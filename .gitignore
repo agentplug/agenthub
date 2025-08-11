@@ -1,5 +1,5 @@
 # Cursor IDE
-./agenthub/.cursor/
+.cursor/
 
 # Python
 __pycache__/
