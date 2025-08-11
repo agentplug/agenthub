@@ -1,0 +1,236 @@
+---
+description: Call when do implementation based on implementation design
+globs: 
+alwaysApply: false
+---
+# Implementation Workflow - Senior Software Engineer Coding Process
+
+## Overview
+This workflow defines how to implement code based on implementation design documents, following a strict iterative cycle that simulates senior software engineer practices. Uses **uv** for Python environment management with **100% reproducible environments** and **immediate unit testing for every function**.
+
+## Environment Setup - Reproducible by Design
+
+### Core Principle: One-Script Reproduction
+**Everything must be reproducible with a single script.** Anyone should be able to clone the repository and run one command to get the exact same environment.
+
+### Project Structure
+```
+project-name/
+├── pyproject.toml          # Project configuration and dependencies
+├── uv.lock                 # Locked dependency versions (committed to git)
+├── requirements.txt        # Human-readable requirements (auto-generated)
+├── setup.sh               # One-command environment setup
+├── src/                   # Source code
+├── tests/                 # Unit tests (mirror source structure)
+└── .gitignore             # Excludes virtual environments, keeps lock files
+```
+
+### Setup Script (`setup.sh`)
+```bash
+#!/bin/bash
+set -e
+if ! command -v uv &> /dev/null; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    source ~/.bashrc
+fi
+uv venv
+uv sync
+uv add --dev pytest black mypy ruff coverage pre-commit
+uv run pre-commit install
+echo "✅ Environment ready!"
+```
+
+## Core Implementation Cycle - Function-Level TDD
+
+### 1. Read & Understand Implementation Design
+- Read relevant implementation design documents for current phase
+- Identify specific module/feature to implement
+- Understand technical requirements and success criteria
+- Ensure reproducible environment is active: `source .venv/bin/activate`
+
+### 2. Implement Function with Immediate Testing
+**For EVERY function, follow this strict cycle:**
+
+#### Step 2a: Write Function Signature and Docstring
+- Define function signature with types and docstring
+- Document parameters, return values, and exceptions
+
+#### Step 2b: Write Unit Tests
+- Write tests for all success paths
+- Write tests for error conditions and edge cases
+- Write tests for boundary conditions
+- Follow AAA pattern (Arrange, Act, Assert)
+
+#### Step 2c: Run Test (Should Fail)
+```bash
+uv run pytest tests/test_module.py::test_function_name -v
+```
+
+#### Step 2d: Implement Function
+- Implement the function logic
+- Handle all error conditions
+- Follow project coding standards
+
+#### Step 2e: Run Test Again (Should Pass)
+```bash
+uv run pytest tests/test_module.py::test_function_name -v
+```
+
+#### Step 2f: If Tests Fail - Fix Bugs Immediately
+**CRITICAL: Do NOT continue until ALL tests pass**
+- Debug failing tests immediately
+- Fix implementation bugs
+- Add missing error handling
+- Correct logic errors
+- Run tests again: `uv run pytest tests/test_module.py::test_function_name -v`
+- Repeat until ALL tests pass
+
+#### Step 2g: Run All Tests for Function
+```bash
+uv run pytest tests/test_module.py -k "function_name" -v
+```
+
+#### Step 2h: Commit Function and Tests Together
+```bash
+git add src/package/module.py tests/test_module.py
+git commit -m "Implement function_name with comprehensive tests"
+```
+
+### 3. Validate Implementation Quality
+- Run all unit tests for the function
+- Run code quality checks: `uv run black .`, `uv run ruff check .`, `uv run mypy .`
+- Verify against design success criteria
+- Ensure no regression in existing functionality
+
+### 4. Move to Next Function
+- Repeat entire cycle for next function
+- Ensure all previous functions still pass their tests
+- Run full test suite periodically: `uv run pytest`
+
+## Function-Level Testing Requirements
+
+### Test Coverage Requirements
+- Every function must have unit tests
+- Test all success paths, error conditions, boundary conditions
+- Test input validation and type checking
+
+### Test Quality Standards
+- Tests must be independent, repeatable, fast (<1 second each)
+- Tests must be descriptive with clear names and docstrings
+- Tests must follow AAA pattern (Arrange, Act, Assert)
+
+### Test File Organization
+```
+tests/
+├── test_module1.py          # Tests for src/package/module1.py
+├── test_module2.py          # Tests for src/package/module2.py
+├── conftest.py             # Shared fixtures
+└── integration/            # Integration tests
+```
+
+## Phase-Based Implementation
+
+### Starting a New Phase
+- Read phase-specific implementation design
+- Identify first unchecked deliverable
+- Ensure reproducible environment is up to date: `uv sync`
+
+### During Phase Implementation
+- Work through deliverables sequentially
+- Implement each function with immediate testing (follow function-level TDD cycle)
+- **CRITICAL: Fix all bugs before moving to next function**
+- Check off completed deliverables immediately when validated
+- Keep environment reproducible: `uv sync` regularly, commit lock file changes
+
+### Completing a Phase
+- Verify all phase success criteria are met
+- Run full test suite: `uv run pytest`
+- Run all code quality checks
+- Run coverage report: `uv run pytest --cov=src --cov-report=html`
+- Commit environment changes: `git add uv.lock pyproject.toml`
+
+## Quality Gates
+
+### Code Quality
+- All unit tests pass: `uv run pytest`
+- Code follows project standards: `uv run black .` (no changes needed)
+- No linting errors: `uv run ruff check .`
+- Type checking passes: `uv run mypy .`
+- Environment is reproducible: `uv sync` works without errors
+
+### Testing Quality
+- 100% function coverage - every function has tests
+- All tests pass - no failing tests
+- Tests are fast, maintainable, and well-documented
+- Edge cases and error conditions covered
+
+### Design Compliance
+- Implementation matches design specification
+- All success criteria validated
+- Integration points work correctly
+- No unauthorized deviations
+
+## Handling Issues
+
+### Technical Blockers
+- Document the blocker with specific details
+- Attempt to resolve within reasonable time
+- Check if new dependencies needed: `uv add package-name`
+- Escalate to design team if solution requires design changes
+
+### Design Ambiguities
+- Clarify with design team before proceeding
+- Document the clarification for future reference
+- Update implementation design if needed
+
+### Environment Issues
+- Reproduce environment: `./setup.sh`
+- Update dependencies: `uv sync`
+- Add missing packages: `uv add package-name`
+- Test reproducibility: Delete .venv and run `./setup.sh` again
+
+### Test Failures - IMMEDIATE ACTION REQUIRED
+**CRITICAL: Do NOT continue implementation until tests pass**
+- Debug failing tests immediately
+- Check if implementation is correct or test expectation is wrong
+- Add more test cases if edge cases discovered
+- Refactor code if tests reveal design issues
+- Run tests again: `uv run pytest tests/test_module.py::test_function_name -v`
+- Repeat until ALL tests pass
+
+## Success Metrics
+
+### Implementation Quality
+- 100% function test coverage: `uv run pytest --cov`
+- Zero critical bugs in implementation
+- All design requirements met
+- All code quality checks pass
+- Environment is 100% reproducible
+
+### Testing Quality
+- Every function has unit tests
+- All tests pass consistently
+- Tests run fast (<1 second per test)
+- Tests are maintainable and well-documented
+- Edge cases and error conditions covered
+
+### Development Efficiency
+- Minimal rework due to design misunderstandings
+- Clear progress tracking through phases
+- Timely completion of deliverables
+- New team members can setup in <5 minutes
+
+## Key Principles
+
+1. **Design is the source of truth** - never deviate without updates
+2. **Test-driven development** - write tests for every function immediately
+3. **Function-level validation** - test each function as you implement it
+4. **Quality over speed** - proper implementation is better than fast implementation
+5. **Clear communication** - document issues and decisions for team awareness
+6. **Use uv for Python environment management** - consistent, fast, reliable dependency management
+7. **100% reproducible environments** - anyone can setup with one command
+8. **Lock files are sacred** - always commit uv.lock for reproducibility
+9. **Tests are part of implementation** - never commit code without tests
+10. **Immediate validation** - test every function right after implementing it
+11. **Fix bugs immediately** - do NOT continue until ALL tests pass
+12. **Zero tolerance for failing tests** - every function must pass all tests before moving on

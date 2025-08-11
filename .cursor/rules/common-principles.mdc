@@ -1,0 +1,109 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Today is June 28th, 2025
+# Common Principles
+
+## 1. Incremental Modification Principle
+**Principle**: Modify existing code and documentation only when necessary, avoiding complete rewrites unless absolutely required.
+
+**Guidelines**:
+- Preserve existing functionality while making targeted improvements
+- Document what was changed and why
+- Test existing functionality after modifications
+
+**Example**: Instead of rewriting an entire API, add new endpoints or modify existing ones while maintaining backward compatibility.
+
+## 2. Criteria-Based Completion Principle
+**Principle**: When implementation criteria are met, mark tasks as complete in documents and move forward.
+
+**Guidelines**:
+- Define clear acceptance criteria before starting implementation
+- Verify all criteria are satisfied before marking as done
+- Use checklists or automated tests to validate completion
+- Don't over-engineer beyond the specified requirements
+
+**Example**: If a function needs to "return user data in JSON format", mark it complete once it returns valid JSON, not after adding extra features.
+
+## 3. RAG Implementation Principle
+**Principle**: For Retrieval-Augmented Generation (RAG) features, use mock files with common types first, then implement real retrieval with LlamaIndex.
+
+**Guidelines**:
+- Start with mock data that represents realistic file structures
+- Implement the retrieval logic using LlamaIndex for production
+- Test with both mock and real data to ensure consistency
+- Document the transition from mock to real implementation
+
+**Example**: Create mock PDF/text files with sample content, then replace with LlamaIndex document loading and vector search.
+
+## 4. Test-First Development Principle
+**Principle**: Write unit tests immediately after writing functions and ensure all tests pass before proceeding.
+
+**Guidelines**:
+- Write tests that cover the main functionality and edge cases
+- Run tests immediately after writing code
+- Fix any failing tests before moving to the next feature
+- Maintain high test coverage (aim for 80%+)
+
+**Example**: After writing a `calculate_total()` function, immediately write tests for normal cases, edge cases (empty input, negative numbers), and error conditions.
+
+## 5. Autonomous Implementation Principle
+**Principle**: Implement code independently without stopping to ask for user input unless absolutely necessary.
+
+**Guidelines**:
+- Make reasonable assumptions based on common patterns and best practices
+- Use existing codebase conventions and patterns
+- Document any assumptions made during implementation
+- Only ask for clarification when requirements are genuinely unclear or conflicting
+
+**Example**: If implementing a user authentication system, follow standard OAuth patterns rather than asking for every detail about the implementation.
+
+## 6. Code Quality Standards
+**Principle**: Maintain high code quality through consistent practices and standards.
+
+**Guidelines**:
+- Follow language-specific style guides (PEP 8 for Python, etc.)
+- Use meaningful variable and function names
+- Add appropriate comments and documentation
+- Keep functions focused and single-purpose
+- Handle errors gracefully with proper exception handling
+
+## 7. Documentation Principle
+**Principle**: Write clear, comprehensive documentation that explains the "why" not just the "what".
+
+**Guidelines**:
+- Document design decisions and trade-offs
+- Include usage examples and code snippets
+- Keep documentation up-to-date with code changes
+- Use consistent formatting and structure
+
+## 8. Performance and Scalability Principle
+**Principle**: Consider performance implications and scalability from the beginning.
+
+**Guidelines**:
+- Choose appropriate data structures and algorithms
+- Consider memory usage and computational complexity
+- Design for horizontal scaling when applicable
+- Profile and optimize critical paths
+
+## 9. Security Principle
+**Principle**: Implement security best practices by default.
+
+**Guidelines**:
+- Validate and sanitize all inputs
+- Use parameterized queries to prevent injection attacks
+- Implement proper authentication and authorization
+- Follow the principle of least privilege
+- Keep dependencies updated and secure
+
+## 10. Maintainability Principle
+**Principle**: Write code that is easy to understand, modify, and extend.
+
+**Guidelines**:
+- Use clear abstractions and separation of concerns
+- Minimize coupling between components
+- Write self-documenting code
+- Use design patterns appropriately
+- Refactor when technical debt accumulates

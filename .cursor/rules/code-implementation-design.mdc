@@ -1,0 +1,411 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Module-Level Implementation Design Rules
+
+## Overview
+These rules guide the creation of detailed implementation designs for specific modules within a larger project. The module design should be derived from and consistent with the project-level implementation design, providing specific technical details, interfaces, and implementation strategies.
+
+## Technology Stack Requirements
+
+### Core AI/ML Technologies
+**Mandatory Technology Choices**:
+- **LLM Calling**: Use AI suites (e.g., OpenAI API, Anthropic Claude, etc.) for all LLM interactions
+- **Retrieval**: Use LlamaIndex for document loading, processing, and retrieval operations
+- **Search**: Use FAISS for vector search and similarity matching operations
+
+**Guidelines**:
+- All LLM interactions must go through AI suites for consistency and management
+- Document processing and retrieval must use LlamaIndex for standardized document handling
+- Vector search operations must use FAISS for performance and scalability
+- Document any deviations from these technology choices with justification
+- Ensure proper integration between these technologies in module designs
+
+**Example**: A document Q&A module should use LlamaIndex to load and process documents, FAISS for vector storage and similarity search, and AI suites to call LLMs for generating responses.
+
+## Foundational Design Principles
+
+### KISS Principle (Keep It Simple, Stupid)
+**Principle**: Always prefer the simplest solution that meets the requirements. Complexity should only be added when absolutely necessary.
+
+**Guidelines**:
+- Start with the simplest possible design
+- Avoid premature optimization and complex patterns
+- Use standard, well-understood technologies and patterns
+- Minimize the number of components and interfaces
+- Prefer straightforward algorithms over clever but complex ones
+- Document the reasoning for any complexity that is added
+
+### YAGNI Principle (You Aren't Gonna Need It)
+**Principle**: Don't implement features or design for scenarios that aren't currently required. Build only what you need now.
+
+**Guidelines**:
+- Focus on current requirements, not future possibilities
+- Avoid speculative features and "nice-to-have" functionality
+- Don't design for scalability unless current requirements demand it
+- Resist the urge to add flexibility for potential future changes
+- Question every design decision: "Do we actually need this now?"
+- Document assumptions and constraints that justify current design choices
+
+## 1. Context Analysis Principle
+**Principle**: Always analyze the project-level implementation design to understand the module's role, dependencies, and integration points.
+
+**Guidelines**:
+- Review the project architecture and identify the module's position in the system
+- Map dependencies with other modules and external systems
+- Understand the module's responsibilities and boundaries
+- Identify integration patterns and data flow requirements
+- Document assumptions based on project-level decisions
+- **KISS**: Focus only on essential dependencies and integration points
+- **YAGNI**: Don't design for potential future integrations unless explicitly required
+- **Tech Stack**: Identify how the module will integrate with AI suites, LlamaIndex, and FAISS
+
+**Example**: If the project design specifies a microservices architecture with REST APIs, the module design should detail the specific REST endpoints, data models, and service boundaries for that module.
+
+## 2. Interface Specification Principle
+**Principle**: Define clear, detailed interfaces for the module including APIs, data contracts, and communication protocols.
+
+**Guidelines**:
+- Specify all public APIs with request/response schemas
+- Define data models and validation rules
+- Document error handling and status codes
+- Specify authentication and authorization requirements
+- Define event contracts for asynchronous communication
+- Include versioning strategy for interfaces
+- **KISS**: Use standard protocols and formats (REST, JSON, HTTP status codes)
+- **YAGNI**: Don't add versioning unless you have multiple versions in production
+- **Tech Stack**: Define interfaces for AI suites API calls, LlamaIndex document operations, and FAISS search operations
+
+**Example**: For a user management module, specify REST endpoints like `POST /api/v1/users`, `GET /api/v1/users/{id}`, with detailed request/response JSON schemas, validation rules, and error codes.
+
+## 3. Data Design Principle
+**Principle**: Design comprehensive data structures, storage strategies, and data flow within the module.
+
+**Guidelines**:
+- Define entity relationships and data models
+- Specify database schema or storage structure
+- Design data validation and transformation logic
+- Plan data migration and versioning strategies
+- Consider caching strategies and data consistency
+- Document data security and privacy requirements
+- **KISS**: Use simple, normalized data structures; avoid over-normalization
+- **YAGNI**: Don't implement complex caching or optimization unless performance requirements demand it
+- **Tech Stack**: Design data models for LlamaIndex documents, FAISS vector storage, and AI suites response caching
+
+**Example**: For a product catalog module, define product entity with attributes, category relationships, pricing models, inventory tracking, and search indexing requirements.
+
+## 4. Component Decomposition Principle
+**Principle**: Break down the module into logical components with clear responsibilities and interactions.
+
+**Guidelines**:
+- Identify core components and their responsibilities
+- Define component interfaces and dependencies
+- Specify component lifecycle and initialization
+- Design component communication patterns
+- Consider component reusability and testability
+- Document component configuration and customization
+- **KISS**: Start with minimal components; only split when complexity demands it
+- **YAGNI**: Don't create components for functionality you don't need yet
+- **Tech Stack**: Design components for AI suites integration, LlamaIndex document processing, and FAISS search operations
+
+**Example**: A payment processing module might have components for payment validation, transaction processing, fraud detection, and notification handling.
+
+## 5. Algorithm and Logic Design Principle
+**Principle**: Specify detailed algorithms, business logic, and processing workflows within the module.
+
+**Guidelines**:
+- Define core algorithms with step-by-step logic
+- Specify business rules and decision trees
+- Design workflow processes and state machines
+- Consider performance requirements and optimization
+- Plan error handling and recovery mechanisms
+- Document edge cases and boundary conditions
+- **KISS**: Use straightforward algorithms; avoid clever but complex solutions
+- **YAGNI**: Don't optimize for performance unless you have measured performance issues
+- **Tech Stack**: Design algorithms for LLM prompt engineering, LlamaIndex document processing pipelines, and FAISS search optimization
+
+**Example**: For an order processing module, define the complete order lifecycle from creation to fulfillment, including validation rules, payment processing, inventory checks, and status transitions.
+
+## 6. Security and Compliance Principle
+**Principle**: Design security measures and compliance requirements specific to the module's functionality.
+
+**Guidelines**:
+- Define authentication and authorization mechanisms
+- Specify data encryption and protection strategies
+- Plan audit logging and monitoring requirements
+- Consider regulatory compliance needs
+- Design secure communication protocols
+- Document security testing requirements
+- **KISS**: Use standard security patterns and libraries; don't invent custom security solutions
+- **YAGNI**: Don't implement security features beyond what's required for your specific use case
+- **Tech Stack**: Design security for AI suites API keys, LlamaIndex document access control, and FAISS vector data protection
+
+**Example**: A financial transaction module should specify encryption standards, audit trail requirements, PCI compliance measures, and fraud detection mechanisms.
+
+## 7. Performance and Scalability Principle
+**Principle**: Design for performance requirements and scalability needs specific to the module.
+
+**Guidelines**:
+- Define performance benchmarks and SLAs
+- Specify resource requirements and limits
+- Design caching and optimization strategies
+- Plan horizontal and vertical scaling approaches
+- Consider load balancing and distribution
+- Document performance monitoring and alerting
+- **KISS**: Start with simple, proven solutions; avoid premature optimization
+- **YAGNI**: Don't design for massive scale unless you have concrete evidence you'll need it
+- **Tech Stack**: Design performance optimization for AI suites API rate limiting, LlamaIndex document processing efficiency, and FAISS search performance tuning
+
+**Example**: A search module should specify response time requirements, indexing strategies, query optimization, and scaling approaches for handling increased load.
+
+## 8. Error Handling and Resilience Principle
+**Principle**: Design comprehensive error handling, recovery mechanisms, and resilience patterns.
+
+**Guidelines**:
+- Define error types and classification
+- Specify error handling strategies for each component
+- Design retry mechanisms and circuit breakers
+- Plan graceful degradation strategies
+- Consider disaster recovery and backup procedures
+- Document error reporting and monitoring
+- **KISS**: Use standard error handling patterns; avoid complex recovery mechanisms
+- **YAGNI**: Don't implement complex resilience patterns unless you have specific failure scenarios to address
+- **Tech Stack**: Design error handling for AI suites API failures, LlamaIndex document processing errors, and FAISS search failures
+
+**Example**: A notification module should handle email service failures, implement retry logic with exponential backoff, and provide fallback notification channels.
+
+## 9. Testing Strategy Principle
+**Principle**: Design comprehensive testing approaches specific to the module's functionality.
+
+**Guidelines**:
+- Define unit testing requirements and coverage
+- Specify integration testing scenarios
+- Plan performance and load testing
+- Design security testing approaches
+- Consider automated testing and CI/CD integration
+- Document test data and environment requirements
+- **KISS**: Focus on essential tests that validate core functionality
+- **YAGNI**: Don't implement extensive test suites for features you haven't built yet
+- **Tech Stack**: Design tests for AI suites API mocking, LlamaIndex document processing validation, and FAISS search accuracy testing
+
+**Example**: For an authentication module, specify unit tests for password validation, integration tests for OAuth flows, security tests for vulnerability assessment, and load tests for concurrent user scenarios.
+
+## 10. Configuration and Deployment Principle
+**Principle**: Design configuration management and deployment strategies for the module.
+
+**Guidelines**:
+- Define configuration parameters and defaults
+- Specify environment-specific configurations
+- Plan deployment procedures and rollback strategies
+- Consider containerization and orchestration
+- Design monitoring and health check mechanisms
+- Document deployment dependencies and prerequisites
+- **KISS**: Use simple configuration management; avoid complex deployment pipelines
+- **YAGNI**: Don't implement complex orchestration unless you have multiple environments or services
+- **Tech Stack**: Design configuration for AI suites API credentials, LlamaIndex document storage paths, and FAISS index configuration
+
+**Example**: A database module should specify connection pool configurations, backup schedules, monitoring thresholds, and deployment procedures for different environments.
+
+## 11. Documentation and Maintenance Principle
+**Principle**: Design comprehensive documentation and maintenance procedures for the module.
+
+**Guidelines**:
+- Define API documentation standards
+- Specify code documentation requirements
+- Plan operational runbooks and procedures
+- Design troubleshooting and debugging guides
+- Consider knowledge transfer and training materials
+- Document maintenance schedules and procedures
+- **KISS**: Focus on essential documentation that helps with maintenance and troubleshooting
+- **YAGNI**: Don't create extensive documentation for features that don't exist yet
+- **Tech Stack**: Document AI suites integration patterns, LlamaIndex document processing workflows, and FAISS search optimization techniques
+
+**Example**: A reporting module should include API documentation, data dictionary, report generation procedures, troubleshooting guides, and maintenance schedules.
+
+## 12. Integration and Dependencies Principle
+**Principle**: Design integration patterns and manage dependencies with other modules and external systems.
+
+**Guidelines**:
+- Define integration interfaces and protocols
+- Specify dependency management strategies
+- Plan integration testing approaches
+- Consider backward compatibility requirements
+- Design integration monitoring and alerting
+- Document integration failure handling
+- **KISS**: Use standard integration patterns; avoid custom protocols
+- **YAGNI**: Don't design for complex integration scenarios unless they're currently required
+- **Tech Stack**: Design integration patterns for AI suites API calls, LlamaIndex document sharing between modules, and FAISS index synchronization
+
+**Example**: A payment gateway integration should specify API contracts, webhook handling, retry mechanisms, monitoring for transaction failures, and fallback payment methods.
+
+## Implementation Checklist
+
+### Pre-Design Phase
+- [ ] Review project-level implementation design
+- [ ] Identify module boundaries and responsibilities
+- [ ] Map dependencies and integration points
+- [ ] Gather specific requirements and constraints
+- [ ] Define success criteria and acceptance criteria
+- [ ] **KISS Check**: Are we solving the right problem with the simplest approach?
+- [ ] **YAGNI Check**: Are we only designing for current requirements?
+- [ ] **Tech Stack Check**: Have we identified all AI suites, LlamaIndex, and FAISS integration points?
+
+### Design Phase
+- [ ] Define module interfaces and APIs
+- [ ] Design data models and storage strategies
+- [ ] Decompose into logical components
+- [ ] Specify algorithms and business logic
+- [ ] Design security and compliance measures
+- [ ] Plan performance and scalability approaches
+- [ ] Design error handling and resilience patterns
+- [ ] Define testing strategies
+- [ ] Plan configuration and deployment
+- [ ] Design documentation and maintenance procedures
+- [ ] Specify integration patterns and dependencies
+- [ ] **KISS Review**: Can any part of the design be simplified?
+- [ ] **YAGNI Review**: Are we building anything we don't need right now?
+- [ ] **Tech Stack Review**: Are we using AI suites, LlamaIndex, and FAISS appropriately?
+
+### Validation Phase
+- [ ] Review design against project-level requirements
+- [ ] Validate interface consistency with other modules
+- [ ] Verify security and compliance requirements
+- [ ] Confirm performance and scalability plans
+- [ ] Review error handling and resilience approaches
+- [ ] Validate testing strategy completeness
+- [ ] Confirm deployment and operational procedures
+- [ ] Review documentation completeness
+- [ ] **KISS Validation**: Is this the simplest solution that meets all requirements?
+- [ ] **YAGNI Validation**: Are we only implementing what's actually needed?
+- [ ] **Tech Stack Validation**: Are AI suites, LlamaIndex, and FAISS properly integrated?
+
+## Design Deliverables
+
+### Required Documents
+1. **Module Interface Specification**: Detailed API definitions, data contracts, and communication protocols
+2. **Component Design**: Component breakdown, responsibilities, and interactions
+3. **Data Design**: Data models, storage strategies, and data flow
+4. **Algorithm Specification**: Business logic, workflows, and processing rules
+5. **Security Design**: Security measures, compliance requirements, and risk mitigation
+6. **Performance Design**: Performance requirements, optimization strategies, and scaling plans
+7. **Error Handling Design**: Error classification, handling strategies, and recovery mechanisms
+8. **Testing Design**: Testing approaches, scenarios, and validation criteria
+9. **Deployment Design**: Configuration management, deployment procedures, and operational requirements
+10. **Integration Design**: Integration patterns, dependency management, and external system interfaces
+11. **Tech Stack Integration Design**: AI suites, LlamaIndex, and FAISS integration specifications
+
+### Optional Documents
+- **Risk Assessment**: Identified risks, mitigation strategies, and contingency plans
+- **Cost Analysis**: Resource requirements, licensing costs, and operational expenses
+- **Timeline and Milestones**: Development phases, dependencies, and delivery schedule
+- **Team Requirements**: Skills, roles, and responsibilities for implementation
+- **Training and Knowledge Transfer**: Training requirements and knowledge sharing plans
+
+## Quality Gates
+
+### Design Review Criteria
+- [ ] Completeness: All aspects of the module are addressed
+- [ ] Consistency: Design aligns with project-level architecture
+- [ ] Feasibility: Implementation is technically and economically viable
+- [ ] Maintainability: Design supports long-term maintenance and evolution
+- [ ] Testability: All components and interfaces can be effectively tested
+- [ ] Security: Security requirements are adequately addressed
+- [ ] Performance: Performance requirements are achievable
+- [ ] Scalability: Design supports growth and scaling requirements
+- [ ] **KISS Compliance**: Design is as simple as possible while meeting requirements
+- [ ] **YAGNI Compliance**: Design only includes what's currently needed
+- [ ] **Tech Stack Compliance**: Proper use of AI suites, LlamaIndex, and FAISS
+
+### Approval Process
+1. **Technical Review**: Review by technical leads and architects
+2. **Security Review**: Review by security team and compliance experts
+3. **Performance Review**: Review by performance and scalability experts
+4. **Stakeholder Review**: Review by business stakeholders and product owners
+5. **Final Approval**: Approval by project manager and technical leadership
+
+## Best Practices
+
+### Design Principles
+- **Single Responsibility**: Each component has one clear responsibility
+- **Open/Closed**: Open for extension, closed for modification
+- **Dependency Inversion**: Depend on abstractions, not concretions
+- **Interface Segregation**: Keep interfaces focused and specific
+- **Loose Coupling**: Minimize dependencies between components
+- **High Cohesion**: Related functionality is grouped together
+- **KISS**: Always prefer the simplest solution that works
+- **YAGNI**: Only build what you need right now
+
+### Documentation Standards
+- Use clear, concise language with technical accuracy
+- Include diagrams and visual representations where helpful
+- Provide examples and use cases for complex concepts
+- Maintain consistent formatting and structure
+- Include version control and change tracking
+- Ensure accessibility and readability
+
+### Review and Iteration
+- Conduct regular design reviews throughout the process
+- Incorporate feedback and iterate on the design
+- Validate design decisions with prototypes or proof of concepts
+- Maintain design documentation as the implementation evolves
+- Conduct post-implementation reviews to validate design effectiveness
+- **KISS Review**: Regularly ask "Can this be simpler?"
+- **YAGNI Review**: Regularly ask "Do we actually need this?"
+
+## KISS and YAGNI Decision Framework
+
+### When to Add Complexity (KISS Exceptions)
+- **Performance Requirements**: When simple solutions don't meet performance SLAs
+- **Security Requirements**: When standard approaches don't meet security needs
+- **Compliance Requirements**: When regulatory requirements demand specific solutions
+- **Integration Requirements**: When external systems require specific protocols
+- **Scalability Requirements**: When current load demands more sophisticated solutions
+
+### When to Resist Adding Features (YAGNI Enforcement)
+- **Future Requirements**: Don't build for requirements that don't exist yet
+- **Nice-to-Have Features**: Focus on must-have functionality first
+- **Over-Engineering**: Don't add flexibility for potential future changes
+- **Premature Optimization**: Don't optimize before measuring performance
+- **Speculative Features**: Don't implement features based on assumptions
+
+### Decision Questions
+Before adding any complexity or feature, ask:
+1. **KISS Questions**:
+   - Is this the simplest solution that meets the requirements?
+   - Can we solve this with standard patterns or libraries?
+   - Will this complexity make the system harder to understand and maintain?
+
+2. **YAGNI Questions**:
+   - Do we have a current requirement for this feature?
+   - Are we building this because we think we might need it later?
+   - Can we implement this when we actually need it?
+
+3. **Justification Questions**:
+   - What specific problem does this solve?
+   - What are the costs of adding this complexity?
+   - What are the risks of not implementing this now?
+
+## Technology Stack Integration Guidelines
+
+### AI Suites Integration
+- **API Management**: Centralize AI suites API calls through a service layer
+- **Rate Limiting**: Implement proper rate limiting and retry logic
+- **Cost Management**: Monitor and optimize API usage costs
+- **Fallback Strategies**: Design fallback mechanisms for API failures
+- **Security**: Secure API keys and credentials management
+
+### LlamaIndex Integration
+- **Document Processing**: Standardize document loading and processing pipelines
+- **Index Management**: Design efficient index creation and maintenance
+- **Query Optimization**: Optimize retrieval queries for performance
+- **Storage Strategy**: Plan document storage and backup strategies
+- **Version Control**: Manage document versions and updates
+
+### FAISS Integration
+- **Index Design**: Design appropriate FAISS index types for your use case
+- **Vector Management**: Plan vector storage and retrieval strategies
+- **Performance Tuning**: Optimize FAISS parameters for your data and queries
+- **Scalability**: Design for index growth and distribution
+- **Memory Management**: Plan memory usage and optimization strategies

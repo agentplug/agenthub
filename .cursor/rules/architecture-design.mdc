@@ -1,0 +1,522 @@
+---
+description: When have requirement and analysis, you need to convert and develop a system design
+globs: 
+alwaysApply: false
+---
+# Architecture Design Framework - Human-AI Expert Collaboration
+
+## 0. Design Loop Prevention & "Why" Foundation
+
+### Input Requirements Location
+**Requirement documents are typically saved in `docs/.requirement_analysis/` folder**
+- AI agents should read and analyze requirements from this location
+- Requirements may include business problem statements, user stories, functional/non-functional requirements
+- All architecture design decisions must trace back to these requirements
+
+### Design Loop Prevention Mechanisms
+
+**Exit Criteria for Each Phase:**
+- Discovery Phase: Must have validated business problem and success metrics
+- Design Phase: Must have approved architecture with clear component justifications
+- Validation Phase: Must have passed all quality gates and stakeholder approval
+- Implementation Phase: Must have clear implementation roadmap
+
+**Decision Gates:**
+- Go/No-Go decisions at each phase boundary
+- Maximum iteration limits per phase (3 iterations maximum)
+- Timeboxing for each design session (2-4 hours maximum)
+- Escalation triggers for unresolved conflicts
+
+**Loop Detection:**
+- Track decision changes and rationale
+- Flag circular discussions and unresolved conflicts
+- Identify when teams are stuck in analysis paralysis
+- Trigger intervention when iteration limits are reached
+
+### "Why" Validation Framework
+
+**Every Component Must Answer:**
+1. What business problem does this solve?
+2. What user outcome does this enable?
+3. What business value does this create?
+4. What would happen if this component didn't exist?
+5. How does this align with business goals?
+
+**Component Justification Template:**
+```
+Component: [Name]
+Business Problem: [Specific problem statement]
+User Outcome: [What users can do/achieve]
+Business Value: [Quantifiable benefit]
+Dependencies: [What this component needs]
+Alternatives Considered: [Other approaches evaluated]
+Decision Rationale: [Why this approach was chosen]
+```
+
+## 1. Understanding Requirements & Analysis
+### Deep Dive into the "Why"
+
+Start by understanding the business problem, not the proposed solution
+Ask: What pain point are we solving? What opportunity are we capturing?
+Map requirements to business value and user outcomes
+Identify success metrics early - how will we measure if this solution works?
+
+**"Why" Validation Checklist:**
+- [ ] Every requirement traces to a business goal
+- [ ] Every feature has a clear user benefit
+- [ ] Every component has a business justification
+- [ ] Success metrics are measurable and meaningful
+- [ ] Business value is quantifiable
+
+### AI Agent Expert Analysis Capabilities
+
+**Deep Requirement Analysis:**
+- Identify implicit requirements from explicit ones
+- Spot conflicting requirements and propose resolutions
+- Recognize architectural implications of business rules
+- Infer non-functional requirements from functional ones
+- Detect missing requirements that are architecturally critical
+
+**Pattern Recognition:**
+- Identify common architectural patterns in requirements
+- Recognize anti-patterns and suggest alternatives
+- Spot scalability bottlenecks before they become problems
+- Detect security vulnerabilities in requirements
+- Identify integration complexity and suggest simplifications
+
+**Domain Expertise:**
+- Apply industry-specific architectural knowledge
+- Understand regulatory and compliance implications
+- Recognize technology maturity and ecosystem health
+- Assess vendor lock-in risks and mitigation strategies
+- Evaluate technology debt implications of choices
+
+### Stakeholder Analysis
+
+Who are the primary users? Secondary users?
+What are their goals, constraints, and current workflows?
+What are the business stakeholders' priorities and constraints?
+Document assumptions and get them validated
+
+### Requirements Decomposition
+
+Break down high-level requirements into user journeys
+Identify functional vs non-functional requirements
+Flag ambiguities and conflicts early
+Create a requirements traceability matrix
+
+## 2. Context Assessment
+### Team Capacity Analysis
+
+Current team skills and experience levels
+Available bandwidth and competing priorities
+Knowledge gaps that need filling
+Team's familiarity with proposed technologies
+
+### Technology Landscape
+
+Existing systems and their constraints
+Current tech stack and its limitations
+Integration points and dependencies
+Technical debt that might impact the solution
+Security and compliance requirements
+
+### Organizational Constraints
+
+Budget limitations
+Timeline pressures
+Political considerations
+Change management capacity
+
+## 3. Solution Design Process
+### Start with "Why" - Problem-First Thinking
+
+For every component: "What problem does this solve?"
+If you can't articulate the why, it shouldn't exist
+Avoid "resume-driven development" - don't use tech just because it's trendy
+
+**Component "Why" Validation:**
+- Every module must solve a specific business problem
+- Every feature must enable a specific user outcome
+- Every technology choice must have a business justification
+- Every integration must serve a business purpose
+- Every decision must trace back to business value
+
+### AI Agent Expert Design Capabilities
+
+**Multi-Dimensional Design Space Exploration:**
+- Generate 3-5 distinct architectural approaches
+- Evaluate each against multiple criteria (performance, cost, complexity, risk)
+- Create hybrid solutions combining best aspects
+- Propose evolutionary paths from current to target architecture
+
+**Advanced Architectural Patterns:**
+- Suggest domain-driven design boundaries
+- Propose event sourcing and CQRS where appropriate
+- Recommend microservices vs. monolith with detailed rationale
+- Design for eventual consistency and distributed systems
+- Propose API-first design with versioning strategies
+
+**Technology Stack Optimization:**
+- Evaluate technology compatibility and integration complexity
+- Assess team learning curves and knowledge transfer needs
+- Consider licensing costs and vendor relationships
+- Evaluate community support and long-term viability
+- Propose technology migration strategies
+
+### Design Principles
+
+Simplicity First: The best solution is often the simplest one that works
+Iterative Value Delivery: Design for incremental releases
+Flexibility Without Over-engineering: Build for known requirements + reasonable future changes
+User-Centric: Every decision should improve user experience
+Maintainability: Consider who will maintain this and how
+
+### AI Agent Expert Decision Framework
+
+**Multi-Criteria Decision Analysis:**
+- Weighted scoring across 10+ criteria
+- Sensitivity analysis for uncertain parameters
+- Risk-adjusted return on investment calculations
+- Scenario planning for different future states
+
+**Trade-off Analysis:**
+- Performance vs. complexity trade-offs
+- Development speed vs. maintainability
+- Cost vs. scalability trade-offs
+- Security vs. usability trade-offs
+- Vendor lock-in vs. feature richness
+
+**Constraint Optimization:**
+- Resource constraint optimization
+- Timeline constraint optimization
+- Technical debt constraint optimization
+- Team capability constraint optimization
+
+### Architecture Decisions
+
+Document Architecture Decision Records (ADRs)
+For each major decision, document:
+
+Context and problem statement
+Options considered
+Decision and rationale
+Consequences and trade-offs
+
+## 4. Human-AI Expert Collaboration Framework
+### Pre-Discussion Preparation
+
+Create visual models using Mermaid diagrams (C4 diagrams, sequence diagrams)
+Prepare multiple solution options with pros/cons
+Identify risks and mitigation strategies
+Have data to support your recommendations
+
+### AI Agent Expert Communication Capabilities
+
+**Stakeholder-Specific Communication:**
+- Executive summaries with business impact focus
+- Technical deep-dives for architects and developers
+- Implementation guidance for project managers
+- Risk assessment for stakeholders
+- Cost-benefit analysis for budget holders
+
+**Interactive Design Sessions:**
+- Real-time architecture sketching and refinement
+- Collaborative constraint exploration
+- Live trade-off analysis and visualization
+- Dynamic scenario modeling
+- Interactive risk assessment
+
+**Design Review Facilitation:**
+- Guide stakeholders through design decisions
+- Challenge assumptions constructively
+- Propose alternatives when designs have issues
+- Facilitate consensus building
+- Document decision rationale and alternatives
+
+### Discussion Structure
+
+Present the problem before the solution
+Show how the solution maps to business goals
+Be transparent about trade-offs
+Seek input on assumptions and constraints
+Be ready to pivot based on new information
+
+### Key Questions to Address
+
+Does this solve the core business problem?
+What's the minimum viable solution?
+What are we explicitly not solving?
+How does this fit into the broader system?
+What are the failure modes and their impacts?
+
+## 5. Solution Validation - Human-AI Collaborative Process
+
+### Validation Philosophy
+Validation is a collaborative process where AI prepares comprehensive validation materials and analysis, while humans work with stakeholders to obtain approvals. AI focuses on thorough technical and business validation, while humans focus on stakeholder engagement and final decision-making.
+
+### AI Agent Expert Validation Capabilities
+
+**Validation Material Preparation:**
+- Generate stakeholder-specific presentation materials
+- Create comprehensive validation checklists and criteria
+- Prepare technical validation reports with detailed analysis
+- Develop risk assessment matrices and mitigation strategies
+- Create comparison matrices for architectural alternatives
+- Generate business value analysis and ROI projections
+
+**Comprehensive Architecture Review:**
+- Security threat modeling and vulnerability assessment
+- Performance modeling and bottleneck identification
+- Scalability analysis under various load scenarios
+- Maintainability assessment and technical debt evaluation
+- Integration complexity and dependency analysis
+- Technology stack compatibility and ecosystem analysis
+
+**Quality Metrics & Benchmarks:**
+- Architecture complexity metrics (cyclomatic complexity, coupling, cohesion)
+- Performance benchmarks and SLAs
+- Security compliance checklists
+- Scalability thresholds and limits
+- Maintainability indices
+- Code quality and technical debt metrics
+
+**Feedback Analysis & Synthesis:**
+- Analyze stakeholder feedback patterns and themes
+- Identify common concerns and improvement opportunities
+- Suggest architectural refinements based on feedback
+- Track validation decision changes and rationale
+- Generate comprehensive validation summary reports
+- Provide data-driven recommendations for improvements
+
+**Continuous Validation Monitoring:**
+- Real-time validation against changing requirements
+- Impact analysis of requirement changes on architecture
+- Architecture drift detection and alerting
+- Performance regression analysis
+- Security vulnerability monitoring
+- Technical debt accumulation tracking
+
+### Human Validation Responsibilities
+
+**Stakeholder Engagement:**
+- Present AI-prepared validation materials to stakeholders
+- Gather stakeholder feedback and concerns
+- Obtain formal approvals and sign-offs
+- Escalate unresolved issues when needed
+
+**Final Decision Making:**
+- Review AI validation analysis and recommendations
+- Make final validation decisions based on stakeholder input
+- Approve architecture for implementation
+- Ensure all validation criteria are met
+
+### Validation Quality Gates
+
+**Business Alignment Gate:**
+- AI validates every component has business justification
+- AI provides comprehensive business value analysis
+- Human confirms stakeholder approval
+- AI tracks business alignment metrics
+
+**Technical Feasibility Gate:**
+- AI performs comprehensive technical validation
+- AI provides detailed technical risk assessment
+- Human validates with development team
+- AI confirms implementation approach feasibility
+
+**Stakeholder Approval Gate:**
+- AI prepares stakeholder approval materials
+- Human obtains approval from stakeholders
+- AI documents approval decisions and rationale
+- Human resolves any stakeholder conflicts
+
+**Implementation Readiness Gate:**
+- AI provides detailed implementation roadmap
+- AI validates resource requirements and dependencies
+- Human confirms resource availability
+- AI tracks implementation readiness metrics
+
+### Validation Documentation Requirements
+
+**AI-Generated Validation Artifacts:**
+- Comprehensive validation reports with detailed analysis
+- Stakeholder presentation materials and comparison matrices
+- Technical validation findings and recommendations
+- Business validation summaries and value propositions
+- Risk assessment and mitigation documentation
+- Implementation roadmap and dependency analysis
+
+**Human-Approved Documentation:**
+- Stakeholder approval records and sign-offs
+- Final validation decisions and rationale
+- Escalation decisions and resolution outcomes
+- Implementation authorization documents
+
+### Validation Success Criteria
+
+- AI has completed comprehensive validation analysis
+- All validation criteria have been met
+- Human has obtained stakeholder approvals
+- Implementation path is clear and validated
+- Validation documentation is complete and approved
+
+## 6. Design Documentation
+### Essential Artifacts
+
+**Visual Documentation (All diagrams must use Mermaid):**
+- High-level architecture diagram (C4 Level 1 - System Context)
+- Container diagram (C4 Level 2)
+- Component diagram (C4 Level 3)
+- Sequence diagrams for key interactions
+- Data flow diagrams
+- Deployment architecture diagram
+- API interaction diagrams
+
+**Technical Documentation:**
+- API contracts (OpenAPI format)
+- Data model definitions (ERD in Mermaid)
+- Technology stack matrix
+- Non-functional requirements matrix
+- Risk assessment matrix
+
+**Component Justification Documentation:**
+- Business problem mapping for each component
+- User outcome mapping for each feature
+- Business value quantification
+- Decision rationale for each major choice
+- Alternative approaches considered
+
+### AI Agent Expert Knowledge Capabilities
+
+**Architectural Knowledge Base:**
+- Industry best practices and patterns
+- Technology ecosystem knowledge
+- Performance characteristics database
+- Security vulnerability database
+- Integration pattern library
+
+**Learning from Experience:**
+- Analyze previous project outcomes
+- Learn from successful and failed architectures
+- Adapt recommendations based on team performance
+- Improve accuracy based on stakeholder feedback
+- Build organization-specific knowledge base
+
+**Predictive Capabilities:**
+- Predict project success probability
+- Forecast technical debt accumulation
+- Estimate maintenance costs
+- Predict scalability bottlenecks
+- Forecast technology obsolescence risks
+
+### Living Documentation
+
+Keep docs close to code, but not directly code here as this step is design. We have another step called implementation design after this.
+Use Mermaid diagrams as code where possible
+Regular review and updates
+Clear ownership model
+
+## 7. Human-AI Expert Collaboration Workflow
+
+### Discovery Phase
+- AI analyzes requirements and identifies key architectural decisions
+- Human validates business context and constraints
+- AI proposes multiple architectural approaches
+- Human provides domain expertise and organizational context
+- **Exit Criteria**: Validated business problem and success metrics
+
+### Design Phase
+- AI generates detailed architectural designs with Mermaid diagrams
+- Human reviews and provides feedback
+- AI refines designs based on feedback
+- Human validates against business goals
+- **Exit Criteria**: Approved architecture with clear component justifications
+
+### Validation Phase
+- AI performs comprehensive architecture review
+- Human validates against organizational constraints
+- AI proposes risk mitigation strategies
+- Human approves final architecture
+- **Exit Criteria**: Passed all quality gates and stakeholder approval
+
+### Implementation Phase
+- AI provides detailed implementation guidance
+- Human executes implementation
+- AI monitors for architecture drift
+- Human provides feedback on implementation challenges
+- **Exit Criteria**: Clear implementation roadmap
+
+## 8. Design Loop Prevention & Quality Gates
+
+### Iteration Limits
+- Maximum 3 iterations per phase
+- Maximum 2-4 hours per design session
+- Escalation required after 3 iterations
+- Timeboxing for all collaborative sessions
+
+### Quality Gates
+- **Business Alignment Gate**: Every component must have business justification
+- **Technical Feasibility Gate**: All technical decisions must be validated
+- **Stakeholder Approval Gate**: All stakeholders must approve design
+- **Implementation Readiness Gate**: Clear implementation path must exist
+
+### Loop Detection Triggers
+- Same decisions being revisited without new information
+- Circular discussions without resolution
+- Analysis paralysis (spending too much time on one decision)
+- Stakeholder conflicts that can't be resolved
+- Scope creep without business justification
+
+### Intervention Strategies
+- Escalate to higher authority when stuck
+- Bring in external expert for fresh perspective
+- Simplify scope to break deadlock
+- Make timeboxed decisions with review points
+- Document unresolved issues for future resolution
+
+## Common Pitfalls to Avoid
+
+Solution-First Thinking: Jumping to implementation before understanding the problem
+Over-Engineering: Building for imaginary future requirements
+Under-Engineering: Ignoring known scaling or flexibility needs
+Ivory Tower Architecture: Designing without considering team capabilities
+Big Bang Approach: Trying to solve everything at once
+Ignoring Operations: Not considering how the solution will be deployed and maintained
+**Design Loops: Getting stuck in endless iterations without progress**
+**Missing "Why": Adding components without business justification**
+
+## Continuous Improvement
+
+Regular architecture reviews
+Retrospectives on design decisions
+Metrics to validate design choices
+Feedback loops with users and stakeholders
+Evolution based on real-world usage
+
+## Mermaid Diagram Requirements
+
+**All visual documentation MUST use Mermaid syntax:**
+- System Context Diagrams (C4 Level 1)
+- Container Diagrams (C4 Level 2)
+- Component Diagrams (C4 Level 3)
+- Sequence Diagrams
+- Data Flow Diagrams
+- Entity Relationship Diagrams
+- Deployment Diagrams
+- State Diagrams
+- User Journey Flowcharts
+
+**Mermaid Diagram Standards:**
+- Use consistent color coding for different system types
+- Include clear labels and descriptions
+- Maintain consistent naming conventions
+- Keep diagrams focused and readable
+- Use appropriate diagram types for different purposes
+
+Remember: Great architecture emerges from deeply understanding the problem space, respecting constraints, and making deliberate trade-offs. Every design decision should trace back to a business need or user outcome. Stay humble, seek feedback, and be ready to adapt as you learn more.
+
+**All docs of this section will be saved to docs/.architecture_design/ folder.**
+
+Remember the principle KISS and YAGNI
+Just make enough change for each time. Do not make major or significant changes if not needed. (Very important)

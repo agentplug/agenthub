@@ -1,0 +1,621 @@
+---
+description: Call when do implementation based on implementation design and python language used
+globs: 
+alwaysApply: false
+---
+# Enhanced Python 3.12 Development Rules
+
+## Tech Stack Requirements
+
+### LLM Integration
+- **Use aisuites** for calling Large Language Models (LLMs)
+- Implement proper error handling and retry logic for LLM API calls
+- Use async patterns for concurrent LLM requests when appropriate
+- Cache LLM responses when possible to reduce API costs and latency
+
+### RAG (Retrieval-Augmented Generation)
+- **Use llamaindex** for RAG functionality and document processing
+- Implement proper document indexing and retrieval strategies
+- Use appropriate embedding models for vector similarity search
+- Structure RAG pipelines with clear separation of retrieval and generation steps
+
+```python
+# Example LLM integration with aisuites
+import aisuites
+from typing import AsyncIterator
+
+async def call_llm_with_retry(prompt: str, max_retries: int = 3) -> str:
+    """Call LLM with retry logic using aisuites."""
+    for attempt in range(max_retries):
+        try:
+            response = await aisuites.call_llm(prompt)
+            return response
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise e
+            await asyncio.sleep(2 ** attempt)  # Exponential backoff
+
+# Example RAG implementation with llamaindex
+from llamaindex import Document, VectorStoreIndex, ServiceContext
+from llamaindex.embeddings import OpenAIEmbedding
+
+def setup_rag_pipeline(documents: list[Document]) -> VectorStoreIndex:
+    """Set up RAG pipeline using llamaindex."""
+    embedding_model = OpenAIEmbedding()
+    service_context = ServiceContext.from_defaults(embed_model=embedding_model)
+    
+    index = VectorStoreIndex.from_documents(
+        documents, 
+        service_context=service_context
+    )
+    return index
+
+async def rag_query(index: VectorStoreIndex, query: str) -> str:
+    """Perform RAG query with retrieval and generation."""
+    query_engine = index.as_query_engine()
+    response = await query_engine.aquery(query)
+    return response.response
+```
+
+## Code Style and Formatting
+
+### PEP 8 Compliance
+- Follow PEP 8 - Python's official style guide
+- Use automated tools: **black** (formatter), **ruff** (linter + formatter), **mypy** (type checker)
+- Configure tools in `pyproject.toml` for consistency
+
+### Naming Conventions
+- **snake_case** for functions, variables, modules, and packages
+- **PascalCase** for classes, exceptions, and type aliases
+- **UPPER_SNAKE_CASE** for constants and module-level variables
+- **camelCase** for nothing (avoid in Python)
+- Use descriptive names that explain intent, not implementation
+- Prefix private attributes with `_` (single underscore)
+- Use `__` (double underscore) for name mangling only when necessary
+
+### Line Length and Structure
+- **88 characters** max line length (black default)
+- **4 spaces** for indentation (never tabs)
+- **2 blank lines** before top-level classes and functions
+- **1 blank line** between methods in classes
+
+## Code Structure and Design
+
+### Function Design
+- **Single Responsibility Principle**: Each function should do one thing well
+- **Function length**: Aim for < 50 lines, max 100 lines
+- **Parameters**: Limit to 5 parameters; use dataclasses or kwargs for more
+- **Return early**: Use guard clauses to reduce nesting
+
+```python
+# Good: Early return pattern
+def process_user(user: User) -> ProcessResult:
+    if not user.is_active:
+        return ProcessResult(success=False, reason="User inactive")
+    
+    if not user.has_permissions:
+        return ProcessResult(success=False, reason="Insufficient permissions")
+    
+    # Main logic here
+    return ProcessResult(success=True, data=process_data(user))
+```
+
+### Class Design
+- **Composition over inheritance**: Prefer composition, mixins, or protocols
+- **Inheritance depth**: Maximum 2 levels of inheritance
+- **Use dataclasses** for simple data containers (Python 3.7+)
+- **Use slots** for performance-critical classes with fixed attributes
+
+```python
+from dataclasses import dataclass, field
+from typing import Protocol
+
+@dataclass(frozen=True)
+class User:
+    id: int
+    name: str
+    email: str
+    created_at: datetime = field(default_factory=datetime.now)
+
+class UserRepository(Protocol):
+    def save(self, user: User) -> None: ...
+    def find_by_id(self, user_id: int) -> User | None: ...
+```
+
+### Type Hints (Python 3.12+)
+- **Use type hints consistently** for all public APIs
+- **Prefer `|` over `Union`** (Python 3.10+)
+- **Use `list[T]` over `List[T]`** (Python 3.9+)
+- **Use `dict[K, V]` over `Dict[K, V]`** (Python 3.9+)
+- **Use `tuple[T, ...]` for variable-length tuples**
+- **Use `TypeVar` for generic functions**
+
+```python
+from typing import TypeVar, Callable, Any
+
+T = TypeVar('T')
+
+def find_first(items: list[T], predicate: Callable[[T], bool]) -> T | None:
+    for item in items:
+        if predicate(item):
+            return item
+    return None
+```
+
+### Error Handling
+- **Never use bare `except:`** - always specify exception types
+- **Use specific exceptions**: `ValueError`, `TypeError`, `KeyError`, etc.
+- **Create custom exceptions** for domain-specific errors
+- **Use exception chaining** with `raise ... from` for context
+- **Handle exceptions at appropriate levels** - don't catch and re-raise unnecessarily
+
+```python
+class InsufficientFundsError(Exception):
+    """Raised when account has insufficient funds for transaction."""
+    pass
+
+def transfer_money(from_account: Account, to_account: Account, amount: Decimal) -> None:
+    try:
+        from_account.withdraw(amount)
+        to_account.deposit(amount)
+    except ValueError as e:
+        raise InsufficientFundsError(f"Transfer failed: {amount}") from e
+```
+
+## Performance and Efficiency
+
+### Profiling and Optimization
+- **Profile before optimizing**: Use `cProfile`, `line_profiler`, or `py-spy`
+- **Memory profiling**: Use `memory_profiler` or `tracemalloc` for memory issues
+- **Benchmark critical paths**: Use `timeit` or `pytest-benchmark`
+
+### Data Structure Selection
+- **Sets** for membership testing: `O(1)` average case
+- **Deque** for queues and stacks: `O(1)` append/pop
+- **DefaultDict** for counting and grouping
+- **Counter** for frequency counting
+- **OrderedDict** when insertion order matters (Python 3.7+ preserves dict order)
+
+```python
+from collections import defaultdict, Counter, deque
+from typing import DefaultDict
+
+# Counting
+word_counts: Counter[str] = Counter()
+word_counts.update(text.split())
+
+# Grouping
+groups: DefaultDict[str, list[int]] = defaultdict(list)
+for item in items:
+    groups[item.category].append(item.id)
+```
+
+### Memory Efficiency
+- **Use generators** for large datasets: `yield` instead of returning lists
+- **Use generator expressions** for one-time iterations
+- **Use `itertools`** for complex iterations: `chain`, `groupby`, `islice`
+
+```python
+from itertools import chain, islice
+
+def process_large_file(filename: str) -> Iterator[ProcessedData]:
+    with open(filename) as f:
+        for line in f:
+            yield process_line(line)
+
+# Memory efficient processing
+def get_first_n_items(items: Iterator[T], n: int) -> list[T]:
+    return list(islice(items, n))
+```
+
+### Async Programming (Python 3.5+)
+- **Use `async`/`await`** for I/O-bound operations
+- **Use `asyncio.gather()`** for concurrent operations
+- **Use `asyncio.create_task()`** for fire-and-forget operations
+- **Handle async context managers** properly
+
+```python
+import asyncio
+from typing import AsyncIterator
+
+async def fetch_multiple_urls(urls: list[str]) -> list[str]:
+    async def fetch_url(url: str) -> str:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.text()
+    
+    return await asyncio.gather(*[fetch_url(url) for url in urls])
+
+async def process_stream() -> AsyncIterator[ProcessedItem]:
+    async for item in data_stream():
+        yield await process_item(item)
+```
+
+## Testing and Reliability
+
+### Testing Strategy
+- **Test coverage target**: 80% minimum, 90% for critical paths
+- **Use pytest** for its powerful features and clean syntax
+- **Write tests first** (TDD) or alongside code
+- **Test behavior, not implementation** - focus on what the code does, not how
+
+### Test Structure
+- **Arrange-Act-Assert** pattern for test clarity
+- **Use fixtures** for test data and setup
+- **Use parametrized tests** for multiple scenarios
+- **Use property-based testing** with `hypothesis` for edge cases
+
+```python
+import pytest
+from hypothesis import given, strategies as st
+
+@pytest.fixture
+def sample_user() -> User:
+    return User(id=1, name="Test User", email="test@example.com")
+
+def test_user_creation(sample_user: User):
+    # Arrange - done by fixture
+    # Act
+    result = user_service.create_user(sample_user)
+    # Assert
+    assert result.id == 1
+    assert result.name == "Test User"
+
+@given(st.text(min_size=1, max_size=100))
+def test_user_name_validation(name: str):
+    user = User(id=1, name=name, email="test@example.com")
+    assert len(user.name) <= 100
+```
+
+### Mocking Strategy
+- **Use `unittest.mock`** or `pytest-mock` for mocking
+- **Mock at boundaries** - external APIs, databases, file systems
+- **Use dependency injection** to make code testable
+- **Avoid mocking what you don't own**
+
+```python
+from unittest.mock import Mock, patch
+
+def test_process_payment(mock_payment_gateway: Mock):
+    # Arrange
+    payment = Payment(amount=100, currency="USD")
+    mock_payment_gateway.process.return_value = PaymentResult(success=True)
+    
+    # Act
+    result = payment_service.process(payment, mock_payment_gateway)
+    
+    # Assert
+    assert result.success is True
+    mock_payment_gateway.process.assert_called_once_with(payment)
+```
+
+## Documentation and Maintainability
+
+### Code Documentation
+- **Write self-documenting code** - good names and structure reduce comment need
+- **Comments explain "why", not "what"**
+- **Use docstrings** for all public functions, classes, and modules
+- **Follow Google or NumPy docstring style** consistently
+
+```python
+def calculate_compound_interest(
+    principal: float, 
+    rate: float, 
+    time: float, 
+    compounds_per_year: int = 1
+) -> float:
+    """Calculate compound interest using the standard formula.
+    
+    Args:
+        principal: Initial investment amount
+        rate: Annual interest rate as decimal (e.g., 0.05 for 5%)
+        time: Time period in years
+        compounds_per_year: Number of times interest is compounded per year
+        
+    Returns:
+        Final amount after compound interest
+        
+    Raises:
+        ValueError: If any input is negative
+        
+    Example:
+        >>> calculate_compound_interest(1000, 0.05, 2)
+        1102.5
+    """
+    if any(x < 0 for x in (principal, rate, time, compounds_per_year)):
+        raise ValueError("All inputs must be non-negative")
+    
+    return principal * (1 + rate / compounds_per_year) ** (compounds_per_year * time)
+```
+
+### Project Documentation
+- **README.md**: Project overview, setup, usage examples
+- **API documentation**: Use Sphinx, FastAPI docs, or similar
+- **Architecture Decision Records (ADRs)**: Document significant design decisions
+- **Changelog**: Track version changes and breaking changes
+
+### Dependency Management
+- **Use `pyproject.toml`** for modern Python projects (PEP 518)
+- **Pin exact versions** in production: `package==1.2.3`
+- **Use version ranges** in development: `package>=1.2.0,<2.0.0`
+- **Separate dev dependencies** from production dependencies
+- **Use `uv`** for fast dependency resolution and installation
+
+```toml
+# pyproject.toml
+[project]
+name = "my-package"
+version = "1.0.0"
+dependencies = [
+    "requests>=2.28.0,<3.0.0",
+    "pydantic>=2.0.0,<3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
+
+## Security and Best Practices
+
+### Input Validation
+- **Never trust user input** - validate and sanitize all external data
+- **Use Pydantic** for data validation and serialization
+- **Use parameterized queries** for databases (SQLAlchemy, psycopg2)
+- **Validate file paths** to prevent path traversal attacks
+
+```python
+from pydantic import BaseModel, EmailStr, validator
+from pathlib import Path
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    age: int
+    
+    @validator('name')
+    def name_must_be_valid(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError('Name cannot be empty')
+        if len(v) > 100:
+            raise ValueError('Name too long')
+        return v.strip()
+
+def safe_file_operation(file_path: str) -> None:
+    # Prevent path traversal
+    path = Path(file_path).resolve()
+    if not path.is_relative_to(Path.cwd()):
+        raise ValueError("Invalid file path")
+```
+
+### Security Practices
+- **Use `secrets` module** for cryptographic randomness
+- **Use environment variables** for configuration and secrets
+- **Hash passwords** with `bcrypt` or `argon2`
+- **Use HTTPS** for all external communications
+- **Implement rate limiting** for APIs
+- **Log security events** but avoid logging sensitive data
+
+```python
+import secrets
+import os
+from cryptography.fernet import Fernet
+
+# Generate secure tokens
+token = secrets.token_urlsafe(32)
+
+# Use environment variables
+api_key = os.getenv("API_KEY")
+if not api_key:
+    raise ValueError("API_KEY environment variable required")
+
+# Secure password hashing
+import bcrypt
+password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+```
+
+## Pythonic Patterns
+
+### Context Managers
+- **Use `with` statements** for resource management
+- **Create custom context managers** for complex resources
+- **Use `contextlib.contextmanager`** decorator for simple cases
+
+```python
+from contextlib import contextmanager
+from typing import Iterator
+
+@contextmanager
+def database_connection(connection_string: str) -> Iterator[Connection]:
+    conn = create_connection(connection_string)
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+# Usage
+with database_connection("postgresql://...") as conn:
+    result = conn.execute("SELECT * FROM users")
+```
+
+### Built-in Features
+- **List/dict/set comprehensions** for clarity and performance
+- **`enumerate()`** instead of `range(len())`
+- **`zip()`** for parallel iteration
+- **`itertools`** for complex iterations
+- **`f-strings`** for string formatting (Python 3.6+)
+
+```python
+# Comprehensions
+squares = [x**2 for x in range(10) if x % 2 == 0]
+user_dict = {user.id: user for user in users}
+
+# Enumerate
+for i, item in enumerate(items, start=1):
+    print(f"{i}: {item}")
+
+# Zip
+for name, age in zip(names, ages):
+    print(f"{name} is {age} years old")
+
+# F-strings
+message = f"User {user.name} (ID: {user.id}) logged in at {datetime.now()}"
+```
+
+### Modern Python Features (3.8+)
+- **Assignment expressions** (`:=`) for conditional assignments
+- **Positional-only parameters** (`/`) for API design
+- **Keyword-only parameters** (`*`) for clarity
+- **Pattern matching** (Python 3.10+) for complex conditionals
+
+```python
+# Assignment expressions
+if (n := len(data)) > 10:
+    print(f"Data too large: {n} items")
+
+# Positional-only parameters
+def calculate(x: float, y: float, /, *, operation: str = "add") -> float:
+    """x and y must be positional, operation must be keyword-only."""
+    if operation == "add":
+        return x + y
+    elif operation == "multiply":
+        return x * y
+
+# Pattern matching (Python 3.10+)
+def process_event(event: Event) -> str:
+    match event:
+        case ClickEvent(x=int(x), y=int(y)):
+            return f"Clicked at ({x}, {y})"
+        case KeyPressEvent(key=key) if key in "wasd":
+            return f"Movement key: {key}"
+        case _:
+            return "Unknown event"
+```
+
+## Code Review and Collaboration
+
+### Pull Request Guidelines
+- **Keep PRs small**: < 500 lines changed, < 20 files
+- **Single purpose**: One feature/fix per PR
+- **Clear title**: Use conventional commits format
+- **Detailed description**: Explain the "why", not just the "what"
+- **Include tests**: New features need tests, bug fixes need regression tests
+
+### Commit Messages
+- **Use conventional commits**: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
+- **Write in imperative mood**: "Add feature" not "Added feature"
+- **Keep first line < 50 characters**
+- **Add body for complex changes**
+
+```
+feat: add user authentication system
+
+- Implement JWT token-based authentication
+- Add login/logout endpoints
+- Include password hashing with bcrypt
+- Add user session management
+
+Closes #123
+```
+
+### Pre-commit Hooks
+- **Automate quality checks** before code reaches review
+- **Use pre-commit framework** for consistent tooling
+- **Include**: black, ruff, mypy, pytest, security checks
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.12
+  
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+  
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+```
+
+## Implementation Workflow
+
+### Development Loop
+1. **Plan**: Understand requirements and design solution
+2. **Implement**: Write code following these rules
+3. **Test**: Write and run tests (unit, integration, property-based)
+4. **Review**: Self-review using linting tools
+5. **Refactor**: Improve code quality and readability
+6. **Repeat**: Until all tests pass and code meets standards
+
+### Quality Gates
+- **All tests pass** (unit, integration, property-based)
+- **Code coverage** meets project standards
+- **Static analysis** passes (mypy, ruff, security scanners)
+- **Performance** meets requirements (benchmark critical paths)
+- **Documentation** is complete and accurate
+
+### Package Setup Script
+Create a setup script for consistent development environment:
+
+```python
+#!/usr/bin/env python3
+"""Setup script for development environment."""
+import subprocess
+import sys
+from pathlib import Path
+
+def run_command(cmd: list[str]) -> None:
+    """Run a command and handle errors."""
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"✓ {' '.join(cmd)}")
+    except subprocess.CalledProcessError as e:
+        print(f"✗ {' '.join(cmd)} failed: {e}")
+        sys.exit(1)
+
+def main():
+    """Set up the development environment."""
+    print("Setting up development environment...")
+    
+    # Install uv if not present
+    try:
+        subprocess.run(["uv", "--version"], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Installing uv...")
+        subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+    
+    # Install dependencies
+    run_command(["uv", "sync"])
+    
+    # Install pre-commit hooks
+    run_command(["pre-commit", "install"])
+    
+    # Run initial checks
+    run_command(["uv", "run", "pre-commit", "run", "--all-files"])
+    
+    print("✓ Development environment ready!")
+
+if __name__ == "__main__":
+    main()
+```
+
+## Remember
+The best code is **maintainable**, **understandable**, and **testable**. Consistency within a project trumps personal preferences. Simplicity often beats cleverness. Write code that your team can understand, modify, and maintain six months from now.
+
+**When implementing**: Follow the loop of implement → test → fix bugs → refactor until everything works well and meets quality standards.
