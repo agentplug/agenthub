@@ -2,7 +2,7 @@
 
 > The "App Store for AI Agents" - A centralized platform for discovering, sharing, and integrating AI agents with one-line simplicity.
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Planning-orange.svg)]()
 
@@ -100,7 +100,7 @@ response = chat_agent.chat("Hello, how can you help me?")
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.12 or higher
 - pip or conda package manager
 
 ### Installation
@@ -176,7 +176,7 @@ git clone https://github.com/your-org/agent-hub.git
 cd agent-hub
 
 # Create virtual environment
-python -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
