@@ -138,112 +138,103 @@ class TestProcessManager:
 
 #### **Tool Management Tests**
 ```python
-# tests/core/test_tool_manager.py
+# tests/core/test_tool_infrastructure.py
 import pytest
-from agentmanagers.core.tool_manager import ToolManager
+from pathlib import Path
+from agentmanagers.core.tool_infrastructure import ToolInfrastructure
 
-class TestToolManager:
-    def test_native_tools_initialization(self):
-        """Test native tools are loaded by default."""
-        manager = ToolManager(use_native_tools=True)
+class TestToolInfrastructure:
+    def test_agent_tools_discovery(self):
+        """Test agent's built-in tools are discovered."""
+        manager = ToolInfrastructure(agent_dir=Path("/tmp/test-agent"))
         available_tools = manager.list_available_tools()
         
-        assert "native" in available_tools
-        assert "rag_query" in available_tools["native"]
-        assert "calculate_metrics" in available_tools["native"]
+        assert "agent_builtin" in available_tools
+        assert "code_generator" in available_tools["agent_builtin"]
+        assert "code_analyzer" in available_tools["agent_builtin"]
     
     def test_custom_tool_override(self):
-        """Test custom tools can override native tools."""
-        manager = ToolManager(use_native_tools=True)
+        """Test custom tools can override agent's built-in tools."""
+        manager = ToolInfrastructure(agent_dir=Path("/tmp/test-agent"))
         
-        def custom_rag_query(query: str, documents: list) -> str:
-            """Custom RAG implementation."""
-            return f"Custom answer to '{query}'"
+        def custom_code_generator(prompt: str) -> str:
+            """Custom code generation implementation."""
+            return f"Custom code for '{prompt}'"
         
-        # Custom tool should override native tool
-        manager.register_custom_tool("rag_query", custom_rag_query)
-        tool_function = manager.get_tool("rag_query")
+        # Custom tool should override agent's built-in tool
+        manager.register_custom_tool("code_generator", custom_code_generator)
+        tool_function = manager.get_tool("code_generator")
         
-        result = tool_function("What is AI?", ["doc1"])
-        assert "Custom answer to 'What is AI?'" in result
+        result = tool_function("Create a function")
+        assert "Custom code for 'Create a function'" in result
     
     def test_tool_priority_system(self):
-        """Test tool priority: custom > native."""
-        manager = ToolManager(use_native_tools=True)
+        """Test tool priority: custom > agent's built-in."""
+        manager = ToolInfrastructure(agent_dir=Path("/tmp/test-agent"))
         
-        def custom_metrics(data: list) -> dict:
-            """Custom metrics implementation."""
-            return {"custom_mean": sum(data) / len(data)}
+        def custom_analyzer(code: str) -> dict:
+            """Custom code analysis implementation."""
+            return {"custom_complexity": len(code)}
         
-        manager.register_custom_tool("calculate_metrics", custom_metrics)
+        manager.register_custom_tool("code_analyzer", custom_analyzer)
         
-        # Should get custom tool, not native tool
-        tool_function = manager.get_tool("calculate_metrics")
-        result = tool_function([1, 2, 3])
-        assert "custom_mean" in result
-        assert result["custom_mean"] == 2.0
+        # Should get custom tool, not agent's built-in tool
+        tool_function = manager.get_tool("code_analyzer")
+        result = tool_function("def test(): pass")
+        assert "custom_complexity" in result
+        assert result["custom_complexity"] == 20
 ```
 
 **Coverage Targets**:
-- **Native Tools**: 95% coverage
+- **Tool Infrastructure**: 95% coverage
 - **Tool Priority**: 95% coverage
 - **Custom Tool Override**: 90% coverage
 
-#### **Native Tools Tests**
+#### **Tool Discovery Tests**
 ```python
-# tests/tools/test_native_tools.py
+# tests/core/test_tool_discovery.py
 import pytest
-from agentmanagers.tools.native_tools import NativeToolManager
+from pathlib import Path
+from agentmanagers.core.tool_discovery import ToolDiscovery
 
-class TestNativeTools:
-    def test_rag_query_tool(self):
-        """Test RAG query tool functionality."""
-        manager = NativeToolManager()
-        rag_tool = manager.native_tools["rag_query"]
+class TestToolDiscovery:
+    def test_agent_manifest_parsing(self):
+        """Test parsing agent manifest for tool declarations."""
+        discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
+        tools = discovery.discover_agent_tools()
         
-        # Test with mock documents
-        result = rag_tool("What is AI?", ["doc1", "doc2"])
-        assert isinstance(result, dict)
-        assert "answer" in result or "result" in result
+        assert "code_generator" in tools
+        assert "code_analyzer" in tools
+        assert tools["code_generator"]["description"] == "Generate code from natural language"
     
-    def test_calculate_metrics_tool(self):
-        """Test metrics calculation tool."""
-        manager = NativeToolManager()
-        metrics_tool = manager.native_tools["calculate_metrics"]
+    def test_tool_metadata_extraction(self):
+        """Test extraction of tool metadata and usage information."""
+        discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
+        tool_info = discovery.get_tool_info("code_generator")
         
-        data = [1, 2, 3, 4, 5]
-        result = metrics_tool(data, ["mean", "max", "min"])
-        
-        assert isinstance(result, dict)
-        assert result["mean"] == 3.0
-        assert result["max"] == 5
-        assert result["min"] == 1
+        assert "description" in tool_info
+        assert "parameters" in tool_info
+        assert "return_type" in tool_info
     
-    def test_file_operations_tool(self):
-        """Test file operations tool."""
-        manager = NativeToolManager()
-        file_tool = manager.native_tools["file_operations"]
+    def test_tool_validation(self):
+        """Test tool safety and compatibility validation."""
+        discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
+        is_valid = discovery.validate_tool("code_generator")
         
-        # Test file reading
-        result = file_tool("read", "tests/fixtures/test.txt")
-        assert isinstance(result, str)
+        assert is_valid == True
     
-    def test_http_requests_tool(self):
-        """Test HTTP requests tool."""
-        manager = NativeToolManager()
-        http_tool = manager.native_tools["http_requests"]
+    def test_tool_conflict_detection(self):
+        """Test detection of tool conflicts between agents."""
+        discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
+        conflicts = discovery.check_tool_conflicts(["agent1", "agent2"])
         
-        # Test with mock HTTP server
-        with mock_http_server():
-            result = http_tool("GET", "http://localhost:8000/test")
-            assert isinstance(result, dict)
-            assert "status_code" in result
+        assert isinstance(conflicts, list)
 
 **Coverage Targets**:
-- **RAG Tool**: 95% coverage
-- **Metrics Tool**: 95% coverage
-- **File Operations**: 90% coverage
-- **HTTP Requests**: 90% coverage
+- **Tool Discovery**: 95% coverage
+- **Tool Metadata**: 95% coverage
+- **Tool Validation**: 90% coverage
+- **Conflict Detection**: 90% coverage
 
 #### **Tool Validation Tests**
 ```python

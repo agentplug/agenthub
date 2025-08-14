@@ -99,19 +99,19 @@ class EnvironmentManager:
 **Testing**:
 - Unit tests for environment creation
 
-#### **Tool Manager**
+#### **Tool Infrastructure**
 ```python
-# agentmanagers/core/tool_manager.py
-class ToolManager:
-    def __init__(self, use_native_tools: bool = True, security_level: str = "medium"):
-        """Initialize with native tools enabled by default."""
-        # Implementation: native tool initialization and custom tool registration
+# agentmanagers/core/tool_infrastructure.py
+class ToolInfrastructure:
+    def __init__(self, agent_dir: Path, security_level: str = "medium"):
+        """Initialize tool infrastructure for agent."""
+        # Implementation: tool discovery, injection, and validation framework
 ```
 
 **Success Criteria**:
-- ✅ Provides stable native tools (RAG, metrics, file operations)
+- ✅ Discovers agent's built-in tools from manifest and code
 - ✅ Can register custom Python functions as tools
-- ✅ Implements tool priority system (custom > native)
+- ✅ Implements tool priority system (custom > agent's built-in)
 - ✅ Extracts tool metadata and provides injection
 - ✅ Implements security validation and resource limits
 - ✅ Configurable security levels (low, medium, high)
@@ -125,29 +125,30 @@ class ToolManager:
 - Integration tests with UV package manager
 - Cross-platform compatibility testing
 
-#### **Native Tools Implementation**
+#### **Tool Discovery and Injection**
 ```python
-# agentmanagers/tools/native_tools.py
-class NativeToolManager:
-    def __init__(self):
-        self.native_tools = {
-            "rag_query": self._rag_query,
-            "calculate_metrics": self._calculate_metrics,
-            "file_operations": self._file_operations,
-            "http_requests": self._http_requests
-        }
+# agentmanagers/core/tool_discovery.py
+class ToolDiscovery:
+    def __init__(self, agent_dir: Path):
+        """Initialize tool discovery for agent."""
+        self.agent_dir = agent_dir
+    
+    def discover_agent_tools(self) -> Dict[str, ToolInfo]:
+        """Discover tools that an agent has implemented."""
+        # Read agent's manifest.json and find tool implementations
+        pass
 ```
 
 **Success Criteria**:
-- ✅ RAG tool for document indexing and querying
-- ✅ Metrics tool for statistical calculations
-- ✅ File operations tool for safe file handling
-- ✅ HTTP tool for secure API requests
+- ✅ Discovers agent's built-in tools from manifest and code
+- ✅ Provides tool metadata and usage information
+- ✅ Supports custom tool injection and override
+- ✅ Validates tool safety and compatibility
 
 **Testing**:
-- Unit tests for each native tool
-- Integration tests for tool reliability
-- Performance tests for tool efficiency
+- Unit tests for tool discovery
+- Integration tests for tool injection
+- Performance tests for tool metadata extraction
 
 #### **Tool Validation System**
 ```python

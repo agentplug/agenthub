@@ -99,7 +99,7 @@ The MVP registry design has **intentional scalability limitations** to focus on 
 - **No Complexity**: Simple JSON-based registry
 - **Fast Development**: Focus on core functionality
 
-## 🛠️ **Hybrid Tool System for Agents**
+## 🛠️ **Tool Infrastructure for Agents**
 
 ### **Enhanced Agent Manifest**
 Agents can declare tool requirements and capabilities in their manifest:
@@ -107,7 +107,7 @@ Agents can declare tool requirements and capabilities in their manifest:
 ```yaml
 name: "openai/analysis-agent"
 version: "1.0.0"
-description: "Multi-purpose analysis agent with hybrid tool support"
+description: "Multi-purpose analysis agent with tool infrastructure support"
 author: "openai"
 license: "MIT"
 
@@ -140,7 +140,7 @@ dependencies:
 
             # Tool requirements and capabilities
             tools:
-              native:
+              builtin:
                 required:
                   - "rag_query"
                   - "calculate_metrics"
@@ -163,10 +163,10 @@ dependencies:
                 - "secure_tool_execution"
                 - "resource_monitoring"
 
-### **Benefits of Enhanced Hybrid Tool System**
-- **Stability**: Native tools provide reliable, tested functionality
+### **Benefits of Enhanced Tool Infrastructure**
+- **Stability**: Agent's built-in tools provide reliable, tested functionality
 - **Flexibility**: Custom tools enable domain-specific capabilities
-- **Tool Override**: Users can replace native tools when needed
+- **Tool Override**: Users can replace agent's built-in tools when needed
 - **Security**: Automatic validation of custom tools for safety
 - **Resource Management**: Configurable limits and monitoring
 - **Consistent Interface**: All tools follow the same calling pattern
@@ -174,11 +174,11 @@ dependencies:
 - **Best of Both Worlds**: Combines reliability with customization and security
 ```
 
-### **Hybrid Tool System Benefits**
-- **Stability**: Native tools provide reliable, tested functionality
+### **Tool Infrastructure Benefits**
+- **Stability**: Agent's built-in tools provide reliable, tested functionality
 - **Flexibility**: Custom tools enable domain-specific capabilities
-- **Tool Override**: Custom tools can replace native tools when needed
-- **Best of Both**: Stability from native tools, flexibility from custom tools
+- **Tool Override**: Custom tools can replace agent's built-in tools when needed
+- **Best of Both**: Stability from agent's built-in tools, flexibility from custom tools
 
 ## 🔧 **MVP Registry Implementation**
 

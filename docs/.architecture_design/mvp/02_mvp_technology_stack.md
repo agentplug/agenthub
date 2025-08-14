@@ -107,62 +107,68 @@ import shutil
 - **pickle**: Tool serialization and persistence
 - **typing**: Type hints for tool validation
 
-### **Native Tools Dependencies**
-- **PyPDF2**: PDF text extraction for RAG tool
-- **python-docx**: Microsoft Word document text extraction
-- **chardet**: Character encoding detection for text files
-- **numpy**: Statistical calculations for metrics tool
-- **requests**: HTTP operations for API tool
-- **pathlib**: Safe file operations for file tool
+### **Tool Infrastructure Dependencies**
+- **inspect**: Function signature and metadata extraction
+- **pickle**: Tool serialization and persistence
+- **typing**: Type hints for tool validation
+- **pathlib**: Safe file operations for tool discovery
 
-### **Hybrid Tool Management Example**
+### **Tool Infrastructure Example**
 ```python
-# agentmanagers/core/tool_manager.py
+# agentmanagers/core/tool_infrastructure.py
 import inspect
 import pickle
 from typing import Dict, Any, Callable
 from pathlib import Path
 
-class ToolManager:
-    def __init__(self, agent_dir: Path, use_native_tools: bool = True):
+class ToolInfrastructure:
+    def __init__(self, agent_dir: Path):
         self.agent_dir = agent_dir
-        self.native_tools = NativeToolManager().native_tools if use_native_tools else {}
+        self.agent_tools = {}
         self.custom_tools = {}
         self.tools_metadata = {}
         
-        # Register native tools first
-        for tool_name, tool_function in self.native_tools.items():
-            self._register_tool(tool_name, tool_function, is_native=True)
+        # Discover agent's built-in tools
+        self._discover_agent_tools()
+    
+    def discover_agent_tools(self) -> Dict[str, Callable]:
+        """Discover tools that the agent has implemented."""
+        # Read agent's manifest.json and find tool implementations
+        pass
     
     def register_custom_tool(self, tool_name: str, tool_function: Callable):
-        """Register a custom user tool (can override native tools)."""
-        self._register_tool(tool_name, tool_function, is_native=False)
+        """Register a custom user tool (can override agent's built-in tools)."""
+        self._register_tool(tool_name, tool_function, is_custom=True)
     
     def get_tool(self, tool_name: str) -> Callable:
-        """Get tool with priority: custom tools > native tools."""
+        """Get tool with priority: custom tools > agent's built-in tools."""
         if tool_name in self.custom_tools:
             return self.custom_tools[tool_name]
-        elif tool_name in self.native_tools:
-            return self.native_tools[tool_name]
+        elif tool_name in self.agent_tools:
+            return self.agent_tools[tool_name]
         else:
             raise ToolNotFoundError(f"Tool '{tool_name}' not found")
     
     def list_available_tools(self) -> Dict[str, List[str]]:
-        """List tools by category: native, custom, all."""
+        """List tools by category: agent's built-in, custom, all."""
         return {
-            "native": list(self.native_tools.keys()),
+            "agent_builtin": list(self.agent_tools.keys()),
             "custom": list(self.custom_tools.keys()),
-            "all": list(set(self.native_tools.keys()) | set(self.custom_tools.keys()))
+            "all": list(set(self.agent_tools.keys()) | set(self.custom_tools.keys()))
         }
     
-    def _register_tool(self, tool_name: str, tool_function: Callable, is_native: bool = False):
+    def _register_tool(self, tool_name: str, tool_function: Callable, is_custom: bool = False):
         """Internal tool registration with priority handling."""
-        if tool_name in self.native_tools and not is_native:
-            # User tool overrides native tool
-            logging.info(f"Custom tool '{tool_name}' overrides native tool")
+        if tool_name in self.agent_tools and is_custom:
+            # User tool overrides agent's built-in tool
+            logging.info(f"Custom tool '{tool_name}' overrides agent's built-in tool")
         
-        self.custom_tools[tool_name] = tool_function
-        self._update_tool_metadata(tool_name, tool_function, is_native)
+        if is_custom:
+            self.custom_tools[tool_name] = tool_function
+        else:
+            self.agent_tools[tool_name] = tool_function
+        
+        self._update_tool_metadata(tool_name, tool_function, is_custom)
 ```
 from pathlib import Path
 import logging

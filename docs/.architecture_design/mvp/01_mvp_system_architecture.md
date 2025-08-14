@@ -101,6 +101,7 @@ graph TB
         RUNTIME[Agent Runtime]
         STORE[Agent Store]
         CACHE[Local Cache]
+        TOOL_INFRA[Tool Infrastructure]
     end
     
     subgraph "External Services"
@@ -114,6 +115,7 @@ graph TB
     CLI --> RUNTIME
     SDK --> RUNTIME
     RUNTIME --> STORE
+    RUNTIME --> TOOL_INFRA
     CLI --> CACHE
     CLI --> GITHUB
     CLI --> STORAGE

@@ -16,8 +16,10 @@ Agent Hub MVP focuses on **validating the core integration experience** - transf
 - ✅ **CLI Interface**: Basic agent lifecycle management
 - ✅ **GitHub Registry**: Simple agent discovery (no search)
 - ✅ **SDK Integration**: One-line agent loading
+- ✅ **Tool Infrastructure**: Tool discovery, injection, and validation framework
 - ❌ **Agent Search**: Not needed for MVP validation
 - ❌ **Community Features**: Post-MVP enhancement
+- ❌ **Centralized Tools**: Tools are implemented inside agents
 
 ### **MVP Success Criteria**
 - **Integration Success Rate**: 90%+ successful installations
@@ -67,6 +69,11 @@ Agent Hub MVP focuses on **validating the core integration experience** - transf
 - Leverage GitHub infrastructure for registry
 - Minimize operational overhead
 - Design for self-service usage
+
+### **5. Agent Autonomy**
+- Agents implement their own tools internally
+- Agent Hub provides tool infrastructure, not tool implementations
+- Each agent is self-contained with its own toolset
 
 ## 🚀 **MVP Implementation Phases**
 
@@ -125,8 +132,10 @@ Agent Hub MVP is a CLI-based platform for installing and managing AI agents with
 3. **Local Execution**: All agents run locally for fast iteration
 4. **GitHub Registry**: Simple JSON-based registry without search
 5. **No Search**: Focus on integration, not discovery
-6. **KISS Principle**: Keep It Simple, Stupid - minimal complexity
-7. **YAGNI Principle**: You Aren't Gonna Need It - no unnecessary features
+6. **Agent Autonomy**: Agents implement their own tools internally
+7. **Tool Infrastructure**: Agent Hub provides framework, not implementations
+8. **KISS Principle**: Keep It Simple, Stupid - minimal complexity
+9. **YAGNI Principle**: You Aren't Gonna Need It - no unnecessary features
 
 ### **MVP Success Metrics**
 - **Agent installation**: < 10 seconds
