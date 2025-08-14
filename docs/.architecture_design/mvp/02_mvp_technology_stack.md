@@ -98,6 +98,72 @@ def list(installed):
 # agentmanagers/runtime/environment_manager.py
 import subprocess
 import shutil
+```
+
+## 🛠️ **Tool Management Dependencies**
+
+### **Core Tool Support**
+- **inspect**: Function signature and metadata extraction
+- **pickle**: Tool serialization and persistence
+- **typing**: Type hints for tool validation
+
+### **Native Tools Dependencies**
+- **PyPDF2**: PDF text extraction for RAG tool
+- **python-docx**: Microsoft Word document text extraction
+- **chardet**: Character encoding detection for text files
+- **numpy**: Statistical calculations for metrics tool
+- **requests**: HTTP operations for API tool
+- **pathlib**: Safe file operations for file tool
+
+### **Hybrid Tool Management Example**
+```python
+# agentmanagers/core/tool_manager.py
+import inspect
+import pickle
+from typing import Dict, Any, Callable
+from pathlib import Path
+
+class ToolManager:
+    def __init__(self, agent_dir: Path, use_native_tools: bool = True):
+        self.agent_dir = agent_dir
+        self.native_tools = NativeToolManager().native_tools if use_native_tools else {}
+        self.custom_tools = {}
+        self.tools_metadata = {}
+        
+        # Register native tools first
+        for tool_name, tool_function in self.native_tools.items():
+            self._register_tool(tool_name, tool_function, is_native=True)
+    
+    def register_custom_tool(self, tool_name: str, tool_function: Callable):
+        """Register a custom user tool (can override native tools)."""
+        self._register_tool(tool_name, tool_function, is_native=False)
+    
+    def get_tool(self, tool_name: str) -> Callable:
+        """Get tool with priority: custom tools > native tools."""
+        if tool_name in self.custom_tools:
+            return self.custom_tools[tool_name]
+        elif tool_name in self.native_tools:
+            return self.native_tools[tool_name]
+        else:
+            raise ToolNotFoundError(f"Tool '{tool_name}' not found")
+    
+    def list_available_tools(self) -> Dict[str, List[str]]:
+        """List tools by category: native, custom, all."""
+        return {
+            "native": list(self.native_tools.keys()),
+            "custom": list(self.custom_tools.keys()),
+            "all": list(set(self.native_tools.keys()) | set(self.custom_tools.keys()))
+        }
+    
+    def _register_tool(self, tool_name: str, tool_function: Callable, is_native: bool = False):
+        """Internal tool registration with priority handling."""
+        if tool_name in self.native_tools and not is_native:
+            # User tool overrides native tool
+            logging.info(f"Custom tool '{tool_name}' overrides native tool")
+        
+        self.custom_tools[tool_name] = tool_function
+        self._update_tool_metadata(tool_name, tool_function, is_native)
+```
 from pathlib import Path
 import logging
 

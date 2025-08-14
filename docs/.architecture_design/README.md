@@ -140,6 +140,7 @@ Each document follows a consistent structure:
 ## 🔍 **Cross-References**
 
 - **Requirements Analysis**: See `docs/.requirement_analysis/` for business requirements
+- **MVP Architecture**: See `docs/.architecture_design/mvp/` for MVP-specific implementation details
 - **Implementation Design**: See `docs/.implementation_design/` for code-level specifications
 - **Project Management**: See `docs/.project_management/` for development planning
 

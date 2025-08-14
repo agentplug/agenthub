@@ -55,6 +55,29 @@ result = agent.generate_code("neural network")
 - **Web Interface**: CLI-only for MVP
 - **Agent Composition**: No cross-agent communication
 
+## 🏠 **Infrastructure Clarification**
+
+### **What Agent Hub Provides (Local Infrastructure)**
+- **Agent Registry**: Store agent metadata and download links
+- **Agent Discovery**: Help users find available agents
+- **Agent Distribution**: Host agent packages for download
+- **Local Storage**: Store downloaded agents on user's machine
+
+### **What Agent Hub Does NOT Provide (Execution Infrastructure)**
+- **❌ Runtime Environment**: No server-side execution
+- **❌ Agent Hosting**: No running agents in the cloud
+- **❌ Execution Infrastructure**: No compute resources
+- **❌ Agent Management**: No monitoring or scaling
+
+### **Execution Model: Download → Local Run**
+```
+User's Local Machine:
+├── Agent Hub CLI/SDK (local)
+├── Downloaded Agents (local)
+├── Virtual Environments (local)
+└── Agent Execution (local subprocess)
+```
+
 ## 🏗️ **MVP Architecture Overview**
 
 ```mermaid
@@ -150,10 +173,19 @@ result = agent.generate_code("hello")   # One line to use
 - Zero infrastructure maintenance
 - Basic agent listing (no search in MVP)
 
-### **4. Local Execution**
-- All agents run on user's machine
+### **4. Local-Only Execution**
+- All agents run on user's machine (no cloud infrastructure)
 - Fast iteration and development
-- Privacy and security
+- Privacy and security (no data sent to cloud)
+- Zero infrastructure maintenance
+
+### **5. Dual Tool Source System**
+- **Agent's Built-in Tools**: Tools that come with the agent (developer's responsibility)
+- **User's Custom Tools**: Optional tools that users can inject to agents
+- **Tool Override**: Users can override agent's built-in tools when needed
+- **Tool Validation**: Automatic validation of tool access and safety
+- **Tool Discovery**: Agent Hub helps agents find and access their tools
+- **Best of Both**: Agent's built-in tools + user's custom tools
 
 ## 📊 **MVP Success Metrics**
 
@@ -208,6 +240,62 @@ python -c "
 import agentmanagers as amg
 agent = amg.load('meta/coding-agent')
 print(agent.generate_code('hello world'))
+"
+```
+
+### **Agent with Built-in + Custom Tools**
+```bash
+# Install a general-purpose agent
+agenthub install openai/analysis-agent
+
+# Use with agent's built-in tools + user's custom tools
+python -c "
+import agentmanagers as amg
+
+# Define custom tools
+def domain_specific_analysis(data, domain):
+    return f'Domain-specific analysis for {domain}: {len(data)} items'
+
+def enhanced_metrics(data):
+    return {'enhanced_mean': sum(data)/len(data), 'variance': 0.5}
+
+# Load agent with custom tools (can override agent's built-in tools)
+agent = amg.load('openai/analysis-agent', 
+    custom_tools={
+        'domain_specific_analysis': domain_specific_analysis,
+        'calculate_metrics': enhanced_metrics  # Overrides agent's built-in metrics tool
+    }
+)
+
+# Agent's built-in tools available
+agent_result = agent.analyze_data([1, 2, 3, 4, 5])
+
+# Custom tools available
+domain_result = agent.domain_specific_analysis([1, 2, 3], 'finance')
+enhanced_result = agent.calculate_metrics([1, 2, 3, 4, 5])
+
+print(f'Native RAG: {native_rag}')
+print(f'File Info: {file_info}')
+print(f'Domain Analysis: {domain_result}')
+print(f'Enhanced Metrics: {enhanced_result}')
+"
+
+# Advanced: Tool override and validation
+python -c "
+import agentmanagers as amg
+
+def custom_data_processor(data):
+    # This tool will be validated for safety
+    return {'processed': len(data), 'status': 'custom'}
+
+# Load agent with custom tool that overrides built-in tool
+agent = amg.load('openai/secure-agent',
+    custom_tools={'data_processor': custom_data_processor}
+)
+
+# Tool validation happens automatically
+result = agent.data_processor([1, 2, 3, 4, 5])
+print(f'Custom processing result: {result}')
 "
 ```
 

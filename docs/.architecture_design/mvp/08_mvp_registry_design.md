@@ -99,6 +99,87 @@ The MVP registry design has **intentional scalability limitations** to focus on 
 - **No Complexity**: Simple JSON-based registry
 - **Fast Development**: Focus on core functionality
 
+## 🛠️ **Hybrid Tool System for Agents**
+
+### **Enhanced Agent Manifest**
+Agents can declare tool requirements and capabilities in their manifest:
+
+```yaml
+name: "openai/analysis-agent"
+version: "1.0.0"
+description: "Multi-purpose analysis agent with hybrid tool support"
+author: "openai"
+license: "MIT"
+
+interface:
+  methods:
+    analyze_data:
+      description: "Analyze data using available tools"
+      parameters:
+        data:
+          type: "array"
+          description: "Data to analyze"
+          required: true
+        analysis_type:
+          type: "string"
+          description: "Type of analysis to perform"
+          required: false
+      returns:
+        type: "object"
+        properties:
+          result:
+            type: "string"
+            description: "Analysis result"
+          metrics:
+            type: "object"
+            description: "Calculated metrics"
+
+dependencies:
+  python: ">=3.12"
+  runtime: ["openai>=1.0.0"]
+
+            # Tool requirements and capabilities
+            tools:
+              native:
+                required:
+                  - "rag_query"
+                  - "calculate_metrics"
+                optional:
+                  - "file_operations"
+                  - "http_requests"
+                  - "data_validation"
+              custom:
+                optional:
+                  - "domain_specific_analysis"
+                  - "enhanced_metrics"
+                  - "custom_validation"
+                security_level: "medium"  # Default security level
+              capabilities:
+                - "statistical_analysis"
+                - "data_processing"
+                - "document_analysis"
+                - "file_operations"
+                - "api_integration"
+                - "secure_tool_execution"
+                - "resource_monitoring"
+
+### **Benefits of Enhanced Hybrid Tool System**
+- **Stability**: Native tools provide reliable, tested functionality
+- **Flexibility**: Custom tools enable domain-specific capabilities
+- **Tool Override**: Users can replace native tools when needed
+- **Security**: Automatic validation of custom tools for safety
+- **Resource Management**: Configurable limits and monitoring
+- **Consistent Interface**: All tools follow the same calling pattern
+- **Easy Extension**: Simple Python function injection with validation
+- **Best of Both Worlds**: Combines reliability with customization and security
+```
+
+### **Hybrid Tool System Benefits**
+- **Stability**: Native tools provide reliable, tested functionality
+- **Flexibility**: Custom tools enable domain-specific capabilities
+- **Tool Override**: Custom tools can replace native tools when needed
+- **Best of Both**: Stability from native tools, flexibility from custom tools
+
 ## 🔧 **MVP Registry Implementation**
 
 ### **1. Registry Structure**

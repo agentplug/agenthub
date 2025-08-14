@@ -98,8 +98,78 @@ class EnvironmentManager:
 
 **Testing**:
 - Unit tests for environment creation
+
+#### **Tool Manager**
+```python
+# agentmanagers/core/tool_manager.py
+class ToolManager:
+    def __init__(self, use_native_tools: bool = True, security_level: str = "medium"):
+        """Initialize with native tools enabled by default."""
+        # Implementation: native tool initialization and custom tool registration
+```
+
+**Success Criteria**:
+- ✅ Provides stable native tools (RAG, metrics, file operations)
+- ✅ Can register custom Python functions as tools
+- ✅ Implements tool priority system (custom > native)
+- ✅ Extracts tool metadata and provides injection
+- ✅ Implements security validation and resource limits
+- ✅ Configurable security levels (low, medium, high)
+
+**Testing**:
+- Unit tests for native tool functionality
+- Integration tests for tool priority and override
+- Performance tests for tool metadata extraction
+- Security tests for tool validation
+- Resource limit tests for tool execution
 - Integration tests with UV package manager
 - Cross-platform compatibility testing
+
+#### **Native Tools Implementation**
+```python
+# agentmanagers/tools/native_tools.py
+class NativeToolManager:
+    def __init__(self):
+        self.native_tools = {
+            "rag_query": self._rag_query,
+            "calculate_metrics": self._calculate_metrics,
+            "file_operations": self._file_operations,
+            "http_requests": self._http_requests
+        }
+```
+
+**Success Criteria**:
+- ✅ RAG tool for document indexing and querying
+- ✅ Metrics tool for statistical calculations
+- ✅ File operations tool for safe file handling
+- ✅ HTTP tool for secure API requests
+
+**Testing**:
+- Unit tests for each native tool
+- Integration tests for tool reliability
+- Performance tests for tool efficiency
+
+#### **Tool Validation System**
+```python
+# agentmanagers/validation/tool_validator.py
+class ToolValidator:
+    def __init__(self, security_level: str = "medium"):
+        """Initialize tool validator with security configuration."""
+        # Implementation: security patterns, resource monitoring
+```
+
+**Success Criteria**:
+- ✅ Security validation for dangerous code patterns
+- ✅ Compatibility validation for agent runtime
+- ✅ Performance validation for tool complexity
+- ✅ Resource monitoring and limits enforcement
+- ✅ Configurable security levels (low, medium, high)
+
+**Testing**:
+- Unit tests for security pattern detection
+- Integration tests for validation workflow
+- Performance tests for validation efficiency
+- Security tests for dangerous code detection
 
 #### **Agent Runtime**
 ```python
@@ -329,14 +399,26 @@ Create Python SDK and polish user experience for production readiness.
 # agentmanagers/sdk/__init__.py
 import agentmanagers as amg
 
-# One-line agent loading
+# Basic agent loading
 agent = amg.load("meta/coding-agent")
 result = agent.generate_code("neural network")
+
+# Agent with custom tools including RAG
+agent = amg.load("openai/analysis-agent", 
+    tools={
+        "rag_query": rag_query_tool,
+        "calculate_metrics": calculate_metrics,
+        "send_notification": send_notification
+    }
+)
+answer = agent.analyze_with_docs("What are the main findings?", ["/path/to/docs/"])
 ```
 
 **Success Criteria**:
 - ✅ One-line agent loading working reliably
 - ✅ Method dispatching to agent subprocesses
+- ✅ Custom tool injection and management
+- ✅ RAG capabilities as a tool
 - ✅ Error handling and validation
 - ✅ Clean, Pythonic API design
 

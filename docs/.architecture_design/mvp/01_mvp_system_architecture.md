@@ -21,7 +21,7 @@ Agent Hub MVP is a **CLI-based platform** that validates the core value proposit
 - **Process-based isolation** prevents dependency conflicts
 - **GitHub-based registry** eliminates infrastructure maintenance
 - **UV package manager** provides 10x faster installations
-- **Local execution** optimizes for development workflows
+- **Local-only execution** - agents run on user's machine, no cloud infrastructure
 
 ## 🏗️ **MVP System Context**
 
@@ -85,7 +85,7 @@ Agent Hub MVP addresses the **critical problem of agent integration complexity**
 2. **MVP Validation Focus**: Build only what's needed to validate core value proposition
 3. **Developer Experience**: Optimize for fast iteration and ease of use
 4. **Zero Maintenance**: Minimize operational overhead and infrastructure
-5. **Local Execution**: Prioritize speed and privacy over cloud scaling
+5. **Local-Only Execution**: All agents run locally, no cloud infrastructure needed
 
 ### **MVP System Components**
 

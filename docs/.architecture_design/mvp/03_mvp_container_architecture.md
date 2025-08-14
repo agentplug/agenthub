@@ -32,6 +32,8 @@ graph TB
         RUNTIME[Agent Runtime]
         REGISTRY[Registry Client]
         STORAGE[Local Storage]
+        TOOLSUPPORT[Agent Tool Support]
+        VALIDATOR[Tool Validator]
     end
     
     subgraph "External Services"
@@ -42,13 +44,17 @@ graph TB
     CLI --> RUNTIME
     CLI --> REGISTRY
     CLI --> STORAGE
+    CLI --> TOOLSUPPORT
     
     SDK --> RUNTIME
     SDK --> STORAGE
+    SDK --> TOOLSUPPORT
     
     RUNTIME --> UV
     REGISTRY --> GITHUB
     STORAGE --> RUNTIME
+    TOOLSUPPORT --> VALIDATOR
+    TOOLSUPPORT --> STORAGE
 ```
 
 ## 🔧 **MVP Container Details**
@@ -211,15 +217,194 @@ class GitHubRegistryClient:
 - ❌ **Search Functionality**: Not in MVP scope
 - ❌ **Advanced Discovery**: Not in MVP scope
 
-### **5. Local Storage Container**
+### **5. Agent Tool Support Container**
 
 #### **Purpose**
-Manage local agent installations and metadata.
+Provides local infrastructure for agents to discover their built-in tools AND allows users to optionally inject custom tools. All execution happens locally on user's machine.
+
+#### **Responsibilities**
+- **Local Tool Discovery**: Help agents find and access their own built-in tools locally
+- **Local Tool Injection**: Allow users to inject additional tools to agents locally
+- **Local Tool Override**: Enable users to override agent's built-in tools locally
+- **Local Tool Registry**: Maintain local registry of agent's built-in tools and user custom tools
+- **Local Tool Validation**: Validate tool access and compatibility locally
+- **Local Tool Isolation**: Ensure tools don't conflict between different agents locally
+- **Local Tool Documentation**: Provide tool metadata and usage information locally
+
+#### **Interfaces**
+```python
+# agentmanagers/core/agent_tool_support.py
+class AgentToolSupport:
+    def __init__(self):
+        """Initialize agent tool support infrastructure."""
+        pass
+    
+    def discover_agent_tools(self, agent_path: str) -> Dict[str, ToolInfo]:
+        """Discover agent's built-in tools."""
+        pass
+    
+    def inject_custom_tools(self, agent_path: str, custom_tools: Dict[str, Callable]):
+        """Inject user's custom tools to an agent."""
+        pass
+    
+    def override_builtin_tools(self, agent_path: str, overrides: Dict[str, Callable]):
+        """Override agent's built-in tools with user tools."""
+        pass
+    
+    def get_available_tools(self, agent_path: str) -> Dict[str, ToolInfo]:
+        """Get all available tools: built-in + custom + overrides."""
+        pass
+    
+    def validate_tool_access(self, agent_path: str, tool_name: str) -> bool:
+        """Validate that an agent can access a specific tool."""
+        pass
+    
+    def check_tool_conflicts(self, agent_path: str, other_agents: List[str]) -> List[str]:
+        """Check for potential tool conflicts between agents."""
+        pass
+```
+
+#### **Dependencies**
+- **Local Tool Registry**: Local database of available tools in user's environment
+- **Local Agent Manifests**: Local information about what tools agents need
+- **Local Storage**: For local tool metadata and agent tool requirements
+- **Local Environment Scanner**: To discover what tools are available locally
+
+#### **MVP Scope**
+- ✅ **Local Built-in Tool Discovery**: Help agents find and access their own tools locally
+- ✅ **Local Custom Tool Injection**: Allow users to inject additional tools locally
+- ✅ **Local Tool Override**: Enable users to override agent's built-in tools locally
+- ✅ **Local Tool Registry**: Maintain local registry of built-in + custom tools
+- ✅ **Local Tool Validation**: Validate tool access and compatibility locally
+- ✅ **Local Tool Conflict Prevention**: Prevent conflicts between agents locally
+- ❌ **Tool Implementation**: No tool building by Agent Hub
+- ❌ **Tool Execution**: No direct tool execution by Agent Hub
+- ❌ **Remote Execution**: No cloud or server-side execution
+
+
+
+
+
+### **6. Tool Validation Container**
+
+#### **Purpose**
+Validate that agents can safely access the tools they declare in their manifests.
+
+#### **Responsibilities**
+- **Tool Access Validation**: Verify agents can access declared tools
+- **Tool Safety Validation**: Check if tools are safe for agent use
+- **Tool Compatibility**: Ensure tools work with agent runtime
+- **Tool Conflict Detection**: Identify potential conflicts between agents
+- **Tool Documentation**: Validate tool metadata and usage information
+
+#### **Interfaces**
+```python
+# agentmanagers/validation/tool_validator.py
+class ToolValidator:
+    def __init__(self, security_level: str = "medium"):
+        self.security_level = security_level
+        self.dangerous_patterns = self._load_dangerous_patterns()
+        self.resource_monitor = ResourceMonitor()
+    
+    def validate_agent_tools(self, agent_path: str, tool_requirements: List[str]) -> ValidationResult:
+        """Validate that an agent can access its declared tools."""
+        result = ValidationResult()
+        
+        # Tool access validation
+        access_result = self._validate_tool_access(agent_path, tool_requirements)
+        result.merge(access_result)
+        
+        # Tool safety validation
+        safety_result = self._validate_tool_safety(tool_requirements)
+        result.merge(safety_result)
+        
+        # Tool compatibility validation
+        compat_result = self._validate_tool_compatibility(agent_path, tool_requirements)
+        result.merge(compat_result)
+        
+        return result
+    
+    def _validate_tool_access(self, agent_path: str, tool_requirements: List[str]) -> ValidationResult:
+        """Validate that an agent can access its required tools."""
+        result = ValidationResult()
+        
+        # Check if tools are available in the environment
+        for tool_name in tool_requirements:
+            if not self._is_tool_available(tool_name):
+                result.add_error(f"Tool '{tool_name}' not available for agent '{agent_path}'")
+        
+        return result
+    
+    def _validate_tool_safety(self, tool_requirements: List[str]) -> ValidationResult:
+        """Check if tools are safe for agent use."""
+        result = ValidationResult()
+        
+        # Check tool safety based on known safe tools
+        for tool_name in tool_requirements:
+            if not self._is_tool_safe(tool_name):
+                result.add_warning(f"Tool '{tool_name}' may have safety concerns")
+        
+        return result
+    
+    def _validate_tool_compatibility(self, agent_path: str, tool_requirements: List[str]) -> ValidationResult:
+        """Validate tool compatibility with agent runtime."""
+        result = ValidationResult()
+        
+        # Check if tools are compatible with agent runtime
+        for tool_name in tool_requirements:
+            if not self._is_tool_compatible(tool_name):
+                result.add_warning(f"Tool '{tool_name}' may have compatibility issues")
+        
+        return result
+
+class ValidationResult:
+    def __init__(self):
+        self.errors = []
+        self.warnings = []
+        self.info = []
+    
+    def add_error(self, message: str):
+        self.errors.append(message)
+    
+    def add_warning(self, message: str):
+        self.warnings.append(message)
+    
+    def add_info(self, message: str):
+        self.info.append(message)
+    
+    def merge(self, other: 'ValidationResult'):
+        self.errors.extend(other.errors)
+        self.warnings.extend(other.warnings)
+        self.info.extend(other.info)
+    
+    def is_valid(self) -> bool:
+        return len(self.errors) == 0
+```
+
+#### **Dependencies**
+- **Tool Registry**: Database of available tools in the environment
+- **Agent Manifests**: Information about what tools agents need
+- **Environment Scanner**: To discover what tools are available
+- **Safety Database**: Known safe and unsafe tool patterns
+
+#### **MVP Scope**
+- ✅ **Tool Access Validation**: Verify agents can access declared tools
+- ✅ **Tool Safety Validation**: Check if tools are safe for agent use
+- ✅ **Tool Compatibility**: Ensure tools work with agent runtime
+- ✅ **Tool Conflict Detection**: Identify potential conflicts between agents
+- ❌ **Tool Implementation**: No tool building or implementation
+- ❌ **Tool Execution**: No direct tool execution
+
+### **8. Local Storage Container**
+
+#### **Purpose**
+Manage local agent installations, metadata, and tool indexes.
 
 #### **Responsibilities**
 - **Agent Storage**: Store installed agent files
 - **Metadata Management**: Track installation metadata
 - **Cache Storage**: Store registry and package caches
+- **Document Indexes**: Store processed document indexes for RAG agents
 - **Configuration**: Manage user settings and preferences
 
 #### **Interfaces**
@@ -303,6 +488,56 @@ sequenceDiagram
     Agent->>Runtime: return result
     Runtime->>SDK: parsed result
     SDK->>User: generated code
+
+### **Agent Tool Support Flow**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant SDK
+    participant ToolSupport
+    participant Validator
+    participant Storage
+    participant Runtime
+    participant Agent
+    
+    User->>SDK: agent = amg.load("agent", custom_tools={...})
+    SDK->>ToolSupport: discover_agent_tools(agent_path)
+    
+    ToolSupport->>Storage: get_agent_manifest(agent_path)
+    Storage->>ToolSupport: agent_manifest
+    
+    alt Custom Tools Provided
+        SDK->>ToolSupport: inject_custom_tools(agent_path, custom_tools)
+        ToolSupport->>ToolSupport: validate_custom_tools()
+        ToolSupport->>Storage: store_custom_tool_metadata()
+        Storage->>ToolSupport: custom_tools_registered
+    end
+    
+    ToolSupport->>Validator: validate_agent_tools(agent_path, all_tools)
+    Validator->>Validator: validate_tool_access_and_safety()
+    
+    alt Validation Failed
+        Validator->>ToolSupport: validation_errors
+        ToolSupport->>SDK: tool_validation_failed
+        SDK->>User: tool_validation_failed
+    else Validation Passed
+        Validator->>ToolSupport: validation_passed
+        ToolSupport->>Storage: register_agent_tools(agent_path, all_tools)
+        Storage->>ToolSupport: tools_registered
+    end
+    
+    ToolSupport->>SDK: agent_tools_ready
+    SDK->>User: agent_with_builtin_and_custom_tools
+    
+    Note over User,SDK: Agent built-in tools + user custom tools ready for use
+    
+    User->>SDK: agent.execute_method("analyze", data)
+    SDK->>Runtime: execute_agent(method, params)
+    Runtime->>Agent: run_subprocess(with tool access)
+    Agent->>Runtime: return result using its own tools
+    Runtime->>SDK: parsed result
+    SDK->>User: result generated by agent
 ```
 
 ### **Registry Update Flow**
@@ -335,6 +570,9 @@ sequenceDiagram
 │   │       ├── agent.yaml           # Agent manifest
 │   │       ├── agent.py             # Main agent script
 │   │       ├── venv/                # Virtual environment
+│   │       ├── document_indexes/    # Document indexes for RAG
+│   │       │   ├── default_abc123.pkl    # Cached document index
+│   │       │   └── default_metadata.json # Index metadata
 │   │       └── .metadata.json       # Installation metadata
 ├── cache/                           # Cached data
 │   ├── registry.json               # Registry cache
@@ -398,6 +636,23 @@ dependencies:
       "download_url": "https://github.com/meta/coding-agent/archive/v1.0.0.tar.gz"
     }
   }
+}
+```
+
+**Document Index Metadata (default_metadata.json)**
+```json
+{
+  "index_name": "default",
+  "document_paths": [
+    "/path/to/research_paper.pdf",
+    "/path/to/technical_spec.txt"
+  ],
+  "chunk_size": 1000,
+  "overlap": 200,
+  "created_at": "2025-06-28T10:30:00Z",
+  "total_documents": 2,
+  "total_chunks": 45,
+  "index_hash": "abc123"
 }
 ```
 

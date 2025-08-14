@@ -136,6 +136,178 @@ class TestProcessManager:
 - **Environment Manager**: 95% coverage
 - **Agent Runtime**: 90% coverage
 
+#### **Tool Management Tests**
+```python
+# tests/core/test_tool_manager.py
+import pytest
+from agentmanagers.core.tool_manager import ToolManager
+
+class TestToolManager:
+    def test_native_tools_initialization(self):
+        """Test native tools are loaded by default."""
+        manager = ToolManager(use_native_tools=True)
+        available_tools = manager.list_available_tools()
+        
+        assert "native" in available_tools
+        assert "rag_query" in available_tools["native"]
+        assert "calculate_metrics" in available_tools["native"]
+    
+    def test_custom_tool_override(self):
+        """Test custom tools can override native tools."""
+        manager = ToolManager(use_native_tools=True)
+        
+        def custom_rag_query(query: str, documents: list) -> str:
+            """Custom RAG implementation."""
+            return f"Custom answer to '{query}'"
+        
+        # Custom tool should override native tool
+        manager.register_custom_tool("rag_query", custom_rag_query)
+        tool_function = manager.get_tool("rag_query")
+        
+        result = tool_function("What is AI?", ["doc1"])
+        assert "Custom answer to 'What is AI?'" in result
+    
+    def test_tool_priority_system(self):
+        """Test tool priority: custom > native."""
+        manager = ToolManager(use_native_tools=True)
+        
+        def custom_metrics(data: list) -> dict:
+            """Custom metrics implementation."""
+            return {"custom_mean": sum(data) / len(data)}
+        
+        manager.register_custom_tool("calculate_metrics", custom_metrics)
+        
+        # Should get custom tool, not native tool
+        tool_function = manager.get_tool("calculate_metrics")
+        result = tool_function([1, 2, 3])
+        assert "custom_mean" in result
+        assert result["custom_mean"] == 2.0
+```
+
+**Coverage Targets**:
+- **Native Tools**: 95% coverage
+- **Tool Priority**: 95% coverage
+- **Custom Tool Override**: 90% coverage
+
+#### **Native Tools Tests**
+```python
+# tests/tools/test_native_tools.py
+import pytest
+from agentmanagers.tools.native_tools import NativeToolManager
+
+class TestNativeTools:
+    def test_rag_query_tool(self):
+        """Test RAG query tool functionality."""
+        manager = NativeToolManager()
+        rag_tool = manager.native_tools["rag_query"]
+        
+        # Test with mock documents
+        result = rag_tool("What is AI?", ["doc1", "doc2"])
+        assert isinstance(result, dict)
+        assert "answer" in result or "result" in result
+    
+    def test_calculate_metrics_tool(self):
+        """Test metrics calculation tool."""
+        manager = NativeToolManager()
+        metrics_tool = manager.native_tools["calculate_metrics"]
+        
+        data = [1, 2, 3, 4, 5]
+        result = metrics_tool(data, ["mean", "max", "min"])
+        
+        assert isinstance(result, dict)
+        assert result["mean"] == 3.0
+        assert result["max"] == 5
+        assert result["min"] == 1
+    
+    def test_file_operations_tool(self):
+        """Test file operations tool."""
+        manager = NativeToolManager()
+        file_tool = manager.native_tools["file_operations"]
+        
+        # Test file reading
+        result = file_tool("read", "tests/fixtures/test.txt")
+        assert isinstance(result, str)
+    
+    def test_http_requests_tool(self):
+        """Test HTTP requests tool."""
+        manager = NativeToolManager()
+        http_tool = manager.native_tools["http_requests"]
+        
+        # Test with mock HTTP server
+        with mock_http_server():
+            result = http_tool("GET", "http://localhost:8000/test")
+            assert isinstance(result, dict)
+            assert "status_code" in result
+
+**Coverage Targets**:
+- **RAG Tool**: 95% coverage
+- **Metrics Tool**: 95% coverage
+- **File Operations**: 90% coverage
+- **HTTP Requests**: 90% coverage
+
+#### **Tool Validation Tests**
+```python
+# tests/validation/test_tool_validator.py
+import pytest
+from agentmanagers.validation.tool_validator import ToolValidator, ValidationResult
+
+class TestToolValidator:
+    def test_security_validation(self):
+        """Test security validation for dangerous code patterns."""
+        validator = ToolValidator(security_level="medium")
+        
+        def dangerous_tool():
+            eval("os.system('rm -rf /')")  # Dangerous operation
+        
+        result = validator.validate_tool("dangerous_tool", dangerous_tool)
+        assert not result.is_valid()
+        assert any("dangerous operations" in error.lower() for error in result.errors)
+    
+    def test_compatibility_validation(self):
+        """Test tool compatibility validation."""
+        validator = ToolValidator(security_level="medium")
+        
+        def complex_tool(a, b, c, d, e, f, g, h, i, j, k):  # Too many parameters
+            return a + b + c + d + e + f + g + h + i + j + k
+        
+        result = validator.validate_tool("complex_tool", complex_tool)
+        assert result.is_valid()  # Should pass but with warnings
+        assert any("many parameters" in warning.lower() for warning in result.warnings)
+    
+    def test_performance_validation(self):
+        """Test tool performance validation."""
+        validator = ToolValidator(security_level="medium")
+        
+        def simple_tool():
+            return "simple"
+        
+        result = validator.validate_tool("simple_tool", simple_tool)
+        assert result.is_valid()
+        assert len(result.warnings) == 0
+    
+    def test_security_levels(self):
+        """Test different security level configurations."""
+        # Test low security level
+        low_validator = ToolValidator(security_level="low")
+        assert low_validator.resource_limits["memory_mb"] == 100
+        
+        # Test high security level
+        high_validator = ToolValidator(security_level="high")
+        assert high_validator.resource_limits["memory_mb"] == 1000
+
+**Coverage Targets**:
+- **Security Validation**: 95% coverage
+- **Compatibility Validation**: 90% coverage
+- **Performance Validation**: 90% coverage
+- **Security Levels**: 95% coverage
+```
+
+**Coverage Targets**:
+- **RAG Tool**: 95% coverage
+- **Metrics Tool**: 95% coverage
+- **File Tool**: 90% coverage
+- **HTTP Tool**: 90% coverage
+
 #### **CLI Tests**
 ```python
 # tests/cli/test_main.py
