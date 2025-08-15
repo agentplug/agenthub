@@ -134,20 +134,156 @@ Runtime Module ← Core Module → Storage Module
 - **Click**: For CLI framework
 - **Rich**: For beautiful terminal output
 
-## 📁 **Documentation Structure**
+## 📁 **Project Implementation Structure**
 
-### **Module Documentation**
-- **[Runtime Module](runtime/)** - Core execution engine
-- **[Storage Module](storage/)** - Data persistence layer
-- **[Core Module](core/)** - Central coordination layer
-- **[CLI Module](cli/)** - User interaction layer
+### **Phase 1 Directory Tree**
+```
+agenthub/
+├── agentmanager/                          # Main Python package
+│   ├── __init__.py
+│   ├── runtime/                           # Runtime Module
+│   │   ├── __init__.py
+│   │   ├── process_manager.py             # Subprocess management
+│   │   ├── environment_manager.py         # Virtual environment management
+│   │   └── agent_runtime.py               # Agent execution coordination
+│   ├── storage/                           # Storage Module
+│   │   ├── __init__.py
+│   │   ├── local_storage.py               # Local file system operations
+│   │   ├── agent_manager.py               # Agent installation/removal
+│   │   ├── metadata_manager.py            # Manifest and metadata handling
+│   │   └── file_manager.py                # File operations and validation
+│   ├── core/                              # Core Module
+│   │   ├── __init__.py
+│   │   ├── agent_loader.py                # Agent loading and validation
+│   │   ├── manifest_parser.py             # YAML manifest parsing
+│   │   ├── interface_validator.py         # Agent interface validation
+│   │   ├── agent_manager.py               # Agent registration and coordination
+│   │   └── agent_wrapper.py               # Dynamic method dispatch wrapper
+│   └── cli/                               # CLI Module
+│       ├── __init__.py
+│       ├── main.py                        # Main CLI entry point
+│       ├── commands/                      # Command implementations
+│       │   ├── __init__.py
+│       │   ├── list.py                    # List agents command
+│       │   ├── info.py                    # Agent info command
+│       │   ├── test.py                    # Test agent command
+│       │   ├── install.py                 # Install agent command
+│       │   └── remove.py                  # Remove agent command
+│       ├── formatters/                    # Output formatting
+│       │   ├── __init__.py
+│       │   ├── table_formatter.py         # Table output formatting
+│       │   └── error_formatter.py         # Error message formatting
+│       └── utils/                         # CLI utilities
+│           ├── __init__.py
+│           └── input_validation.py        # Input validation helpers
+├── tests/                                 # Test suite
+│   └── phase1_foundation/                # Phase 1 tests
+│       ├── __init__.py
+│       ├── conftest.py                    # Test configuration and fixtures
+│       ├── runtime/                       # Runtime module tests
+│       │   ├── __init__.py
+│       │   ├── test_process_manager.py
+│       │   ├── test_environment_manager.py
+│       │   └── test_agent_runtime.py
+│       ├── storage/                       # Storage module tests
+│       │   ├── __init__.py
+│       │   ├── test_local_storage.py
+│       │   ├── test_agent_manager.py
+│       │   ├── test_metadata_manager.py
+│       │   └── test_file_manager.py
+│       ├── core/                          # Core module tests
+│       │   ├── __init__.py
+│       │   ├── test_agent_loader.py
+│       │   ├── test_manifest_parser.py
+│       │   ├── test_interface_validator.py
+│       │   └── test_agent_wrapper.py
+│       ├── cli/                           # CLI module tests
+│       │   ├── __init__.py
+│       │   ├── test_main.py
+│       │   ├── test_commands.py
+│       │   └── test_formatters.py
+│       ├── integration/                   # Integration tests
+│       │   ├── __init__.py
+│       │   ├── test_runtime_storage.py
+│       │   ├── test_core_storage.py
+│       │   ├── test_core_runtime.py
+│       │   └── test_cli_integration.py
+│       └── e2e/                           # End-to-end tests
+│           ├── __init__.py
+│           ├── test_agent_discovery.py
+│           ├── test_agent_installation.py
+│           ├── test_agent_testing.py
+│           └── test_agent_management.py
+├── docs/                                  # Documentation
+│   └── .implementation_design/
+│       └── phase1_foundation/             # Phase 1 design docs
+│           ├── README.md                   # This file
+│           ├── runtime/                    # Runtime module design
+│           │   ├── README.md
+│           │   ├── 01_interface_design.md
+│           │   ├── 02_implementation_details.md
+│           │   ├── 03_testing_strategy.md
+│           │   └── 04_success_criteria.md
+│           ├── storage/                    # Storage module design
+│           │   ├── README.md
+│           │   ├── 01_interface_design.md
+│           │   ├── 02_implementation_details.md
+│           │   ├── 03_testing_strategy.md
+│           │   └── 04_success_criteria.md
+│           ├── core/                       # Core module design
+│           │   ├── README.md
+│           │   ├── 01_interface_design.md
+│           │   ├── 02_implementation_details.md
+│           │   ├── 03_testing_strategy.md
+│           │   └── 04_success_criteria.md
+│           ├── cli/                        # CLI module design
+│           │   ├── README.md
+│           │   ├── 01_interface_design.md
+│           │   ├── 02_implementation_details.md
+│           │   ├── 03_testing_strategy.md
+│           │   └── 04_success_criteria.md
+│           └── testing/                    # Testing documentation
+│               ├── README.md
+│               ├── runtime_testing.md
+│               ├── storage_testing.md
+│               ├── core_testing.md
+│               ├── cli_testing.md
+│               ├── integration_testing.md
+│               └── e2e_testing.md
+├── setup.py                               # Package setup and dependencies
+├── requirements.txt                       # Development dependencies
+├── requirements-dev.txt                   # Development and testing dependencies
+├── pyproject.toml                        # Modern Python project configuration
+├── .env.example                          # Environment variables template
+├── .gitignore                            # Git ignore patterns
+└── README.md                             # Project overview
+```
 
-### **Each Module Contains**
-- `README.md` - Module overview and navigation
-- `01_interface_design.md` - Public interfaces and APIs
-- `02_implementation_details.md` - Internal implementation
-- `03_testing_strategy.md` - Testing approach and examples
-- `04_success_criteria.md` - Success metrics and validation
+### **Key Implementation Files**
+
+#### **Core Package Files**
+- **`agentmanager/__init__.py`**: Main package initialization and public API
+- **`setup.py`**: Package installation and dependency management
+- **`pyproject.toml`**: Modern Python project configuration
+- **`requirements.txt`**: Production dependencies
+
+#### **Module Implementation Files**
+- **Runtime**: `process_manager.py`, `environment_manager.py`, `agent_runtime.py`
+- **Storage**: `local_storage.py`, `agent_manager.py`, `metadata_manager.py`, `file_manager.py`
+- **Core**: `agent_loader.py`, `manifest_parser.py`, `interface_validator.py`, `agent_wrapper.py`
+- **CLI**: `main.py`, command implementations, formatters, utilities
+
+#### **Test Organization**
+- **Unit Tests**: Individual module functionality testing
+- **Integration Tests**: Cross-module coordination testing
+- **E2E Tests**: Complete user workflow testing
+- **Test Fixtures**: Shared test data and configuration
+
+#### **Documentation Structure**
+- **Module Design**: Detailed design for each module
+- **Testing Plans**: Comprehensive testing strategies and examples
+- **Interface Design**: Public APIs and usage examples
+- **Implementation Details**: Internal architecture and design decisions
 
 ## 🚀 **Implementation Approach**
 
