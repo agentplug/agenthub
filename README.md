@@ -11,7 +11,7 @@
 Agent Hub transforms AI agent discovery and integration from a complex, time-consuming process into a seamless, one-line experience. Think of it as the "Hugging Face for AI Agents" - a platform where developers can share their agents and users can integrate them with simple code like:
 
 ```python
-import agentmanagers as amg
+import agentmanager as amg
 
 # Load any agent with one line
 coding_agent = amg.load("meta/coding_agent")
@@ -107,7 +107,7 @@ response = chat_agent.chat("Hello, how can you help me?")
 
 ```bash
 # Install the Agent Hub client SDK
-pip install agentmanagers
+pip install agentmanager
 
 # Or install from source
 git clone https://github.com/your-org/agent-hub.git
@@ -118,7 +118,7 @@ pip install -e .
 ### Quick Start
 
 ```python
-import agentmanagers as amg
+import agentmanager as amg
 
 # Load your first agent
 coding_agent = amg.load("meta/coding_agent")
@@ -132,7 +132,7 @@ print(code)
 
 ```python
 # Create an agent package
-from agentmanagers import Agent
+from agentmanager import Agent
 
 class MyCodingAgent(Agent):
     def generate(self, prompt: str) -> str:
@@ -187,7 +187,7 @@ pip install -r requirements-dev.txt
 pytest
 
 # Start development server
-python -m agentmanagers.server
+python -m agentmanager.server
 ```
 
 ## 📊 Roadmap
