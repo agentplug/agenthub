@@ -1,6 +1,5 @@
 """Tests for AgentWrapper class."""
 
-
 import pytest
 
 from agentmanager.core.agent_wrapper import AgentExecutionError, AgentWrapper

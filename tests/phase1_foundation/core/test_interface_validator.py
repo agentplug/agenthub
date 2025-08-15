@@ -1,6 +1,5 @@
 """Tests for InterfaceValidator class."""
 
-
 import pytest
 
 from agentmanager.core.interface_validator import (
