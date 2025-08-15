@@ -105,7 +105,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
 # Verify installation
-python -c "import agentmanagers; print('Installation successful!')"
+python -c "import agentmanager; print('Installation successful!')"
 ```
 
 ### **3. Development Configuration**
@@ -139,7 +139,7 @@ pre-commit install
 pytest
 
 # Run with coverage
-pytest --cov=agentmanagers --cov-report=html
+pytest --cov=agentmanager --cov-report=html
 
 # Run specific test categories
 pytest -m unit              # Unit tests only
@@ -221,7 +221,7 @@ EOF
 #### **Simple Installation (Recommended)**
 ```bash
 # Install via pip
-pip install agentmanagers
+pip install agentmanager
 
 # Verify installation
 agenthub --version
@@ -346,13 +346,13 @@ python -m build
 python -m twine upload dist/*
 
 # Install from PyPI
-pip install agentmanagers
+pip install agentmanager
 ```
 
 ### **2. Standalone Distribution**
 ```bash
 # Create standalone executable
-pyinstaller --onefile --name agenthub agentmanagers/cli/main.py
+pyinstaller --onefile --name agenthub agentmanager/cli/main.py
 
 # Create distribution package
 mkdir -p dist/agent-hub
@@ -407,7 +407,7 @@ CMD ["agenthub", "--help"]
 
 ### **1. Log Configuration**
 ```python
-# agentmanagers/utils/logging.py
+# agentmanager/utils/logging.py
 import logging
 import logging.handlers
 from pathlib import Path
@@ -447,7 +447,7 @@ agenthub cache --info       # Show cache information
 
 ### **3. Performance Monitoring**
 ```python
-# agentmanagers/utils/monitoring.py
+# agentmanager/utils/monitoring.py
 import time
 import logging
 from functools import wraps
@@ -482,12 +482,12 @@ python --version  # Should be 3.12+
 python3.12 --version  # Alternative check
 
 # Permission issues
-sudo pip install agentmanagers  # On Linux/macOS
-pip install --user agentmanagers  # User installation
+sudo pip install agentmanager  # On Linux/macOS
+pip install --user agentmanager  # User installation
 
 # Dependency conflicts
 pip install --upgrade pip setuptools wheel
-pip install agentmanagers --force-reinstall
+pip install agentmanager --force-reinstall
 ```
 
 #### **2. Runtime Issues**
@@ -529,13 +529,13 @@ tail -f ~/.agenthub/logs/agenthub.log
 ### **1. Application Updates**
 ```bash
 # Update Agent Hub
-pip install --upgrade agentmanagers
+pip install --upgrade agentmanager
 
 # Update specific version
-pip install agentmanagers==1.1.0
+pip install agentmanager==1.1.0
 
 # Check for updates
-pip list --outdated | grep agentmanagers
+pip list --outdated | grep agentmanager
 ```
 
 ### **2. Agent Updates**

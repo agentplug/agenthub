@@ -59,7 +59,7 @@ graph TD
 ### **Base Exception Classes**
 
 ```python
-# agentmanagers/exceptions.py
+# agentmanager/exceptions.py
 class AgentHubError(Exception):
     """Base exception for all Agent Hub errors."""
     
@@ -253,7 +253,7 @@ class ConfigurationError(AgentHubError):
 ### **Global Error Handler**
 
 ```python
-# agentmanagers/utils/error_handler.py
+# agentmanager/utils/error_handler.py
 import sys
 import traceback
 import logging
@@ -397,7 +397,7 @@ class ErrorHandler:
             'network': "Check your internet connection and try again",
             'permission': "Check file permissions in ~/.agenthub/ directory",
             'disk_space': "Free up disk space and try again",
-            'dependency': "Try reinstalling Agent Hub: pip install --upgrade agentmanagers",
+            'dependency': "Try reinstalling Agent Hub: pip install --upgrade agentmanager",
             'memory': "Close other applications to free up memory",
             'timeout': "Try again or increase timeout settings"
         }
@@ -421,7 +421,7 @@ class ErrorHandler:
 ### **Context Managers for Error Handling**
 
 ```python
-# agentmanagers/utils/error_context.py
+# agentmanager/utils/error_context.py
 import contextlib
 from typing import Any, Generator, Type
 from .error_handler import ErrorHandler
@@ -500,7 +500,7 @@ def suppress_errors(
 ### **Error Metrics Collection**
 
 ```python
-# agentmanagers/utils/error_metrics.py
+# agentmanager/utils/error_metrics.py
 import json
 import time
 from pathlib import Path
@@ -656,8 +656,8 @@ class ErrorMetrics:
 ```python
 # tests/utils/test_error_handling.py
 import pytest
-from agentmanagers.exceptions import *
-from agentmanagers.utils.error_handler import ErrorHandler
+from agentmanager.exceptions import *
+from agentmanager.utils.error_handler import ErrorHandler
 
 class TestErrorHandling:
     def test_agent_not_found_error(self):
@@ -682,7 +682,7 @@ class TestErrorHandling:
     
     def test_error_context_manager(self):
         """Test error context manager."""
-        from agentmanagers.utils.error_context import error_context
+        from agentmanager.utils.error_context import error_context
         
         with pytest.raises(ValueError):
             with error_context("test operation"):
@@ -690,7 +690,7 @@ class TestErrorHandling:
     
     def test_error_metrics_collection(self):
         """Test error metrics collection."""
-        from agentmanagers.utils.error_metrics import ErrorMetrics
+        from agentmanager.utils.error_metrics import ErrorMetrics
         
         metrics = ErrorMetrics()
         error = AgentNotFoundError("test/agent")

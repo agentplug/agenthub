@@ -218,7 +218,7 @@ dependencies:
 
 #### **GitHub Registry Client**
 ```python
-# agentmanagers/registry/github_client.py
+# agentmanager/registry/github_client.py
 import requests
 import json
 import base64
@@ -286,7 +286,7 @@ class GitHubRegistryClient:
 
 #### **Local Cache Implementation**
 ```python
-# agentmanagers/cache/registry_cache.py
+# agentmanager/cache/registry_cache.py
 import json
 import time
 from pathlib import Path

@@ -88,7 +88,7 @@ addopts =
     --strict-config
     --verbose
     --tb=short
-    --cov=agentmanagers
+    --cov=agentmanager
     --cov-report=term-missing
     --cov-report=html
     --cov-report=xml
@@ -108,7 +108,7 @@ markers =
 ```python
 # tests/runtime/test_process_manager.py
 import pytest
-from agentmanagers.runtime.process_manager import ProcessManager
+from agentmanager.runtime.process_manager import ProcessManager
 
 class TestProcessManager:
     def test_create_subprocess(self):
@@ -141,7 +141,7 @@ class TestProcessManager:
 # tests/core/test_tool_infrastructure.py
 import pytest
 from pathlib import Path
-from agentmanagers.core.tool_infrastructure import ToolInfrastructure
+from agentmanager.core.tool_infrastructure import ToolInfrastructure
 
 class TestToolInfrastructure:
     def test_agent_tools_discovery(self):
@@ -195,7 +195,7 @@ class TestToolInfrastructure:
 # tests/core/test_tool_discovery.py
 import pytest
 from pathlib import Path
-from agentmanagers.core.tool_discovery import ToolDiscovery
+from agentmanager.core.tool_discovery import ToolDiscovery
 
 class TestToolDiscovery:
     def test_agent_manifest_parsing(self):
@@ -240,7 +240,7 @@ class TestToolDiscovery:
 ```python
 # tests/validation/test_tool_validator.py
 import pytest
-from agentmanagers.validation.tool_validator import ToolValidator, ValidationResult
+from agentmanager.validation.tool_validator import ToolValidator, ValidationResult
 
 class TestToolValidator:
     def test_security_validation(self):
@@ -304,7 +304,7 @@ class TestToolValidator:
 # tests/cli/test_main.py
 import pytest
 from click.testing import CliRunner
-from agentmanagers.cli.main import cli
+from agentmanager.cli.main import cli
 
 class TestCLI:
     def test_install_command(self):
@@ -338,7 +338,7 @@ class TestCLI:
 ```python
 # tests/sdk/test_agent_wrapper.py
 import pytest
-from agentmanagers.sdk.agent_wrapper import AgentWrapper
+from agentmanager.sdk.agent_wrapper import AgentWrapper
 
 class TestAgentWrapper:
     def test_agent_loading(self):
@@ -372,8 +372,8 @@ class TestAgentWrapper:
 ```python
 # tests/integration/test_agent_workflow.py
 import pytest
-from agentmanagers.cli.main import cli
-from agentmanagers.sdk import load_agent
+from agentmanager.cli.main import cli
+from agentmanager.sdk import load_agent
 from click.testing import CliRunner
 
 class TestAgentWorkflow:
@@ -430,7 +430,7 @@ class TestUserExperience:
             
             # Install Agent Hub
             result = subprocess.run([
-                "pip", "install", "agentmanagers"
+                "pip", "install", "agentmanager"
             ], capture_output=True, text=True)
             assert result.returncode == 0
             
@@ -443,7 +443,7 @@ class TestUserExperience:
             # Use agent
             result = subprocess.run([
                 "python", "-c", 
-                "import agentmanagers as amg; agent = amg.load('meta/coding-agent'); print(agent.generate_code('hello'))"
+                "import agentmanager as amg; agent = amg.load('meta/coding-agent'); print(agent.generate_code('hello'))"
             ], capture_output=True, text=True)
             assert result.returncode == 0
             assert len(result.stdout.strip()) > 0
@@ -468,7 +468,7 @@ class TestUserExperience:
 # tests/performance/test_performance.py
 import pytest
 import time
-from agentmanagers.sdk import load_agent
+from agentmanager.sdk import load_agent
 
 class TestPerformance:
     def test_agent_installation_performance(self):
@@ -698,7 +698,7 @@ pytest -m integration       # Integration tests only
 pytest -m e2e              # End-to-end tests only
 
 # Run with coverage
-pytest --cov=agentmanagers --cov-report=html
+pytest --cov=agentmanager --cov-report=html
 
 # Run in parallel
 pytest -n auto
@@ -719,7 +719,7 @@ pytest -x
 ### **Coverage Reporting**
 ```bash
 # Generate coverage reports
-pytest --cov=agentmanagers --cov-report=html --cov-report=xml --cov-report=term-missing
+pytest --cov=agentmanager --cov-report=html --cov-report=xml --cov-report=term-missing
 
 # Coverage targets
 # Overall: > 90%
@@ -772,7 +772,7 @@ jobs:
     
     - name: Run tests
       run: |
-        pytest --cov=agentmanagers --cov-report=xml
+        pytest --cov=agentmanager --cov-report=xml
     
     - name: Upload coverage
       uses: codecov/codecov-action@v3

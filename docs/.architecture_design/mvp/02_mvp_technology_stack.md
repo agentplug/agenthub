@@ -55,7 +55,7 @@ import dataclasses        # Clean data structures
 
 ### **CLI Structure Example**
 ```python
-# agentmanagers/cli/main.py
+# agentmanager/cli/main.py
 import click
 
 @click.group()
@@ -95,7 +95,7 @@ def list(installed):
 
 ### **UV Integration with Fallback**
 ```python
-# agentmanagers/runtime/environment_manager.py
+# agentmanager/runtime/environment_manager.py
 import subprocess
 import shutil
 ```
@@ -115,7 +115,7 @@ import shutil
 
 ### **Tool Infrastructure Example**
 ```python
-# agentmanagers/core/tool_infrastructure.py
+# agentmanager/core/tool_infrastructure.py
 import inspect
 import pickle
 from typing import Dict, Any, Callable
@@ -279,7 +279,7 @@ class EnvironmentManager:
 
 ### **GitHub API Integration**
 ```python
-# agentmanagers/registry/github_client.py
+# agentmanager/registry/github_client.py
 import requests
 import json
 import base64
@@ -440,7 +440,7 @@ mypy .
 
 ### **Security Features**
 ```python
-# agentmanagers/security/validator.py
+# agentmanager/security/validator.py
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -473,7 +473,7 @@ def validate_manifest(manifest_data: dict) -> AgentManifest:
 
 ### **Caching Implementation**
 ```python
-# agentmanagers/cache/cache_manager.py
+# agentmanager/cache/cache_manager.py
 import json
 import time
 from pathlib import Path
@@ -522,7 +522,7 @@ class CacheManager:
 
 ### **Platform-Specific Handling**
 ```python
-# agentmanagers/utils/platform.py
+# agentmanager/utils/platform.py
 import platform
 import os
 from pathlib import Path

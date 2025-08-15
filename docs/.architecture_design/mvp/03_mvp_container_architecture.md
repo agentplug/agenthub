@@ -72,7 +72,7 @@ Primary user interface for agent management operations.
 
 #### **Interfaces**
 ```python
-# agentmanagers/cli/main.py
+# agentmanager/cli/main.py
 @click.group()
 def cli():
     """Agent Hub - One-line AI agent integration."""
@@ -118,8 +118,8 @@ Python library for one-line agent integration.
 
 #### **Interfaces**
 ```python
-# agentmanagers/sdk/__init__.py
-import agentmanagers as amg
+# agentmanager/sdk/__init__.py
+import agentmanager as amg
 
 # One-line agent loading
 agent = amg.load("meta/coding-agent")
@@ -151,14 +151,14 @@ Execute agents in isolated environments with dependency management.
 
 #### **Interfaces**
 ```python
-# agentmanagers/runtime/process_manager.py
+# agentmanager/runtime/process_manager.py
 class ProcessManager:
     def execute_agent(self, agent_path: str, method: str, parameters: dict) -> dict:
         """Execute agent method in isolated subprocess."""
         # Implementation
         pass
 
-# agentmanagers/runtime/environment_manager.py
+# agentmanager/runtime/environment_manager.py
 class EnvironmentManager:
     def create_environment(self, agent_path: str) -> str:
         """Create isolated virtual environment."""
@@ -192,7 +192,7 @@ Fetch agent metadata from GitHub-based registry.
 
 #### **Interfaces**
 ```python
-# agentmanagers/registry/github_client.py
+# agentmanager/registry/github_client.py
 class GitHubRegistryClient:
     def get_registry(self) -> dict:
         """Fetch registry from GitHub."""
@@ -233,7 +233,7 @@ Provides local infrastructure for agents to discover their built-in tools AND al
 
 #### **Interfaces**
 ```python
-# agentmanagers/core/agent_tool_support.py
+# agentmanager/core/agent_tool_support.py
 class AgentToolSupport:
     def __init__(self):
         """Initialize agent tool support infrastructure."""
@@ -299,7 +299,7 @@ Validate that agents can safely access the tools they declare in their manifests
 
 #### **Interfaces**
 ```python
-# agentmanagers/validation/tool_validator.py
+# agentmanager/validation/tool_validator.py
 class ToolValidator:
     def __init__(self, security_level: str = "medium"):
         self.security_level = security_level
@@ -409,7 +409,7 @@ Manage local agent installations, metadata, and tool indexes.
 
 #### **Interfaces**
 ```python
-# agentmanagers/storage/local_storage.py
+# agentmanager/storage/local_storage.py
 class LocalStorage:
     def install_agent(self, agent_path: str, agent_data: bytes) -> str:
         """Install agent to local storage."""

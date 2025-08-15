@@ -17,7 +17,7 @@ Agent Hub MVP is a **CLI-based platform** that transforms AI agent integration f
 agenthub install meta/coding-agent
 
 # Use the agent in Python
-import agentmanagers as amg
+import agentmanager as amg
 agent = amg.load("meta/coding-agent")
 result = agent.generate_code("neural network")
 ```
@@ -158,7 +158,7 @@ graph TB
 ### **1. One-Line Integration**
 ```python
 # The MVP's core value proposition
-import agentmanagers as amg
+import agentmanager as amg
 agent = amg.load("meta/coding-agent")  # One line to load
 result = agent.generate_code("hello")   # One line to use
 ```
@@ -223,7 +223,7 @@ result = agent.generate_code("hello")   # One line to use
 ### **Installation**
 ```bash
 # Install Agent Hub MVP
-pip install agentmanagers
+pip install agentmanager
 
 # Verify installation
 agenthub --version
@@ -237,7 +237,7 @@ agenthub install meta/coding-agent
 
 # Use the agent
 python -c "
-import agentmanagers as amg
+import agentmanager as amg
 agent = amg.load('meta/coding-agent')
 print(agent.generate_code('hello world'))
 "
@@ -250,7 +250,7 @@ agenthub install openai/analysis-agent
 
 # Use with agent's built-in tools + user's custom tools
 python -c "
-import agentmanagers as amg
+import agentmanager as amg
 
 # Define custom tools
 def domain_specific_analysis(data, domain):
@@ -282,7 +282,7 @@ print(f'Enhanced Metrics: {enhanced_result}')
 
 # Advanced: Tool override and validation
 python -c "
-import agentmanagers as amg
+import agentmanager as amg
 
 def custom_data_processor(data):
     # This tool will be validated for safety
@@ -339,7 +339,7 @@ pip install -r requirements-dev.txt
 ## 🎯 **Next Steps**
 
 ### **For Users**
-1. **Install Agent Hub**: `pip install agentmanagers`
+1. **Install Agent Hub**: `pip install agentmanager`
 2. **Try First Agent**: `agenthub install meta/coding-agent`
 3. **Explore Commands**: `agenthub --help`
 

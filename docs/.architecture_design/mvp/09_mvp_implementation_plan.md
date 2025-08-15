@@ -63,7 +63,7 @@ Build the fundamental runtime system that enables agent execution with process-b
 
 #### **Process Manager**
 ```python
-# agentmanagers/runtime/process_manager.py
+# agentmanager/runtime/process_manager.py
 class ProcessManager:
     def execute_agent(self, agent_path: str, method: str, parameters: dict) -> dict:
         """Execute agent in isolated subprocess."""
@@ -83,7 +83,7 @@ class ProcessManager:
 
 #### **Environment Manager**
 ```python
-# agentmanagers/runtime/environment_manager.py
+# agentmanager/runtime/environment_manager.py
 class EnvironmentManager:
     def create_environment(self, agent_path: str) -> str:
         """Create isolated virtual environment using UV."""
@@ -101,7 +101,7 @@ class EnvironmentManager:
 
 #### **Tool Infrastructure**
 ```python
-# agentmanagers/core/tool_infrastructure.py
+# agentmanager/core/tool_infrastructure.py
 class ToolInfrastructure:
     def __init__(self, agent_dir: Path, security_level: str = "medium"):
         """Initialize tool infrastructure for agent."""
@@ -127,7 +127,7 @@ class ToolInfrastructure:
 
 #### **Tool Discovery and Injection**
 ```python
-# agentmanagers/core/tool_discovery.py
+# agentmanager/core/tool_discovery.py
 class ToolDiscovery:
     def __init__(self, agent_dir: Path):
         """Initialize tool discovery for agent."""
@@ -152,7 +152,7 @@ class ToolDiscovery:
 
 #### **Tool Validation System**
 ```python
-# agentmanagers/validation/tool_validator.py
+# agentmanager/validation/tool_validator.py
 class ToolValidator:
     def __init__(self, security_level: str = "medium"):
         """Initialize tool validator with security configuration."""
@@ -174,7 +174,7 @@ class ToolValidator:
 
 #### **Agent Runtime**
 ```python
-# agentmanagers/runtime/agent_runtime.py
+# agentmanager/runtime/agent_runtime.py
 class AgentRuntime:
     def load_agent_manifest(self, agent_path: str) -> dict:
         """Load and validate agent manifest."""
@@ -231,7 +231,7 @@ agenthub info <agent-path>        # Show agent details
 
 #### **Error Handling System**
 ```python
-# agentmanagers/cli/utils/error_handler.py
+# agentmanager/cli/utils/error_handler.py
 import logging
 from typing import Optional
 
@@ -284,7 +284,7 @@ class ErrorHandler:
 
 #### **Output Formatting**
 ```python
-# agentmanagers/cli/utils/output_formatter.py
+# agentmanager/cli/utils/output_formatter.py
 class OutputFormatter:
     def print_agent_list(self, agents: list, show_details: bool = False):
         """Format and display agent lists."""
@@ -321,7 +321,7 @@ Integrate with GitHub-based registry for agent discovery and installation.
 
 #### **GitHub Registry Client**
 ```python
-# agentmanagers/registry/github_client.py
+# agentmanager/registry/github_client.py
 class GitHubRegistryClient:
     def get_registry(self) -> dict:
         """Fetch registry.json from GitHub."""
@@ -360,7 +360,7 @@ agenthub info <agent-path>              # Show detailed info from registry
 
 #### **Caching System**
 ```python
-# agentmanagers/cache/cache_manager.py
+# agentmanager/cache/cache_manager.py
 class CacheManager:
     def get_cached_registry(self) -> dict:
         """Get cached registry data with TTL support."""
@@ -397,8 +397,8 @@ Create Python SDK and polish user experience for production readiness.
 
 #### **Python SDK**
 ```python
-# agentmanagers/sdk/__init__.py
-import agentmanagers as amg
+# agentmanager/sdk/__init__.py
+import agentmanager as amg
 
 # Basic agent loading
 agent = amg.load("meta/coding-agent")
@@ -431,7 +431,7 @@ answer = agent.analyze_with_docs("What are the main findings?", ["/path/to/docs/
 
 #### **Method Dispatching**
 ```python
-# agentmanagers/sdk/agent_wrapper.py
+# agentmanager/sdk/agent_wrapper.py
 class AgentWrapper:
     def __getattr__(self, name):
         """Dynamic method dispatching to agent."""
@@ -561,7 +561,7 @@ mypy .                    # Type check
 ### **Production Environment**
 ```bash
 # Production installation
-pip install agentmanagers
+pip install agentmanager
 
 # Verify installation
 agenthub --version
