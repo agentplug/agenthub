@@ -67,3 +67,133 @@ class LocalStorage:
             except OSError as e:
                 logger.error(f"OS error creating directory {directory}: {e}")
                 raise
+
+    def discover_agents(self) -> list[dict[str, str]]:
+        """
+        Discover all installed agents in the agents directory.
+
+        Returns:
+            List of agent information dictionaries with keys:
+            - name: Agent name
+            - namespace: Developer namespace
+            - path: Full path to agent directory
+            - version: Agent version (if available)
+
+        Raises:
+            OSError: If unable to read agents directory
+        """
+        agents = []
+
+        if not self._agents_dir.exists():
+            logger.debug(f"Agents directory does not exist: {self._agents_dir}")
+            return agents
+
+        try:
+            # Iterate through namespace directories (e.g., agentplug/)
+            for namespace_dir in self._agents_dir.iterdir():
+                if not namespace_dir.is_dir():
+                    continue
+
+                namespace = namespace_dir.name
+                if namespace.startswith("."):
+                    continue  # Skip hidden directories
+
+                # Iterate through agent directories
+                for agent_dir in namespace_dir.iterdir():
+                    if not agent_dir.is_dir():
+                        continue
+
+                    agent_name = agent_dir.name
+                    if agent_name.startswith("."):
+                        continue  # Skip hidden directories
+
+                    # Check if this is a valid agent directory
+                    if self._is_valid_agent_directory(agent_dir):
+                        agent_info = {
+                            "name": agent_name,
+                            "namespace": namespace,
+                            "path": str(agent_dir),
+                        }
+
+                        # Try to get version from manifest
+                        version = self._get_agent_version(agent_dir)
+                        if version:
+                            agent_info["version"] = version
+
+                        agents.append(agent_info)
+
+        except OSError as e:
+            logger.error(f"Error discovering agents: {e}")
+            raise
+
+        return agents
+
+    def _is_valid_agent_directory(self, agent_path: Path) -> bool:
+        """
+        Check if a directory contains a valid agent.
+
+        Args:
+            agent_path: Path to the agent directory
+
+        Returns:
+            True if the directory contains required agent files
+        """
+        required_files = ["agent.yaml", "agent.py"]
+
+        for required_file in required_files:
+            if not (agent_path / required_file).exists():
+                logger.debug(f"Missing required file {required_file} in {agent_path}")
+                return False
+
+        return True
+
+    def _get_agent_version(self, agent_path: Path) -> str | None:
+        """
+        Get agent version from manifest file.
+
+        Args:
+            agent_path: Path to the agent directory
+
+        Returns:
+            Agent version string if available, None otherwise
+        """
+        manifest_path = agent_path / "agent.yaml"
+        if not manifest_path.exists():
+            return None
+
+        try:
+            import yaml
+
+            with open(manifest_path) as f:
+                manifest = yaml.safe_load(f)
+                return manifest.get("version")
+        except Exception as e:
+            logger.debug(f"Error reading version from {manifest_path}: {e}")
+            return None
+
+    def get_agent_path(self, namespace: str, agent_name: str) -> Path:
+        """
+        Get the path to a specific agent.
+
+        Args:
+            namespace: The agent namespace (e.g., 'agentplug')
+            agent_name: The agent name (e.g., 'coding-agent')
+
+        Returns:
+            Path to the agent directory
+        """
+        return self._agents_dir / namespace / agent_name
+
+    def agent_exists(self, namespace: str, agent_name: str) -> bool:
+        """
+        Check if an agent exists in storage.
+
+        Args:
+            namespace: The agent namespace (e.g., 'agentplug')
+            agent_name: The agent name (e.g., 'coding-agent')
+
+        Returns:
+            True if the agent exists and is valid
+        """
+        agent_path = self.get_agent_path(namespace, agent_name)
+        return agent_path.exists() and self._is_valid_agent_directory(agent_path)
