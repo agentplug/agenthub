@@ -1,12 +1,12 @@
 # Phase 1: Seed Agent Creation
 
-**Document Type**: Seed Agent Creation Guide  
-**Phase**: 1 - Foundation (Prerequisite)  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Create working seed agents that Phase 1 will test with  
+**Document Type**: Seed Agent Creation Guide
+**Phase**: 1 - Foundation (Prerequisite)
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Create working seed agents that Phase 1 will test with
 
 ## 🎯 **Seed Agent Creation Overview**
 
@@ -19,6 +19,13 @@
 - ✅ **Must provide real functionality** (not just mock responses)
 
 ## 🌱 **Required Seed Agents**
+
+### **Critical: Independent Virtual Environments**
+Each agent **MUST** have its own independent virtual environment (`.venv/` directory) to ensure:
+- **Dependency Isolation**: No conflicts between agent packages
+- **Security**: Agents can't access system packages
+- **Reproducibility**: Exact dependency versions for each agent
+- **Maintenance**: Easy to update/remove individual agent environments
 
 ### **1. agentplug/coding-agent**
 
@@ -39,7 +46,7 @@ interface:
       returns:
         type: "string"
         description: "Generated Python code"
-    
+
     explain_code:
       description: "Explain what a piece of Python code does"
       parameters:
@@ -88,7 +95,7 @@ interface:
       returns:
         type: "object"
         description: "Analysis results with insights"
-    
+
     summarize_content:
       description: "Create a summary of content"
       parameters:
@@ -128,6 +135,10 @@ interface:
 │   ├── agent.py             # Main agent script (required)
 │   ├── requirements.txt     # Dependencies (optional)
 │   ├── README.md            # Documentation (optional)
+│   ├── .venv/               # Independent virtual environment (required)
+│   │   ├── bin/             # Python executable and scripts
+│   │   ├── lib/             # Installed packages
+│   │   └── pyvenv.cfg       # Virtual environment config
 │   └── examples/            # Example usage (optional)
 │       ├── basic_usage.py
 │       └── advanced_usage.py
@@ -136,6 +147,10 @@ interface:
     ├── agent.py             # Main agent script (required)
     ├── requirements.txt     # Dependencies (optional)
     ├── README.md            # Documentation (optional)
+    ├── .venv/               # Independent virtual environment (required)
+    │   ├── bin/             # Python executable and scripts
+    │   ├── lib/             # Installed packages
+    │   └── pyvenv.cfg       # Virtual environment config
     └── examples/            # Example usage (optional)
         ├── basic_usage.py
         └── advanced_usage.py
@@ -164,7 +179,7 @@ interface:
       returns:
         type: "string"
         description: "Generated Python code"
-    
+
     explain_code:
       description: "Explain what a piece of Python code does"
       parameters:
@@ -176,7 +191,7 @@ interface:
         type: "string"
         description: "Explanation of what the code does"
 
-dependencies: 
+dependencies:
   - "aisuite[openai]>=0.1.7"
   - "python-dotenv>=1.0.0"
 tags: ["code-generation", "python", "ai-assistant"]
@@ -196,18 +211,18 @@ from typing import Dict, Any
 
 class CodingAgent:
     """Python code generation agent."""
-    
+
     def __init__(self):
         """Initialize the coding agent."""
         pass
-    
+
     def generate_code(self, prompt: str) -> str:
         """
         Generate Python code based on a prompt using AI.
-        
+
         Args:
             prompt: Natural language description of code to generate
-            
+
         Returns:
             Generated Python code as a string
         """
@@ -215,30 +230,30 @@ class CodingAgent:
             import aisuite as ai
             from dotenv import load_dotenv
             load_dotenv()
-            
+
             client = ai.Client()
             messages = [
                 {"role": "system", "content": "You are a Python code generator. Generate only valid, working Python code. Do not include explanations, just the code."},
                 {"role": "user", "content": prompt}
             ]
-            
+
             response = client.chat.completions.create(
                 model="openai:gpt-4o",
                 messages=messages,
                 temperature=0.1
             )
-            
+
             return response.choices[0].message.content
         except Exception as e:
             return f"# Error generating code: {str(e)}\n# Please check your API key and internet connection."
-    
+
     def explain_code(self, code: str) -> str:
         """
         Explain what a piece of Python code does using AI.
-        
+
         Args:
             code: Python code to explain
-            
+
         Returns:
             Explanation of what the code does
         """
@@ -246,19 +261,19 @@ class CodingAgent:
             import aisuite as ai
             from dotenv import load_dotenv
             load_dotenv()
-            
+
             client = ai.Client()
             messages = [
                 {"role": "system", "content": "You are a Python code explainer. Explain what the code does in simple terms."},
                 {"role": "user", "content": f"Explain this Python code:\n{code}"}
             ]
-            
+
             response = client.chat.completions.create(
                 model="openai:gpt-4o",
                 messages=messages,
                 temperature=0.1
             )
-            
+
             return response.choices[0].message.content
         except Exception as e:
             return f"Error explaining code: {str(e)}. Please check your API key and internet connection."
@@ -268,16 +283,16 @@ def main():
     if len(sys.argv) != 2:
         print(json.dumps({"error": "Invalid arguments"}))
         sys.exit(1)
-    
+
     try:
         # Parse input from command line
         input_data = json.loads(sys.argv[1])
         method = input_data.get("method")
         parameters = input_data.get("parameters", {})
-        
+
         # Create agent instance
         agent = CodingAgent()
-        
+
         # Execute requested method
         if method == "generate_code":
             result = agent.generate_code(parameters.get("prompt", ""))
@@ -288,7 +303,7 @@ def main():
         else:
             print(json.dumps({"error": f"Unknown method: {method}"}))
             sys.exit(1)
-            
+
     except Exception as e:
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
@@ -304,7 +319,12 @@ Each seed agent must work independently before being used in Phase 1 testing.
 
 #### **Test coding-agent**
 ```bash
-# Test generate_code method
+# Test generate_code method (must use virtual environment)
+cd ~/.agenthub/agents/agentplug/coding-agent
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate     # On Windows
+
 python agent.py '{"method": "generate_code", "parameters": {"prompt": "Create a function that adds two numbers"}}'
 
 # Expected output:
@@ -349,10 +369,27 @@ export OPENAI_API_KEY="your-openai-api-key-here"
 export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
 ```
 
-### **Step 1: Create Agent Directories**
+### **Step 0.5: Set Up UV Package Manager**
 ```bash
+# Install UV package manager (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or using pip
+pip install uv
+```
+
+### **Step 1: Create Agent Directories and Virtual Environments**
+```bash
+# Create agent directories
 mkdir -p ~/.agenthub/agents/agentplug/coding-agent
 mkdir -p ~/.agenthub/agents/agentplug/analysis-agent
+
+# Create independent virtual environments for each agent
+cd ~/.agenthub/agents/agentplug/coding-agent
+uv venv .venv
+
+cd ~/.agenthub/agents/agentplug/analysis-agent
+uv venv .venv
 ```
 
 ### **Step 2: Create Agent Manifests**
@@ -360,7 +397,24 @@ mkdir -p ~/.agenthub/agents/agentplug/analysis-agent
 - Ensure all required fields are present
 - Validate YAML syntax
 
-### **Step 3: Implement Agent Logic**
+### **Step 3: Install Dependencies in Virtual Environments**
+```bash
+# Install dependencies in coding-agent environment
+cd ~/.agenthub/agents/agentplug/coding-agent
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate     # On Windows
+uv pip install 'aisuite[openai]' python-dotenv
+
+# Install dependencies in analysis-agent environment
+cd ~/.agenthub/agents/agentplug/analysis-agent
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate     # On Windows
+uv pip install 'aisuite[openai]' python-dotenv
+```
+
+### **Step 4: Implement Agent Logic**
 - Write `agent.py` files with actual functionality
 - Implement all defined methods
 - Add proper error handling
@@ -429,13 +483,16 @@ mkdir -p ~/.agenthub/agents/agentplug/analysis-agent
 ## 📋 **Checklist**
 
 - [ ] Set up aisuite and API keys
+- [ ] Install UV package manager
 - [ ] Create `~/.agenthub/agents/agentplug/` directory structure
+- [ ] Create independent virtual environments for each agent using UV
+- [ ] Install dependencies in each agent's virtual environment
 - [ ] Write `agent.yaml` for coding-agent with aisuite dependencies
 - [ ] Write `agent.py` for coding-agent with aisuite AI integration
 - [ ] Write `agent.yaml` for analysis-agent with aisuite dependencies
 - [ ] Write `agent.py` for analysis-agent with aisuite AI integration
-- [ ] Test coding-agent independently with AI calls
-- [ ] Test analysis-agent independently with AI calls
+- [ ] Test coding-agent independently with AI calls (in virtual environment)
+- [ ] Test analysis-agent independently with AI calls (in virtual environment)
 - [ ] Validate JSON input/output format
 - [ ] Test error handling scenarios (API failures, etc.)
 - [ ] Document agent usage and examples
