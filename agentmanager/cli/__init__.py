@@ -1,9 +1,5 @@
-"""CLI Module - Command-line interface and testing tools."""
+"""CLI Module - Command-line interface for AgentHub."""
 
-# TODO: Import main function when implemented
-# from agentmanager.cli.main import main
+from agentmanager.cli.main import main
 
-__all__ = [
-    # TODO: Add functions as they are implemented
-    # "main",
-]
+__all__ = ["main"]

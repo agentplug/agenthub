@@ -4,6 +4,70 @@ This directory showcases how AgentHub solves real business problems and user pai
 
 ## 🎯 Business-Focused Examples
 
+### **Core Module Breakthrough Examples**
+
+#### 4. **Core Unified Interface** (`core_unified_interface.py`)
+**Breakthrough:** "Use AI agents like native Python objects - just call agent.method_name()!"
+
+**Revolutionary Features:**
+- **Magic method interface** - Call agents like regular Python functions
+- **Seamless cross-agent workflows** - Chain multiple agents effortlessly
+- **Dynamic method discovery** - Introspect agent capabilities at runtime
+- **Agent composition** - Combine agents for complex multi-step tasks
+- **Native Python experience** - No complex APIs or configuration
+
+**Business Value:**
+- Transform AI from complex APIs into simple function calls
+- Rapid prototyping and development acceleration
+- Easy integration into existing Python workflows
+- Enterprise-grade reliability with robust error handling
+
+**Run:** `python core_unified_interface.py`
+
+---
+
+#### 5. **Agent Discovery and Validation** (`agent_discovery_and_validation.py`)
+**Enterprise Challenge:** "I need to manage multiple AI agents with confidence they're working correctly"
+
+**Enterprise Features:**
+- **Comprehensive agent discovery** across namespaces and repositories
+- **Multi-level validation** (manifest, structure, runtime health)
+- **Capability analysis** and method mapping across agents
+- **Health monitoring** with live execution tests
+- **Actionable recommendations** for system management
+- **Production readiness assessment** and quality assurance
+
+**Business Value:**
+- Confidence in AI agent deployments at scale
+- Visibility into system capabilities and health
+- Proactive maintenance and optimization guidance
+- Risk mitigation through comprehensive validation
+
+**Run:** `python agent_discovery_and_validation.py`
+
+---
+
+#### 6. **Dynamic Agent Orchestration** (`dynamic_agent_orchestration.py`)
+**Vision:** "Create AI workflows that adapt, scale, and handle failures gracefully"
+
+**Advanced Capabilities:**
+- **Automatic fallback** and error recovery between agents
+- **Parallel task execution** for improved performance
+- **Complex workflow orchestration** with dependencies
+- **Context variable substitution** between workflow steps
+- **Real-time capability analysis** and recommendations
+- **Self-healing workflows** that adapt to agent availability
+
+**Business Value:**
+- Self-healing AI workflows that adapt to failures
+- Horizontal scaling through agent redundancy
+- Business continuity through intelligent fallbacks
+- Improved performance through parallel execution
+
+**Run:** `python dynamic_agent_orchestration.py`
+
+---
+
 ### 1. **Code Generation Workflow** (`code_generation_workflow.py`)
 **Solves:** "I need to quickly prototype code but I'm not sure about syntax or best practices"
 
