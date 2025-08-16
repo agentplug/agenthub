@@ -237,7 +237,8 @@ class TestAgentWrapper:
         wrapper = AgentWrapper(agent_info)
 
         with pytest.raises(
-            AttributeError, match="'AgentWrapper' object has no attribute 'nonexistent'"
+            AttributeError,
+            match="Method 'nonexistent' not found in agent 'test-agent'!",
         ):
             wrapper.nonexistent()
 
