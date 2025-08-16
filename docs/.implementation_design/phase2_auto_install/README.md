@@ -110,6 +110,17 @@ AgentHub Phase 2 implements **UV-based isolated environments** to ensure each ag
 5. **Validate Environment**: Ensure environment is ready for execution
 6. **Ready for Use**: Agent can now execute in isolated context
 
+#### **Progress Tracking & User Experience Requirements**
+- **Real-time progress updates**: Phase and step-level progress tracking
+- **Visual progress indicators**: Progress bars, percentages, and status icons
+- **Time estimates**: Completion time and remaining time calculations
+- **Interactive controls**: Pause, resume, and cancel capabilities
+- **Background execution**: Installations continue in background
+- **Multiple installation tracking**: Concurrent setup monitoring
+- **Detailed error reporting**: Specific failure reasons and solutions
+- **Recovery options**: Rollback, retry, and conflict resolution
+- **User feedback**: Clear status messages and actionable recommendations
+
 #### **UV Environment Requirements**
 
 ##### **System Prerequisites**
@@ -180,7 +191,7 @@ AgentHub Phase 2 implements **UV-based isolated environments** to ensure each ag
 - **Input**: Module implementations and integration points
 - **Output**: Validated functionality and performance metrics
 
-## 🔄 **Auto-Installation Flow**
+## 🔄 **Auto-Installation Flow with Progress Tracking**
 
 ```mermaid
 sequenceDiagram
@@ -194,22 +205,114 @@ sequenceDiagram
 
     User->>CLI: Install "dev/awesome-agent"
     CLI->>AutoInstaller: Trigger installation
+
+    Note over AutoInstaller: Progress Tracking Started
+
     AutoInstaller->>Storage: Check if already installed
     Storage-->>AutoInstaller: Not found
+    AutoInstaller-->>CLI: 🔍 Discovery: 10% [✓]
+
     AutoInstaller->>GitHub: Clone repository
     GitHub-->>AutoInstaller: Local repository path
+    AutoInstaller-->>CLI: 📥 Cloning: 25% [✓]
+
     AutoInstaller->>GitHub: Validate repository
     GitHub-->>AutoInstaller: Validation results
-    AutoInstaller->>Environment: Create virtual environment
+    AutoInstaller-->>CLI: 📋 Validation: 35% [✓]
+
+    AutoInstaller->>Environment: Create UV environment
     Environment-->>AutoInstaller: Environment ready
+    AutoInstaller-->>CLI: 🐍 UV Setup: 50% [✓]
+
     AutoInstaller->>Environment: Install dependencies
     Environment-->>AutoInstaller: Dependencies installed
+    AutoInstaller-->>CLI: 📦 Dependencies: 85% [✓]
+
     AutoInstaller->>Storage: Track installation
     Storage-->>AutoInstaller: Installation recorded
+    AutoInstaller-->>CLI: 💾 Storage: 95% [✓]
+
     AutoInstaller->>Core: Register agent
     Core-->>AutoInstaller: Agent ready
+    AutoInstaller-->>CLI: 🎉 Ready: 100% [✓]
+
     AutoInstaller-->>CLI: Installation complete
-    CLI-->>User: Success message
+    CLI-->>User: Success message with agent details
+```
+
+### **📊 Progress Tracking Features**
+
+#### **Real-Time Progress Updates**
+- **Phase-based tracking**: Discovery → Cloning → Validation → UV Setup → Dependencies → Storage → Ready
+- **Step-level progress**: Detailed progress within each phase
+- **Time estimates**: Estimated completion time and remaining time
+- **Visual indicators**: Progress bars, percentages, and status icons
+
+#### **Interactive Controls**
+- **Pause/Resume**: Users can pause long installations
+- **Progress queries**: Check status of ongoing installations
+- **Background execution**: Installations continue in background
+- **Multiple installations**: Track multiple concurrent setups
+
+#### **Error Handling & Recovery**
+- **Detailed error reporting**: Specific package failures with reasons
+- **Conflict resolution**: Automatic dependency conflict detection
+- **Rollback capability**: Clean recovery from failed installations
+- **Retry mechanisms**: Automatic retry for transient failures
+
+### **🚨 Enhanced Error Handling & User Feedback**
+
+#### **Dependency Installation Failures**
+When dependencies fail to install, AgentHub provides detailed feedback:
+
+```bash
+❌ Dependency installation failed for "agentplug/scientific-paper-analyzer"
+
+Failed packages:
+  • llama-index>=0.10.0
+    Error: Version conflict with existing numpy==1.21.0
+    Solution: Update numpy to >=1.24.0 or use compatible llama-index version
+
+  • openai>=1.0.0
+    Error: Network timeout during download
+    Solution: Check internet connection and retry
+
+Conflicting packages detected:
+  • numpy==1.21.0 (incompatible with llama-index>=0.10.0)
+  • requests==2.25.0 (outdated, may cause security issues)
+
+Recommended actions:
+  1. Update requirements.txt with compatible versions
+  2. Check network connectivity
+  3. Verify Python version compatibility (3.11+ required)
+
+Rollback available: Yes
+Retry available: Yes (for network errors)
+```
+
+#### **User Recovery Options**
+- **Automatic rollback**: Clean removal of failed installation
+- **Manual retry**: Retry specific failed packages
+- **Conflict resolution**: Automatic version compatibility suggestions
+- **Alternative versions**: Suggest compatible package versions
+- **Expert mode**: Detailed debugging information for developers
+
+#### **Progress Monitoring Commands**
+```bash
+# Check installation progress
+agenthub progress "agentplug/scientific-paper-analyzer"
+
+# Pause ongoing installation
+agenthub pause "agentplug/scientific-paper-analyzer"
+
+# Resume paused installation
+agenthub resume "agentplug/scientific-paper-analyzer"
+
+# View detailed logs
+agenthub logs "agentplug/scientific-paper-analyzer"
+
+# Cancel and rollback
+agenthub cancel "agentplug/scientific-paper-analyzer"
 ```
 
 ## 🚀 **Implementation Roadmap with End-to-End Testing**

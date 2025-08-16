@@ -16,13 +16,14 @@
 class UVEnvironmentSetup:
     """Coordinate the complete UV-based isolated environment setup process for agents."""
 
-    def setup_uv_environment(self, agent_path: str, agent_config: AgentConfig) -> UVEnvironmentSetupResult:
+    def setup_uv_environment(self, agent_path: str, agent_config: AgentConfig, progress_callback=None) -> UVEnvironmentSetupResult:
         """
-        Set up a complete UV-based isolated environment for an agent.
+        Set up a complete UV-based isolated environment for an agent with progress tracking.
 
         Args:
             agent_path: Path to the agent directory
             agent_config: Parsed agent.yaml configuration
+            progress_callback: Optional callback for progress updates
 
         Returns:
             UVEnvironmentSetupResult with setup status and environment details
@@ -33,6 +34,18 @@ class UVEnvironmentSetup:
             PythonVersionError: If specified Python version is not available
             ResourceLimitError: If resource limits cannot be satisfied
         """
+        pass
+
+    def get_setup_progress(self, agent_name: str) -> SetupProgress:
+        """Get current setup progress for an agent."""
+        pass
+
+    def pause_setup(self, agent_name: str) -> bool:
+        """Pause ongoing setup process."""
+        pass
+
+    def resume_setup(self, agent_name: str) -> bool:
+        """Resume paused setup process."""
         pass
 
     def create_uv_project(self, agent_path: str, python_version: str) -> UVProjectResult:
@@ -52,13 +65,14 @@ class UVEnvironmentSetup:
         """
         pass
 
-    def install_uv_dependencies(self, agent_path: str, requirements_path: str) -> UVDependencyResult:
+    def install_uv_dependencies(self, agent_path: str, requirements_path: str, progress_callback=None) -> UVDependencyResult:
         """
-        Install dependencies using UV package manager.
+        Install dependencies using UV package manager with progress tracking.
 
         Args:
             agent_path: Path to the UV project directory
             requirements_path: Path to requirements.txt file
+            progress_callback: Optional callback for progress updates
 
         Returns:
             UVDependencyResult with installation status and details
@@ -68,6 +82,14 @@ class UVEnvironmentSetup:
             UVInstallationError: If dependency installation fails
             ConflictError: If dependency conflicts cannot be resolved
         """
+        pass
+
+    def get_installation_progress(self, agent_path: str) -> InstallationProgress:
+        """Get current installation progress for an agent."""
+        pass
+
+    def rollback_failed_installation(self, agent_path: str) -> RollbackResult:
+        """Rollback failed dependency installation and cleanup."""
         pass
 
     def validate_uv_environment(self, agent_path: str) -> UVEnvironmentValidationResult:
@@ -269,6 +291,20 @@ class UVDependencyResult:
     conflicts_resolved: List[str]
     warnings: List[str]
     errors: List[str]
+    failed_packages: List[FailedPackage]
+    installation_log: str
+    rollback_available: bool
+
+@dataclass
+class FailedPackage:
+    """Information about a failed package installation."""
+    package_name: str
+    version_attempted: str
+    error_type: str  # "version_conflict", "network_error", "compilation_error", "dependency_conflict"
+    error_message: str
+    conflicting_packages: List[str]
+    suggested_solutions: List[str]
+    can_retry: bool
 
 @dataclass
 class UVEnvironmentValidationResult:
@@ -313,6 +349,48 @@ class UVResourceLimits:
     timeout: Optional[int]  # seconds
     cpu_limit: Optional[str]  # e.g., "2", "50%"
     disk_limit: Optional[str]  # e.g., "1GB", "100MB"
+
+@dataclass
+class InstallationProgress:
+    """Progress tracking for agent installation."""
+    agent_name: str
+    current_step: str
+    step_number: int
+    total_steps: int
+    progress_percentage: float
+    current_package: Optional[str]
+    packages_installed: int
+    total_packages: int
+    start_time: datetime
+    estimated_remaining: Optional[float]  # seconds
+    status: str  # "running", "completed", "failed", "paused"
+
+@dataclass
+class RollbackResult:
+    """Result of rollback operation."""
+    success: bool
+    agent_path: str
+    cleaned_resources: List[str]
+    rollback_time: float
+    errors: List[str]
+    warnings: List[str]
+
+@dataclass
+class SetupProgress:
+    """Progress tracking for complete environment setup."""
+    agent_name: str
+    current_phase: str  # "discovery", "cloning", "config", "uv_setup", "dependencies", "validation"
+    phase_number: int
+    total_phases: int
+    overall_progress: float
+    current_step: str
+    step_progress: float
+    start_time: datetime
+    estimated_total_time: Optional[float]  # seconds
+    estimated_remaining: Optional[float]  # seconds
+    status: str  # "running", "paused", "completed", "failed"
+    current_operation: str
+    details: Dict[str, Any]
 ```
 
 ### **EnvironmentSetupResult Class**
