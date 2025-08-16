@@ -136,7 +136,8 @@ def info(agent_name: str):
         # Parse agent name
         if "/" not in agent_name:
             rprint(
-                "❌ [red]Agent name must be in format 'namespace/name' (e.g., 'agentplug/coding-agent')[/red]"
+                "❌ [red]Agent name must be in format 'namespace/name' "
+                "(e.g., 'agentplug/coding-agent')[/red]"
             )
             sys.exit(1)
 
@@ -156,17 +157,20 @@ def info(agent_name: str):
 
         # Display agent information
         rprint(
-            f"\n🔧 [bold cyan]Agent: {agent_name} v{agent_info.get('version', 'unknown')}[/bold cyan]"
+            f"\n🔧 [bold cyan]Agent: {agent_name} "
+            f"v{agent_info.get('version', 'unknown')}[/bold cyan]"
         )
         rprint("═" * 50)
 
         rprint(
-            f"📖 [bold]Description:[/bold] {agent_info.get('description', 'No description')}"
+            f"📖 [bold]Description:[/bold] "
+            f"{agent_info.get('description', 'No description')}"
         )
         rprint(f"👤 [bold]Author:[/bold] {agent_info.get('author', 'Unknown')}")
         rprint(f"📍 [bold]Location:[/bold] {agent_info.get('path', 'Unknown')}")
         rprint(
-            f"✅ [bold]Status:[/bold] {'Valid and ready' if agent_info.get('valid', False) else 'Invalid'}"
+            f"✅ [bold]Status:[/bold] "
+            f"{'Valid and ready' if agent_info.get('valid', False) else 'Invalid'}"
         )
 
         # Show methods
@@ -200,9 +204,41 @@ def info(agent_name: str):
         if methods:
             first_method = methods[0]
             rprint("\n💡 [bold]Example Usage:[/bold]")
-            rprint(
-                f'  [dim]agenthub exec {agent_name} {first_method} "{{\\"prompt\\": \\"your input\\"}}"[/dim]'
-            )
+
+            # Get the actual parameter names from the method definition
+            method_def = method_defs.get(first_method, {})
+            parameters = method_def.get("parameters", {})
+
+            if parameters:
+                # Use the first required parameter or first parameter available
+                param_name = None
+                for param, param_info in parameters.items():
+                    if isinstance(param_info, dict) and param_info.get(
+                        "required", True
+                    ):
+                        param_name = param
+                        break
+
+                if not param_name and parameters:
+                    # Fall back to first parameter if no required ones
+                    param_name = list(parameters.keys())[0]
+
+                if param_name:
+                    rprint(
+                        f"  [dim]agenthub exec {agent_name} {first_method} "
+                        f'"{{\\"{param_name}\\": \\"your input\\"}}"[/dim]'
+                    )
+                else:
+                    rprint(
+                        f"  [dim]agenthub exec {agent_name} {first_method} "
+                        f'"your input"[/dim]'
+                    )
+            else:
+                # No parameters defined, use simple input
+                rprint(
+                    f"  [dim]agenthub exec {agent_name} {first_method} "
+                    f'"your input"[/dim]'
+                )
 
     except Exception as e:
         rprint(f"❌ [red]Error getting agent info: {e}[/red]")
@@ -222,8 +258,10 @@ def exec(
     """Execute any agent method with full flexibility.
 
     Examples:
-      agenthub exec agentplug/coding-agent generate_code '{"prompt": "create hello world"}'
-      agenthub exec agentplug/analysis-agent analyze_text '{"text": "great product"}'
+      agenthub exec agentplug/coding-agent generate_code
+        '{"prompt": "create hello world"}'
+      agenthub exec agentplug/analysis-agent analyze_text
+        '{"text": "great product"}'
       agenthub exec agentplug/coding-agent generate_code --interactive
       agenthub exec agentplug/coding-agent generate_code "create a calculator"
     """
@@ -258,10 +296,12 @@ def exec(
                 rprint(f"❌ [red]JSON parsing failed: {e}[/red]")
                 rprint("💡 [yellow]Tip: Use simple text instead of JSON![/yellow]")
                 rprint(
-                    f'   [cyan]agenthub exec {agent_name} {method_name} "your simple text here"[/cyan]'
+                    f"   [cyan]agenthub exec {agent_name} {method_name} "
+                    f'"your simple text here"[/cyan]'
                 )
                 rprint(
-                    f"   [cyan]agenthub exec {agent_name} {method_name} --interactive[/cyan]"
+                    f"   [cyan]agenthub exec {agent_name} {method_name} "
+                    f"--interactive[/cyan]"
                 )
                 sys.exit(1)
 
@@ -270,13 +310,16 @@ def exec(
             rprint("❌ [red]No parameters provided[/red]")
             rprint("💡 [yellow]Choose your preferred style:[/yellow]")
             rprint(
-                f'   [cyan]JSON:[/cyan] agenthub exec {agent_name} {method_name} \'{{"key": "value"}}\''
+                f"   [cyan]JSON:[/cyan] agenthub exec {agent_name} {method_name} "
+                f'\'{{"key": "value"}}\''
             )
             rprint(
-                f'   [cyan]Simple:[/cyan] agenthub exec {agent_name} {method_name} "your text here"'
+                f"   [cyan]Simple:[/cyan] agenthub exec {agent_name} {method_name} "
+                f'"your text here"'
             )
             rprint(
-                f"   [cyan]Interactive:[/cyan] agenthub exec {agent_name} {method_name} --interactive"
+                f"   [cyan]Interactive:[/cyan] agenthub exec {agent_name} "
+                f"{method_name} --interactive"
             )
             sys.exit(1)
 
@@ -305,7 +348,8 @@ def exec(
                         # Truncate long text results
                         rprint(f"  [cyan]{key}:[/cyan] {value[:200]}...")
                         rprint(
-                            f"  [dim](truncated, full result has {len(value)} characters)[/dim]"
+                            f"  [dim](truncated, full result has {len(value)} "
+                            f"characters)[/dim]"
                         )
                     else:
                         rprint(f"  [cyan]{key}:[/cyan] {value}")
@@ -317,7 +361,8 @@ def exec(
                     )
                     rprint(agent_result[:500] + "...")
                     rprint(
-                        f"[dim](truncated, full result has {len(agent_result)} characters)[/dim]"
+                        f"[dim](truncated, full result has {len(agent_result)} "
+                        f"characters)[/dim]"
                     )
                 else:
                     rprint("\n📄 [bold]Result:[/bold]")
@@ -418,7 +463,8 @@ def validate():
             rprint("\n🚀 [green]System ready for production use![/green]")
         else:
             rprint(
-                f"\n⚠️  [yellow]{len(agents) - valid_count} agents need attention[/yellow]"
+                f"\n⚠️  [yellow]{len(agents) - valid_count} agents "
+                f"need attention[/yellow]"
             )
 
     except Exception as e:

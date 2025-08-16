@@ -1,41 +1,37 @@
-#!/usr/bin/env python3
-"""
-Simple Example: Show how easy AgentHub is to use.
-
-Just 3 lines of code to get AI-generated backpropagation!
-"""
-
 import sys
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agentmanager.core.agent_loader import AgentLoader  # noqa: E402
-from agentmanager.core.agent_wrapper import AgentWrapper  # noqa: E402
-from agentmanager.runtime.agent_runtime import AgentRuntime  # noqa: E402
-from agentmanager.storage.local_storage import LocalStorage  # noqa: E402
+import agentmanager as amg
 
 
 def main():
-    """Super simple: 3 lines to get AI-generated code!"""
-    print("🚀 AgentHub: Super Simple to Use!")
-    print("=" * 40)
+    # Load agents
+    coding_agent = amg.load_agent("agentplug/coding-agent")
+    analysis_agent = amg.load_agent("agentplug/analysis-agent")
 
-    # Load agent (3 lines - super simple!)
-    storage = LocalStorage()
-    loader = AgentLoader(storage)
-    agent = AgentWrapper(
-        loader.load_agent("agentplug", "coding-agent"), runtime=AgentRuntime(storage)
+    # Generate code
+    code = coding_agent.generate_code(
+        "Create a Python function that calculates compound interest "
+        "with monthly contributions"
+    )
+    print("💰 Financial Calculator Code:")
+    print(code)
+
+    # Analyze feedback
+    feedback = (
+        "The new mobile app is fantastic! The user interface is intuitive and "
+        "the performance is much better than the previous version. However, I "
+        "noticed some issues with the payment processing - it sometimes takes "
+        "3-4 attempts to complete a transaction. The customer support team "
+        "was very helpful when I contacted them about this issue. Overall, "
+        "I'm satisfied but hope the payment bugs get fixed soon."
     )
 
-    # Generate code (1 line)
-    result = agent.generate_code(prompt="Create a simple backpropagation algorithm")
-
-    # Use the code (1 line)
-    print(f"✅ Generated {len(result['result'])} chars of backpropagation code!")
-    print("\n" + result["result"])
+    insights = analysis_agent.analyze_text(feedback)
+    print("\n📊 Customer Feedback Analysis:")
+    print(insights)
 
 
 if __name__ == "__main__":

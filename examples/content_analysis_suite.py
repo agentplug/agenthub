@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 """
 Content Analysis Suite: Understand your content at scale.
-
-USER PAIN POINT: "I have tons of text content (reviews, feedback, documents)
-but no time to read and analyze it all manually."
-
-SOLUTION: AgentHub's analysis agent processes any text content and provides
-instant insights - sentiment, summaries, key themes, and actionable recommendations.
 """
 
 import sys
 from pathlib import Path
 
-# Add the project root to Python path so we can import agentmanager
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agentmanager.runtime.agent_runtime import AgentRuntime  # noqa: E402
-from agentmanager.storage.local_storage import LocalStorage  # noqa: E402
+import agentmanager as amg
 
 
 def main():
@@ -27,13 +18,12 @@ def main():
     print("Transform overwhelming text into actionable insights!")
     print()
 
-    # Initialize the system
-    storage = LocalStorage()
-    runtime = AgentRuntime(storage=storage)
-
-    # Check if analysis agent is available
-    if not storage.agent_exists("agentplug", "analysis-agent"):
-        print("❌ Analysis agent not found! Please set up seed agents first.")
+    # Load analysis agent
+    try:
+        analysis_agent = amg.load_agent("agentplug/analysis-agent")
+    except Exception as e:
+        print(f"❌ Analysis agent not found: {e}")
+        print("💡 Please set up seed agents first.")
         return
 
     # Real-world content analysis scenarios
@@ -91,76 +81,65 @@ def main():
         try:
             # Analyze the content
             print("   🔍 Analyzing content...")
-            result = runtime.execute_agent(
-                "agentplug",
-                "analysis-agent",
-                "analyze_text",
-                {
-                    "text": scenario["content"].strip(),
-                    "analysis_type": scenario["analysis_type"],
-                },
+            result = analysis_agent.analyze_text(
+                text=scenario["content"].strip(),
+                analysis_type=scenario["analysis_type"],
             )
 
             if "result" in result:
-                exec_time = result.get("execution_time", 0)
-                print(f"   ✅ Analysis completed in {exec_time:.1f}s")
-                print()
+                print("   ✅ Analysis complete!")
+                print("   📊 Insights:")
+                insights = result["result"]
 
-                analysis = result["result"]
-                if isinstance(analysis, dict):
-                    print("   📋 Analysis Results:")
-                    print("   " + "=" * 25)
-                    for key, value in analysis.items():
-                        if key != "result":
-                            print(f"   {key.title()}: {value}")
-
-                    if "result" in analysis:
-                        print(f"   Detailed Analysis: {analysis['result'][:200]}...")
+                # Format insights nicely
+                if isinstance(insights, dict):
+                    for key, value in insights.items():
+                        if key == "result":
+                            print(f"      {value}")
+                        else:
+                            print(f"      {key}: {value}")
                 else:
-                    print(f"   📋 Analysis: {str(analysis)[:300]}...")
+                    print(f"      {insights}")
 
                 print()
-
-                # Get a summary for longer content
-                if len(scenario["content"]) > 200:
-                    print("   📝 Generating executive summary...")
-                    summary_result = runtime.execute_agent(
-                        "agentplug",
-                        "analysis-agent",
-                        "summarize_content",
-                        {"content": scenario["content"].strip()},
-                    )
-
-                    if "result" in summary_result:
-                        summary = summary_result["result"]
-                        print(f"   📊 Executive Summary: {summary}")
+                print("   💡 Business Impact:")
+                print(f"      {scenario['business_value']}")
 
             else:
-                print(f"   ❌ Error: {result.get('error', 'Unknown error')}")
+                print(f"   ❌ Analysis failed: {result.get('error')}")
 
         except Exception as e:
-            print(f"   💥 Exception: {e}")
+            print(f"   💥 Error during analysis: {e}")
 
         print()
         input("   Press Enter to continue to next scenario...")
         print()
 
-    # Show the business impact
-    print("💼 BUSINESS IMPACT:")
-    print("=" * 20)
-    print("⚡ Instant Analysis - Process thousands of documents in minutes")
-    print("🎯 Actionable Insights - Not just data, but recommendations")
-    print("📈 Scale Operations - Handle 10x more content with same team")
-    print("⏰ Time Savings - Hours of manual reading reduced to seconds")
-    print("🔍 Consistent Quality - No human fatigue or oversight")
+    # Summary of capabilities
+    print("🎯 CONTENT ANALYSIS CAPABILITIES DEMONSTRATED:")
+    print("=" * 50)
+    print("✅ Sentiment analysis for customer feedback")
+    print("✅ Urgency detection for support tickets")
+    print("✅ Meeting summarization with action items")
+    print("✅ Multi-format content processing")
+    print("✅ Instant insights and recommendations")
+    print("✅ Scalable text analysis")
     print()
-    print("💰 ROI EXAMPLES:")
-    print("• Customer Support: 50% faster ticket resolution")
-    print("• Content Marketing: Analyze competitor content in minutes")
-    print("• Product Management: Process user feedback 10x faster")
-    print("• Sales: Prioritize leads based on inquiry sentiment")
-    print()
-    print("🚀 AgentHub transforms your content into competitive advantage!")
+
+    print("💼 BUSINESS VALUE:")
+    print("🚀 Process thousands of documents in minutes vs hours")
+    print("📊 Extract actionable insights, not just data")
+    print("⚡ Consistent quality without human fatigue")
+    print("📈 Scale content operations 10x with same team")
+    print("🎯 Focus on high-value analysis tasks")
+
+    print("\n🚀 MORE USE CASES:")
+    print("• Competitive content analysis")
+    print("• Legal document review")
+    print("• Research paper summarization")
+    print("• Social media sentiment tracking")
+    print("• Product feedback categorization")
+    print("• Compliance document analysis")
 
 
 if __name__ == "__main__":

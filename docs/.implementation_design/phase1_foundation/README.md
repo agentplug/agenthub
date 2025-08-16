@@ -10,18 +10,40 @@
 
 ## 🎯 **Phase 1 Overview**
 
-Phase 1 is the **foundation phase** that builds the core runtime system capable of executing pre-created `agentplug` agents. This phase establishes the fundamental architecture that all subsequent phases build upon.
+Phase 1 is the **foundation phase** that builds the core runtime system capable of loading and executing pre-created `agentplug` agents. This phase establishes the fundamental architecture that all subsequent phases build upon.
+
+### **Simple Usage Example**
+```python
+import agentmanager
+
+# Load a pre-created agent
+coding_agent = agentmanager.load_agent("agentplug/coding-agent")
+
+# Execute agent methods directly
+result = coding_agent.generate_code("Create a hello world function")
+print(result)
+
+# Load another agent
+analysis_agent = agentmanager.load_agent("agentplug/analysis-agent")
+
+# Use different agent methods
+insights = analysis_agent.analyze_data("Sample data: 1, 2, 3, 4, 5")
+print(insights)
+```
+
+**That's it!** Simple, clean, and intuitive. No complex installation, no registry lookups - just load and use.
 
 ### **Phase Goal**
 Build a working system where developers can:
-1. **Execute** pre-created `agentplug` agents
-2. **Test** agent functionality through CLI
-3. **Validate** agent interfaces and behavior
+1. **Load** pre-created `agentplug` agents with `agentmanager.load_agent()`
+2. **Execute** agent methods directly on loaded agent objects
+3. **Test** agent functionality through CLI
 4. **Build** foundation for Phase 2 auto-installation
 
 ### **Success Criteria**
-- ✅ Can execute `agentplug/coding-agent` successfully
-- ✅ Can execute `agentplug/analysis-agent` successfully
+- ✅ Can load `agentplug/coding-agent` with `agentmanager.load_agent()`
+- ✅ Can load `agentplug/analysis-agent` with `agentmanager.load_agent()`
+- ✅ Can execute agent methods directly on loaded objects
 - ✅ Basic agent runtime working
 - ✅ Local storage system working
 - ✅ Foundation ready for Phase 2
@@ -414,6 +436,7 @@ Phase 1 cannot succeed without working seed agents to test with. These agents se
 - ✅ CLI system that provides testing interface
 
 ### **Testable Functionality**
+- ✅ Can load agents with `agentmanager.load_agent()`
 - ✅ Can execute `agentplug/coding-agent` methods
 - ✅ Can execute `agentplug/analysis-agent` methods
 - ✅ Can list and inspect installed agents
@@ -476,13 +499,15 @@ Phase 1 cannot succeed without working seed agents to test with. These agents se
 ## 🎉 **Phase 1 Success Celebration**
 
 ### **What Success Looks Like**
-- Developers can execute agentplug agents successfully
+- Developers can load agentplug agents with simple `agentmanager.load_agent()` calls
+- Agent methods execute directly on loaded objects
 - CLI provides intuitive testing interface
 - All modules work together seamlessly
 - Foundation is solid for Phase 2
 
 ### **Success Metrics**
-- ✅ 100% of agentplug agents execute successfully
+- ✅ 100% of agentplug agents load successfully with `agentmanager.load_agent()`
+- ✅ 100% of agent methods execute successfully on loaded objects
 - ✅ CLI commands work without errors
 - ✅ Module integration is seamless
 - ✅ Performance meets Phase 1 requirements

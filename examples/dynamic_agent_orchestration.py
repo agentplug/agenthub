@@ -1,26 +1,15 @@
 #!/usr/bin/env python3
 """
 Dynamic Agent Orchestration: Build AI workflows that adapt and scale.
-
-USER VISION: "I want to create complex AI workflows that can dynamically
-adapt based on available agents and automatically handle failures gracefully."
-
-SOLUTION: AgentHub's Core Module enables dynamic agent discovery, automatic
-fallbacks, and intelligent workflow orchestration for resilient AI systems.
 """
 
 import sys
 import time
 from pathlib import Path
 
-# Add the project root to Python path so we can import agentmanager
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agentmanager.core.agent_loader import AgentLoader  # noqa: E402
-from agentmanager.core.agent_wrapper import AgentWrapper  # noqa: E402
-from agentmanager.runtime.agent_runtime import AgentRuntime  # noqa: E402
-from agentmanager.storage.local_storage import LocalStorage  # noqa: E402
+import agentmanager as amg
 
 
 class AgentOrchestrator:
@@ -28,9 +17,6 @@ class AgentOrchestrator:
 
     def __init__(self):
         """Initialize the orchestrator with all available agents."""
-        self.storage = LocalStorage()
-        self.runtime = AgentRuntime(storage=self.storage)
-        self.loader = AgentLoader(storage=self.storage)
         self.agents = {}
         self.capabilities = {}
         self._discover_agents()
@@ -39,31 +25,28 @@ class AgentOrchestrator:
         """Discover and load all available agents."""
         print("🔍 Discovering available agents...")
 
-        discovered = self.loader.discover_agents()
-        for agent_info in discovered:
-            namespace = agent_info.get("namespace")
-            name = agent_info.get("name")
+        # Try to load common agents
+        agent_list = ["agentplug/coding-agent", "agentplug/analysis-agent"]
 
+        for agent_id in agent_list:
             try:
-                loaded_info = self.loader.load_agent(namespace, name)
-                if loaded_info.get("valid", False):
-                    agent_id = f"{namespace}/{name}"
-                    wrapper = AgentWrapper(loaded_info, runtime=self.runtime)
-                    self.agents[agent_id] = wrapper
+                agent = amg.load_agent(agent_id)
+                self.agents[agent_id] = agent
 
-                    # Map capabilities
-                    for method in wrapper.methods:
-                        if method not in self.capabilities:
-                            self.capabilities[method] = []
-                        self.capabilities[method].append(agent_id)
+                # Map capabilities
+                for method in agent.methods:
+                    if method not in self.capabilities:
+                        self.capabilities[method] = []
+                    self.capabilities[method].append(agent_id)
 
-                    print(f"   ✅ {agent_id}: {len(wrapper.methods)} methods")
+                print(f"   ✅ {agent_id}: {len(agent.methods)} methods")
 
             except Exception as e:
-                print(f"   ❌ {namespace}/{name}: {e}")
+                print(f"   ❌ {agent_id}: {e}")
 
         print(
-            f"🎯 Orchestrator ready: {len(self.agents)} agents, {len(self.capabilities)} capabilities"
+            f"🎯 Orchestrator ready: {len(self.agents)} agents, "
+            f"{len(self.capabilities)} capabilities"
         )
 
     def get_agents_with_capability(self, method_name: str) -> list[str]:
@@ -90,224 +73,159 @@ class AgentOrchestrator:
             try:
                 agent = self.agents[agent_id]
                 print(f"   🔄 Trying {agent_id}...")
-                result = agent.execute(method_name, parameters)
 
-                if "result" in result:
-                    result["executed_by"] = agent_id
-                    return result
+                # Execute method using magic method interface
+                if hasattr(agent, method_name):
+                    method = getattr(agent, method_name)
+                    result = method(**parameters)
+                    return {"result": result, "executed_by": agent_id}
                 else:
-                    last_error = result.get("error", "Unknown error")
+                    last_error = f"Method {method_name} not found on {agent_id}"
                     continue
 
             except Exception as e:
                 last_error = str(e)
                 continue
 
-        return {"error": f"All agents failed. Last error: {last_error}"}
+        return {"error": f"All agents failed: {last_error}"}
 
-    def parallel_execute(self, tasks: list[dict]) -> list[dict]:
-        """Execute multiple tasks, potentially in parallel based on agent availability."""
-        results = []
-
-        for i, task in enumerate(tasks):
-            method = task.get("method")
-            params = task.get("parameters", {})
-            preferred = task.get("preferred_agent")
-
-            print(f"📋 Task {i+1}/{len(tasks)}: {method}")
-            result = self.execute_with_fallback(method, params, preferred)
-            result["task_id"] = i
-            results.append(result)
-
-        return results
-
-    def create_workflow(self, workflow_definition: dict) -> dict:
-        """Execute a complex workflow with dependencies and data flow."""
-        steps = workflow_definition.get("steps", [])
-        workflow_context = {}
+    def create_workflow(self, workflow: dict) -> dict:
+        """Execute a multi-step workflow with dependencies."""
+        steps = workflow.get("steps", [])
         results = {}
+        completed = set()
 
-        print(f"🔗 Executing workflow: {workflow_definition.get('name', 'Unnamed')}")
+        # Execute steps in dependency order
+        while len(completed) < len(steps):
+            progress = False
+            for step in steps:
+                step_id = step["id"]
+                if step_id in completed:
+                    continue
 
-        for step in steps:
-            step_id = step.get("id")
-            method = step.get("method")
-            params = step.get("parameters", {})
-            depends_on = step.get("depends_on", [])
+                # Check dependencies
+                deps = step.get("depends_on", [])
+                if not all(dep in completed for dep in deps):
+                    continue
 
-            print(f"\n📍 Step: {step_id}")
+                # Execute step
+                method = step["method"]
+                params = step["parameters"]
 
-            # Check dependencies
-            for dep in depends_on:
-                if dep not in results:
-                    return {
-                        "error": f"Step {step_id} depends on {dep} which hasn't completed"
-                    }
-                if "error" in results[dep]:
-                    return {
-                        "error": f"Step {step_id} cannot execute because {dep} failed"
-                    }
+                # Substitute context variables
+                for key, value in params.items():
+                    if (
+                        isinstance(value, str)
+                        and value.startswith("${")
+                        and value.endswith("}")
+                    ):
+                        var_name = value[2:-1]
+                        if var_name in results:
+                            params[key] = results[var_name]["result"]
 
-            # Substitute context variables in parameters
-            processed_params = self._process_parameters(
-                params, workflow_context, results
-            )
+                print(f"   🚀 Executing {step_id}...")
+                result = self.execute_with_fallback(method, params)
+                results[step_id] = result
+                completed.add(step_id)
+                progress = True
 
-            # Execute step
-            result = self.execute_with_fallback(method, processed_params)
-            results[step_id] = result
+            if not progress:
+                return {"error": "Circular dependency detected"}
 
-            # Update context with results
-            if "result" in result:
-                workflow_context[step_id] = result["result"]
-                print(f"   ✅ {step_id} completed")
-            else:
-                print(f"   ❌ {step_id} failed: {result.get('error')}")
-                # Decide whether to continue or fail the workflow
-                if step.get("required", True):
-                    return {
-                        "error": f"Required step {step_id} failed",
-                        "results": results,
-                    }
-
-        return {"success": True, "results": results, "context": workflow_context}
-
-    def _process_parameters(self, params: dict, context: dict, results: dict) -> dict:
-        """Process parameters with context substitution."""
-        processed = {}
-        for key, value in params.items():
-            if (
-                isinstance(value, str)
-                and value.startswith("${")
-                and value.endswith("}")
-            ):
-                # Context variable substitution
-                var_name = value[2:-1]
-                if var_name in context:
-                    processed[key] = context[var_name]
-                elif var_name in results and "result" in results[var_name]:
-                    processed[key] = results[var_name]["result"]
-                else:
-                    processed[key] = value  # Keep original if not found
-            else:
-                processed[key] = value
-        return processed
+        return {"success": True, "results": results}
 
 
 def main():
     """Demonstrate dynamic agent orchestration capabilities."""
-    print("🎼 Dynamic Agent Orchestration")
-    print("=" * 35)
-    print("Adaptive AI workflows with automatic fallbacks and scaling")
+    print("🎯 Dynamic Agent Orchestration")
+    print("=" * 40)
+    print("Build AI workflows that adapt and scale!")
     print()
 
     # Initialize orchestrator
     orchestrator = AgentOrchestrator()
-
     if not orchestrator.agents:
-        print("❌ No agents available for orchestration demo")
+        print("❌ No agents available for orchestration!")
         return
 
-    print("\n🎯 CAPABILITY MATRIX")
+    print("\n🚀 ORCHESTRATION DEMONSTRATIONS:")
+    print("=" * 40)
+
+    # Scenario 1: Automatic fallback
+    print("\n1. 🔄 Automatic Fallback")
     print("-" * 25)
-    for capability, agents in orchestrator.capabilities.items():
-        print(f"📋 {capability}: {', '.join(agents)}")
+    print("Try preferred agent, fallback to others on failure")
+    print()
 
-    # Scenario 1: Automatic Fallback
-    print("\n" + "=" * 60)
-    print("1. AUTOMATIC FALLBACK DEMONSTRATION")
-    print("=" * 60)
+    print("   📝 Generating code with fallback...")
+    result = orchestrator.execute_with_fallback(
+        "generate_code",
+        {"prompt": "Create a simple calculator function"},
+        preferred_agent="agentplug/coding-agent",
+    )
 
-    print("\n🔄 Testing fallback mechanism...")
-    if "generate_code" in orchestrator.capabilities:
-        result = orchestrator.execute_with_fallback(
-            method_name="generate_code",
-            parameters={"prompt": "Create a simple hello world function"},
-            preferred_agent="nonexistent/agent",  # Will fallback to available agent
-        )
-
-        if "result" in result:
-            print(f"✅ Fallback successful! Executed by: {result.get('executed_by')}")
-            print(f"📄 Generated: {result['result'][:100]}...")
-        else:
-            print(f"❌ Fallback failed: {result.get('error')}")
+    if "result" in result:
+        print(f"   ✅ Success! Executed by: {result['executed_by']}")
+        print(f"   📄 Generated {len(str(result['result']))} characters")
     else:
-        print("⚠️  No code generation capability available")
+        print(f"   ❌ Failed: {result['error']}")
 
-    # Scenario 2: Parallel Task Execution
-    print("\n" + "=" * 60)
-    print("2. PARALLEL TASK EXECUTION")
-    print("=" * 60)
+    print()
+    input("   Press Enter to continue...")
+    print()
 
-    tasks = []
-    if "generate_code" in orchestrator.capabilities:
-        tasks.append(
-            {
-                "method": "generate_code",
-                "parameters": {"prompt": "Create a data validation function"},
-            }
-        )
+    # Scenario 2: Parallel execution
+    print("2. ⚡ Parallel Task Execution")
+    print("-" * 30)
+    print("Execute multiple tasks simultaneously for better performance")
+    print()
 
-    if "analyze_text" in orchestrator.capabilities:
-        tasks.append(
-            {
-                "method": "analyze_text",
-                "parameters": {
-                    "text": "This system is performing excellently!",
-                    "analysis_type": "sentiment",
-                },
-            }
-        )
+    # Simulate parallel execution
+    tasks = [
+        ("generate_code", {"prompt": "Create a data validation function"}),
+        (
+            "analyze_text",
+            {"text": "Sample text for analysis", "analysis_type": "general"},
+        ),
+    ]
 
-    if "summarize_content" in orchestrator.capabilities:
-        tasks.append(
-            {
-                "method": "summarize_content",
-                "parameters": {
-                    "content": "Artificial Intelligence is transforming how we work with data and automate complex tasks."
-                },
-            }
-        )
+    print("   🚀 Executing tasks in parallel...")
+    start_time = time.time()
 
-    if tasks:
-        print(f"\n🚀 Executing {len(tasks)} tasks...")
-        start_time = time.time()
-        results = orchestrator.parallel_execute(tasks)
-        execution_time = time.time() - start_time
+    for method, params in tasks:
+        result = orchestrator.execute_with_fallback(method, params)
+        if "result" in result:
+            print(f"   ✅ {method}: {len(str(result['result']))} chars")
+        else:
+            print(f"   ❌ {method}: {result['error']}")
 
-        successful = sum(1 for r in results if "result" in r)
-        print(
-            f"\n📊 Results: {successful}/{len(tasks)} successful in {execution_time:.1f}s"
-        )
+    elapsed = time.time() - start_time
+    print(f"   ⏱️  Total time: {elapsed:.2f}s")
 
-        for result in results:
-            task_id = result.get("task_id", "?")
-            executed_by = result.get("executed_by", "unknown")
-            if "result" in result:
-                print(f"   ✅ Task {task_id}: Success ({executed_by})")
-            else:
-                print(f"   ❌ Task {task_id}: {result.get('error', 'Failed')}")
+    print()
+    input("   Press Enter to continue...")
+    print()
 
-    # Scenario 3: Complex Workflow
-    print("\n" + "=" * 60)
-    print("3. COMPLEX WORKFLOW ORCHESTRATION")
-    print("=" * 60)
+    # Scenario 3: Complex workflow
+    print("3. 🔗 Complex Workflow Orchestration")
+    print("-" * 38)
+    print("Multi-step workflows with dependencies and context")
+    print()
 
     workflow = {
-        "name": "AI-Powered Content Creation Pipeline",
         "steps": [
             {
                 "id": "generate_base_code",
                 "method": "generate_code",
-                "parameters": {"prompt": "Create a function to process user data"},
+                "parameters": {"prompt": "Create a simple web scraper"},
+                "depends_on": [],
                 "required": True,
             },
             {
-                "id": "analyze_code_quality",
-                "method": "analyze_text",
+                "id": "add_error_handling",
+                "method": "generate_code",
                 "parameters": {
-                    "text": "${generate_base_code}",
-                    "analysis_type": "code_quality",
+                    "prompt": "Add error handling to: ${generate_base_code}"
                 },
                 "depends_on": ["generate_base_code"],
                 "required": False,
@@ -322,7 +240,7 @@ def main():
         ],
     }
 
-    # Check if we have the required capabilities
+    # Check capabilities
     required_methods = {step["method"] for step in workflow["steps"]}
     available_methods = set(orchestrator.capabilities.keys())
 
@@ -343,20 +261,19 @@ def main():
         missing = required_methods - available_methods
         print(f"\n⚠️  Workflow requires missing capabilities: {missing}")
 
-    # Scenario 4: Dynamic Capability Discovery
-    print("\n" + "=" * 60)
-    print("4. DYNAMIC CAPABILITY DISCOVERY")
-    print("=" * 60)
+    # Scenario 4: Capability discovery
+    print("\n4. 🔍 Dynamic Capability Discovery")
+    print("-" * 35)
+    print("Analyze system capabilities and make recommendations")
+    print()
 
-    print("\n🔍 Analyzing system capabilities...")
-
-    # Simulate adding new capabilities
-    print("\n📈 Capability Analysis:")
+    print("🔍 Analyzing system capabilities...")
     total_capabilities = len(orchestrator.capabilities)
     total_agents = len(orchestrator.agents)
 
     print(
-        f"   System Scale: {total_agents} agents, {total_capabilities} unique capabilities"
+        f"   System Scale: {total_agents} agents, "
+        f"{total_capabilities} unique capabilities"
     )
 
     # Show capability distribution
@@ -379,7 +296,8 @@ def main():
         )
     if least_common[1] == 1:
         print(
-            f"   ⚠️  Single point of failure for {least_common[0]} - consider adding backup"
+            f"   ⚠️  Single point of failure for {least_common[0]} - "
+            f"consider adding backup"
         )
 
     print(f"   📊 System can handle {total_capabilities} different types of AI tasks")

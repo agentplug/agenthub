@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 """
 Code Generation Workflow: From idea to implementation in seconds.
-
-USER PAIN POINT: "I need to quickly prototype code but I'm not sure about syntax,
-best practices, or how to structure the solution."
-
-SOLUTION: AgentHub's coding agent generates clean, documented code with explanations,
-turning your ideas into working implementations instantly.
 """
 
 import sys
 from pathlib import Path
 
-# Add the project root to Python path so we can import agentmanager
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agentmanager.runtime.agent_runtime import AgentRuntime  # noqa: E402
-from agentmanager.storage.local_storage import LocalStorage  # noqa: E402
+import agentmanager as amg
 
 
 def main():
@@ -27,13 +18,12 @@ def main():
     print("Transform your ideas into working code in seconds!")
     print()
 
-    # Initialize the system
-    storage = LocalStorage()
-    runtime = AgentRuntime(storage=storage)
-
-    # Check if coding agent is available
-    if not storage.agent_exists("agentplug", "coding-agent"):
-        print("❌ Coding agent not found! Please set up seed agents first.")
+    # Load coding agent
+    try:
+        coding_agent = amg.load_agent("agentplug/coding-agent")
+    except Exception as e:
+        print(f"❌ Coding agent not found: {e}")
+        print("💡 Please set up seed agents first.")
         return
 
     # Real-world scenarios users face daily
@@ -67,16 +57,10 @@ def main():
         try:
             # Generate code solution
             print("   🔧 Generating solution...")
-            result = runtime.execute_agent(
-                "agentplug",
-                "coding-agent",
-                "generate_code",
-                {"prompt": scenario["prompt"]},
-            )
+            result = coding_agent.generate_code(prompt=scenario["prompt"])
 
             if "result" in result:
-                exec_time = result.get("execution_time", 0)
-                print(f"   ✅ Generated in {exec_time:.1f}s")
+                print("   ✅ Code generated successfully!")
 
                 # Show first part of generated code
                 code = result["result"]
@@ -95,39 +79,54 @@ def main():
 
                 # Get explanation
                 print("   💭 Getting code explanation...")
-                explanation_result = runtime.execute_agent(
-                    "agentplug", "coding-agent", "explain_code", {"code": code}
-                )
+                explanation_result = coding_agent.explain_code(code=code)
 
                 if "result" in explanation_result:
                     explanation = explanation_result["result"]
-                    # Show brief explanation
-                    print(f"   📚 Explanation: {explanation[:200]}...")
+                    print("   📚 Code Explanation:")
+                    print("   " + "-" * 25)
+                    print(f"   {explanation}")
+                    print("   " + "-" * 25)
+                else:
+                    print(
+                        f"   ❌ Explanation failed: {explanation_result.get('error')}"
+                    )
 
             else:
-                print(f"   ❌ Error: {result.get('error', 'Unknown error')}")
+                print(f"   ❌ Code generation failed: {result.get('error')}")
 
         except Exception as e:
-            print(f"   💥 Exception: {e}")
+            print(f"   💥 Error during code generation: {e}")
 
         print()
         input("   Press Enter to continue to next scenario...")
         print()
 
-    # Summary of value delivered
-    print("🎯 VALUE DELIVERED:")
-    print("=" * 20)
-    print("✅ Instant code generation - no more blank page syndrome")
-    print("✅ Best practices built-in - secure, maintainable code")
-    print("✅ Complete with explanations - learn while you build")
-    print("✅ Multiple scenarios covered - from APIs to data processing")
-    print("✅ Production-ready quality - not just snippets")
+    # Summary of capabilities
+    print("🎯 CODE GENERATION CAPABILITIES DEMONSTRATED:")
+    print("=" * 50)
+    print("✅ API client creation with error handling")
+    print("✅ Data processing pipelines with pandas")
+    print("✅ Input validation systems with security")
+    print("✅ Clean, documented code generation")
+    print("✅ Code explanations and best practices")
+    print("✅ Multiple programming languages support")
     print()
-    print("💰 TIME SAVED: Hours of coding, research, and debugging")
-    print("🛡️  RISK REDUCED: Following security and performance best practices")
-    print("📈 PRODUCTIVITY: From idea to implementation in under 30 seconds")
-    print()
-    print("🚀 AgentHub turns you into a coding powerhouse!")
+
+    print("💼 BUSINESS VALUE:")
+    print("🚀 Transform ideas into working code in seconds")
+    print("⚡ Follow security and performance best practices automatically")
+    print("🔧 Eliminate blank page syndrome and reduce development time")
+    print("📚 Get explanations to learn while building")
+    print("⏰ Save hours of coding, research, and debugging time")
+
+    print("\n🚀 MORE USE CASES:")
+    print("• Database query builders")
+    print("• Configuration file generators")
+    print("• Test case generation")
+    print("• Documentation templates")
+    print("• Deployment scripts")
+    print("• Data transformation functions")
 
 
 if __name__ == "__main__":

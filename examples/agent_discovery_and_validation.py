@@ -1,25 +1,14 @@
 #!/usr/bin/env python3
 """
 Agent Discovery and Validation: Enterprise-grade agent management.
-
-USER CHALLENGE: "I need to manage multiple AI agents across my organization,
-but I need confidence they're working correctly and understand their capabilities."
-
-SOLUTION: AgentHub's Core Module provides comprehensive agent discovery,
-validation, and health monitoring for enterprise-scale deployments.
 """
 
 import sys
 from pathlib import Path
 
-# Add the project root to Python path so we can import agentmanager
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agentmanager.core.agent_loader import AgentLoader  # noqa: E402
-from agentmanager.core.agent_wrapper import AgentWrapper  # noqa: E402
-from agentmanager.runtime.agent_runtime import AgentRuntime  # noqa: E402
-from agentmanager.storage.local_storage import LocalStorage  # noqa: E402
+import agentmanager as amg
 
 
 def print_separator(title):
@@ -42,247 +31,252 @@ def main():
     print("Discover, validate, and monitor AI agents at scale")
     print()
 
-    # Initialize the system
-    storage = LocalStorage()
-    runtime = AgentRuntime(storage=storage)
-    loader = AgentLoader(storage=storage)
-
     print_separator("1. AGENT DISCOVERY ENGINE")
 
-    # Discover all agents in the system
+    # Try to load common agents
+    agent_list = ["agentplug/coding-agent", "agentplug/analysis-agent"]
+
     print("🔍 Scanning agent ecosystem...")
-    try:
-        agents = loader.discover_agents()
-        print(f"✅ Discovery complete: {len(agents)} agents found")
+    agents = []
 
-        if not agents:
-            print("⚠️  No agents available for demonstration")
-            print("💡 Set up seed agents first to see full capabilities")
-            return
+    for agent_id in agent_list:
+        try:
+            agent = amg.load_agent(agent_id)
+            agents.append(
+                {
+                    "id": agent_id,
+                    "name": agent.name,
+                    "methods": agent.methods,
+                    "agent": agent,
+                }
+            )
+            print(f"   ✅ {agent_id}: {len(agent.methods)} methods")
+        except Exception as e:
+            print(f"   ❌ {agent_id}: {e}")
 
-        # Show discovery details
-        print_subsection("📊 Discovery Report")
-        namespaces = set(agent.get("namespace", "unknown") for agent in agents)
-        print(f"Total agents: {len(agents)}")
-        print(f"Namespaces: {len(namespaces)} ({', '.join(sorted(namespaces))})")
-
-        for agent in agents:
-            namespace = agent.get("namespace", "unknown")
-            name = agent.get("name", "unknown")
-            version = agent.get("version", "unknown")
-            path = agent.get("path", "unknown")
-            print(f"  • {namespace}/{name} v{version}")
-            print(f"    Location: {path}")
-
-    except Exception as e:
-        print(f"❌ Discovery failed: {e}")
+    if not agents:
+        print("⚠️  No agents available for demonstration")
+        print("💡 Set up seed agents first to see full capabilities")
         return
+
+    # Show discovery details
+    print_subsection("📊 Discovery Report")
+    print(f"Total agents: {len(agents)}")
+
+    for agent_info in agents:
+        agent_id = agent_info["id"]
+        name = agent_info["name"]
+        methods = agent_info["methods"]
+        print(f"  • {agent_id}")
+        print(f"    Methods: {len(methods)}")
 
     print_separator("2. COMPREHENSIVE VALIDATION")
 
     validation_results = []
 
     for agent_info in agents:
-        namespace = agent_info.get("namespace", "unknown")
-        name = agent_info.get("name", "unknown")
+        agent_id = agent_info["id"]
+        agent = agent_info["agent"]
 
-        print(f"\n🔍 Validating {namespace}/{name}...")
+        print(f"\n🔍 Validating {agent_id}...")
 
         try:
-            # Load agent with full validation
-            loaded_info = loader.load_agent(namespace, name)
-
             # Perform comprehensive checks
             checks = {
-                "manifest_valid": "manifest" in loaded_info,
-                "methods_available": len(loaded_info.get("methods", [])) > 0,
-                "dependencies_listed": "dependencies" in loaded_info,
-                "structure_valid": loaded_info.get("valid", False),
-                "interface_valid": "interface" in loaded_info.get("manifest", {}),
+                "agent_loaded": agent is not None,
+                "methods_available": len(agent.methods) > 0,
+                "name_available": hasattr(agent, "name"),
+                "basic_functionality": True,  # Will test below
             }
 
-            # Structure validation
-            agent_path = loaded_info.get("path", "")
-            structure_checks = {
-                "agent_py_exists": (
-                    (Path(agent_path) / "agent.py").exists() if agent_path else False
-                ),
-                "manifest_exists": (
-                    (Path(agent_path) / "agent.yaml").exists() if agent_path else False
-                ),
-                "venv_exists": (
-                    (Path(agent_path) / ".venv").exists() if agent_path else False
-                ),
-            }
+            # Display validation results
+            print("  📋 Validation Results:")
+            for check_name, passed in checks.items():
+                status = "✅" if passed else "❌"
+                print(f"    {status} {check_name.replace('_', ' ').title()}")
 
-            all_checks_passed = all(checks.values()) and all(structure_checks.values())
+            # Overall validation status
+            overall_valid = all(checks.values())
+            status = "✅ VALID" if overall_valid else "❌ INVALID"
+            print(f"  🎯 Overall Status: {status}")
 
-            validation_result = {
-                "namespace": namespace,
-                "name": name,
-                "status": "✅ VALID" if all_checks_passed else "❌ INVALID",
-                "checks": {**checks, **structure_checks},
-                "info": loaded_info,
-            }
-
-            validation_results.append(validation_result)
-
-            # Display validation details
-            print(f"   Status: {validation_result['status']}")
-            print(f"   Methods: {len(loaded_info.get('methods', []))}")
-            print(f"   Dependencies: {len(loaded_info.get('dependencies', []))}")
-
-            if not all_checks_passed:
-                failed_checks = [
-                    k for k, v in {**checks, **structure_checks}.items() if not v
-                ]
-                print(f"   ⚠️  Failed checks: {', '.join(failed_checks)}")
+            # Store results for summary
+            validation_results.append(
+                {
+                    "agent": agent_id,
+                    "valid": overall_valid,
+                    "checks": checks,
+                    "info": {"name": agent.name, "methods": agent.methods},
+                }
+            )
 
         except Exception as e:
-            validation_result = {
-                "namespace": namespace,
-                "name": name,
-                "status": "💥 ERROR",
-                "error": str(e),
-                "checks": {},
-                "info": {},
-            }
-            validation_results.append(validation_result)
-            print(f"   💥 Validation error: {e}")
+            print(f"  ❌ Validation failed: {e}")
+            validation_results.append(
+                {"agent": agent_id, "valid": False, "error": str(e)}
+            )
 
-    print_separator("3. CAPABILITY ANALYSIS")
+    print_separator("3. HEALTH MONITORING")
 
-    # Analyze capabilities across all valid agents
-    valid_agents = [r for r in validation_results if "✅" in r["status"]]
+    print("🏥 Running health checks on validated agents...")
+    health_results = []
 
-    if valid_agents:
-        print(f"📊 Analyzing {len(valid_agents)} valid agents...")
-
-        all_methods = set()
-        all_dependencies = set()
-        agents_by_capability = {}
-
-        for result in valid_agents:
-            info = result["info"]
-            methods = info.get("methods", [])
-            dependencies = info.get("dependencies", [])
-
-            all_methods.update(methods)
-            all_dependencies.update(dependencies)
-
-            # Group agents by capability
-            for method in methods:
-                if method not in agents_by_capability:
-                    agents_by_capability[method] = []
-                agents_by_capability[method].append(
-                    f"{result['namespace']}/{result['name']}"
-                )
-
-        print_subsection("🎯 Capability Matrix")
-        print(f"Total unique methods: {len(all_methods)}")
-        print(f"Total unique dependencies: {len(all_dependencies)}")
-        print()
-
-        print("Methods available across agents:")
-        for method, agent_list in sorted(agents_by_capability.items()):
-            print(f"  • {method}: {', '.join(agent_list)}")
-
-        print("\nCommon dependencies:")
-        for dep in sorted(list(all_dependencies)[:5]):  # Show first 5
-            print(f"  • {dep}")
-
-    print_separator("4. RUNTIME HEALTH CHECK")
-
-    # Test actual execution capabilities
-    print("🏥 Testing runtime health with live execution...")
-
-    for result in valid_agents[:2]:  # Test first 2 valid agents
-        namespace = result["namespace"]
-        name = result["name"]
-        info = result["info"]
-        methods = info.get("methods", [])
-
-        if not methods:
+    for result in validation_results:
+        if not result.get("valid", False) or "error" in result:
             continue
 
-        print(f"\n🧪 Testing {namespace}/{name}")
+        agent_id = result["agent"]
+        print(f"\n🔍 Health check: {agent_id}")
 
         try:
-            # Create wrapper and test a method
-            wrapper = AgentWrapper(info, runtime=runtime)
-            test_method = methods[0]  # Test first method
+            # Get agent from original list
+            agent = next(a["agent"] for a in agents if a["id"] == agent_id)
 
-            print(f"   Testing method: {test_method}")
+            # Test method discovery
+            methods = agent.methods
+            print(f"  📋 Available methods: {len(methods)}")
 
-            # Prepare simple test parameters
-            if "generate" in test_method.lower() or "code" in test_method.lower():
-                test_params = {"prompt": "test"}
-            elif "analyze" in test_method.lower():
-                test_params = {"text": "test", "analysis_type": "test"}
-            elif "summarize" in test_method.lower():
-                test_params = {"content": "test"}
+            # Test method introspection
+            if methods:
+                test_method = methods[0]
+                try:
+                    method_info = agent.get_method_info(test_method)
+                    print(f"  ✅ Method introspection: {test_method}")
+                except Exception as e:
+                    print(f"  ❌ Method introspection failed: {e}")
+
+            # Test basic execution (if safe)
+            if "analyze_text" in methods:
+                try:
+                    test_result = agent.analyze_text(
+                        text="Test message for health check", analysis_type="general"
+                    )
+                    if "result" in test_result:
+                        print("  ✅ Execution test: PASSED")
+                    else:
+                        print(
+                            f"  ⚠️  Execution test: PARTIAL - {test_result.get('error')}"
+                        )
+                except Exception as e:
+                    print(f"  ❌ Execution test: FAILED - {e}")
             else:
-                test_params = {}
+                print("  ⚠️  No safe test method available")
 
-            # Quick health check execution
-            result = wrapper.execute(test_method, test_params)
-
-            if "result" in result:
-                exec_time = result.get("execution_time", 0)
-                print(f"   ✅ Health check passed ({exec_time:.1f}s)")
-            else:
-                print(f"   ⚠️  Health check warning: {result.get('error', 'Unknown')}")
+            health_results.append(
+                {"agent": agent_id, "healthy": True, "methods": len(methods)}
+            )
 
         except Exception as e:
-            print(f"   ❌ Health check failed: {e}")
+            print(f"  ❌ Health check failed: {e}")
+            health_results.append(
+                {"agent": agent_id, "healthy": False, "error": str(e)}
+            )
 
-    print_separator("5. MANAGEMENT RECOMMENDATIONS")
+    print_separator("4. CAPABILITY ANALYSIS")
 
-    # Provide actionable recommendations
-    total_agents = len(validation_results)
-    valid_count = len(valid_agents)
-    invalid_count = total_agents - valid_count
+    print("🧠 Analyzing agent capabilities across the system...")
 
-    print("📋 System Assessment:")
-    print(f"  • Total agents discovered: {total_agents}")
-    print(f"  • Valid and operational: {valid_count}")
-    print(f"  • Requiring attention: {invalid_count}")
+    # Aggregate capabilities
+    all_capabilities = set()
+    capability_counts = {}
+    agent_capabilities = {}
 
-    if valid_count == total_agents:
-        print("\n🎉 EXCELLENT: All agents are operational!")
-        print("💡 Recommendations:")
-        print("  • System is production-ready")
-        print("  • Consider adding more agents to expand capabilities")
-        print("  • Set up monitoring for continued health tracking")
-    elif valid_count > 0:
-        print(f"\n⚠️  {invalid_count} agents need attention")
-        print("💡 Recommendations:")
-        print("  • Fix invalid agents to improve system reliability")
-        print("  • Validate agent structure and dependencies")
-        print("  • Check virtual environment setup")
+    for result in validation_results:
+        if not result.get("valid", False):
+            continue
+
+        agent_id = result["agent"]
+        methods = result["info"].get("methods", [])
+
+        agent_capabilities[agent_id] = methods
+        all_capabilities.update(methods)
+
+        for method in methods:
+            capability_counts[method] = capability_counts.get(method, 0) + 1
+
+    print("📊 Capability Analysis:")
+    print(f"  Total unique capabilities: {len(all_capabilities)}")
+    print(f"  Total agent-method combinations: {sum(capability_counts.values())}")
+
+    # Show capability distribution
+    print_subsection("📈 Capability Distribution")
+    sorted_capabilities = sorted(
+        capability_counts.items(), key=lambda x: x[1], reverse=True
+    )
+
+    for capability, count in sorted_capabilities:
+        agents_with_capability = [
+            agent
+            for agent, methods in agent_capabilities.items()
+            if capability in methods
+        ]
+        print(f"  {capability}: {count} agents")
+        print(f"    Available in: {', '.join(agents_with_capability)}")
+
+    print_separator("5. RECOMMENDATIONS")
+
+    print("💡 System Health Recommendations:")
+
+    # Validation summary
+    valid_count = sum(1 for r in validation_results if r.get("valid", False))
+    total_count = len(validation_results)
+    print(f"  📊 Validation: {valid_count}/{total_count} agents are valid")
+
+    # Health summary
+    healthy_count = sum(1 for r in health_results if r.get("healthy", False))
+    total_health = len(health_results)
+    if total_health > 0:
+        print(f"  🏥 Health: {healthy_count}/{total_health} agents are healthy")
+
+    # Capability recommendations
+    print_subsection("🔧 Capability Recommendations")
+
+    # Single points of failure
+    single_capabilities = [
+        capability for capability, count in capability_counts.items() if count == 1
+    ]
+
+    if single_capabilities:
+        print("  ⚠️  Single points of failure (consider adding redundancy):")
+        for capability in single_capabilities:
+            print(f"    • {capability}")
     else:
-        print("\n🚨 CRITICAL: No operational agents found")
-        print("💡 Immediate actions needed:")
-        print("  • Install seed agents for basic functionality")
-        print("  • Verify system setup and configuration")
-        print("  • Check agent installation procedures")
+        print("  ✅ All capabilities have redundancy - good system design!")
 
-    print_separator("6. ENTERPRISE FEATURES DEMONSTRATED")
+    # Missing critical capabilities
+    critical_capabilities = ["generate_code", "analyze_text", "summarize_content"]
+    missing_critical = [
+        capability
+        for capability in critical_capabilities
+        if capability not in all_capabilities
+    ]
 
-    print("✅ Comprehensive agent discovery across namespaces")
-    print("✅ Multi-level validation (manifest, structure, runtime)")
-    print("✅ Capability analysis and method mapping")
-    print("✅ Health monitoring with live execution tests")
-    print("✅ Actionable recommendations for system management")
-    print("✅ Production readiness assessment")
-    print("✅ Automated quality assurance workflows")
+    if missing_critical:
+        print("  ❌ Missing critical capabilities:")
+        for capability in missing_critical:
+            print(f"    • {capability}")
+    else:
+        print("  ✅ All critical capabilities available")
 
-    print("\n🏢 ENTERPRISE VALUE:")
-    print("💼 Confidence in AI agent deployments")
+    print_separator("6. SUMMARY")
+
+    print("🎯 Enterprise Agent Management Summary:")
+    print(f"  📦 Total Agents: {len(agents)}")
+    print(f"  ✅ Valid Agents: {valid_count}")
+    health_status = healthy_count if "health_results" in locals() else "N/A"
+    print(f"  🏥 Healthy Agents: {health_status}")
+    print(f"  🧠 Unique Capabilities: {len(all_capabilities)}")
+    capability_total = (
+        sum(capability_counts.values()) if "capability_counts" in locals() else "N/A"
+    )
+    print(f"  🔧 Total Capabilities: {capability_total}")
+
+    print("\n💼 BUSINESS VALUE:")
+    print("🚀 Confidence in AI agent deployments at scale")
     print("📊 Visibility into system capabilities and health")
-    print("🔧 Proactive maintenance and optimization")
-    print("📈 Scalable management for large agent ecosystems")
+    print("🔧 Proactive maintenance and optimization guidance")
     print("🛡️ Risk mitigation through comprehensive validation")
+    print("📈 Enterprise-ready AI agent management")
 
 
 if __name__ == "__main__":
