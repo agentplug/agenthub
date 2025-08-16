@@ -1,8 +1,3 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import agentmanager as amg
 
 
@@ -11,15 +6,15 @@ def main():
     coding_agent = amg.load_agent("agentplug/coding-agent")
     analysis_agent = amg.load_agent("agentplug/analysis-agent")
 
-    # Generate code
+    # Generate code using the correct method
     code = coding_agent.generate_code(
         "Create a Python function that calculates compound interest "
         "with monthly contributions"
     )
     print("💰 Financial Calculator Code:")
-    print(code)
+    print(code["result"], "\n", "=" * 50)
 
-    # Analyze feedback
+    # Analyze feedback using the correct method
     feedback = (
         "The new mobile app is fantastic! The user interface is intuitive and "
         "the performance is much better than the previous version. However, I "

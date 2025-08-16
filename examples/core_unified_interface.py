@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-Core Module Unified Interface: Work with AI agents like native Python objects.
-"""
-
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import agentmanager as amg
 
 

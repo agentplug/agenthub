@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-Agent Discovery and Validation: Enterprise-grade agent management.
-"""
-
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import agentmanager as amg
 
 

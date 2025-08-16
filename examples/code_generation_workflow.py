@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-Code Generation Workflow: From idea to implementation in seconds.
-"""
-
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import agentmanager as amg
 
 
@@ -91,6 +81,12 @@ def main():
                     print(
                         f"   ❌ Explanation failed: {explanation_result.get('error')}"
                     )
+
+                print("   🔍 Validating code...")
+                validation_result = coding_agent.validate_code(
+                    code=code, criteria="Handle edge cases."
+                )
+                print(f"   ✅ Code validation: {validation_result['result']}")
 
             else:
                 print(f"   ❌ Code generation failed: {result.get('error')}")

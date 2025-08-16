@@ -6,7 +6,44 @@ This directory showcases how AgentHub solves real business problems and user pai
 
 ### **Core Module Breakthrough Examples**
 
-#### 4. **Core Unified Interface** (`core_unified_interface.py`)
+#### 1. **Simple Example** (`simple_example.py`)
+**Breakthrough:** "Get started with AgentHub in under 5 minutes!"
+
+**Core Features:**
+- **Basic agent loading** with `amg.load_agent()`
+- **Simple method calls** on agent objects
+- **Code generation** and text analysis workflows
+- **Clean, minimal syntax** for quick prototyping
+
+**Business Value:**
+- Rapid onboarding for new users
+- Simple integration into existing workflows
+- Clear demonstration of core capabilities
+
+**Run:** `python simple_example.py`
+
+---
+
+#### 2. **Error Handling Demo** (`error_handling_demo.py`)
+**Breakthrough:** "Professional error messages that guide users to solutions!"
+
+**Advanced Features:**
+- **Intelligent error handling** that shows available methods
+- **Method discovery** through helpful error messages
+- **Similar method suggestions** for common mistakes
+- **Professional user experience** with clear guidance
+
+**Business Value:**
+- Reduced debugging time for developers
+- Better user onboarding and learning
+- Professional platform quality and user experience
+- Self-documenting error messages
+
+**Run:** `python error_handling_demo.py`
+
+---
+
+#### 3. **Core Unified Interface** (`core_unified_interface.py`)
 **Breakthrough:** "Use AI agents like native Python objects - just call agent.method_name()!"
 
 **Revolutionary Features:**
@@ -26,7 +63,7 @@ This directory showcases how AgentHub solves real business problems and user pai
 
 ---
 
-#### 5. **Agent Discovery and Validation** (`agent_discovery_and_validation.py`)
+#### 4. **Agent Discovery and Validation** (`agent_discovery_and_validation.py`)
 **Enterprise Challenge:** "I need to manage multiple AI agents with confidence they're working correctly"
 
 **Enterprise Features:**
@@ -47,7 +84,7 @@ This directory showcases how AgentHub solves real business problems and user pai
 
 ---
 
-#### 6. **Dynamic Agent Orchestration** (`dynamic_agent_orchestration.py`)
+#### 5. **Dynamic Agent Orchestration** (`dynamic_agent_orchestration.py`)
 **Vision:** "Create AI workflows that adapt, scale, and handle failures gracefully"
 
 **Advanced Capabilities:**
@@ -68,7 +105,7 @@ This directory showcases how AgentHub solves real business problems and user pai
 
 ---
 
-### 1. **Code Generation Workflow** (`code_generation_workflow.py`)
+#### 6. **Code Generation Workflow** (`code_generation_workflow.py`)
 **Solves:** "I need to quickly prototype code but I'm not sure about syntax or best practices"
 
 **Business Value:**
@@ -86,7 +123,7 @@ This directory showcases how AgentHub solves real business problems and user pai
 
 ---
 
-### 2. **Content Analysis Suite** (`content_analysis_suite.py`)
+#### 7. **Content Analysis Suite** (`content_analysis_suite.py`)
 **Solves:** "I have tons of text content but no time to read and analyze it manually"
 
 **Business Value:**

@@ -1,14 +1,4 @@
-#!/usr/bin/env python3
-"""
-Dynamic Agent Orchestration: Build AI workflows that adapt and scale.
-"""
-
-import sys
 import time
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import agentmanager as amg
 
 
