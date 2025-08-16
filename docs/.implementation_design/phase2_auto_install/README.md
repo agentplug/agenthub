@@ -71,6 +71,72 @@ graph TB
     AW --> AR
 ```
 
+## 🏗️ **UV-Based Isolated Environments**
+
+### **Environment Isolation Strategy**
+AgentHub Phase 2 implements **UV-based isolated environments** to ensure each agent runs in its own isolated context, preventing dependency conflicts and enabling scalable agent management.
+
+#### **Directory Structure**
+```
+~/.agenthub/agents/
+├── dev_name1/
+│   ├── repo_name1/
+│   │   ├── .venv/           # UV virtual environment
+│   │   ├── agent.py         # Agent logic
+│   │   ├── agent.yaml       # Interface + UV config
+│   │   ├── requirements.txt # UV-compatible dependencies
+│   │   └── README.md        # Documentation
+│   └── repo_name2/
+│       ├── .venv/           # Separate isolated environment
+│       └── ...
+└── dev_name2/
+    └── repo_name3/
+        ├── .venv/           # Another isolated environment
+        └── ...
+```
+
+#### **UV Environment Benefits**
+- **Complete Isolation**: Each agent has its own Python environment
+- **Dependency Management**: UV handles Python versions and package conflicts
+- **Scalability**: Can manage hundreds of agents without conflicts
+- **Clean Execution**: Fresh environment for each agent execution
+- **Easy Cleanup**: Remove environments when agents are uninstalled
+
+#### **Environment Setup Flow**
+1. **Clone Repository**: AgentHub clones to `~/.agenthub/agents/dev_name/repo_name/`
+2. **Parse Configuration**: Extract UV settings from `agent.yaml`
+3. **Create UV Project**: Initialize UV project with specified Python version
+4. **Install Dependencies**: Install packages from `requirements.txt`
+5. **Validate Environment**: Ensure environment is ready for execution
+6. **Ready for Use**: Agent can now execute in isolated context
+
+#### **UV Environment Requirements**
+
+##### **System Prerequisites**
+- **UV Package Manager**: Must be installed and available in system PATH
+- **Python Versions**: Support for Python 3.11+ with automatic version management
+- **System Resources**: Minimum 500MB disk space, 1GB RAM per agent environment
+- **Network Access**: Internet connectivity for package downloads and dependency resolution
+
+##### **Agent Repository Requirements**
+- **agent.yaml**: Must include UV configuration section with Python version and resource limits
+- **requirements.txt**: UV-compatible dependencies with no version conflicts
+- **pyproject.toml**: UV project configuration (optional but recommended)
+- **Structure**: Standard Python package structure for UV project initialization
+
+##### **Resource Management**
+- **Memory Limits**: Configurable per agent (default: 2GB)
+- **Timeout Settings**: Execution time limits (default: 300 seconds)
+- **CPU Constraints**: Optional CPU usage limits
+- **Disk Quotas**: Environment size monitoring and limits
+
+##### **Benefits of UV Integration**
+- **Complete Isolation**: No dependency conflicts between agents
+- **Fast Installation**: UV's optimized dependency resolution
+- **Reproducible Builds**: Lock file ensures consistent environments
+- **Resource Control**: Built-in resource limit enforcement
+- **Easy Cleanup**: Simple environment removal and cleanup
+
 ## 📋 **Module Architecture & Responsibilities**
 
 ### **1. GitHub Integration Module** (`github/`)
@@ -80,10 +146,12 @@ graph TB
 - **Output**: Local repository path with validated structure
 
 ### **2. Environment Management Module** (`environment/`)
-- **Primary Responsibility**: Virtual environment creation and dependency management
-- **Key Components**: Environment Setup, Virtual Environment Creator, Dependency Manager
-- **Input**: Agent path and requirements.txt
-- **Output**: Working virtual environment with all dependencies
+- **Primary Responsibility**: UV-based isolated environment creation and dependency management
+- **Key Components**: UV Environment Setup, UV Project Creator, UV Dependency Manager, Environment Validator
+- **Input**: Agent path, requirements.txt, and UV configuration from agent.yaml
+- **Output**: Isolated UV virtual environment with all dependencies installed and validated
+- **Isolation**: Each agent runs in its own `.venv/` directory to prevent dependency conflicts
+- **UV Integration**: Full UV project lifecycle with pyproject.toml, uv.lock, and resource limits
 
 ### **3. Storage Enhancement Module** (`storage/`)
 - **Primary Responsibility**: Installation tracking and metadata management
@@ -859,6 +927,211 @@ dependencies = [
 - Enhanced agent discovery mechanisms
 - Advanced agent management features
 - Integration with external agent marketplaces
+
+## 📦 **Agent Repository Requirements**
+
+### **Standard Repository Structure**
+Each agent repository must provide the following structure for AgentHub to successfully auto-install and manage:
+
+```
+agent-repo/
+├── agent.py          # Main agent logic with JSON interface
+├── agent.yaml        # Interface definition + UV configuration
+├── requirements.txt  # UV-compatible dependencies
+├── pyproject.toml    # Optional: UV project configuration
+├── README.md         # Documentation and usage examples
+└── .gitignore        # Git ignore file
+```
+
+### **Required Files & Standards**
+
+#### **1. agent.py - Main Agent Implementation**
+- **Purpose**: Core agent logic and functionality
+- **Interface**: Must support JSON input/output via command line
+- **Format**: `python agent.py '{"method": "method_name", "parameters": {...}}'`
+- **Output**: Valid JSON response to stdout
+- **Error Handling**: Proper error responses with exit codes (0 for success, 1 for errors)
+- **Methods**: Must implement all methods defined in agent.yaml
+
+#### **2. agent.yaml - Interface Definition & UV Configuration**
+- **Purpose**: Define agent interface, metadata, and UV configuration
+- **Required Fields**: name, version, description, interface, dependencies, uv_config
+- **UV Config**: Python version, isolation settings, resource limits
+- **Interface**: Method definitions with parameters, types, and return values
+- **Example**:
+```yaml
+name: "agent-name"
+version: "1.0.0"
+description: "Agent description"
+python_version: "3.11+"
+
+uv_config:
+  python_version: "3.11"
+  isolated: true
+  resources:
+    memory_limit: "2GB"
+    timeout: 300
+    cpu_limit: "2"
+    disk_limit: "1GB"
+
+interface:
+  methods:
+    method_name:
+      description: "Method description"
+      parameters:
+        param_name:
+          type: "string|integer|boolean|array|object"
+          description: "Parameter description"
+          required: true|false
+          default: "default_value"  # if not required
+      returns:
+        type: "string|integer|boolean|array|object"
+        description: "Return value description"
+
+dependencies:
+  - "package>=1.0.0"
+  - "another-package>=2.0.0"
+```
+
+#### **3. requirements.txt - UV-Compatible Dependencies**
+- **Purpose**: Define all Python package dependencies
+- **Format**: Standard pip requirements format
+- **Requirements**: No version conflicts, clean dependency tree
+- **Best Practices**: Use >= for minimum versions, avoid conflicting packages
+- **Example**:
+```txt
+# Core dependencies
+llama-index>=0.10.0
+openai>=1.0.0
+chromadb>=0.4.0
+
+# Utility packages
+python-dotenv>=1.0.0
+requests>=2.28.0
+
+# Avoid conflicts - use compatible versions
+numpy>=1.21.0
+pandas>=1.3.0
+```
+
+#### **4. pyproject.toml - UV Project Configuration**
+- **Purpose**: Configure UV project settings and metadata
+- **Required**: Project name, version, Python requirements, dependencies
+- **Optional**: Build system, development dependencies
+- **Example**:
+```toml
+[project]
+name = "agent-name"
+version = "1.0.0"
+description = "Agent description"
+requires-python = ">=3.11"
+dependencies = [
+    "package>=1.0.0",
+    "another-package>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
+```
+
+#### **5. README.md - Comprehensive Documentation**
+- **Purpose**: Provide complete usage and setup instructions
+- **Required Sections**: Overview, Installation, Usage, Configuration, Examples
+- **Optional**: Performance, Troubleshooting, Contributing
+- **Structure**:
+```markdown
+# Agent Name
+
+## Overview
+Clear description of what the agent does
+
+## Installation
+- AgentHub auto-installation instructions
+- Manual installation for development
+
+## Usage
+- Basic usage examples
+- Method descriptions
+- Parameter explanations
+
+## Configuration
+- Configuration options
+- Environment variables
+- Dependencies
+
+## Examples
+- Code examples
+- Use case scenarios
+- API reference
+```
+
+### **Agent Interface Standards**
+
+#### **JSON Input/Output Format**
+- **Input**: `{"method": "method_name", "parameters": {...}}`
+- **Output**: `{"result": {...}}` or `{"error": "error_message"}`
+- **Exit Codes**: 0 for success, 1 for errors
+
+#### **Method Requirements**
+- **Discovery**: Must support method discovery and validation
+- **Parameters**: Clear parameter types and validation
+- **Returns**: Consistent return format
+- **Error Handling**: Graceful error handling with meaningful messages
+
+#### **Performance Standards**
+- **Response Time**: Methods should complete within reasonable timeouts
+- **Memory Usage**: Respect memory limits specified in uv_config
+- **Resource Management**: Clean up resources after execution
+
+### **UV Environment Compatibility**
+
+#### **Python Version Support**
+- **Minimum**: Python 3.11+
+- **Recommended**: Python 3.11 or 3.12
+- **Specification**: Must be clearly defined in agent.yaml
+
+#### **Dependency Management**
+- **Isolation**: Dependencies must not conflict with other agents
+- **Clean Installation**: All dependencies must install without conflicts
+- **Version Pinning**: Use appropriate version constraints
+
+#### **Resource Constraints**
+- **Memory Limits**: Define reasonable memory usage limits
+- **Timeout Settings**: Set appropriate execution timeouts
+- **Cleanup**: Ensure proper resource cleanup
+
+### **Quality Standards**
+
+#### **Code Quality**
+- **Modular Design**: Clean separation of concerns
+- **Error Handling**: Comprehensive error handling
+- **Documentation**: Clear code comments and docstrings
+- **Testing**: Include basic tests if possible
+
+#### **Documentation Quality**
+- **Completeness**: All methods and parameters documented
+- **Examples**: Practical usage examples provided
+- **Troubleshooting**: Common issues and solutions documented
+- **API Reference**: Clear method signatures and return types
+
+#### **Security Considerations**
+- **Input Validation**: Validate all input parameters
+- **Error Messages**: Don't expose sensitive information in errors
+- **Resource Limits**: Respect system resource constraints
+- **Isolation**: Maintain proper environment isolation
+
+### **Compliance Checklist**
+Before submitting your agent for AgentHub installation, ensure it meets all requirements:
+
+- [ ] **Repository Structure**: All required files exist and follow standards
+- [ ] **Interface Compliance**: JSON interface implemented correctly
+- [ ] **UV Environment Ready**: Dependencies and configuration validated
+- [ ] **Documentation Quality**: Complete and clear documentation provided
+- [ ] **Testing**: Basic functionality tested locally
 
 ## 📚 **Module Documentation**
 
