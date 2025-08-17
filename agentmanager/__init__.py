@@ -15,31 +15,52 @@ from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
 
 
-def load_agent(agent_name):
+def load_agent(agent_name, setup_environment=True):
     """
-    Load a pre-created agent from local storage.
+    Load an agent, automatically installing it if it doesn't exist.
+
+    This is the recommended way to use agents - just call this function
+    and it will handle everything automatically!
 
     Args:
         agent_name (str): Agent name in format "developer/agent"
-                          (e.g., "agentplug/coding-agent")
+                          (e.g., "agentplug/scientific-paper-analyzer")
+        setup_environment (bool): Whether to set up virtual environment and install dependencies
 
     Returns:
         AgentWrapper: Wrapped agent ready for method execution
+
+    Raises:
+        ValueError: If agent name format is invalid
+        RuntimeError: If agent installation fails
     """
     # Parse agent name
     if "/" not in agent_name:
-        raise ValueError(
-            f"Agent name must be in format 'developer/agent', got: {agent_name}"
-        )
+        raise ValueError(f"Invalid agent name format: {agent_name}. Expected: 'developer/agent'")
 
     developer, agent = agent_name.split("/", 1)
 
-    # Initialize components
+    # Initialize managers
     storage_manager = LocalStorage()
     runtime_manager = AgentRuntime(storage_manager)
     loader = AgentLoader(storage_manager)
 
-    # Load and wrap agent
+    # Check if agent exists
+    if not storage_manager.agent_exists(developer, agent):
+        print(f"📥 Agent '{agent_name}' not found. Installing automatically...")
+
+        # Import and use AutoInstaller
+        from agentmanager.github.auto_installer import AutoInstaller
+
+        installer = AutoInstaller(setup_environment=setup_environment)
+        result = installer.install_agent(agent_name)
+
+        if not result.success:
+            raise RuntimeError(f"Failed to install agent '{agent_name}': {result.error_message}")
+
+        print(f"✅ Agent '{agent_name}' installed successfully!")
+
+    # Now load the agent
     agent_data = loader.load_agent(developer, agent)
     agent_wrapper = AgentWrapper(agent_data, runtime=runtime_manager)
 
