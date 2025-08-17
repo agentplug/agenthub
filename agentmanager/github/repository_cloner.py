@@ -51,10 +51,12 @@ class RepositoryCloner:
         
         Args:
             base_storage_path: Base directory where agents will be stored.
-                              Defaults to './agents' in current directory.
+                              Defaults to '~/.agenthub/agents' in user's home directory.
         """
         self.url_parser = URLParser()
-        self.base_storage_path = Path(base_storage_path or "./agents")
+        # Use ~/.agenthub/agents as default storage path
+        default_path = Path.home() / ".agenthub" / "agents"
+        self.base_storage_path = Path(base_storage_path or default_path)
         
         # Ensure base storage directory exists
         self.base_storage_path.mkdir(parents=True, exist_ok=True)
