@@ -1,259 +1,369 @@
-# AgentHub Business Solutions
+# AgentHub Examples - Complete User Documentation
 
-This directory showcases how AgentHub solves real business problems and user pain points. Each example demonstrates practical workflows that save time, reduce costs, and increase productivity.
+This directory contains comprehensive examples demonstrating all current capabilities of AgentHub for both programmatic usage and CLI commands.
 
-## 🎯 Business-Focused Examples
+## 🚀 Quick Start
 
-### **Core Module Breakthrough Examples**
-
-#### 1. **Simple Example** (`simple_example.py`)
-**Breakthrough:** "Get started with AgentHub in under 5 minutes!"
-
-**Core Features:**
-- **Basic agent loading** with `amg.load_agent()`
-- **Simple method calls** on agent objects
-- **Code generation** and text analysis workflows
-- **Clean, minimal syntax** for quick prototyping
-
-**Business Value:**
-- Rapid onboarding for new users
-- Simple integration into existing workflows
-- Clear demonstration of core capabilities
-
-**Run:** `python simple_example.py`
-
----
-
-#### 2. **Error Handling Demo** (`error_handling_demo.py`)
-**Breakthrough:** "Professional error messages that guide users to solutions!"
-
-**Advanced Features:**
-- **Intelligent error handling** that shows available methods
-- **Method discovery** through helpful error messages
-- **Similar method suggestions** for common mistakes
-- **Professional user experience** with clear guidance
-
-**Business Value:**
-- Reduced debugging time for developers
-- Better user onboarding and learning
-- Professional platform quality and user experience
-- Self-documenting error messages
-
-**Run:** `python error_handling_demo.py`
-
----
-
-#### 3. **Core Unified Interface** (`core_unified_interface.py`)
-**Breakthrough:** "Use AI agents like native Python objects - just call agent.method_name()!"
-
-**Revolutionary Features:**
-- **Magic method interface** - Call agents like regular Python functions
-- **Seamless cross-agent workflows** - Chain multiple agents effortlessly
-- **Dynamic method discovery** - Introspect agent capabilities at runtime
-- **Agent composition** - Combine agents for complex multi-step tasks
-- **Native Python experience** - No complex APIs or configuration
-
-**Business Value:**
-- Transform AI from complex APIs into simple function calls
-- Rapid prototyping and development acceleration
-- Easy integration into existing Python workflows
-- Enterprise-grade reliability with robust error handling
-
-**Run:** `python core_unified_interface.py`
-
----
-
-#### 4. **Agent Discovery and Validation** (`agent_discovery_and_validation.py`)
-**Enterprise Challenge:** "I need to manage multiple AI agents with confidence they're working correctly"
-
-**Enterprise Features:**
-- **Comprehensive agent discovery** across namespaces and repositories
-- **Multi-level validation** (manifest, structure, runtime health)
-- **Capability analysis** and method mapping across agents
-- **Health monitoring** with live execution tests
-- **Actionable recommendations** for system management
-- **Production readiness assessment** and quality assurance
-
-**Business Value:**
-- Confidence in AI agent deployments at scale
-- Visibility into system capabilities and health
-- Proactive maintenance and optimization guidance
-- Risk mitigation through comprehensive validation
-
-**Run:** `python agent_discovery_and_validation.py`
-
----
-
-#### 5. **Dynamic Agent Orchestration** (`dynamic_agent_orchestration.py`)
-**Vision:** "Create AI workflows that adapt, scale, and handle failures gracefully"
-
-**Advanced Capabilities:**
-- **Automatic fallback** and error recovery between agents
-- **Parallel task execution** for improved performance
-- **Complex workflow orchestration** with dependencies
-- **Context variable substitution** between workflow steps
-- **Real-time capability analysis** and recommendations
-- **Self-healing workflows** that adapt to agent availability
-
-**Business Value:**
-- Self-healing AI workflows that adapt to failures
-- Horizontal scaling through agent redundancy
-- Business continuity through intelligent fallbacks
-- Improved performance through parallel execution
-
-**Run:** `python dynamic_agent_orchestration.py`
-
----
-
-#### 6. **Code Generation Workflow** (`code_generation_workflow.py`)
-**Solves:** "I need to quickly prototype code but I'm not sure about syntax or best practices"
-
-**Business Value:**
-- Transform ideas into working code in seconds
-- Follow security and performance best practices automatically
-- Eliminate blank page syndrome and reduce development time
-- Get explanations to learn while building
-
-**Use Cases:**
-- API client creation with proper error handling
-- Data processing pipelines with pandas
-- Input validation systems with security considerations
-
-**ROI:** Hours of coding, research, and debugging time saved per task
-
----
-
-#### 7. **Content Analysis Suite** (`content_analysis_suite.py`)
-**Solves:** "I have tons of text content but no time to read and analyze it manually"
-
-**Business Value:**
-- Process thousands of documents in minutes vs hours
-- Extract actionable insights, not just data
-- Consistent quality without human fatigue
-- Scale content operations 10x with same team
-
-**Use Cases:**
-- Customer review sentiment analysis
-- Support ticket prioritization by urgency
-- Meeting notes summarization with action items
-- Competitive content analysis
-
-**ROI:** 50% faster processing, improved decision making, reduced manual labor costs
-
----
-
-### 3. **Business Automation Showcase** (`business_automation_showcase.py`)
-**Solves:** "I spend hours on repetitive tasks but lack technical skills for automation"
-
-**Business Value:**
-- Turn complex processes into one-click operations
-- Orchestrate multiple AI capabilities seamlessly
-- Create sophisticated workflows without coding expertise
-- Scale automation across entire organization
-
-**Use Cases:**
-- Automated report generation with analysis
-- End-to-end business process workflows
-- Data analysis to executive summary pipeline
-- Multi-step decision support systems
-
-**ROI:** 4.5+ hours saved per week per workflow ($500+ value)
-
-## 💼 Real Business Impact
-
-### **Time Savings**
-- **Code Generation:** 2-4 hours per development task
-- **Content Analysis:** 80% reduction in manual reading time
-- **Business Automation:** 4.5+ hours per week per workflow
-
-### **Cost Reduction**
-- Eliminate need for expensive consulting for simple automation
-- Reduce manual labor costs by 50-80%
-- Faster time-to-market for new features and processes
-
-### **Quality Improvement**
-- Consistent best practices built into all generated code
-- No human oversight errors in content analysis
-- Standardized business processes across teams
-
-### **Scalability**
-- Handle 10x more content with same team size
-- Deploy automation across multiple departments
-- Replicate successful workflows instantly
-
-## 🚀 Getting Started
-
-### Prerequisites
-1. **Complete setup:** Run `./setup.sh` from project root
-2. **Seed agents ready:** Ensure coding and analysis agents are installed
-3. **API access:** Set `OPENAI_API_KEY` environment variable
-
-### Running Examples
+### Run the Complete Demo
 ```bash
-cd examples
+python examples/quick_start.py
+```
+Shows all AgentHub capabilities without requiring actual installations.
 
-# See code generation in action
-python code_generation_workflow.py
+## 📋 Available Examples
 
-# Experience content analysis power
-python content_analysis_suite.py
+### Core Examples
+- **`quick_start.py`** - Complete feature demonstration
+- **`interactive_demo.py`** - Step-by-step interactive guide
+- **`basic_installation.py`** - Simple installation workflows
+- **`environment_management.py`** - Advanced environment operations
 
-# Witness business automation magic
-python business_automation_showcase.py
+### CLI Examples
+- **`cli_usage.py`** - All CLI commands with examples
+- **`batch_operations.py`** - Bulk agent management
+- **`cicd_integration.py`** - CI/CD pipeline examples
+
+## 🎯 Complete Usage Examples
+
+### 1. Basic Agent Installation
+
+#### Programmatic
+```python
+from agentmanager import load_agent
+
+# Auto-install and use
+agent = load_agent("agentplug/scientific-paper-analyzer")
+result = agent.analyze_paper(pdf_path="paper.pdf")
 ```
 
-### What You'll Experience
-- **Real AI execution** generating actual business value
-- **Interactive workflows** with pause points to examine results
-- **Quantified ROI** showing exact time and cost savings
-- **Practical scenarios** you can implement immediately
+#### CLI
+```bash
+agenthub install agentplug/scientific-paper-analyzer
+```
 
-## 🎯 Business Scenarios Covered
+### 2. Advanced Installation with Details
 
-### **Development Teams**
-- Rapid prototyping and code generation
-- API client development with best practices
-- Data processing pipeline creation
+#### Programmatic
+```python
+from agentmanager.github.auto_installer import AutoInstaller
 
-### **Content Teams**
-- Customer feedback analysis at scale
-- Content strategy based on sentiment analysis
-- Automated content quality assessment
+installer = AutoInstaller(setup_environment=True)
+result = installer.install_agent("developer/agent-name")
 
-### **Operations Teams**
-- Support ticket prioritization automation
-- Business report generation workflows
-- Process optimization through analysis
+if result.success:
+    print(f"✅ Installed at: {result.local_path}")
+    print(f"🌍 Environment: {result.environment_result.venv_path}")
+    print(f"📦 Packages: {len(result.dependency_result.installed_packages)}")
+```
 
-### **Executive Teams**
-- Strategic insights from unstructured data
-- Automated competitive analysis
-- ROI tracking and performance monitoring
+#### CLI
+```bash
+agenthub install developer/agent-name --detailed
+```
 
-## 💡 Next Steps
+### 3. Environment Management
 
-After experiencing these examples:
+#### Python Version Migration
+```python
+from agentmanager.environment.environment_manager import AdvancedEnvironmentManager
 
-1. **Identify Your Pain Points** - Which repetitive tasks consume your team's time?
-2. **Map to Capabilities** - How could code generation + analysis solve your challenges?
-3. **Start Small** - Pick one workflow and implement it with AgentHub
-4. **Scale Success** - Expand successful automations across your organization
-5. **Measure Impact** - Track time saved and productivity gains
+manager = AdvancedEnvironmentManager()
+result = manager.migrate_python_version(
+    agent_name="developer/agent",
+    target_python_version="3.11",
+    create_backup=True
+)
+```
 
-## 🏆 Success Metrics
+#### CLI
+```bash
+agenthub migrate developer/agent 3.11
+```
 
-Organizations using AgentHub report:
-- **50-80% reduction** in manual processing time
-- **10x increase** in content analysis capacity
-- **$500+ weekly savings** per automated workflow
-- **Same-day implementation** of complex business processes
+#### Environment Cloning
+```python
+manager.clone_environment("prod/agent", "dev/agent-copy")
+```
 
-## 🔮 Vision
+#### CLI
+```bash
+agenthub clone prod/agent dev/agent-copy
+```
 
-AgentHub transforms how businesses operate:
-- **From manual to automated** - Complex processes become one-click operations
-- **From reactive to proactive** - AI-driven insights enable better decisions
-- **From siloed to integrated** - Seamless workflows across departments
-- **From expensive to accessible** - Enterprise-grade automation for any budget
+### 4. Repository Management
 
-**AgentHub: Where AI meets business efficiency!**
+#### List All Agents
+```python
+from agentmanager.github.repository_cloner import RepositoryCloner
+
+cloner = RepositoryCloner()
+agents = cloner.list_cloned_agents()
+for name, path in agents.items():
+    print(f"{name}: {path}")
+```
+
+#### CLI
+```bash
+agenthub list --detailed
+```
+
+### 5. Backup and Recovery
+
+#### Create Backup
+```python
+import shutil
+from pathlib import Path
+
+agent_path = Path.home() / ".agenthub" / "agents" / "developer" / "agent"
+backup_path = Path.home() / ".agenthub" / "backups" / "agent_backup"
+shutil.copytree(agent_path, backup_path)
+```
+
+#### CLI
+```bash
+agenthub backup developer/agent
+agenthub restore /path/to/backup
+```
+
+### 6. System Maintenance
+
+#### Environment Repair
+```bash
+agenthub repair developer/agent --force-reinstall-deps
+```
+
+#### Storage Optimization
+```bash
+agenthub optimize developer/agent
+```
+
+#### Cleanup Operations
+```bash
+agenthub cleanup --dry-run
+agenthub cleanup --remove-broken-envs
+```
+
+### 7. Status and Analysis
+
+#### Check Agent Status
+```bash
+agenthub status developer/agent
+agenthub analyze-deps developer/agent
+agenthub python-versions
+```
+
+## 📊 Complete Workflow Examples
+
+### Development Team Setup
+```bash
+# Install base agents
+agenthub install agentplug/scientific-paper-analyzer
+agenthub install agentplug/coding-agent
+
+# Clone for development
+agenthub clone agentplug/scientific-paper-analyzer dev/alice-paper-analyzer
+agenthub clone agentplug/coding-agent dev/bob-coding-agent
+
+# Migrate to different Python versions
+agenthub migrate dev/alice-paper-analyzer 3.11
+agenthub migrate dev/bob-coding-agent 3.10
+
+# Optimize storage
+agenthub optimize dev/alice-paper-analyzer
+agenthub optimize dev/bob-coding-agent
+```
+
+### Production Deployment
+```bash
+# Install with custom path
+agenthub install company/production-agent --base-path /opt/agents
+
+# Create backup
+agenthub backup company/production-agent --backup-path /backups
+
+# Validate installation
+agenthub status company/production-agent
+
+# Monitor dependencies
+agenthub analyze-deps company/production-agent
+```
+
+### CI/CD Integration
+```bash
+#!/bin/bash
+# deploy-agents.sh
+
+# Install agents
+agenthub install company/agent1 --base-path /opt/agents
+agenthub install company/agent2 --base-path /opt/agents
+
+# Validate all agents
+for agent in company/agent1 company/agent2; do
+    if ! agenthub status "$agent" > /dev/null 2>&1; then
+        echo "❌ $agent validation failed"
+        exit 1
+    fi
+done
+
+echo "✅ All agents deployed successfully"
+```
+
+## 🔧 Testing Your Setup
+
+### Validate Installation
+```bash
+# Check AgentHub is working
+python -c "import agentmanager; print('AgentHub ready!')"
+
+# Check CLI commands
+agenthub --help
+agenthub list --help
+```
+
+### Test with Mock Agent
+```bash
+# Create test structure
+mkdir -p /tmp/test-agent
+cd /tmp/test-agent
+
+# Create required files
+echo 'def test_method(): return {"status": "ok"}' > agent.py
+echo 'name: test-agent' > agent.yaml
+echo '# No dependencies' > requirements.txt
+echo '# Test agent' > README.md
+
+# Validate structure
+python -c "
+from agentmanager.github.repository_validator import RepositoryValidator
+validator = RepositoryValidator()
+result = validator.validate_repository('/tmp/test-agent')
+print('Valid:', result.is_valid)
+"
+```
+
+## 🎯 Agent Repository Structure
+
+For agents to work with AgentHub, they must follow this structure:
+
+```
+my-agent/
+├── agent.py              # Main implementation
+├── agent.yaml           # Configuration
+├── requirements.txt     # Dependencies
+├── README.md           # Documentation
+└── pyproject.toml      # Optional UV config
+```
+
+**agent.yaml example:**
+```yaml
+name: my-awesome-agent
+version: 1.0.0
+description: An awesome agent
+python_version: "3.11+"
+interface:
+  methods:
+    process_data:
+      parameters:
+        data: string
+      returns:
+        type: object
+dependencies:
+  - requests>=2.25.0
+  - pandas>=1.3.0
+```
+
+## 📈 Performance Tips
+
+### Storage Optimization
+```bash
+# Regular maintenance
+agenthub optimize company/agent1
+agenthub optimize company/agent2
+
+# Batch optimization
+for agent in $(agenthub list | grep -o '^[^[:space:]]*'); do
+    agenthub optimize "$agent"
+done
+```
+
+### Environment Management
+```bash
+# Check all Python versions
+agenthub python-versions
+
+# Migrate multiple agents
+for agent in dev/*; do
+    agenthub migrate "$agent" 3.11
+done
+```
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+#### "Agent not found"
+```bash
+# Check format
+agenthub install developer/agent-name  # ✅ Correct
+agenthub install agent-name           # ❌ Missing developer/
+```
+
+#### "Environment creation failed"
+```bash
+# Check UV installation
+uv --version
+
+# Repair environment
+agenthub repair developer/agent-name --force-reinstall-deps
+```
+
+#### "Dependencies failed"
+```bash
+# Analyze dependencies
+agenthub analyze-deps developer/agent-name
+
+# Check requirements.txt
+agenthub status developer/agent-name
+```
+
+### Debug Mode
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+from agentmanager import load_agent
+agent = load_agent("developer/agent-name")
+```
+
+## 🚀 Next Steps
+
+After exploring these examples:
+
+1. **Choose your first real agent** to install
+2. **Set up your development workflow** using environment cloning
+3. **Create backup procedures** for production agents
+4. **Implement monitoring** for agent health
+5. **Scale to team-wide usage**
+
+## 📚 Additional Resources
+
+- **User Guide**: `../docs/USER_GUIDE.md`
+- **API Documentation**: Check docstrings in source code
+- **CLI Help**: Run `agenthub --help` or `agenthub command --help`
+- **Examples**: All files in this directory are executable examples
+
+## 💡 Quick Commands Reference
+
+```bash
+# Essential commands
+agenthub install developer/agent-name     # Install agent
+agenthub list --detailed                  # List all agents
+agenthub status developer/agent-name      # Check agent status
+agenthub repair developer/agent-name      # Fix broken environment
+agenthub backup developer/agent-name      # Create backup
+agenthub migrate developer/agent-name 3.11  # Upgrade Python
+agenthub optimize developer/agent-name    # Clean up storage
+agenthub cleanup                          # System maintenance
+```
+
+Start with `python examples/quick_start.py` to see everything in action!
