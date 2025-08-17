@@ -47,15 +47,15 @@ code = coding_agent.method_name("a simple backprop python class")
 
 ### 🔌 One-Line Integration
 ```python
-# Load any agent instantly
-coding_agent = amg.load("meta/coding_agent")
-data_agent = amg.load("openai/data_analyzer")
-chat_agent = amg.load("anthropic/conversation")
+# Load any agent instantly - automatically installs if not found!
+coding_agent = amg.load_agent("agentplug/coding-agent")
+paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
+data_agent = amg.load_agent("openai/data_analyzer")
 
-# Use agents with standardized interfaces
-code = coding_agent.generate("Python class for neural network")
-analysis = data_agent.analyze("sales_data.csv")
-response = chat_agent.chat("Hello, how can you help me?")
+# Use agents with direct method calls
+code = coding_agent.generate_code("Python class for neural network")
+analysis = paper_analyzer.analyze_paper("paper.pdf")
+response = data_agent.analyze("sales_data.csv")
 ```
 
 ### 🛠️ Developer Tools
@@ -120,12 +120,18 @@ pip install -e .
 ```python
 import agentmanager as amg
 
-# Load your first agent
-coding_agent = amg.load("meta/coding_agent")
+# Load your first agent - automatically installs if needed!
+paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
 
-# Use the agent
-code = coding_agent.generate("Create a Python class for a simple neural network")
-print(code)
+# Use the agent immediately
+result = paper_analyzer.analyze_paper("research_paper.pdf")
+print(result)
+
+# The agent is automatically:
+# • Cloned from GitHub if not installed
+# • Set up with isolated virtual environment  
+# • All dependencies installed
+# • Ready to use immediately
 ```
 
 ### Publishing Your First Agent
