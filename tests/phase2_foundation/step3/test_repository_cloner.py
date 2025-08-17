@@ -32,7 +32,8 @@ class TestRepositoryCloner:
         """Test RepositoryCloner initialization."""
         # Test default initialization
         default_cloner = RepositoryCloner()
-        assert default_cloner.base_storage_path == Path("./agents")
+        expected_default = Path.home() / ".agenthub" / "agents"
+        assert default_cloner.base_storage_path == expected_default
         
         # Test custom path initialization
         assert self.cloner.base_storage_path == Path(self.temp_dir)
@@ -42,12 +43,12 @@ class TestRepositoryCloner:
         """Test agent storage path generation."""
         # Test normal agent name
         path = self.cloner._get_agent_storage_path("user/agent")
-        expected = Path(self.temp_dir) / "user_agent"
+        expected = Path(self.temp_dir) / "user" / "agent"
         assert path == expected
         
         # Test agent name with hyphens
         path = self.cloner._get_agent_storage_path("test-user/awesome-agent")
-        expected = Path(self.temp_dir) / "test-user_awesome-agent"
+        expected = Path(self.temp_dir) / "test-user" / "awesome-agent"
         assert path == expected
     
     @patch('subprocess.run')
@@ -121,7 +122,7 @@ class TestCloneAgent:
         assert result.success is True
         assert result.agent_name == "user/agent"
         assert result.github_url == "https://github.com/user/agent.git"
-        assert result.local_path == str(Path(self.temp_dir) / "user_agent")
+        assert result.local_path == str(Path(self.temp_dir) / "user" / "agent")
         assert result.clone_time_seconds is not None
         assert result.error_message is None
     
@@ -189,7 +190,7 @@ class TestAgentManagement:
     def test_is_agent_cloned_true(self):
         """Test is_agent_cloned when agent is cloned."""
         # Create a mock cloned agent directory
-        agent_path = Path(self.temp_dir) / "user_agent"
+        agent_path = Path(self.temp_dir) / "user" / "agent"
         agent_path.mkdir(parents=True)
         (agent_path / "test_file.txt").write_text("test content")
         
@@ -202,7 +203,7 @@ class TestAgentManagement:
     def test_get_agent_path_cloned(self):
         """Test get_agent_path when agent is cloned."""
         # Create a mock cloned agent directory
-        agent_path = Path(self.temp_dir) / "user_agent"
+        agent_path = Path(self.temp_dir) / "user" / "agent"
         agent_path.mkdir(parents=True)
         (agent_path / "test_file.txt").write_text("test content")
         
@@ -219,8 +220,10 @@ class TestAgentManagement:
         # Create mock cloned agents
         agents = ["user/agent1", "developer/agent2", "company/tool"]
         for agent in agents:
-            safe_name = agent.replace("/", "_")
-            agent_path = Path(self.temp_dir) / safe_name
+            parts = agent.split("/")
+            developer_dir = Path(self.temp_dir) / parts[0]
+            developer_dir.mkdir(parents=True, exist_ok=True)
+            agent_path = developer_dir / parts[1]
             agent_path.mkdir(parents=True)
             (agent_path / "test_file.txt").write_text("test content")
         
@@ -229,7 +232,8 @@ class TestAgentManagement:
         assert len(result) == 3
         for agent in agents:
             assert agent in result
-            expected_path = str(Path(self.temp_dir) / agent.replace("/", "_"))
+            parts = agent.split("/")
+            expected_path = str(Path(self.temp_dir) / parts[0] / parts[1])
             assert result[agent] == expected_path
     
     def test_remove_agent_not_found(self):
@@ -243,7 +247,7 @@ class TestAgentManagement:
     def test_remove_agent_success(self):
         """Test successful agent removal."""
         # Create a mock cloned agent directory
-        agent_path = Path(self.temp_dir) / "user_agent"
+        agent_path = Path(self.temp_dir) / "user" / "agent"
         agent_path.mkdir(parents=True)
         (agent_path / "test_file.txt").write_text("test content")
         
@@ -282,7 +286,7 @@ class TestGitCloneExecution:
         
         assert result.returncode == 0
         mock_run.assert_called_once_with(
-            ["git", "clone", github_url, str(target_path)],
+            ["git", "clone", "--recursive", github_url, str(target_path)],
             capture_output=True,
             text=True,
             timeout=300
@@ -346,7 +350,8 @@ class TestIntegration:
         
         # Should be the correct classes
         cloner = agentmanager.github.RepositoryCloner()
-        assert cloner.base_storage_path == Path("./agents")
+        expected_path = Path.home() / ".agenthub" / "agents"
+        assert cloner.base_storage_path == expected_path
     
     def test_url_parser_integration(self):
         """Test integration with URLParser."""
@@ -399,7 +404,8 @@ class TestBackwardCompatibility:
         
         # Creating RepositoryCloner should not affect existing components
         cloner = RepositoryCloner()
-        assert cloner.base_storage_path == Path("./agents")
+        expected_path = Path.home() / ".agenthub" / "agents"
+        assert cloner.base_storage_path == expected_path
         
         # Existing components should still work normally
         assert loader.storage is storage
