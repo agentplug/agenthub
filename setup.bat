@@ -23,6 +23,7 @@ echo Installing packages...
 REM Activate virtual environment (Windows path)
 call .venv\Scripts\activate.bat
 uv pip install -e .
+REM Note: Run 'uv pip install -e ".[dev]"' if you want to install optional development dependencies (pytest, black, ruff, etc.)
 
 echo Setup complete! Agent Hub is ready to use.
 echo.

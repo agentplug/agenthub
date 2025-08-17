@@ -27,6 +27,7 @@ Write-Host "Installing packages..." -ForegroundColor Cyan
 # Activate virtual environment (Windows path)
 & ".venv\Scripts\Activate.ps1"
 uv pip install -e .
+# Note: Run 'uv pip install -e ".[dev]"' if you want to install optional development dependencies (pytest, black, ruff, etc.)
 
 Write-Host "Setup complete! Agent Hub is ready to use." -ForegroundColor Green
 Write-Host ""
