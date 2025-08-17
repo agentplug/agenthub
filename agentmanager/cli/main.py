@@ -13,6 +13,8 @@ from rich.table import Table
 from agentmanager.core.agent_loader import AgentLoader
 from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
+from agentmanager.cli.commands import agent
+from agentmanager.cli.config import CLIConfig
 
 console = Console()
 
@@ -470,6 +472,10 @@ def validate():
     except Exception as e:
         rprint(f"❌ [red]Validation failed: {e}[/red]")
         sys.exit(1)
+
+
+# Add agent management commands
+cli.add_command(agent)
 
 
 def main():
