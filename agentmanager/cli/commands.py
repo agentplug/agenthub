@@ -534,7 +534,7 @@ def _show_agent_status(agent_name: str, agent_path: str):
     if venv_path.exists():
         try:
             env_setup = EnvironmentSetup()
-            env_info = env_setup._collect_environment_info(str(path), str(venv_path))
+            env_info = env_setup._collect_environment_info(path, venv_path)
             
             rprint(f"🌍 Environment: {'Active' if env_info.get('venv_exists') else 'Broken'}")
             rprint(f"   Python: {env_info.get('python_executable', 'Unknown')}")
