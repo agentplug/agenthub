@@ -5,15 +5,14 @@ This module provides functionality for creating and managing virtual environment
 and dependency installation for auto-installed agents.
 """
 
+import logging
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from agentmanager.utils.logging import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Check if environment module is available
 ENVIRONMENT_AVAILABLE = True  # This module is self-contained

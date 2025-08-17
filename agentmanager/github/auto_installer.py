@@ -5,11 +5,10 @@ This module provides the main AutoInstaller class that orchestrates the complete
 agent installation workflow including cloning, validation, and environment setup.
 """
 
+import logging
 import time
 from dataclasses import dataclass
 from typing import List, Optional
-
-from agentmanager.utils.logging import get_logger
 
 # Check if environment module is available
 try:
@@ -22,7 +21,7 @@ from .url_parser import URLParser
 from .repository_cloner import RepositoryCloner, CloneResult
 from .repository_validator import RepositoryValidator, ValidationResult
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
