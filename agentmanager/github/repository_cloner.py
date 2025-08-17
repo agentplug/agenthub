@@ -94,9 +94,14 @@ class RepositoryCloner:
         Returns:
             Path: Local path where the agent should be stored
         """
-        # Replace slash with underscore for directory name to avoid path issues
-        safe_name = agent_name.replace("/", "_")
-        return self.base_storage_path / safe_name
+        # Maintain the developer/agent-name directory structure
+        # Split by slash and create nested directories
+        parts = agent_name.split("/")
+        if len(parts) != 2:
+            raise ValueError(f"Invalid agent name format: {agent_name}. Expected: 'developer/agent-name'")
+        
+        developer, agent = parts
+        return self.base_storage_path / developer / agent
     
     def _execute_git_clone(self, github_url: str, target_path: Path) -> subprocess.CompletedProcess:
         """
@@ -367,12 +372,15 @@ class RepositoryCloner:
         if not self.base_storage_path.exists():
             return cloned_agents
         
-        for item in self.base_storage_path.iterdir():
-            if item.is_dir() and any(item.iterdir()):  # Non-empty directory
-                # Convert safe directory name back to agent name
-                agent_name = item.name.replace("_", "/", 1)  # Only replace first underscore
-                if self.url_parser.is_valid_agent_name(agent_name):
-                    cloned_agents[agent_name] = str(item)
+        # Handle nested directory structure: base/developer/agent/
+        for developer_dir in self.base_storage_path.iterdir():
+            if developer_dir.is_dir():
+                for agent_dir in developer_dir.iterdir():
+                    if agent_dir.is_dir() and any(agent_dir.iterdir()):  # Non-empty directory
+                        # Reconstruct agent name from path
+                        agent_name = f"{developer_dir.name}/{agent_dir.name}"
+                        if self.url_parser.is_valid_agent_name(agent_name):
+                            cloned_agents[agent_name] = str(agent_dir)
         
         logger.debug(f"Found {len(cloned_agents)} cloned agents")
         return cloned_agents
