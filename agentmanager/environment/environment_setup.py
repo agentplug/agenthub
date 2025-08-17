@@ -50,11 +50,14 @@ class DependencyInstallResult:
     installed_packages: List[str]
     error_message: Optional[str] = None
     warnings: List[str] = None
+    next_steps: List[str] = None
 
     def __post_init__(self):
-        """Initialize warnings list if it is None."""
+        """Initialize lists if they are None."""
         if self.warnings is None:
             self.warnings = []
+        if self.next_steps is None:
+            self.next_steps = []
 
 
 class EnvironmentSetupError(Exception):
@@ -94,6 +97,11 @@ class EnvironmentSetup:
     def setup_environment(self, agent_path: str) -> EnvironmentSetupResult:
         """Set up a virtual environment for the agent."""
         start_time = time.time()
+        
+        # Ensure the path is properly expanded (handle ~ characters)
+        if isinstance(agent_path, str) and '~' in agent_path:
+            agent_path = str(Path(agent_path).expanduser())
+        
         agent_path_obj = Path(agent_path)
 
         if not agent_path_obj.exists():
@@ -123,13 +131,92 @@ class EnvironmentSetup:
             venv_path = agent_path_obj / ".venv"
             self.logger.info(f"Creating virtual environment at {venv_path}")
 
-            result = subprocess.run(
-                ["uv", "sync"],
+            # Step 1: Create the virtual environment first
+            create_result = subprocess.run(
+                ["uv", "venv", ".venv"],
                 cwd=agent_path,
                 capture_output=True,
                 text=True,
                 timeout=60
             )
+
+            if create_result.returncode != 0:
+                return EnvironmentSetupResult(
+                    success=False,
+                    agent_path=agent_path,
+                    venv_path=str(venv_path),
+                    setup_time_seconds=time.time() - start_time,
+                    error_message=f"UV venv creation failed: {create_result.stderr}",
+                    next_steps=[
+                        "Check if UV is properly installed",
+                        "Verify system permissions",
+                        "Ensure sufficient disk space"
+                    ]
+                )
+
+            # Step 2: Install dependencies from agent.yaml or requirements.txt
+            # First try to read dependencies from agent.yaml
+            agent_yaml_path = agent_path_obj / "agent.yaml"
+            dependencies = []
+            
+            if agent_yaml_path.exists():
+                try:
+                    import yaml
+                    with open(agent_yaml_path, 'r') as f:
+                        agent_config = yaml.safe_load(f)
+                    
+                    if 'dependencies' in agent_config:
+                        dependencies = agent_config['dependencies']
+                        self.logger.info(f"Found {len(dependencies)} dependencies in agent.yaml")
+                    else:
+                        self.logger.info("No dependencies section in agent.yaml, falling back to requirements.txt")
+                except Exception as e:
+                    self.logger.warning(f"Failed to parse agent.yaml: {e}, falling back to requirements.txt")
+            
+            # If no dependencies from agent.yaml, try requirements.txt
+            if not dependencies:
+                requirements_path = agent_path_obj / "requirements.txt"
+                if requirements_path.exists():
+                    with open(requirements_path, 'r') as f:
+                        dependencies = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                    self.logger.info(f"Found {len(dependencies)} dependencies in requirements.txt")
+                else:
+                    return EnvironmentSetupResult(
+                        success=False,
+                        agent_path=agent_path,
+                        venv_path=str(venv_path),
+                        setup_time_seconds=time.time() - start_time,
+                        error_message="No dependencies found in agent.yaml or requirements.txt",
+                        next_steps=[
+                            "Ensure agent.yaml has a dependencies section",
+                            "Or provide a requirements.txt file"
+                        ]
+                    )
+            
+            # Install dependencies using UV with explicit Python path
+            venv_python = venv_path / "bin" / "python"
+            if not venv_python.exists():
+                # Fallback for Windows
+                venv_python = venv_path / "Scripts" / "python.exe"
+            
+            if dependencies:
+                self.logger.info(f"Installing {len(dependencies)} dependencies: {dependencies}")
+                result = subprocess.run(
+                    ["uv", "pip", "install", "--python", str(venv_python)] + dependencies,
+                    cwd=agent_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=300  # 5 minutes for dependency installation
+                )
+            else:
+                # Fallback to requirements.txt if no dependencies found
+                result = subprocess.run(
+                    ["uv", "pip", "install", "--python", str(venv_python), "-r", "requirements.txt"],
+                    cwd=agent_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=300  # 5 minutes for dependency installation
+                )
 
             if result.returncode != 0:
                 return EnvironmentSetupResult(
@@ -195,6 +282,13 @@ class EnvironmentSetup:
     def install_dependencies(self, agent_path: str, venv_path: str) -> DependencyInstallResult:
         """Install dependencies in the virtual environment."""
         start_time = time.time()
+        
+        # Ensure the paths are properly expanded (handle ~ characters)
+        if isinstance(agent_path, str) and '~' in agent_path:
+            agent_path = str(Path(agent_path).expanduser())
+        if isinstance(venv_path, str) and '~' in venv_path:
+            venv_path = str(Path(venv_path).expanduser())
+        
         agent_path_obj = Path(agent_path)
         venv_path_obj = Path(venv_path)
 
