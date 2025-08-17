@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ProcessManager:
     """Manages agent subprocess execution with isolation."""
 
-    def __init__(self, timeout: int = 30):
+    def __init__(self, timeout: int = 300):
         """
         Initialize the process manager.
 

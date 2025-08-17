@@ -14,7 +14,7 @@ class TestProcessManager:
     def test_init_default_timeout(self):
         """Test ProcessManager initialization with default timeout."""
         pm = ProcessManager()
-        assert pm.timeout == 30
+        assert pm.timeout == 300
         assert pm.environment_manager is not None
 
     def test_init_custom_timeout(self):
