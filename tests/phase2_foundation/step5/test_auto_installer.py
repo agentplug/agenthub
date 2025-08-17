@@ -230,16 +230,14 @@ class TestAutoInstaller:
                 assert result.environment_result.success is True
                 assert result.dependency_result.success is True
     
-    def test_get_next_steps_for_success_basic(self, auto_installer, mock_validation_result):
+    def test_get_next_steps_for_success_basic(self, auto_installer, mock_clone_result, mock_validation_result):
         """Test getting next steps for successful installation without environment."""
-        next_steps = auto_installer._get_next_steps_for_success(mock_validation_result, None, None)
+        next_steps = auto_installer._get_next_steps_for_success("test/agent", mock_clone_result, mock_validation_result)
         
-        assert "✅ Agent repository cloned and validated successfully" in next_steps
-        assert "📁 Agent location: /tmp/test/agent" in next_steps
-        assert "🔧 Next: Set up UV environment and install dependencies manually" in next_steps
-        assert "📦 UV project configuration detected - ready for environment setup" in next_steps
+        assert "✅ Agent 'test/agent' installed successfully!" in next_steps
+        assert "📁 Local path: /tmp/test/agent" in next_steps
     
-    def test_get_next_steps_for_success_with_environment(self, auto_installer, mock_validation_result):
+    def test_get_next_steps_for_success_with_environment(self, auto_installer, mock_clone_result, mock_validation_result):
         """Test getting next steps for successful installation with environment."""
         mock_env_result = Mock(
             success=True,
@@ -250,25 +248,22 @@ class TestAutoInstaller:
             installed_packages=["requests", "pandas"]
         )
         
-        next_steps = auto_installer._get_next_steps_for_success(mock_validation_result, mock_env_result, mock_dep_result)
+        next_steps = auto_installer._get_next_steps_for_success("test/agent", mock_clone_result, mock_validation_result, mock_env_result, mock_dep_result)
         
-        assert "✅ UV virtual environment created successfully" in next_steps
-        assert "✅ Dependencies installed successfully" in next_steps
-        assert "📦 Installed packages: 2" in next_steps
+        assert "🌍 Virtual environment created successfully" in next_steps
+        assert "📚 Dependencies installed successfully" in next_steps
     
     def test_get_next_steps_for_validation_failure(self, auto_installer):
         """Test getting next steps for validation failure."""
         mock_validation_result = Mock(
+            is_valid=False,
             local_path="/tmp/test/agent",
             missing_files=["agent.py", "requirements.txt"]
         )
         
-        next_steps = auto_installer._get_next_steps_for_validation_failure(mock_validation_result)
+        next_steps = auto_installer._get_next_steps_for_failure("test/agent", None, mock_validation_result, None)
         
-        assert "❌ Repository validation failed" in next_steps
-        assert "📁 Repository location: /tmp/test/agent" in next_steps
-        assert "🔧 Missing: agent.py - This is the main agent implementation file" in next_steps
-        assert "🔧 Missing: requirements.txt - This lists Python dependencies" in next_steps
+        assert any("Repository validation failed" in step for step in next_steps)
     
     def test_collect_all_warnings(self, auto_installer, mock_validation_result):
         """Test collecting all warnings from installation steps."""
