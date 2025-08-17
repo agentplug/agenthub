@@ -130,7 +130,7 @@ class AutoInstaller:
             validation_result = self.repository_validator.validate_repository(
                 clone_result.local_path
             )
-            if not validation_result.success:
+            if not validation_result.is_valid:
                 return self._create_failure_result(
                     agent_name, start_time,
                     f"Repository validation failed: {validation_result.error_message}",
@@ -167,7 +167,7 @@ class AutoInstaller:
 
             # Step 6: Determine success and collect results
             installation_time = time.time() - start_time
-            success = (clone_result.success and validation_result.success and
+            success = (clone_result.success and validation_result.is_valid and
                       (not self.setup_environment or not environment_result or
                        environment_result.success))
 
@@ -239,15 +239,16 @@ class AutoInstaller:
         """Collect warnings from all installation steps."""
         warnings = []
 
-        if clone_result.warnings:
-            warnings.extend(clone_result.warnings)
+        # CloneResult doesn't have warnings attribute
+        # if clone_result.warnings:
+        #     warnings.extend(clone_result.warnings)
         if validation_result.warnings:
             warnings.extend(validation_result.warnings)
         if (environment_result and hasattr(environment_result, 'warnings') and
-            environment_result.warnings):
+                environment_result.warnings):
             warnings.extend(environment_result.warnings)
         if (dependency_result and hasattr(dependency_result, 'warnings') and
-            dependency_result.warnings):
+                dependency_result.warnings):
             warnings.extend(dependency_result.warnings)
 
         return warnings
@@ -332,7 +333,7 @@ class AutoInstaller:
                 "   • Network connectivity"
             ])
 
-        if validation_result and not validation_result.success:
+        elif validation_result and not validation_result.is_valid:
             next_steps.extend([
                 "✅ Cloning succeeded but validation failed - check:",
                 "   • Required files (agent.py, agent.yaml, requirements.txt, README.md)",
