@@ -1,358 +1,334 @@
-# Environment Module - Interface Design
+# Environment Management Module - Interface Design
 
-**Document Type**: Detailed Interface Design
-**Module**: Environment Management
-**Phase**: 2 - Auto-Install
-**Author**: William
-**Date Created**: 2025-06-28
-**Last Updated**: 2025-06-28
-**Status**: Active
+## Overview
+The Environment Management Module handles the creation and management of isolated UV environments for each agent, ensuring complete dependency isolation and reproducible execution.
 
-## 🎯 **Public Interfaces**
+## Core Principles
+- **Automated Setup**: No manual intervention required from users
+- **Standardized Process**: Consistent setup flow for all agents
+- **Complete Isolation**: Each agent runs in its own environment
+- **Fallback Mechanisms**: Robust error handling and recovery
+- **Resource Management**: Configurable limits and constraints
 
-### **UV Environment Setup Interface**
+## UV Environment Setup Interface
 
+### Primary Interface
 ```python
 class UVEnvironmentSetup:
-    """Coordinate the complete UV-based isolated environment setup process for agents."""
-
+    """Standardized UV environment setup for automated agent installation"""
+    
     def setup_uv_environment(self, agent_path: str, agent_config: AgentConfig, progress_callback=None) -> UVEnvironmentSetupResult:
         """
-        Set up a complete UV-based isolated environment for an agent with progress tracking.
-
+        Automated setup of UV environment for an agent
+        
         Args:
-            agent_path: Path to the agent directory
+            agent_path: Path to agent repository
             agent_config: Parsed agent.yaml configuration
-            progress_callback: Optional callback for progress updates
-
+            progress_callback: Optional progress tracking callback
+            
         Returns:
-            UVEnvironmentSetupResult with setup status and environment details
-
-        Raises:
-            UVEnvironmentSetupError: If UV environment setup fails
-            RequirementsError: If requirements.txt is invalid or installation fails
-            PythonVersionError: If specified Python version is not available
-            ResourceLimitError: If resource limits cannot be satisfied
+            UVEnvironmentSetupResult with setup status and details
         """
         pass
+    
+    def create_uv_environment(self, agent_path: str, python_version: str) -> UVEnvironmentResult:
+        """
+        Create isolated UV environment
+        
+        Args:
+            agent_path: Path to agent repository
+            python_version: Python version to use
+            
+        Returns:
+            UVEnvironmentResult with environment details
+        """
+        pass
+    
+    def execute_setup_commands(self, agent_path: str, agent_config: AgentConfig, progress_callback=None) -> UVDependencyResult:
+        """
+        Execute setup commands from agent.yaml with proper virtual environment activation
+        
+        This method executes the commands defined in agent.yaml setup.commands, ensuring
+        each command runs in the activated virtual environment for proper isolation.
+        
+        Expected command format in agent.yaml:
+        setup:
+          commands:
+            - "source .venv/bin/activate && uv sync"
+            - "source .venv/bin/activate && uv pip install -e ."
+            - "source .venv/bin/activate && uv pip install -r requirements.txt"
+        
+        Args:
+            agent_path: Path to agent repository
+            agent_config: Agent configuration with setup commands
+            progress_callback: Progress tracking callback for real-time updates
+            
+        Returns:
+            UVDependencyResult with setup status, including failed packages and rollback info
+        """
+        pass
+    
+    def validate_environment(self, agent_path: str, agent_config: AgentConfig) -> UVEnvironmentValidationResult:
+        """
+        Validate agent environment setup using validation steps from agent.yaml
+        
+        Args:
+            agent_path: Path to agent repository
+            agent_config: Agent configuration with validation steps
+            
+        Returns:
+            UVEnvironmentValidationResult with validation status
+        """
+        pass
+    
+    def cleanup_failed_setup(self, agent_path: str) -> RollbackResult:
+        """
+        Clean up failed environment setup
+        
+        Args:
+            agent_path: Path to agent repository
+            
+        Returns:
+            RollbackResult with cleanup status
+        """
+        pass
+    
+    def get_environment_info(self, agent_path: str) -> UVEnvironmentInfo:
+        """
+        Get information about agent environment
+        
+        Args:
+            agent_path: Path to agent repository
+            
+        Returns:
+            UVEnvironmentInfo with environment details
+        """
+        pass
+```
 
+### Dynamic Setup Execution
+```python
+class SetupCommandExecutor:
+    """Execute setup commands dynamically from agent.yaml"""
+    
+    def execute_setup_commands(self, agent_path: str, setup_config: SetupConfig, progress_callback=None) -> SetupExecutionResult:
+        """
+        Execute setup commands in sequence as specified in agent.yaml
+        
+        Args:
+            agent_path: Path to agent repository
+            setup_config: Setup configuration from agent.yaml
+            progress_callback: Progress tracking callback
+            
+        Returns:
+            SetupExecutionResult with execution status
+        """
+        commands = setup_config.commands
+        total_commands = len(commands)
+        
+        for i, command in enumerate(commands):
+            try:
+                # Execute command
+                result = self._execute_command(agent_path, command)
+                
+                # Update progress
+                if progress_callback:
+                    progress_percentage = ((i + 1) / total_commands) * 100
+                    progress_callback(f"Executing: {command}", progress_percentage)
+                
+                # Check if command succeeded
+                if not result.success:
+                    return SetupExecutionResult(
+                        success=False,
+                        failed_command=command,
+                        error_message=result.error_message,
+                        commands_executed=i + 1,
+                        total_commands=total_commands
+                    )
+                    
+            except Exception as e:
+                return SetupExecutionResult(
+                    success=False,
+                    failed_command=command,
+                    error_message=str(e),
+                    commands_executed=i + 1,
+                    total_commands=total_commands
+                )
+        
+        return SetupExecutionResult(
+            success=True,
+            commands_executed=total_commands,
+            total_commands=total_commands
+        )
+    
+    def _execute_command(self, agent_path: str, command: str) -> CommandExecutionResult:
+        """Execute a single setup command"""
+        # Implementation details for command execution
+        pass
+```
+
+### Progress Tracking Interface
+```python
+class SetupProgressTracker:
+    """Track and report setup progress for automated installation"""
+    
     def get_setup_progress(self, agent_name: str) -> SetupProgress:
-        """Get current setup progress for an agent."""
+        """Get current setup progress for an agent"""
         pass
-
+    
     def pause_setup(self, agent_name: str) -> bool:
-        """Pause ongoing setup process."""
+        """Pause ongoing setup process"""
         pass
-
+    
     def resume_setup(self, agent_name: str) -> bool:
-        """Resume paused setup process."""
+        """Resume paused setup process"""
         pass
-
-    def create_uv_project(self, agent_path: str, python_version: str) -> UVProjectResult:
-        """
-        Create a new UV project with specified Python version.
-
-        Args:
-            agent_path: Path where UV project should be created
-            python_version: Python version specification (e.g., "3.11", "3.12")
-
-        Returns:
-            UVProjectResult with project creation details
-
-        Raises:
-            UVProjectError: If UV project creation fails
-            PythonVersionError: If specified Python version is not available
-        """
-        pass
-
-    def install_uv_dependencies(self, agent_path: str, requirements_path: str, progress_callback=None) -> UVDependencyResult:
-        """
-        Install dependencies using UV package manager with progress tracking.
-
-        Args:
-            agent_path: Path to the UV project directory
-            requirements_path: Path to requirements.txt file
-            progress_callback: Optional callback for progress updates
-
-        Returns:
-            UVDependencyResult with installation status and details
-
-        Raises:
-            RequirementsError: If requirements.txt is invalid
-            UVInstallationError: If dependency installation fails
-            ConflictError: If dependency conflicts cannot be resolved
-        """
-        pass
-
-    def get_installation_progress(self, agent_path: str) -> InstallationProgress:
-        """Get current installation progress for an agent."""
-        pass
-
-    def rollback_failed_installation(self, agent_path: str) -> RollbackResult:
-        """Rollback failed dependency installation and cleanup."""
-        pass
-
-    def validate_uv_environment(self, agent_path: str) -> UVEnvironmentValidationResult:
-        """Validate that a UV environment is properly configured and functional."""
-        pass
-
-    def cleanup_failed_uv_setup(self, agent_path: str):
-        """Clean up resources from a failed UV environment setup."""
-        pass
-
-    def get_uv_environment_info(self, agent_path: str) -> UVEnvironmentInfo:
-        """Get detailed information about a UV environment."""
+    
+    def cancel_setup(self, agent_name: str) -> bool:
+        """Cancel ongoing setup process"""
         pass
 ```
 
-### **Environment Setup Interface**
+## UV Environment Data Models
 
-```python
-class EnvironmentSetup:
-    """Coordinate the complete environment setup process for agents."""
-
-    def setup_environment(self, agent_path: str, requirements_path: str) -> EnvironmentSetupResult:
-        """
-        Set up a complete virtual environment for an agent.
-
-        Args:
-            agent_path: Path to the agent directory
-            requirements_path: Path to requirements.txt file
-
-        Returns:
-            EnvironmentSetupResult with setup status and environment details
-
-        Raises:
-            EnvironmentSetupError: If environment setup fails
-            RequirementsError: If requirements.txt is invalid or installation fails
-            VirtualEnvironmentError: If virtual environment creation fails
-        """
-        pass
-
-    def validate_environment(self, env_path: str) -> EnvironmentValidationResult:
-        """Validate that an environment is properly configured and functional."""
-        pass
-
-    def cleanup_failed_setup(self, agent_path: str):
-        """Clean up resources from a failed environment setup."""
-        pass
-```
-
-### **Virtual Environment Creator Interface**
-
-```python
-class VirtualEnvironmentCreator:
-    """Create and configure Python virtual environments."""
-
-    def create_environment(self, target_path: str, python_version: Optional[str] = None) -> str:
-        """
-        Create a new virtual environment.
-
-        Args:
-            target_path: Path where environment should be created
-            python_version: Optional Python version specification
-
-        Returns:
-            Path to the created virtual environment
-
-        Raises:
-            VirtualEnvironmentError: If environment creation fails
-            PythonVersionError: If specified Python version is not available
-        """
-        pass
-
-    def activate_environment(self, env_path: str) -> EnvironmentContext:
-        """Activate a virtual environment and return context manager."""
-        pass
-
-    def deactivate_environment(self, env_path: str):
-        """Deactivate a virtual environment."""
-        pass
-
-    def get_python_executable(self, env_path: str) -> str:
-        """Get the Python executable path for a virtual environment."""
-        pass
-
-    def get_environment_info(self, env_path: str) -> EnvironmentInfo:
-        """Get detailed information about a virtual environment."""
-        pass
-```
-
-### **Dependency Manager Interface**
-
-```python
-class DependencyManager:
-    """Install and manage Python dependencies in virtual environments."""
-
-    def install_dependencies(self, env_path: str, requirements_path: str) -> DependencyInstallResult:
-        """
-        Install dependencies from requirements.txt in a virtual environment.
-
-        Args:
-            env_path: Path to the virtual environment
-            requirements_path: Path to requirements.txt file
-
-        Returns:
-            DependencyInstallResult with installation status and details
-
-        Raises:
-            RequirementsError: If requirements.txt is invalid
-            InstallationError: If dependency installation fails
-            ConflictError: If dependency conflicts cannot be resolved
-        """
-        pass
-
-    def validate_requirements(self, requirements_path: str) -> RequirementsValidationResult:
-        """Validate requirements.txt format and content."""
-        pass
-
-    def resolve_conflicts(self, requirements: List[str]) -> ConflictResolutionResult:
-        """Resolve dependency conflicts in requirements."""
-        pass
-
-    def get_installed_packages(self, env_path: str) -> List[PackageInfo]:
-        """Get list of installed packages in a virtual environment."""
-        pass
-
-    def check_package_health(self, env_path: str) -> PackageHealthResult:
-        """Check the health and compatibility of installed packages."""
-        pass
-```
-
-### **Environment Validator Interface**
-
-```python
-class EnvironmentValidator:
-    """Validate virtual environment configuration and functionality."""
-
-    def validate_environment(self, env_path: str) -> EnvironmentValidationResult:
-        """
-        Validate that a virtual environment is properly configured.
-
-        Args:
-            env_path: Path to the virtual environment
-
-        Returns:
-            EnvironmentValidationResult with validation details
-        """
-        pass
-
-    def test_python_functionality(self, env_path: str) -> PythonTestResult:
-        """Test basic Python functionality in the environment."""
-        pass
-
-    def test_package_imports(self, env_path: str, packages: List[str]) -> ImportTestResult:
-        """Test that specified packages can be imported."""
-        pass
-
-    def check_environment_isolation(self, env_path: str) -> IsolationTestResult:
-        """Verify that the environment is properly isolated."""
-        pass
-```
-
-## 🔧 **Data Models**
-
-### **UV Environment Data Models**
-
+### Core Setup Models
 ```python
 @dataclass
 class UVEnvironmentSetupResult:
-    """Result of UV environment setup operation."""
+    """Result of automated UV environment setup"""
     success: bool
     agent_path: str
-    uv_project_path: str
+    environment_path: str
+    setup_time: float
     python_version: str
-    python_executable: str
-    setup_time: float  # seconds
-    installed_packages: List[PackageInfo]
-    uv_config: UVConfig
-    warnings: List[str]
+    uv_version: str
+    commands_executed: List[str]
+    commands_failed: List[str]
     errors: List[str]
+    warnings: List[str]
     setup_log: str
-    validation_result: Optional[UVEnvironmentValidationResult] = None
-
-@dataclass
-class UVProjectResult:
-    """Result of UV project creation."""
-    success: bool
-    project_path: str
-    python_version: str
-    uv_lock_file: str
-    creation_time: float  # seconds
-    project_config: Dict[str, Any]
-
-@dataclass
-class UVDependencyResult:
-    """Result of UV dependency installation."""
-    success: bool
-    installed_packages: List[PackageInfo]
-    resolved_versions: Dict[str, str]
-    installation_time: float  # seconds
-    conflicts_resolved: List[str]
-    warnings: List[str]
-    errors: List[str]
-    failed_packages: List[FailedPackage]
-    installation_log: str
     rollback_available: bool
 
 @dataclass
+class SetupExecutionResult:
+    """Result of setup command execution"""
+    success: bool
+    commands_executed: int
+    total_commands: int
+    failed_command: Optional[str]
+    error_message: Optional[str]
+    execution_time: float
+    setup_log: str
+
+@dataclass
+class CommandExecutionResult:
+    """Result of individual command execution"""
+    success: bool
+    command: str
+    output: str
+    error_message: Optional[str]
+    execution_time: float
+    exit_code: int
+
+@dataclass
+class UVEnvironmentResult:
+    """Result of UV environment creation"""
+    success: bool
+    agent_path: str
+    environment_path: str
+    python_version: str
+    creation_time: float
+    errors: List[str]
+
+@dataclass
+class UVDependencyResult:
+    """Result of dependency installation"""
+    success: bool
+    agent_path: str
+    installed_packages: List[str]
+    install_time: float
+    errors: List[str]
+    warnings: List[str]
+    failed_packages: List[FailedPackage]
+    installation_log: str
+    rollback_available: bool
+    conflicts_resolved: List[str]
+
+@dataclass
 class FailedPackage:
-    """Information about a failed package installation."""
+    """Information about a failed package installation"""
     package_name: str
     version_attempted: str
-    error_type: str  # "version_conflict", "network_error", "compilation_error", "dependency_conflict"
+    error_type: str
     error_message: str
     conflicting_packages: List[str]
     suggested_solutions: List[str]
     can_retry: bool
+    retry_count: int
 
 @dataclass
 class UVEnvironmentValidationResult:
-    """Result of UV environment validation."""
-    is_valid: bool
-    validation_time: float  # seconds
-    python_version: str
-    python_executable: str
-    uv_project_valid: bool
-    package_count: int
-    validation_errors: List[str]
-    validation_warnings: List[str]
-    test_results: Dict[str, bool]
-    overall_score: float  # 0.0 to 1.0
+    """Result of environment validation"""
+    success: bool
+    agent_path: str
+    validation_steps: List[ValidationStep]
+    validation_time: float
+    errors: List[str]
+    warnings: List[str]
+
+@dataclass
+class ValidationStep:
+    """Individual validation step result"""
+    step_name: str
+    command: str
+    success: bool
+    output: str
+    error: Optional[str]
+    execution_time: float
 
 @dataclass
 class UVEnvironmentInfo:
-    """Information about a UV environment."""
+    """Information about UV environment"""
     agent_path: str
-    uv_project_path: str
+    environment_path: str
     python_version: str
-    python_executable: str
-    uv_lock_file: str
-    installed_packages: List[PackageInfo]
-    uv_config: UVConfig
-    last_updated: datetime
-    health_status: str
+    uv_version: str
+    created_at: datetime
+    last_used: datetime
+    status: str
+    resource_usage: ResourceUsage
 
 @dataclass
-class UVConfig:
-    """UV-specific configuration from agent.yaml."""
-    python_version: str
-    isolated: bool
-    resources: UVResourceLimits
-    dependencies: List[str]
-    dev_dependencies: List[str]
+class ResourceUsage:
+    """Resource usage information"""
+    memory_usage: str
+    disk_usage: str
+    cpu_usage: float
+    active_processes: int
+```
 
+### Progress Tracking Models
+```python
 @dataclass
-class UVResourceLimits:
-    """Resource limits for UV environment."""
-    memory_limit: Optional[str]  # e.g., "2GB", "512MB"
-    timeout: Optional[int]  # seconds
-    cpu_limit: Optional[str]  # e.g., "2", "50%"
-    disk_limit: Optional[str]  # e.g., "1GB", "100MB"
+class SetupProgress:
+    """Overall setup progress tracking"""
+    agent_name: str
+    current_phase: str
+    phase_number: int
+    total_phases: int
+    overall_progress: float
+    current_step: str
+    step_progress: float
+    start_time: datetime
+    estimated_total_time: Optional[float]
+    estimated_remaining: Optional[float]
+    status: str
+    current_operation: str
+    details: Dict[str, Any]
 
 @dataclass
 class InstallationProgress:
-    """Progress tracking for agent installation."""
+    """Dependency installation progress"""
     agent_name: str
     current_step: str
     step_number: int
@@ -362,649 +338,346 @@ class InstallationProgress:
     packages_installed: int
     total_packages: int
     start_time: datetime
-    estimated_remaining: Optional[float]  # seconds
-    status: str  # "running", "completed", "failed", "paused"
+    estimated_remaining: Optional[float]
+    status: str
+    current_operation: str
+    package_details: Dict[str, Any]
 
 @dataclass
 class RollbackResult:
-    """Result of rollback operation."""
+    """Result of failed setup rollback"""
     success: bool
     agent_path: str
     cleaned_resources: List[str]
     rollback_time: float
     errors: List[str]
     warnings: List[str]
-
-@dataclass
-class SetupProgress:
-    """Progress tracking for complete environment setup."""
-    agent_name: str
-    current_phase: str  # "discovery", "cloning", "config", "uv_setup", "dependencies", "validation"
-    phase_number: int
-    total_phases: int
-    overall_progress: float
-    current_step: str
-    step_progress: float
-    start_time: datetime
-    estimated_total_time: Optional[float]  # seconds
-    estimated_remaining: Optional[float]  # seconds
-    status: str  # "running", "paused", "completed", "failed"
-    current_operation: str
-    details: Dict[str, Any]
+    partial_cleanup: bool
 ```
 
-### **EnvironmentSetupResult Class**
-
-```python
-from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
-from datetime import datetime
-
-@dataclass
-class EnvironmentSetupResult:
-    """Result of environment setup operation."""
-    success: bool
-    environment_path: str
-    python_executable: str
-    setup_time: float  # seconds
-    installed_packages: List[PackageInfo]
-    warnings: List[str]
-    errors: List[str]
-    setup_log: str
-    validation_result: Optional[EnvironmentValidationResult] = None
-```
-
-### **EnvironmentValidationResult Class**
-
+### Configuration Models
 ```python
 @dataclass
-class EnvironmentValidationResult:
-    """Result of environment validation."""
-    is_valid: bool
-    validation_time: float  # seconds
-    python_version: str
-    python_executable: str
-    package_count: int
-    validation_errors: List[str]
-    validation_warnings: List[str]
-    test_results: Dict[str, bool]
-    overall_score: float  # 0.0 to 1.0
-```
-
-### **EnvironmentInfo Class**
-
-```python
-@dataclass
-class EnvironmentInfo:
-    """Information about a virtual environment."""
-    path: str
-    python_version: str
-    python_executable: str
-    creation_time: datetime
-    last_modified: datetime
-    size_bytes: int
-    package_count: int
-    is_active: bool
-    platform: str
-    architecture: str
-```
-
-### **DependencyInstallResult Class**
-
-```python
-@dataclass
-class DependencyInstallResult:
-    """Result of dependency installation."""
-    success: bool
-    installed_packages: List[PackageInfo]
-    failed_packages: List[FailedPackage]
-    installation_time: float  # seconds
-    total_packages: int
-    successful_installations: int
-    failed_installations: int
-    warnings: List[str]
-    installation_log: str
-```
-
-### **PackageInfo Class**
-
-```python
-@dataclass
-class PackageInfo:
-    """Information about an installed package."""
+class AgentConfig:
+    """Parsed agent configuration from agent.yaml"""
     name: str
     version: str
-    location: str
-    dependencies: List[str]
-    size_bytes: int
-    install_time: datetime
-    is_editable: bool
-    metadata: Dict[str, Any]
-```
+    description: str
+    python_version: str
+    dependencies: DependencyConfig
+    setup: SetupConfig
+    interface: InterfaceConfig
+    resources: ResourceConfig
 
-### **RequirementsValidationResult Class**
-
-```python
 @dataclass
-class RequirementsValidationResult:
-    """Result of requirements.txt validation."""
-    is_valid: bool
+class DependencyConfig:
+    """Dependency configuration"""
+    source: str  # "requirements.txt" or "pyproject.toml"
+    python_version: str
     packages: List[str]
-    parsed_requirements: List[Requirement]
-    validation_errors: List[str]
-    validation_warnings: List[str]
-    dependency_count: int
-    has_conflicts: bool
-    conflict_details: List[str]
-```
 
-### **ConflictResolutionResult Class**
-
-```python
 @dataclass
-class ConflictResolutionResult:
-    """Result of dependency conflict resolution."""
-    resolved: bool
-    original_requirements: List[str]
-    resolved_requirements: List[str]
-    conflicts_resolved: List[str]
-    remaining_conflicts: List[str]
-    resolution_strategy: str
-    resolution_notes: str
+class SetupConfig:
+    """Setup configuration for automated installation"""
+    commands: List[str]  # Dynamic setup commands from agent.yaml
+    validation: List[str]  # Validation commands from agent.yaml
+    timeout: int  # Setup timeout in seconds
+    resources: ResourceConfig
+
+@dataclass
+class ResourceConfig:
+    """Resource limits and constraints"""
+    memory_limit: str
+    cpu_limit: str
+    disk_limit: str
+    timeout: int
+
+@dataclass
+class InterfaceConfig:
+    """Agent interface configuration"""
+    methods: Dict[str, MethodConfig]
+
+@dataclass
+class MethodConfig:
+    """Individual method configuration"""
+    description: str
+    parameters: Dict[str, ParameterConfig]
+    returns: ReturnConfig
+
+@dataclass
+class ParameterConfig:
+    """Method parameter configuration"""
+    type: str
+    description: str
+    required: bool
+    default: Optional[Any]
+
+@dataclass
+class ReturnConfig:
+    """Method return value configuration"""
+    type: str
+    description: str
 ```
 
-### **EnvironmentContext Class**
+## UV Environment Requirements & Constraints
 
-```python
-from contextlib import AbstractContextManager
+### System Requirements
+- **UV Installation**: UV package manager must be available and functional
+- **Python Versions**: Support for Python 3.11+ with configurable per-agent requirements
+- **System Resources**: Sufficient disk space, memory, and CPU for environment creation
+- **Network Access**: Access to PyPI and other package repositories
+- **File Permissions**: Write access to agent storage directories
 
-class EnvironmentContext(AbstractContextManager):
-    """Context manager for virtual environment activation."""
+### UV Project Structure Requirements
+- **pyproject.toml**: UV-compatible project configuration (required)
+- **requirements.txt**: Standard pip format dependencies (required)
+- **Python Version**: Specified in agent.yaml and compatible with system
+- **Build System**: Compatible with UV's build system requirements
 
-    def __enter__(self) -> 'EnvironmentContext':
-        """Activate the virtual environment."""
-        pass
+### Agent Configuration Requirements
+- **agent.yaml**: Must contain standardized setup configuration
+- **Setup Commands**: Dynamic list of setup commands (not hardcoded)
+- **Validation Steps**: Commands to verify successful setup
+- **Resource Limits**: Memory, CPU, disk, and timeout constraints
+- **Python Version**: Specific Python version requirements
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Deactivate the virtual environment."""
-        pass
+### Environment Setup Flow Requirements
+1. **Configuration Parsing**: Parse agent.yaml for setup requirements
+2. **Environment Creation**: Create isolated UV environment with specified Python version
+3. **Dynamic Command Execution**: Execute setup commands from agent.yaml in sequence
+4. **Environment Validation**: Execute validation commands to verify setup
+5. **Resource Verification**: Check resource usage and limits
+6. **Status Recording**: Record successful setup in agent registry
+7. **Cleanup Handling**: Handle failed setups with rollback capability
 
-    def run_command(self, command: List[str], **kwargs) -> subprocess.CompletedProcess:
-        """Run a command in the activated environment."""
-        pass
+### Dynamic Setup Command Requirements
+- **Flexible Commands**: Number of commands varies by agent
+- **Sequential Execution**: Commands executed in order from agent.yaml
+- **Fallback Support**: Multiple setup strategies supported
+- **Error Handling**: Graceful failure handling for individual commands
+- **Progress Tracking**: Real-time progress updates for each command
 
-    def get_env_vars(self) -> Dict[str, str]:
-        """Get environment variables for the activated environment."""
-        pass
-```
+### Dependency Management Requirements
+- **Isolation**: Complete dependency isolation between agents
+- **Version Resolution**: Handle version conflicts and compatibility
+- **Fallback Methods**: Multiple installation strategies for reliability
+- **Conflict Detection**: Identify and resolve dependency conflicts
+- **Rollback Support**: Clean recovery from failed installations
 
-## 🚨 **Exception Classes**
+### Validation Requirements
+- **Command Execution**: Execute validation commands in isolated environment
+- **Output Analysis**: Parse and validate command outputs
+- **Error Detection**: Identify setup failures and issues
+- **Health Checks**: Verify agent functionality and imports
+- **Resource Verification**: Check resource usage and limits
 
-### **UV Environment Exceptions**
+### Performance Requirements
+- **Setup Time**: Environment creation < 30 seconds
+- **Installation Time**: Dependency installation < 90 seconds
+- **Validation Time**: Environment validation < 30 seconds
+- **Total Setup**: Complete setup < 2 minutes for typical agents
+- **Resource Usage**: Memory usage < 500MB during setup
 
-```python
-class UVEnvironmentSetupError(Exception):
-    """Base exception for UV environment setup failures."""
-    pass
+### Scalability Requirements
+- **Concurrent Setups**: Support multiple simultaneous agent installations
+- **Resource Management**: Efficient resource allocation and cleanup
+- **Queue Management**: Handle setup requests in order
+- **Progress Tracking**: Track multiple installations simultaneously
+- **Error Isolation**: Failures don't affect other installations
 
-class UVProjectError(Exception):
-    """Exception raised when UV project creation fails."""
-    pass
+## UV Environment Mock Implementations
 
-class UVInstallationError(Exception):
-    """Exception raised when UV dependency installation fails."""
-    pass
-
-class UVValidationError(Exception):
-    """Exception raised when UV environment validation fails."""
-    pass
-
-class UVResourceLimitError(Exception):
-    """Exception raised when resource limits cannot be satisfied."""
-    pass
-
-class UVPythonVersionError(Exception):
-    """Exception raised when specified Python version is not available."""
-    pass
-
-class UVConflictError(Exception):
-    """Exception raised when dependency conflicts cannot be resolved."""
-    pass
-```
-
-### **EnvironmentSetupError**
-
-```python
-class EnvironmentSetupError(Exception):
-    """Raised when environment setup fails."""
-
-    def __init__(self, agent_path: str, reason: str = None, details: Dict[str, Any] = None):
-        self.agent_path = agent_path
-        self.reason = reason
-        self.details = details or {}
-        super().__init__(f"Environment setup failed for '{agent_path}': {reason}")
-```
-
-### **VirtualEnvironmentError**
-
-```python
-class VirtualEnvironmentError(Exception):
-    """Raised when virtual environment creation or management fails."""
-
-    def __init__(self, env_path: str, operation: str, reason: str = None):
-        self.env_path = env_path
-        self.operation = operation
-        self.reason = reason
-        super().__init__(f"Virtual environment {operation} failed for '{env_path}': {reason}")
-```
-
-### **RequirementsError**
-
-```python
-class RequirementsError(Exception):
-    """Raised when requirements.txt processing fails."""
-
-    def __init__(self, requirements_path: str, reason: str = None, details: Dict[str, Any] = None):
-        self.requirements_path = requirements_path
-        self.reason = reason
-        self.details = details or {}
-        super().__init__(f"Requirements processing failed for '{requirements_path}': {reason}")
-```
-
-### **InstallationError**
-
-```python
-class InstallationError(Exception):
-    """Raised when package installation fails."""
-
-    def __init__(self, package_name: str, env_path: str, reason: str = None, output: str = None):
-        self.package_name = package_name
-        self.env_path = env_path
-        self.reason = reason
-        self.output = output
-        super().__init__(f"Package '{package_name}' installation failed in '{env_path}': {reason}")
-```
-
-### **ConflictError**
-
-```python
-class ConflictError(Exception):
-    """Raised when dependency conflicts cannot be resolved."""
-
-    def __init__(self, conflicts: List[str], requirements: List[str], reason: str = None):
-        self.conflicts = conflicts
-        self.requirements = requirements
-        self.reason = reason
-        super().__init__(f"Dependency conflicts detected: {conflicts}. Reason: {reason}")
-```
-
-### **PythonVersionError**
-
-```python
-class PythonVersionError(Exception):
-    """Raised when specified Python version is not available."""
-
-    def __init__(self, requested_version: str, available_versions: List[str]):
-        self.requested_version = requested_version
-        self.available_versions = available_versions
-        super().__init__(f"Python version '{requested_version}' not available. Available: {available_versions}")
-```
-
-## 🔗 **Module Integration Points**
-
-### **With Core Module**
-
-```python
-# Core module uses Environment module for agent setup
-from agentmanager.environment.environment_setup import EnvironmentSetup
-
-class AutoInstaller:
-    def __init__(self):
-        self.env_setup = EnvironmentSetup()
-
-    def install_agent(self, agent_name: str) -> InstallationResult:
-        # Clone and validate repository...
-
-        # Set up environment
-        env_result = self.env_setup.setup_environment(
-            agent_path=local_path,
-            requirements_path=os.path.join(local_path, 'requirements.txt')
-        )
-
-        if not env_result.success:
-            raise EnvironmentSetupError(local_path, "Environment setup failed")
-
-        # Continue with installation...
-```
-
-### **With Storage Module**
-
-```python
-# Environment module provides environment information to storage
-from agentmanager.storage.metadata_manager import MetadataManager
-
-class EnvironmentSetup:
-    def __init__(self):
-        self.metadata_manager = MetadataManager()
-
-    def setup_environment(self, agent_path: str, requirements_path: str) -> EnvironmentSetupResult:
-        # Set up environment...
-
-        # Store environment metadata
-        self.metadata_manager.store_environment_info(agent_path, env_result)
-
-        return env_result
-```
-
-### **With GitHub Module**
-
-```python
-# Environment module uses GitHub module for repository information
-from agentmanager.github.github_client import GitHubClient
-
-class EnvironmentSetup:
-    def __init__(self):
-        self.github_client = GitHubClient()
-
-    def setup_environment(self, agent_name: str, agent_path: str, requirements_path: str):
-        # Get repository metadata for environment configuration
-        metadata = self.github_client.get_repository_metadata(agent_name)
-
-        # Use metadata for environment setup...
-```
-
-## 📊 **Performance Requirements**
-
-### **Response Time Targets**
-- **Environment Creation**: < 30 seconds for typical agents
-- **Dependency Installation**: < 2 minutes for typical agents
-- **Environment Validation**: < 10 seconds
-- **Package Health Check**: < 15 seconds
-
-### **Resource Usage Targets**
-- **Memory**: < 200MB during environment setup
-- **Disk Space**: < 100MB overhead per agent environment
-- **CPU**: Efficient use of available CPU resources
-
-### **Scalability Targets**
-- **Concurrent Setups**: Support 3+ simultaneous environment setups
-- **Environment Count**: Support 50+ agent environments
-- **Package Complexity**: Handle complex dependency trees efficiently
-
-## 🧪 **Testing Interfaces**
-
-### **UV Environment Mock Implementations**
-
+### Mock UV Environment Setup
 ```python
 class MockUVEnvironmentSetup(UVEnvironmentSetup):
-    """Mock implementation for UV environment testing."""
-
-    def __init__(self, mock_results: Dict[str, UVEnvironmentSetupResult]):
-        super().__init__()
-        self.mock_results = mock_results
-        self.setup_calls = []
-
-    def setup_uv_environment(self, agent_path: str, agent_config: AgentConfig) -> UVEnvironmentSetupResult:
-        """Mock UV environment setup."""
-        self.setup_calls.append({
-            'agent_path': agent_path,
-            'agent_config': agent_config
-        })
-
-        if agent_path in self.mock_results:
-            return self.mock_results[agent_path]
-
-        # Default success result
+    """Mock implementation for testing and development"""
+    
+    def setup_uv_environment(self, agent_path: str, agent_config: AgentConfig, progress_callback=None) -> UVEnvironmentSetupResult:
+        """Mock environment setup for testing"""
+        if progress_callback:
+            progress_callback("Creating mock environment", 25)
+            progress_callback("Installing mock dependencies", 75)
+            progress_callback("Validating mock setup", 100)
+        
         return UVEnvironmentSetupResult(
             success=True,
             agent_path=agent_path,
-            uv_project_path=f"/tmp/mock_uv_{agent_path}",
-            python_executable="/usr/bin/python3.11",
-            setup_time=1.0,
-            installed_packages=[],
-            uv_config=UVConfig(
-                python_version="3.11",
-                isolated=True,
-                resources=UVResourceLimits(),
-                dependencies=[],
-                dev_dependencies=[]
-            ),
-            warnings=[],
+            environment_path=f"{agent_path}/.venv",
+            setup_time=2.5,
+            python_version="3.11.5",
+            uv_version="0.1.0",
             errors=[],
-            setup_log="Mock UV setup completed"
+            warnings=[],
+            setup_log="Mock setup completed successfully",
+            rollback_available=False
         )
-
-    def get_setup_calls(self) -> List[Dict[str, Any]]:
-        """Get list of setup calls made during testing."""
-        return self.setup_calls.copy()
-```
-
-## 📋 **UV Environment Requirements & Constraints**
-
-### **System Requirements**
-- **UV Installation**: UV package manager must be installed and available in PATH
-- **Python Versions**: Support for Python 3.11+ with automatic version management
-- **Disk Space**: Minimum 500MB available space per agent environment
-- **Memory**: Minimum 1GB RAM available for environment setup
-- **Network**: Internet access for package downloads and dependency resolution
-
-### **UV Project Structure Requirements**
-- **Project Initialization**: Must create valid UV project with `pyproject.toml`
-- **Lock File Management**: Generate and maintain `uv.lock` for reproducible builds
-- **Virtual Environment**: Create `.venv/` directory with isolated Python environment
-- **Dependency Resolution**: Resolve all dependencies without conflicts
-- **Version Pinning**: Lock dependency versions for consistency
-
-### **Agent Configuration Requirements**
-- **agent.yaml Parsing**: Must parse UV-specific configuration section
-- **Python Version Validation**: Verify specified Python version is available
-- **Resource Limit Enforcement**: Apply memory, timeout, and CPU limits
-- **Isolation Settings**: Ensure complete environment isolation
-- **Dependency Validation**: Verify requirements.txt compatibility
-
-### **Environment Setup Flow Requirements**
-1. **Clone Repository**: Clone agent repo to `~/.agenthub/agents/dev_name/repo_name/`
-2. **Parse Configuration**: Extract UV settings from agent.yaml
-3. **Create UV Project**: Initialize UV project with specified Python version
-4. **Install Dependencies**: Install all packages from requirements.txt
-5. **Validate Environment**: Test Python functionality and package imports
-6. **Resource Limits**: Apply and verify resource constraints
-7. **Isolation Test**: Verify environment isolation from system
-
-### **Dependency Management Requirements**
-- **Conflict Resolution**: Automatically resolve dependency conflicts
-- **Version Compatibility**: Ensure all packages are compatible
-- **Clean Installation**: No leftover files or broken dependencies
-- **Rollback Capability**: Ability to rollback failed installations
-- **Health Checking**: Verify installed packages are functional
-
-### **Validation Requirements**
-- **Python Functionality**: Test basic Python operations
-- **Package Imports**: Verify all required packages can be imported
-- **Environment Isolation**: Confirm no system package leakage
-- **Resource Compliance**: Verify resource limits are respected
-- **Performance Testing**: Basic performance benchmarks
-
-### **Performance Requirements**
-- **Environment Creation**: < 30 seconds for typical agents
-- **Dependency Installation**: < 2 minutes for typical agents
-- **Environment Validation**: < 10 seconds
-- **Package Health Check**: < 15 seconds
-- **Resource Usage**: < 200MB memory, < 100MB disk overhead per agent
-
-### **Scalability Requirements**
-- **Concurrent Setups**: Support 3+ simultaneous environment setups
-- **Environment Count**: Support 50+ agent environments
-- **Package Complexity**: Handle complex dependency trees efficiently
-- **Isolation**: Complete isolation between agent environments
-
-### **Mock Implementations**
-
-```python
-class MockEnvironmentSetup(EnvironmentSetup):
-    """Mock implementation for testing."""
-
-    def __init__(self, mock_results: Dict[str, EnvironmentSetupResult]):
-        super().__init__()
-        self.mock_results = mock_results
-        self.setup_calls = []
-
-    def setup_environment(self, agent_path: str, requirements_path: str) -> EnvironmentSetupResult:
-        """Mock environment setup."""
-        self.setup_calls.append({
-            'agent_path': agent_path,
-            'requirements_path': requirements_path
-        })
-
-        if agent_path in self.mock_results:
-            return self.mock_results[agent_path]
-
-        # Default success result
-        return EnvironmentSetupResult(
+    
+    def create_uv_environment(self, agent_path: str, python_version: str) -> UVEnvironmentResult:
+        """Mock environment creation"""
+        return UVEnvironmentResult(
             success=True,
-            environment_path=f"/tmp/mock_env_{agent_path}",
-            python_executable="/usr/bin/python3",
-            setup_time=1.0,
-            installed_packages=[],
-            warnings=[],
-            errors=[],
-            setup_log="Mock setup completed"
+            agent_path=agent_path,
+            environment_path=f"{agent_path}/.venv",
+            python_version=python_version,
+            creation_time=1.0,
+            errors=[]
         )
-
-    def get_setup_calls(self) -> List[Dict[str, str]]:
-        """Get list of setup calls made during testing."""
-        return self.setup_calls.copy()
+    
+    def install_dependencies(self, agent_path: str, agent_config: AgentConfig, progress_callback=None) -> UVDependencyResult:
+        """Mock dependency installation"""
+        if progress_callback:
+            progress_callback("Installing mock packages", 50)
+            progress_callback("Resolving dependencies", 100)
+        
+        return UVDependencyResult(
+            success=True,
+            agent_path=agent_path,
+            installed_packages=["mock-package-1", "mock-package-2"],
+            install_time=3.0,
+            errors=[],
+            warnings=[],
+            failed_packages=[],
+            installation_log="Mock installation completed",
+            rollback_available=False,
+            conflicts_resolved=[]
+        )
+    
+    def validate_environment(self, agent_path: str, agent_config: AgentConfig) -> UVEnvironmentValidationResult:
+        """Mock environment validation"""
+        validation_steps = [
+            ValidationStep(
+                step_name="Agent executable test",
+                command="python agent.py --help",
+                success=True,
+                output="Mock agent help output",
+                error=None,
+                execution_time=0.5
+            ),
+            ValidationStep(
+                step_name="Module import test",
+                command="python -c 'import core.module'",
+                success=True,
+                output="Module imported successfully",
+                error=None,
+                execution_time=0.3
+            )
+        ]
+        
+        return UVEnvironmentValidationResult(
+            success=True,
+            agent_path=agent_path,
+            validation_steps=validation_steps,
+            validation_time=0.8,
+            errors=[],
+            warnings=[]
+        )
 ```
 
-### **Test Data Providers**
-
+### Mock Progress Tracker
 ```python
-class TestEnvironmentProvider:
-    """Provide test environments for testing."""
-
-    def create_test_environment(self, name: str, packages: List[str] = None) -> str:
-        """Create a test virtual environment."""
-        pass
-
-    def cleanup_test_environment(self, env_path: str):
-        """Clean up a test environment."""
-        pass
-
-    def create_test_requirements(self, packages: List[str]) -> str:
-        """Create a test requirements.txt file."""
-        pass
+class MockSetupProgressTracker(SetupProgressTracker):
+    """Mock progress tracker for testing"""
+    
+    def get_setup_progress(self, agent_name: str) -> SetupProgress:
+        """Get mock setup progress"""
+        return SetupProgress(
+            agent_name=agent_name,
+            current_phase="Dependency Installation",
+            phase_number=3,
+            total_phases=5,
+            overall_progress=60.0,
+            current_step="Installing packages",
+            step_progress=75.0,
+            start_time=datetime.now(),
+            estimated_total_time=120.0,
+            estimated_remaining=48.0,
+            status="running",
+            current_operation="pip install",
+            details={"packages_installed": 15, "total_packages": 20}
+        )
 ```
 
-## 📚 **Usage Examples**
+## 🔧 **Correct Setup Process & Commands**
 
-### **Basic Environment Setup**
+### **Setup Commands in agent.yaml**
+The `setup.commands` section in `agent.yaml` defines the exact commands AgentHub will execute to set up your agent:
 
-```python
-from agentmanager.environment.environment_setup import EnvironmentSetup
-
-env_setup = EnvironmentSetup()
-
-try:
-    result = env_setup.setup_environment(
-        agent_path="/path/to/agent",
-        requirements_path="/path/to/agent/requirements.txt"
-    )
-
-    if result.success:
-        print(f"Environment setup successful!")
-        print(f"Environment path: {result.environment_path}")
-        print(f"Python executable: {result.python_executable}")
-        print(f"Setup time: {result.setup_time:.2f} seconds")
-    else:
-        print("Environment setup failed:")
-        for error in result.errors:
-            print(f"  - {error}")
-
-except EnvironmentSetupError as e:
-    print(f"Environment setup error: {e}")
+```yaml
+setup:
+  commands:
+    - "source .venv/bin/activate && uv sync"                                    # Step 1: Activate + sync
+    - "source .venv/bin/activate && uv pip install -e ."                        # Step 2: Install project
+    - "source .venv/bin/activate && uv pip install -r requirements.txt"         # Step 3: Install deps
+  validation:
+    - "python -c 'import core.rag_system'"         # Verify core modules
+    - "python -c 'import core.llamaindex_store'"   # Verify LlamaIndex integration
+    - "python -c 'import aisuite'"                 # Verify aisuite integration
 ```
 
-### **Virtual Environment Management**
+### **Why This Approach Works**
+1. **Virtual Environment Activation**: `source .venv/bin/activate` ensures all subsequent commands run in the isolated environment
+2. **Command Chaining**: Using `&&` ensures each command only runs if the previous succeeds
+3. **Proper Isolation**: All packages install in `.venv/lib/python3.11/site-packages/`
+4. **Standard UV Commands**: Uses standard UV commands that users expect
 
-```python
-from agentmanager.environment.virtual_environment import VirtualEnvironmentCreator
+### **Setup Process Flow**
+1. **Environment Creation**: AgentHub creates `.venv/` using `uv venv --python 3.11`
+2. **Command Execution**: AgentHub executes each command from `setup.commands`
+3. **Virtual Environment Activation**: Each command activates the environment first
+4. **Package Installation**: Packages install in the isolated environment
+5. **Validation**: AgentHub runs validation commands to verify setup
+6. **Registration**: Agent is registered and ready for use
 
-env_creator = VirtualEnvironmentCreator()
+### **Benefits of This Setup Process**
+- **🎯 Reliability**: Virtual environment activation ensures proper isolation
+- **🔧 Simplicity**: Standard UV commands that users understand
+- **📊 Progress Tracking**: Each step can be monitored and reported
+- **🔄 Consistency**: Same process works for all agents
+- **🐛 Debugging**: Easy to reproduce setup manually for troubleshooting
 
-# Create environment
-env_path = env_creator.create_environment("/tmp/my_agent_env")
+## Integration Points
 
-# Get environment info
-env_info = env_creator.get_environment_info(env_path)
-print(f"Python version: {env_info.python_version}")
-print(f"Package count: {env_info.package_count}")
+### With GitHub Module
+- **Repository Validation**: Verify agent.yaml contains valid setup configuration
+- **Structure Validation**: Ensure required files are present
+- **Configuration Parsing**: Extract setup requirements from agent.yaml
 
-# Activate environment
-with env_creator.activate_environment(env_path) as env:
-    # Run commands in activated environment
-    result = env.run_command(["python", "--version"])
-    print(f"Python version: {result.stdout}")
-```
+### With Storage Module
+- **Installation Tracking**: Record setup progress and status
+- **Environment Metadata**: Store environment information and configuration
+- **Rollback Support**: Track setup state for rollback operations
 
-### **Dependency Management**
+### With Core Module
+- **Agent Registration**: Register successfully set up agents
+- **Interface Validation**: Verify agent interface compliance
+- **Health Monitoring**: Monitor agent environment health
 
-```python
-from agentmanager.environment.dependency_manager import DependencyManager
+### With CLI Module
+- **Progress Reporting**: Provide real-time setup progress updates
+- **User Feedback**: Display setup status and completion information
+- **Error Reporting**: Show detailed error information and recovery options
 
-dep_manager = DependencyManager()
+## Error Handling & Recovery
 
-# Validate requirements
-validation = dep_manager.validate_requirements("/path/to/requirements.txt")
-if not validation.is_valid:
-    print("Requirements validation failed:")
-    for error in validation.validation_errors:
-        print(f"  - {error}")
-    return
+### Setup Failure Scenarios
+- **UV Installation Issues**: UV not available or malfunctioning
+- **Python Version Conflicts**: Incompatible Python versions
+- **Dependency Conflicts**: Package version conflicts and resolution failures
+- **Resource Exhaustion**: Insufficient disk space, memory, or CPU
+- **Network Failures**: Package download and installation failures
+- **Permission Issues**: File system access and permission problems
 
-# Install dependencies
-result = dep_manager.install_dependencies(
-    env_path="/tmp/my_agent_env",
-    requirements_path="/path/to/requirements.txt"
-)
+### Recovery Strategies
+- **Automatic Retry**: Retry failed operations with exponential backoff
+- **Fallback Methods**: Use alternative installation strategies
+- **Conflict Resolution**: Automatically resolve dependency conflicts
+- **Resource Cleanup**: Clean up partial installations and retry
+- **Rollback Operations**: Revert to previous working state
+- **User Guidance**: Provide clear error messages and recovery steps
 
-if result.success:
-    print(f"Successfully installed {result.successful_installations} packages")
-    print(f"Installation time: {result.installation_time:.2f} seconds")
-else:
-    print("Dependency installation failed:")
-    for failed in result.failed_packages:
-        print(f"  - {failed.name}: {failed.reason}")
-```
-
-### **Environment Validation**
-
-```python
-from agentmanager.environment.environment_validator import EnvironmentValidator
-
-validator = EnvironmentValidator()
-
-# Validate environment
-validation = validator.validate_environment("/tmp/my_agent_env")
-
-if validation.is_valid:
-    print("Environment validation passed!")
-    print(f"Python version: {validation.python_version}")
-    print(f"Package count: {validation.package_count}")
-    print(f"Overall score: {validation.overall_score:.2f}")
-else:
-    print("Environment validation failed:")
-    for error in validation.validation_errors:
-        print(f"  - {error}")
-
-# Test specific packages
-import_result = validator.test_package_imports(
-    "/tmp/my_agent_env",
-    ["requests", "numpy", "pandas"]
-)
-
-for package, success in import_result.import_results.items():
-    status = "✓" if success else "✗"
-    print(f"{status} {package}")
-```
-
-This interface design provides the foundation for implementing the Environment Management Module with clear contracts, error handling, and integration points for virtual environment creation and dependency management.
+### Error Reporting
+- **Detailed Error Messages**: Specific error causes and context
+- **Recovery Instructions**: Clear steps to resolve issues
+- **Log Information**: Detailed logs for debugging
+- **Progress Preservation**: Maintain progress across retries
+- **User Notifications**: Real-time error status updates

@@ -1,4 +1,4 @@
-# Agent Hub Phase 2: Auto-Install Implementation Design
+# AgentHub Phase 2: Auto-Install Implementation Design
 
 **Document Type**: Phase 2 Implementation Overview
 **Phase**: 2 - Auto-Install
@@ -193,6 +193,8 @@ AgentHub Phase 2 implements **UV-based isolated environments** to ensure each ag
 
 ## 🔄 **Auto-Installation Flow with Progress Tracking**
 
+### **Auto-Installation Flow**
+
 ```mermaid
 sequenceDiagram
     participant User
@@ -224,9 +226,19 @@ sequenceDiagram
     Environment-->>AutoInstaller: Environment ready
     AutoInstaller-->>CLI: 🐍 UV Setup: 50% [✓]
 
-    AutoInstaller->>Environment: Install dependencies
+    AutoInstaller->>Environment: Execute setup commands from agent.yaml
+    Note over Environment: 1. source .venv/bin/activate && uv sync
+    Note over Environment: 2. source .venv/bin/activate && uv pip install -e .
+    Note over Environment: 3. source .venv/bin/activate && uv pip install -r requirements.txt
     Environment-->>AutoInstaller: Dependencies installed
     AutoInstaller-->>CLI: 📦 Dependencies: 85% [✓]
+
+    AutoInstaller->>Environment: Run validation commands from agent.yaml
+    Note over Environment: python -c 'import core.rag_system'
+    Note over Environment: python -c 'import core.llamaindex_store'
+    Note over Environment: python -c 'import aisuite'
+    Environment-->>AutoInstaller: Validation passed
+    AutoInstaller-->>CLI: ✅ Validation: 90% [✓]
 
     AutoInstaller->>Storage: Track installation
     Storage-->>AutoInstaller: Installation recorded
@@ -1235,6 +1247,73 @@ Before submitting your agent for AgentHub installation, ensure it meets all requ
 - [ ] **UV Environment Ready**: Dependencies and configuration validated
 - [ ] **Documentation Quality**: Complete and clear documentation provided
 - [ ] **Testing**: Basic functionality tested locally
+
+## 🔧 **Correct Setup Process & Commands**
+
+### **Setup Commands in agent.yaml**
+The `setup.commands` section in your `agent.yaml` defines the exact commands AgentHub will execute to set up your agent:
+
+```yaml
+setup:
+  commands:
+    - "source .venv/bin/activate && uv sync"                                    # Step 1: Activate + sync
+    - "source .venv/bin/activate && uv pip install -e ."                        # Step 2: Install project
+    - "source .venv/bin/activate && uv pip install -r requirements.txt"         # Step 3: Install deps
+  validation:
+    - "python -c 'import core.rag_system'"         # Verify core modules
+    - "python -c 'import core.llamaindex_store'"   # Verify LlamaIndex integration
+    - "python -c 'import aisuite'"                 # Verify aisuite integration
+```
+
+### **Why This Approach Works**
+1. **Virtual Environment Activation**: `source .venv/bin/activate` ensures all subsequent commands run in the isolated environment
+2. **Command Chaining**: Using `&&` ensures each command only runs if the previous succeeds
+3. **Proper Isolation**: All packages install in `.venv/lib/python3.11/site-packages/`
+4. **Standard UV Commands**: Uses standard UV commands that users expect
+
+### **Alternative Setup Approaches (Not Recommended)**
+❌ **Don't use these approaches**:
+```yaml
+# ❌ BAD: No virtual environment activation
+setup:
+  commands:
+    - "uv pip install -r requirements.txt"  # Installs in system Python
+
+# ❌ BAD: Complex Python path specification
+setup:
+  commands:
+    - "uv pip install --python .venv/bin/python -r requirements.txt"  # Verbose and error-prone
+
+# ❌ BAD: Missing activation
+setup:
+  commands:
+    - "uv sync"  # May not use virtual environment
+```
+
+✅ **Use this approach**:
+```yaml
+# ✅ GOOD: Clean virtual environment activation
+setup:
+  commands:
+    - "source .venv/bin/activate && uv sync"
+    - "source .venv/bin/activate && uv pip install -e ."
+    - "source .venv/bin/activate && uv pip install -r requirements.txt"
+```
+
+### **Setup Process Flow**
+1. **Environment Creation**: AgentHub creates `.venv/` using `uv venv --python 3.11`
+2. **Command Execution**: AgentHub executes each command from `setup.commands`
+3. **Virtual Environment Activation**: Each command activates the environment first
+4. **Package Installation**: Packages install in the isolated environment
+5. **Validation**: AgentHub runs validation commands to verify setup
+6. **Registration**: Agent is registered and ready for use
+
+### **Benefits of This Setup Process**
+- **🎯 Reliability**: Virtual environment activation ensures proper isolation
+- **🔧 Simplicity**: Standard UV commands that users understand
+- **📊 Progress Tracking**: Each step can be monitored and reported
+- **🔄 Consistency**: Same process works for all agents
+- **🐛 Debugging**: Easy to reproduce setup manually for troubleshooting
 
 ## 📚 **Module Documentation**
 
