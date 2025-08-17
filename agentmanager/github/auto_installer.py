@@ -117,7 +117,7 @@ class AutoInstaller:
 
             # Step 2: Clone the repository
             logger.debug("Step 2: Cloning repository")
-            clone_result = self.repository_cloner.clone_repository(agent_name)
+            clone_result = self.repository_cloner.clone_agent(agent_name)
             if not clone_result.success:
                 return self._create_failure_result(
                     agent_name, start_time,
