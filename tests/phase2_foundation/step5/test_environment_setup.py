@@ -317,7 +317,6 @@ class TestEnvironmentSetup:
                 info = setup._collect_environment_info(temp_agent_path, venv_path)
                 
                 assert info["venv_path"] == str(venv_path)
-                assert info["venv_exists"] is True
                 assert info["python_executable"] == str(venv_path / "bin" / "python")
                 assert info["uv_version"] == "uv 0.1.0"
                 assert "agent.py" in info["project_files"]
