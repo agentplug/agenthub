@@ -107,7 +107,7 @@ class AutoInstaller:
         try:
             # Step 1: Validate agent name and construct GitHub URL
             logger.debug("Step 1: Validating agent name and constructing GitHub URL")
-            github_url = self.url_parser.construct_github_url(agent_name)
+            github_url = self.url_parser.build_github_url(agent_name)
             if not github_url:
                 return self._create_failure_result(
                     agent_name, start_time,
