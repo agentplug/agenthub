@@ -9,13 +9,18 @@ __author__ = "William"
 
 # Import implemented components
 from .url_parser import URLParser
+from .repository_cloner import RepositoryCloner, CloneResult, CloneError, RepositoryNotFoundError, GitNotAvailableError
 
 # Future imports will be added as components are implemented
-# from .repository_cloner import RepositoryCloner
 # from .repository_validator import RepositoryValidator
 # from .github_client import GitHubClient
 
 __all__ = [
     "URLParser",
+    "RepositoryCloner", 
+    "CloneResult",
+    "CloneError",
+    "RepositoryNotFoundError", 
+    "GitNotAvailableError",
     # Will be populated as more components are implemented
 ]
