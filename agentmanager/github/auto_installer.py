@@ -131,9 +131,12 @@ class AutoInstaller:
                 clone_result.local_path
             )
             if not validation_result.is_valid:
+                error_msg = "Repository validation failed"
+                if validation_result.validation_errors:
+                    error_msg += f": {'; '.join(validation_result.validation_errors)}"
                 return self._create_failure_result(
                     agent_name, start_time,
-                    f"Repository validation failed: {validation_result.error_message}",
+                    error_msg,
                     clone_result=clone_result,
                     validation_result=validation_result
                 )
@@ -272,8 +275,8 @@ class AutoInstaller:
     def _get_next_steps_for_success(self, agent_name: str,
                                    clone_result: CloneResult,
                                    validation_result: ValidationResult,
-                                   environment_result: Optional[object],
-                                   dependency_result: Optional[object]) -> List[str]:
+                                   environment_result: Optional[object] = None,
+                                   dependency_result: Optional[object] = None) -> List[str]:
         """Get next steps for successful installation."""
         next_steps = [
             f"✅ Agent '{agent_name}' installed successfully!",
@@ -304,8 +307,8 @@ class AutoInstaller:
 
         else:
             next_steps.extend([
-                "⚠️ Virtual environment not created",
-                "🔧 Consider running with setup_environment=True"
+                "✅ Agent repository cloned and validated successfully",
+                "🔧 Next: Set up UV environment and install dependencies manually"
             ])
 
         next_steps.extend([
@@ -316,10 +319,11 @@ class AutoInstaller:
         return next_steps
 
     def _get_next_steps_for_failure(self, agent_name: str,
-                                   clone_result: CloneResult,
-                                   validation_result: ValidationResult,
+                                   clone_result: Optional[CloneResult],
+                                   validation_result: Optional[ValidationResult],
                                    environment_result: Optional[object]) -> List[str]:
         """Get next steps for failed installation."""
+        agent_name = agent_name or "Unknown"
         next_steps = [
             f"❌ Installation of agent '{agent_name}' failed",
             "🔍 Review the error messages above for specific issues"
@@ -335,12 +339,12 @@ class AutoInstaller:
 
         elif validation_result and not validation_result.is_valid:
             next_steps.extend([
-                "✅ Cloning succeeded but validation failed - check:",
+                "❌ Repository validation failed - check:",
                 "   • Required files (agent.py, agent.yaml, requirements.txt, README.md)",
                 "   • File formats and content"
             ])
 
-        if environment_result and not environment_result.success:
+        if environment_result and hasattr(environment_result, 'success') and not environment_result.success:
             next_steps.extend([
                 "🌍 Environment setup failed - check:",
                 "   • UV installation and availability",
@@ -355,3 +359,53 @@ class AutoInstaller:
         ])
 
         return next_steps
+
+    def get_installation_summary(self, result: InstallationResult) -> str:
+        """Get a formatted summary of the installation result."""
+        if result.success:
+            summary = f"""🎉 Agent Installation Successful!
+
+Agent: {result.agent_name}
+Location: {result.local_path}
+GitHub URL: {result.github_url}
+Time: {result.installation_time_seconds:.2f}s"""
+            
+            if result.validation_result and result.validation_result.repository_info:
+                total_files = result.validation_result.repository_info.get("total_files", "N/A")
+                summary += f"\nTotal Files: {total_files}"
+                
+            if result.environment_result and hasattr(result.environment_result, 'success') and result.environment_result.success:
+                venv_path = getattr(result.environment_result, 'venv_path', 'N/A')
+                summary += f"\nEnvironment: {venv_path}"
+                
+            if result.dependency_result and hasattr(result.dependency_result, 'success') and result.dependency_result.success:
+                packages = len(getattr(result.dependency_result, 'installed_packages', []))
+                summary += f"\nDependencies: {packages} packages installed"
+                
+            return summary
+        else:
+            agent_name = result.agent_name or "Unknown"
+            error_message = result.error_message or "Unknown error"
+            install_time = result.installation_time_seconds or 0.0
+            return f"""❌ Agent Installation Failed!
+
+Agent: {agent_name}
+Error: {error_message}
+Time: {install_time:.2f}s"""
+
+    def list_installed_agents(self):
+        """List all installed agents."""
+        return self.repository_cloner.list_cloned_agents()
+
+    def remove_agent(self, agent_name: str) -> bool:
+        """Remove an installed agent."""
+        return self.repository_cloner.remove_agent(agent_name)
+
+    # Alias methods for test compatibility
+    def _get_next_steps_for_validation_failure(self, validation_result):
+        """Alias for backward compatibility with tests."""
+        return self._get_next_steps_for_failure("", None, validation_result, None)
+
+    def _collect_all_warnings(self, validation_result, environment_result, dependency_result):
+        """Alias for backward compatibility with tests."""
+        return self._collect_warnings(None, validation_result, environment_result, dependency_result)
