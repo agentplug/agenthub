@@ -235,3 +235,5 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+test_agent_repo/
+sample_docs/

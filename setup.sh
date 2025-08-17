@@ -1,35 +1,27 @@
 #!/bin/bash
-set -e
 
-echo "🚀 Setting up Agent Hub development environment..."
+echo "🚀 Setting up Scientific Paper Analyzer Agent..."
+echo "📦 Installing dependencies with UV..."
 
-# Check if uv is installed
+# Check if UV is installed
 if ! command -v uv &> /dev/null; then
-    echo "📦 Installing UV package manager..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
-    echo "✅ UV installed successfully"
+    echo "❌ UV is not installed. Please install UV first:"
+    echo "   curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
 fi
 
-# Create virtual environment
-echo "🐍 Creating virtual environment..."
-uv venv
+# Create virtual environment and install dependencies
+echo "🔧 Creating virtual environment..."
+uv venv --python 3.11
 
-# Install dependencies
-echo "📚 Installing dependencies..."
-uv sync --dev
+echo "📦 Installing packages..."
+source .venv/bin/activate
+uv pip install -e .
 
-# Install pre-commit hooks
-echo "🎣 Setting up pre-commit hooks..."
-uv run pre-commit install
-
-echo "✅ Environment setup complete!"
+echo "✅ Setup complete! Agent is ready to use."
 echo ""
-echo "To activate the environment, run:"
-echo "  source .venv/bin/activate"
+echo "🎯 To run the agent:"
+echo "   source .venv/bin/activate"
+echo "   python agent.py '{\"method\": \"get_info\", \"parameters\": {}}'"
 echo ""
-echo "To run tests:"
-echo "  uv run pytest"
-echo ""
-echo "To run the CLI:"
-echo "  uv run python -m agentmanager.cli.main --help"
+echo "📚 For more examples, see the examples/ directory"
