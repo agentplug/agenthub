@@ -100,7 +100,7 @@ class RepositoryCloner:
     
     def _execute_git_clone(self, github_url: str, target_path: Path) -> subprocess.CompletedProcess:
         """
-        Execute git clone command.
+        Execute git clone command with full repository content.
         
         Args:
             github_url: GitHub repository URL to clone
@@ -109,7 +109,8 @@ class RepositoryCloner:
         Returns:
             subprocess.CompletedProcess: Result of git clone command
         """
-        cmd = ["git", "clone", github_url, str(target_path)]
+        # Use --recursive to clone submodules if any, and ensure full clone
+        cmd = ["git", "clone", "--recursive", github_url, str(target_path)]
         logger.debug(f"Executing git clone: {' '.join(cmd)}")
         
         try:
@@ -123,6 +124,88 @@ class RepositoryCloner:
         except subprocess.TimeoutExpired as e:
             logger.error(f"Git clone timed out after 5 minutes: {github_url}")
             raise CloneError(f"Clone operation timed out for {github_url}")
+    
+    def _verify_clone_completeness(self, local_path: Path) -> bool:
+        """
+        Verify that the clone operation was complete and contains expected files.
+        
+        Args:
+            local_path: Path to the cloned repository
+            
+        Returns:
+            bool: True if clone appears complete, False otherwise
+        """
+        try:
+            # Check if .git directory exists (indicates git repository)
+            git_path = local_path / ".git"
+            if not git_path.exists() or not git_path.is_dir():
+                logger.warning(f"Git directory not found at {git_path}")
+                return False
+            
+            # Check if repository has content (not just .git)
+            content_files = [f for f in local_path.iterdir() if f.name != ".git"]
+            if not content_files:
+                logger.warning(f"No content files found in cloned repository at {local_path}")
+                return False
+            
+            # Check for essential files (at least one of these should exist)
+            essential_patterns = ["*.py", "*.yaml", "*.yml", "*.txt", "*.md"]
+            has_essential = False
+            for pattern in essential_patterns:
+                if list(local_path.glob(pattern)):
+                    has_essential = True
+                    break
+            
+            if not has_essential:
+                logger.warning(f"No essential files found in cloned repository at {local_path}")
+                return False
+            
+            logger.debug(f"Clone verification passed for {local_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error during clone verification: {e}")
+            return False
+    
+    def _check_clone_depth(self, local_path: Path) -> str:
+        """
+        Check if the clone is shallow or full depth.
+        
+        Args:
+            local_path: Path to the cloned repository
+            
+        Returns:
+            str: 'full' if full clone, 'shallow' if shallow clone, 'unknown' if can't determine
+        """
+        try:
+            # Check if .git/shallow file exists (indicates shallow clone)
+            shallow_file = local_path / ".git" / "shallow"
+            if shallow_file.exists():
+                return "shallow"
+            
+            # Check git log to see if we have full history
+            import subprocess
+            result = subprocess.run(
+                ["git", "log", "--oneline", "--all"],
+                cwd=local_path,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                # Count commits to determine if it's likely a full clone
+                commit_lines = [line for line in result.stdout.split('\n') if line.strip()]
+                if len(commit_lines) > 1:  # More than just the initial commit
+                    return "full"
+                else:
+                    return "shallow"
+            else:
+                return "unknown"
+                
+        except Exception as e:
+            logger.debug(f"Could not determine clone depth: {e}")
+            return "unknown"
     
     def clone_agent(self, agent_name: str, target_path: Optional[str] = None) -> CloneResult:
         """
@@ -194,6 +277,22 @@ class RepositoryCloner:
             
             if result.returncode == 0:
                 logger.info(f"Successfully cloned {agent_name} to {local_path} in {clone_time:.2f}s")
+                
+                # Verify clone completeness
+                if not self._verify_clone_completeness(local_path):
+                    logger.warning(f"Clone verification failed for {agent_name} at {local_path}")
+                    # Clone succeeded but verification failed - this might indicate a shallow clone
+                    # We'll still return success but log the warning
+                
+                # Check clone depth
+                clone_depth = self._check_clone_depth(local_path)
+                if clone_depth == "full":
+                    logger.info(f"Full repository clone completed for {agent_name}")
+                elif clone_depth == "shallow":
+                    logger.warning(f"Shallow clone detected for {agent_name} - limited history")
+                else:
+                    logger.info(f"Clone depth unknown for {agent_name}")
+                
                 return CloneResult(
                     success=True,
                     local_path=str(local_path),
