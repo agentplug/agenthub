@@ -787,6 +787,114 @@ def list_python_versions():
         rprint(f"❌ [red]Error listing Python versions: {e}[/red]")
 
 
+@agent.command("info")
+@click.argument("agent_name")
+@click.option(
+    "--base-path",
+    type=click.Path(),
+    help="Custom base storage path for agents",
+)
+def info_agent(agent_name: str, base_path: Optional[str]):
+    """Show detailed information about an installed agent."""
+    try:
+        from agentmanager.core.agent_loader import AgentLoader
+        from agentmanager.storage.local_storage import LocalStorage
+        
+        # Parse agent name
+        if "/" not in agent_name:
+            rprint("❌ [red]Agent name must be in format 'namespace/name'[/red]")
+            rprint("💡 [dim]Example: agentplug/coding-agent[/dim]")
+            return
+
+        namespace, name = agent_name.split("/", 1)
+
+        # Initialize system
+        storage = LocalStorage()
+        if base_path:
+            storage.base_storage_path = Path(base_path)
+        loader = AgentLoader(storage=storage)
+
+        # Load agent info
+        try:
+            agent_info = loader.load_agent(namespace, name)
+        except Exception as e:
+            rprint(f"❌ [red]Agent not found: {agent_name}[/red]")
+            rprint(f"Error: {e}")
+            return
+
+        # Display agent information
+        rprint(
+            f"\n🔧 [bold cyan]Agent: {agent_name} "
+            f"v{agent_info.get('version', 'unknown')}[/bold cyan]"
+        )
+        rprint("═" * 50)
+
+        rprint(
+            f"📖 [bold]Description:[/bold] "
+            f"{agent_info.get('description', 'No description')}"
+        )
+        rprint(f"👤 [bold]Author:[/bold] {agent_info.get('author', 'Unknown')}")
+        rprint(f"📍 [bold]Location:[/bold] {agent_info.get('path', 'Unknown')}")
+        rprint(
+            f"✅ [bold]Status:[/bold] "
+            f"{'Valid and ready' if agent_info.get('valid', False) else 'Invalid'}"
+        )
+
+        # Show methods
+        methods = agent_info.get("methods", [])
+        if methods:
+            rprint(f"\n🎯 [bold]Available Methods ({len(methods)}):[/bold]")
+
+            method_table = Table()
+            method_table.add_column("Method", style="cyan", no_wrap=True)
+            method_table.add_column("Description", style="green")
+
+            manifest = agent_info.get("manifest", {})
+            interface = manifest.get("interface", {})
+            method_defs = interface.get("methods", {})
+
+            for method in methods:
+                method_def = method_defs.get(method, {})
+                description = method_def.get("description", "No description available")
+                method_table.add_row(method, description)
+
+            console.print(method_table)
+
+        # Show dependencies
+        dependencies = agent_info.get("dependencies", [])
+        if dependencies:
+            rprint(f"\n📦 [bold]Dependencies ({len(dependencies)}):[/bold]")
+            for dep in dependencies:
+                rprint(f"  • {dep}")
+
+        # Show environment info
+        from agentmanager.environment.environment_setup import EnvironmentSetup
+        agent_path = agent_info.get('path')
+        if agent_path:
+            venv_path = Path(agent_path) / ".venv"
+            if venv_path.exists():
+                try:
+                    env_setup = EnvironmentSetup()
+                    env_info = env_setup._collect_environment_info(agent_path, venv_path)
+                    
+                    rprint(f"\n🌍 [bold]Environment:[/bold]")
+                    rprint(f"   Status: {'Active' if env_info.get('venv_exists') else 'Broken'}")
+                    rprint(f"   Python: {env_info.get('python_executable', 'Unknown')}")
+                    rprint(f"   UV Version: {env_info.get('uv_version', 'Unknown')}")
+                    
+                    # Check installed packages
+                    packages = env_setup._get_installed_packages(str(venv_path))
+                    rprint(f"   Packages: {len(packages)} installed")
+                    
+                except Exception as e:
+                    rprint(f"❌ Environment info: {e}")
+            else:
+                rprint(f"\n🌍 [bold]Environment:[/bold] Not created")
+
+    except Exception as e:
+        rprint(f"❌ [red]Error getting agent info: {e}[/red]")
+
+
 @agent.command("analyze-deps")
 @click.argument("agent_name")
 @click.option(
