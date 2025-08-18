@@ -151,8 +151,11 @@ agenthub list --base-path /custom/path
 
 #### Remove Agents
 ```bash
-# Remove with confirmation
+# Remove with confirmation (top-level command)
 agenthub remove developer/agent-name
+
+# Remove with confirmation (agent subcommand)
+agenthub agent remove developer/agent-name
 
 # Force removal without confirmation
 agenthub remove developer/agent-name --force
