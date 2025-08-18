@@ -124,6 +124,7 @@ def list():
 
         rprint("\n💡 [dim]Use 'agenthub info <agent>' for details[/dim]")
         rprint("🚀 [dim]Use 'agenthub exec <agent> <method> <params>' to run[/dim]")
+        rprint("📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]")
 
     except Exception as e:
         rprint(f"❌ [red]Error listing agents: {e}[/red]")
@@ -241,6 +242,8 @@ def info(agent_name: str):
                     f"  [dim]agenthub exec {agent_name} {first_method} "
                     f'"your input"[/dim]'
                 )
+            
+            rprint(f"  [dim]agenthub agent analyze-deps {agent_name}[/dim]")
 
     except Exception as e:
         rprint(f"❌ [red]Error getting agent info: {e}[/red]")
@@ -260,10 +263,8 @@ def exec(
     """Execute any agent method with full flexibility.
 
     Examples:
-      agenthub exec agentplug/coding-agent generate_code
-        '{"prompt": "create hello world"}'
-      agenthub exec agentplug/analysis-agent analyze_text
-        '{"text": "great product"}'
+      agenthub exec agentplug/coding-agent generate_code '{"prompt": "create hello world"}'
+      agenthub exec agentplug/analysis-agent analyze_text '{"text": "great product"}'
       agenthub exec agentplug/coding-agent generate_code --interactive
       agenthub exec agentplug/coding-agent generate_code "create a calculator"
     """
@@ -323,6 +324,7 @@ def exec(
                 f"   [cyan]Interactive:[/cyan] agenthub exec {agent_name} "
                 f"{method_name} --interactive"
             )
+            rprint("\n📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]")
             sys.exit(1)
 
         # Initialize system
@@ -463,11 +465,19 @@ def validate():
 
         if valid_count == len(agents):
             rprint("\n🚀 [green]System ready for production use![/green]")
+            rprint("\n📋 [dim]Next steps:[/dim]")
+            rprint("  • agenthub agent install <agent> - Install new agents")
+            rprint("  • agenthub agent status - Check agent status")
+            rprint("  • agenthub agent analyze-deps <agent> - Analyze dependencies")
         else:
             rprint(
                 f"\n⚠️  [yellow]{len(agents) - valid_count} agents "
                 f"need attention[/yellow]"
             )
+            rprint("\n🔧 [dim]Try:[/dim]")
+            rprint("  • agenthub agent repair <agent> - Repair broken agents")
+            rprint("  • agenthub agent remove <agent> - Remove invalid agents")
+            rprint("  • agenthub agent install <agent> - Reinstall agents")
 
     except Exception as e:
         rprint(f"❌ [red]Validation failed: {e}[/red]")
@@ -483,30 +493,32 @@ def validate():
 )
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 def remove(agent_name: str, base_path: Optional[str], force: bool):
-    """Remove an installed agent (shortcut for 'agenthub agent remove')."""
-    try:
-        from agentmanager.github.repository_cloner import RepositoryCloner
-        
-        cloner = RepositoryCloner(base_storage_path=Path(base_path) if base_path else None)
+    """Remove an installed agent.
+    
+    This is a legacy command. Use 'agenthub agent remove <agent>' instead.
+    """
+    rprint("⚠️  [yellow]This command is deprecated.[/yellow]")
+    rprint("💡 [cyan]Use instead: agenthub agent remove <agent>[/cyan]")
+    
+    from agentmanager.github.repository_cloner import RepositoryCloner
+    
+    cloner = RepositoryCloner(base_storage_path=Path(base_path) if base_path else None)
 
-        if not cloner.is_agent_cloned(agent_name):
-            rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
+    if not cloner.is_agent_cloned(agent_name):
+        rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
+        return
+
+    agent_path = cloner.get_agent_path(agent_name)
+    
+    if not force:
+        if not click.confirm(f"Remove agent '{agent_name}' from {agent_path}?"):
             return
 
-        agent_path = cloner.get_agent_path(agent_name)
-        
-        if not force:
-            if not click.confirm(f"Remove agent '{agent_name}' from {agent_path}?"):
-                return
-
-        if cloner.remove_agent(agent_name):
-            rprint(f"✅ [green]Agent '{agent_name}' removed successfully[/green]")
-            rprint(f"📁 Removed: {agent_path}")
-        else:
-            rprint(f"❌ [red]Failed to remove agent '{agent_name}'[/red]")
-
-    except Exception as e:
-        rprint(f"❌ [red]Error removing agent: {e}[/red]")
+    if cloner.remove_agent(agent_name):
+        rprint(f"✅ [green]Agent '{agent_name}' removed successfully[/green]")
+        rprint(f"📁 Removed: {agent_path}")
+    else:
+        rprint(f"❌ [red]Failed to remove agent '{agent_name}'[/red]")
 
 
 # Add agent management commands
