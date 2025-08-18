@@ -2,7 +2,7 @@
 
 import json
 import sys
-from typing import Any
+from typing import Any, Optional
 
 import click
 from rich import print as rprint
@@ -472,6 +472,41 @@ def validate():
     except Exception as e:
         rprint(f"❌ [red]Validation failed: {e}[/red]")
         sys.exit(1)
+
+
+@cli.command()
+@click.argument("agent_name")
+@click.option(
+    "--base-path",
+    type=click.Path(),
+    help="Custom base storage path for agents",
+)
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+def remove(agent_name: str, base_path: Optional[str], force: bool):
+    """Remove an installed agent (shortcut for 'agenthub agent remove')."""
+    try:
+        from agentmanager.github.repository_cloner import RepositoryCloner
+        
+        cloner = RepositoryCloner(base_storage_path=Path(base_path) if base_path else None)
+
+        if not cloner.is_agent_cloned(agent_name):
+            rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
+            return
+
+        agent_path = cloner.get_agent_path(agent_name)
+        
+        if not force:
+            if not click.confirm(f"Remove agent '{agent_name}' from {agent_path}?"):
+                return
+
+        if cloner.remove_agent(agent_name):
+            rprint(f"✅ [green]Agent '{agent_name}' removed successfully[/green]")
+            rprint(f"📁 Removed: {agent_path}")
+        else:
+            rprint(f"❌ [red]Failed to remove agent '{agent_name}'[/red]")
+
+    except Exception as e:
+        rprint(f"❌ [red]Error removing agent: {e}[/red]")
 
 
 # Add agent management commands
