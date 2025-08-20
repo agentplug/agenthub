@@ -1,8 +1,11 @@
 """Agent wrapper for unified agent interface."""
 
 import logging
+from typing import Dict, Any, List, Optional
 
 from agentmanager.core.interface_validator import InterfaceValidator
+from agentmanager.core.custom_method_manager import CustomMethodManager
+from agentmanager.core.exceptions import MethodNotFoundError, MethodInjectionError
 
 logger = logging.getLogger(__name__)
 
@@ -16,16 +19,18 @@ class AgentExecutionError(Exception):
 class AgentWrapper:
     """Unified wrapper for agent operations."""
 
-    def __init__(self, agent_info: dict, runtime=None):
+    def __init__(self, agent_info: dict, runtime=None, custom_method_manager: CustomMethodManager = None):
         """
         Initialize the agent wrapper.
 
         Args:
             agent_info: Agent information from AgentLoader
             runtime: Optional runtime for executing methods
+            custom_method_manager: Optional custom method manager for method injection
         """
         self.agent_info = agent_info
         self.runtime = runtime
+        self.custom_method_manager = custom_method_manager or CustomMethodManager()
         self.interface_validator = InterfaceValidator()
 
         # Extract key information for easy access
@@ -41,10 +46,24 @@ class AgentWrapper:
         # Extract interface for method operations
         self.manifest = agent_info.get("manifest", {})
         self.interface = self.manifest.get("interface", {})
+        
+        # Load custom methods
+        self._load_custom_methods()
+
+    def _load_custom_methods(self):
+        """Load custom methods for this agent."""
+        try:
+            agent_path = f"{self.namespace}/{self.agent_name}"
+            custom_methods = self.custom_method_manager.list_methods(agent_path)
+            self.custom_methods = list(custom_methods.keys())
+            logger.debug(f"Loaded {len(self.custom_methods)} custom methods for agent {agent_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load custom methods: {e}")
+            self.custom_methods = []
 
     def has_method(self, method_name: str) -> bool:
         """
-        Check if the agent has a specific method.
+        Check if the agent has a specific method (built-in or custom).
 
         Args:
             method_name: Name of the method to check
@@ -52,7 +71,19 @@ class AgentWrapper:
         Returns:
             True if method exists
         """
-        return method_name in self.methods
+        return method_name in self.methods or method_name in self.custom_methods
+
+    def is_custom_method(self, method_name: str) -> bool:
+        """
+        Check if a method is a custom injected method.
+
+        Args:
+            method_name: Name of the method to check
+
+        Returns:
+            True if method is custom
+        """
+        return method_name in self.custom_methods
 
     def get_method_info(self, method_name: str) -> dict:
         """
@@ -68,17 +99,35 @@ class AgentWrapper:
             AgentExecutionError: If method doesn't exist
         """
         if not self.has_method(method_name):
-            available = ", ".join(self.methods) if self.methods else "none"
+            available = ", ".join(self.methods + self.custom_methods) if (self.methods or self.custom_methods) else "none"
             raise AgentExecutionError(
                 f"Method '{method_name}' not available in agent '{self.name}'. "
                 f"Available methods: {available}"
             )
 
+        # Check if it's a custom method
+        if self.is_custom_method(method_name):
+            try:
+                agent_path = f"{self.namespace}/{self.agent_name}"
+                method_info = self.custom_method_manager.get_method_info(agent_path, method_name)
+                if method_info:
+                    return {
+                        "name": method_info.name,
+                        "description": f"Custom {method_info.language} method",
+                        "language": method_info.language,
+                        "injected_at": method_info.injected_at,
+                        "security_score": getattr(method_info, 'security_score', 'unknown'),
+                        "custom": True
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to get custom method info for {method_name}: {e}")
+
+        # Return built-in method info
         return self.interface_validator.get_method_info(self.interface, method_name)
 
     def execute(self, method_name: str, parameters: dict) -> dict:
         """
-        Execute an agent method.
+        Execute an agent method (built-in or custom).
 
         Args:
             method_name: Name of the method to execute
@@ -94,19 +143,147 @@ class AgentWrapper:
             raise AgentExecutionError("No runtime provided for agent execution")
 
         if not self.has_method(method_name):
-            available = ", ".join(self.methods) if self.methods else "none"
+            available = ", ".join(self.methods + self.custom_methods) if (self.methods or self.custom_methods) else "none"
             raise AgentExecutionError(
                 f"Method '{method_name}' not available in agent '{self.name}'. "
                 f"Available methods: {available}"
             )
 
         try:
+            # Execute using runtime
             result = self.runtime.execute_agent(
                 self.namespace, self.agent_name, method_name, parameters
             )
             return result
         except Exception as e:
             raise AgentExecutionError(f"Failed to execute {method_name}: {e}") from e
+
+    def inject_custom_method(self, method_name: str, implementation: Any, language: str = "python") -> dict:
+        """
+        Inject a custom method for this agent.
+
+        Args:
+            method_name: Name of the method to inject
+            implementation: Method implementation
+            language: Programming language of the implementation
+
+        Returns:
+            Injection result dictionary
+
+        Raises:
+            MethodInjectionError: If injection fails
+        """
+        try:
+            agent_path = f"{self.namespace}/{self.agent_name}"
+            self.custom_method_manager.inject_method(agent_path, method_name, implementation, language)
+            
+            # Reload custom methods
+            self._load_custom_methods()
+            
+            logger.info(f"Successfully injected custom method '{method_name}' for agent '{self.name}'")
+            
+            return {
+                "success": True,
+                "message": f"Successfully injected custom method '{method_name}' for agent '{self.name}'",
+                "method_name": method_name,
+                "language": language,
+                "agent_path": agent_path
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to inject custom method '{method_name}': {e}")
+            raise MethodInjectionError(
+                f"Failed to inject custom method: {str(e)}",
+                agent_path=f"{self.namespace}/{self.agent_name}",
+                method_name=method_name,
+                cause=e
+            )
+
+    def remove_custom_method(self, method_name: str) -> dict:
+        """
+        Remove a custom method from this agent.
+
+        Args:
+            method_name: Name of the method to remove
+
+        Returns:
+            Removal result dictionary
+
+        Raises:
+            MethodNotFoundError: If method doesn't exist
+        """
+        if not self.is_custom_method(method_name):
+            raise MethodNotFoundError(
+                f"Method '{method_name}' is not a custom method",
+                agent_path=f"{self.namespace}/{self.agent_name}",
+                method_name=method_name
+            )
+
+        try:
+            agent_path = f"{self.namespace}/{self.agent_name}"
+            self.custom_method_manager.remove_method(agent_path, method_name)
+            
+            # Reload custom methods
+            self._load_custom_methods()
+            
+            logger.info(f"Successfully removed custom method '{method_name}' from agent '{self.name}'")
+            
+            return {
+                "success": True,
+                "message": f"Successfully removed custom method '{method_name}' from agent '{self.name}'",
+                "method_name": method_name,
+                "agent_path": agent_path
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to remove custom method '{method_name}': {e}")
+            raise MethodInjectionError(
+                f"Failed to remove custom method: {str(e)}",
+                agent_path=f"{self.namespace}/{self.agent_name}",
+                method_name=method_name,
+                cause=e
+            )
+
+    def list_custom_methods(self) -> List[Dict[str, Any]]:
+        """
+        List all custom methods for this agent.
+
+        Returns:
+            List of custom method information dictionaries
+        """
+        try:
+            agent_path = f"{self.namespace}/{self.agent_name}"
+            custom_methods = self.custom_method_manager.list_methods(agent_path)
+            
+            method_list = []
+            for method_name, method_info in custom_methods.items():
+                method_list.append({
+                    "name": method_name,
+                    "language": method_info.language,
+                    "injected_at": method_info.injected_at,
+                    "security_score": getattr(method_info, 'security_score', 'unknown'),
+                    "metadata": method_info.metadata
+                })
+            
+            return method_list
+            
+        except Exception as e:
+            logger.warning(f"Failed to list custom methods: {e}")
+            return []
+
+    def get_custom_method_context(self) -> dict:
+        """
+        Get execution context for custom methods.
+
+        Returns:
+            Dictionary with custom method context information
+        """
+        try:
+            agent_path = f"{self.namespace}/{self.agent_name}"
+            return self.custom_method_manager.get_method_context(agent_path)
+        except Exception as e:
+            logger.warning(f"Failed to get custom method context: {e}")
+            return {}
 
     def __getattr__(self, method_name: str):
         """
@@ -128,13 +305,14 @@ class AgentWrapper:
 
         if not self.has_method(method_name):
             # Provide helpful error message with available methods
-            available_methods = ", ".join(self.methods) if self.methods else "none"
+            all_methods = self.methods + self.custom_methods
+            available_methods = ", ".join(all_methods) if all_methods else "none"
 
             # Try to find similar method names
             similar_methods = []
-            if self.methods:
+            if all_methods:
                 method_name_lower = method_name.lower()
-                for method in self.methods:
+                for method in all_methods:
                     if (
                         method_name_lower in method.lower()
                         or method.lower() in method_name_lower
@@ -152,24 +330,31 @@ class AgentWrapper:
                 )
 
             # Show method details for better guidance
-            if self.methods:
+            if all_methods:
                 error_msg += "\n\n🔍 Method details:"
-                for method in self.methods:
+                for method in all_methods:
                     try:
                         method_info = self.get_method_info(method)
                         description = method_info.get("description", "No description")
-                        error_msg += f"\n   • {method}: {description}"
+                        method_type = "🔧 Custom" if self.is_custom_method(method) else "📦 Built-in"
+                        error_msg += f"\n   • {method}: {description} ({method_type})"
                     except Exception:
-                        error_msg += f"\n   • {method}: Available"
+                        method_type = "🔧 Custom" if self.is_custom_method(method) else "📦 Built-in"
+                        error_msg += f"\n   • {method}: Available ({method_type})"
 
             raise AttributeError(error_msg)
 
         def method_caller(*args, **kwargs):
             """Execute the agent method with provided arguments."""
-            # Get method information from the agent's interface
+            # Get method information from the agent's interface or custom method
             try:
                 method_info = self.get_method_info(method_name)
                 interface_params = method_info.get("parameters", {})
+                
+                # For custom methods, we might not have detailed parameter info
+                if self.is_custom_method(method_name):
+                    # Use parameters as-is for custom methods
+                    return self.execute(method_name, kwargs if kwargs else dict(zip(range(len(args)), args)))
 
                 # If no kwargs provided, try to map positional args to parameters
                 if args and not kwargs:
@@ -306,9 +491,12 @@ class AgentWrapper:
 
     def __repr__(self) -> str:
         """String representation of the agent wrapper."""
+        custom_count = len(self.custom_methods)
+        total_count = len(self.methods) + custom_count
         return (
             f"AgentWrapper(name='{self.namespace}/{self.agent_name}', "
-            f"methods={self.methods}, version='{self.version}')"
+            f"methods={total_count} (built-in: {len(self.methods)}, custom: {custom_count}), "
+            f"version='{self.version}')"
         )
 
     def to_dict(self) -> dict:
@@ -326,6 +514,8 @@ class AgentWrapper:
             "description": self.description,
             "path": self.path,
             "methods": self.methods,
+            "custom_methods": self.custom_methods,
             "dependencies": self.dependencies,
             "has_runtime": self.runtime is not None,
+            "total_methods": len(self.methods) + len(self.custom_methods)
         }

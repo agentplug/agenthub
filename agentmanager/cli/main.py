@@ -14,6 +14,7 @@ from agentmanager.core.agent_loader import AgentLoader
 from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
 from agentmanager.cli.commands import agent
+from agentmanager.cli.method_commands import method
 from agentmanager.cli.config import CLIConfig
 
 console = Console()
@@ -476,6 +477,9 @@ def validate():
 
 # Add agent management commands
 cli.add_command(agent)
+
+# Add custom method management commands
+cli.add_command(method)
 
 
 def main():
