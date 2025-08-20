@@ -183,6 +183,27 @@ class CustomMethodManager:
         """Check if a method exists."""
         return self._get_method_file_path(agent_path, method_name).exists()
 
+    def get_method_context(self, agent_path: str) -> Dict[str, Any]:
+        """
+        Get the execution context for custom methods of an agent.
+        This includes a list of available methods and their basic info.
+        """
+        methods = self.list_methods(agent_path)
+        context_methods = {}
+        for name, info in methods.items():
+            context_methods[name] = {
+                "language": info.language,
+                "injected_at": info.injected_at,
+                "metadata": info.metadata,
+                "security_score": info.metadata.get("security_score", "unknown")
+            }
+        return {
+            "methods": context_methods,
+            "total_methods": len(methods),
+            "base_path": str(self.base_path),
+            "agent_path": agent_path
+        }
+
     def cleanup_expired_methods(self, max_age_hours: int = 24) -> int:
         """Clean up expired methods."""
         cutoff_time = time.time() - (max_age_hours * 3600)
@@ -287,6 +308,10 @@ class CustomMethodManager:
                 'min': min, 'max': max, 'sum': sum, 'abs': abs,
                 'print': print, 'range': range, 'enumerate': enumerate,
                 'zip': zip, 'map': map, 'filter': filter,
+                'ValueError': ValueError, 'TypeError': TypeError, 'KeyError': KeyError,
+                'IndexError': IndexError, 'AttributeError': AttributeError,
+                'round': round, 'sorted': sorted, 'reversed': reversed,
+                '__import__': __import__, 'isinstance': isinstance, 'hasattr': hasattr,
             }
         }
         

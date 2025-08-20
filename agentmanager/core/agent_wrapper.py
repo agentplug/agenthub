@@ -139,9 +139,6 @@ class AgentWrapper:
         Raises:
             AgentExecutionError: If execution fails
         """
-        if not self.runtime:
-            raise AgentExecutionError("No runtime provided for agent execution")
-
         if not self.has_method(method_name):
             available = ", ".join(self.methods + self.custom_methods) if (self.methods or self.custom_methods) else "none"
             raise AgentExecutionError(
@@ -150,7 +147,17 @@ class AgentWrapper:
             )
 
         try:
-            # Execute using runtime
+            # Handle custom methods directly
+            if self.is_custom_method(method_name):
+                agent_path = f"{self.namespace}/{self.agent_name}"
+                custom_method = self.custom_method_manager.get_method(agent_path, method_name)
+                result = custom_method(**parameters)
+                return result
+            
+            # Handle built-in methods through runtime
+            if not self.runtime:
+                raise AgentExecutionError("No runtime provided for built-in agent method execution")
+            
             result = self.runtime.execute_agent(
                 self.namespace, self.agent_name, method_name, parameters
             )
@@ -351,10 +358,20 @@ class AgentWrapper:
                 method_info = self.get_method_info(method_name)
                 interface_params = method_info.get("parameters", {})
                 
-                # For custom methods, we might not have detailed parameter info
+                # For custom methods, execute directly without runtime
                 if self.is_custom_method(method_name):
-                    # Use parameters as-is for custom methods
-                    return self.execute(method_name, kwargs if kwargs else dict(zip(range(len(args)), args)))
+                    try:
+                        # Get the custom method directly and execute it
+                        agent_path = f"{self.namespace}/{self.agent_name}"
+                        custom_method = self.custom_method_manager.get_method(agent_path, method_name)
+                        
+                        # Call the method directly with provided arguments
+                        if kwargs:
+                            return custom_method(**kwargs)
+                        else:
+                            return custom_method(*args)
+                    except Exception as e:
+                        raise AgentExecutionError(f"Failed to execute custom method {method_name}: {e}") from e
 
                 # If no kwargs provided, try to map positional args to parameters
                 if args and not kwargs:
