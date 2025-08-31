@@ -27,21 +27,70 @@
 
 ## 🚀 **User Experience: Simple & Powerful**
 
+### **The `evaluate()` Function Parameters**
+
+The core `evaluate()` function follows the **KISS principle** with just the essential parameters:
+
+```python
+def evaluate(
+    agent: EvaluatableAgent,
+    benchmark: Union[str, dict, str],
+    full: bool = False
+) -> EvaluationResult:
+    """
+    Evaluate an agent using the specified benchmark.
+    
+    Args:
+        agent: The agent to evaluate. Must implement __call__(input_text: str) -> str
+        benchmark: Benchmark identifier or custom benchmark data
+                  - String: Use public benchmarks ("glue", "human_eval", "gsm8k", etc.)
+                  - Dict: Custom benchmark data in the defined format
+                  - Path: Path to custom benchmark JSON file
+        full: If True, use full benchmark dataset; if False, use bundled samples
+    
+    Returns:
+        EvaluationResult: Comprehensive evaluation results with scores, insights, and recommendations
+    """
+```
+
+### **Parameter Details**
+
+#### **`agent` (Required)**
+- **Type**: `EvaluatableAgent` (any object with `__call__` method)
+- **Purpose**: The AI agent to be evaluated
+- **Interface**: Must implement `agent(input_text: str) -> str`
+- **Example**: `MyAgent()`, `OpenAIAgent()`, `CustomLLM()`
+
+#### **`benchmark` (Required)**
+- **Type**: `Union[str, dict, str]` (string identifier, dict data, or file path)
+- **Purpose**: Specifies which benchmark to use for evaluation
+- **Options**:
+  - **Public benchmarks**: `"glue"`, `"human_eval"`, `"gsm8k"`, `"copa"`, `"vqa"`
+  - **Custom data**: Dictionary with benchmark format
+  - **File path**: `"path/to/benchmark.json"`
+
+#### **`full` (Optional)**
+- **Type**: `bool` (default: `False`)
+- **Purpose**: Choose between bundled (fast) and full (comprehensive) benchmarks
+- **Behavior**:
+  - `False` (default): Use bundled samples (~50-100 test cases, <1 second startup)
+  - `True`: Use full benchmark datasets (10,000+ test cases, 2-5 minute startup)
+
 ### **The "Magic" Moment**
 ```python
-from agent_evaluation import evaluate
+from agentmanager.evaluation import evaluate, display_results
 
 # Evaluate on industry standard benchmarks
 result = evaluate(my_agent, benchmark="glue")
-print(f"GLUE Score: {result.glue_average:.3f}")
-print(f"Competitive Position: {result.competitive_position}")
+display_results(result)
 
 # Evaluate on specific task
 result = evaluate(my_agent, benchmark="human_eval")
-print(f"Code Generation: {result.pass_rate:.1%}")
+display_results(result)
 
 # Use custom benchmark
 result = evaluate(my_agent, benchmark="my_custom_benchmark.json")
+display_results(result)
 ```
 
 ### **What Users Get**
@@ -127,7 +176,7 @@ result = evaluate(my_agent, benchmark="glue")
 ### **Step 2: Automatic Benchmark Loading**
 ```python
 # Framework automatically loads appropriate benchmark
-# - Downloads public benchmarks if needed
+# - Uses bundled benchmarks for instant startup
 # - Validates custom benchmark format
 # - Selects appropriate evaluation logic
 ```
@@ -342,7 +391,7 @@ class EvaluatableAgent:
   ],
   "evaluation_criteria": {
     "accuracy": {"weight": 1.0}
-    }
+  }
 }
 ```
 
@@ -407,41 +456,38 @@ class MyAgent:
             return "I can help with sentiment analysis and grammar checking."
 
 # Instant evaluation with bundled samples (<1 second startup)
-result = evaluate(MyAgent(), benchmark="glue")
+result = evaluate(
+    agent=MyAgent(),
+    benchmark="glue",
+    full=False            # Use bundled samples (default)
+)
 
 # Single method call for beautiful results display
 display_results(result)
-
-## 🎨 **Integrated Results Display**
-
-### **The `display_results()` Method**
-Instead of multiple print statements, AgentManager provides a single, beautiful display method:
-
-```python
-from agentmanager.evaluation import evaluate, display_results
-
-# Evaluate your agent
-result = evaluate(my_agent, benchmark="glue")
-
-# Display results beautifully with one method call
-display_results(result)
 ```
 
-### **What `display_results()` Shows**
-- **Overall Score & Competitive Position** - Quick summary
-- **Task Performance Breakdown** - Individual task scores with status indicators
-- **Performance Metrics** - Accuracy, F1, precision, recall, execution time
-- **Strengths & Weaknesses** - What's working and what needs improvement
-- **Competitive Analysis** - Percentile ranking and gap to top performers
-- **Actionable Suggestions** - Specific next steps for improvement
-
-### **Customizable Display Options**
+### **Example 1a: Parameter Variations for Different Use Cases**
 ```python
-# Display with custom formatting
-display_results(result, format="detailed")      # Full breakdown
-display_results(result, format="summary")       # Just key metrics
-display_results(result, format="cli")           # Command-line friendly
-display_results(result, format="json")          # Raw data for processing
+# Fast development iteration (bundled samples)
+dev_result = evaluate(
+    agent=MyAgent(),
+    benchmark="glue",
+    full=False            # Use bundled samples for speed
+)
+
+# Production evaluation (full dataset)
+prod_result = evaluate(
+    agent=MyAgent(),
+    benchmark="glue",
+    full=True             # Use full benchmark dataset
+)
+
+# Custom benchmark evaluation
+custom_result = evaluate(
+    agent=MyAgent(),
+    benchmark="my_custom_benchmark.json"
+    # full=False by default for custom benchmarks
+)
 ```
 
 ### **Example 2: Comprehensive Evaluation (Full Benchmarks)**
@@ -496,26 +542,44 @@ custom_benchmark = {
 
 # Use custom benchmark
 result = evaluate(MyAgent(), benchmark=custom_benchmark)
-print(f"Custom Domain Score: {result.overall_score:.1%}")
+display_results(result)
 ```
 
-### **Example 5: CLI Usage Patterns**
-```bash
-# Quick evaluation (bundled)
-agentmanager evaluate-agent my_agent.py --benchmark glue
+## 🎨 **Integrated Results Display**
 
-# Comprehensive evaluation (full)
-agentmanager evaluate-agent my_agent.py --benchmark glue --full
+### **The `display_results()` Method**
+Instead of multiple print statements, AgentManager provides a single, beautiful display method:
 
-# Compare bundled vs full results
-agentmanager evaluate-agent my_agent.py --benchmark glue > bundled_results.txt
-agentmanager evaluate-agent my_agent.py --benchmark glue --full > full_results.txt
-diff bundled_results.txt full_results.txt
+```python
+from agentmanager.evaluation import evaluate, display_results
+
+# Evaluate your agent
+result = evaluate(my_agent, benchmark="glue")
+
+# Display results beautifully with one method call
+display_results(result)
+```
+
+### **What `display_results()` Shows**
+- **Overall Score & Competitive Position** - Quick summary
+- **Task Performance Breakdown** - Individual task scores with status indicators
+- **Performance Metrics** - Accuracy, F1, precision, recall, execution time
+- **Strengths & Weaknesses** - What's working and what needs improvement
+- **Competitive Analysis** - Percentile ranking and gap to top performers
+- **Actionable Suggestions** - Specific next steps for improvement
+
+### **Customizable Display Options**
+```python
+# Display with custom formatting
+display_results(result, format="detailed")      # Full breakdown
+display_results(result, format="summary")       # Just key metrics
+display_results(result, format="cli")           # Command-line friendly
+display_results(result, format="json")          # Raw data for processing
 ```
 
 ## 🔍 **Accessing Rich Results Programmatically**
 
-### **Example 6: Deep Dive into Results**
+### **Example 5: Deep Dive into Results**
 ```python
 # Get detailed insights from evaluation results
 result = evaluate(my_agent, benchmark="glue")
@@ -536,7 +600,7 @@ for task_name, task_data in result.task_breakdown.items():
         print(f"   Expected: {task_data['expected']}, Got: {task_data['agent_response']}")
 ```
 
-### **Example 7: Custom Analysis and Filtering**
+### **Example 6: Custom Analysis and Filtering**
 ```python
 # Filter results by performance thresholds
 strong_tasks = {name: data for name, data in result.task_breakdown.items() 
@@ -602,23 +666,7 @@ for iteration in range(10):
 
 # Phase 2: Final Validation (Full)
 final_result = evaluate(my_agent, benchmark="glue", full=True)  # 2-5 minutes
-print(f"Production-ready score: {final_result.overall_score:.3f}")
-print(f"Competitive position: {final_result.competitive_position}")
-```
-
-### **Create Custom Benchmark**
-```json
-{
-  "name": "Domain-Specific Test",
-  "evaluation_type": "classification",
-  "test_cases": [
-    {
-      "input": "Classify this text as positive or negative",
-      "expected_output": "positive",
-      "evaluation_method": "exact_match"
-    }
-  ]
-}
+display_results(final_result)
 ```
 
 ## 🖥️ **CLI Integration**
@@ -712,203 +760,3 @@ Gap to Top: 15% improvement needed to reach top 10%
 ---
 
 *This offline evaluation framework leverages existing, proven benchmarks to provide instant competitive positioning and actionable insights for agent improvement. By focusing on industry standards while maintaining flexibility for custom scenarios, we deliver maximum value with minimal development effort.*
-
-    "Accuracy" : 20
-    "Helpfulness" : 20
-    "Actionability" : 10
-```
-
-### **Scoring Scale**
-```mermaid
-graph LR
-    A[0.0-0.2] --> B[Poor]
-    C[0.3-0.5] --> D[Needs Improvement]
-    E[0.6-0.7] --> F[Satisfactory]
-    G[0.8-0.9] --> H[Good]
-    I[0.9-1.0] --> J[Excellent]
-```
-
-## 📚 **Benchmark Format Standards**
-
-### **MVP Benchmark Format (JSON)**
-The MVP will support a simple, standardized benchmark format that's easy to create and widely compatible:
-
-```json
-{
-  "name": "Coding Assistant Benchmark v1.0",
-  "description": "Evaluates coding agent capabilities",
-  "version": "1.0.0",
-  "test_cases": [
-    {
-      "id": "code_gen_001",
-      "input": "Generate a Python function to sort a list",
-      "expected_topics": ["function definition", "sorting logic", "return statement"],
-      "response_type": "code_generation",
-      "difficulty": "easy"
-    }
-  ],
-  "evaluation_criteria": {
-    "relevance": {"weight": 0.25},
-    "completeness": {"weight": 0.25},
-    "accuracy": {"weight": 0.20},
-    "helpfulness": {"weight": 0.20},
-    "actionability": {"weight": 0.10}
-    }
-
-}
-
-```
-
-
-
-### **Why This Format?**
-1. **JSON Standard**: Universal format supported by all programming languages
-2. **Simple Structure**: Easy to create and modify
-3. **Extensible**: Can add new fields without breaking compatibility
-4. **Human Readable**: Developers can easily understand and create benchmarks
-5. **Version Control Friendly**: Works well with Git and other VCS
-
-### **Alternative Formats (Future)**
-- **YAML**: More human-readable for complex benchmarks
-- **CSV**: Simple tabular format for basic tests
-- **Custom DSL**: Domain-specific language for advanced use cases
-
-
-## 🤖 **Agent Interface Design**
-
-
-
-### **Core Interface (Minimal Requirements)**
-
-```python
-
-class EvaluatableAgent:
-
-    """Minimal interface for agent evaluation - only ONE method required"""
-
-    
-
-    def __call__(self, input_text: str) -> str:
-
-        """
-
-        Process input and return response.
-
-        This is the ONLY required method.
-
-        """
-
-        pass
-
-```
-
-
-
-### **Enhanced Interface (Optional but Recommended)**
-
-```python
-
-class EvaluatableAgent:
-
-    """Enhanced interface for better evaluation results"""
-
-    
-
-    def __call__(self, input_text: str) -> str:
-
-        """Required: Process input and return response"""
-
-        pass
-
-    
-
-    # Optional attributes for better evaluation
-
-    @property
-
-    def capabilities(self) -> List[str]:
-
-        """Optional: List of agent capabilities"""
-        return []
-
-    
-
-    @property
-
-    def description(self) -> str:
-
-        """Optional: Human-readable description of the agent"""
-        return ""
-
-    
-
-    @property
-
-    def name(self) -> str:
-
-        """Optional: Agent name for identification"""
-        return ""
-
-```
-
-## 🎯 **MVP Success Metrics**
-
-
-### **User Satisfaction**
-
-- **Ease of Use**: Can evaluate agent in <5 lines of code
-
-- **Actionable Results**: Clear next steps for improvement
-
-- **Visual Appeal**: Results are compelling and easy to understand
-
-
-
-### **Developer Value**
-
-- **Immediate Insights**: Understand agent capabilities in minutes
-
-- **Improvement Guidance**: Clear roadmap for enhancement
-
-- **Competitive Awareness**: Know how agent compares to others
-
-
-
-### **Framework Adoption**
-
-- **Simple Integration**: Works with any Python-based agent
-
-- **Fast Results**: Evaluation completes in <30 seconds
-
-- **Rich Output**: Comprehensive insights without complexity
-
-
-## 🚀 **Getting Started**
-
-### **Installation**
-```bash
-pip install agent-evaluation
-```
-
-### **Basic Usage**
-```python
-from agent_evaluation import evaluate
-
-# Evaluate your agent with a benchmark file
-result = evaluate(my_agent, benchmark="my_benchmark.json")
-
-# Get insights
-print(f"Your agent scored {result.overall_score}/10")
-print(f"Top strength: {result.strengths[0]}")
-print(f"Priority improvement: {result.improvements[0]}")
-```
-
-### **Use Existing Benchmark Files**
-```python
-# Use a benchmark file you already have
-result = evaluate(my_agent, benchmark="path/to/existing_benchmark.json")
-```
-
----
-
-*This offline evaluation framework provides a simple, compelling way for developers to understand and improve their AI agents, with beautiful results and actionable insights that drive continuous improvement. The MVP focuses on user-supplied benchmarks with a simple, standardized format that's easy to create and widely compatible.*
