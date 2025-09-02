@@ -15,13 +15,48 @@ console = Console()
 
 
 def display_simple_agent_list(agents: Dict[str, str]):
-    """Display simple agent list."""
+    """Display simple agent list with descriptions."""
+    from agentmanager.core.agents.loader import AgentLoader
+    from agentmanager.storage.local_storage import LocalStorage
+    
     table = Table(title=f"📦 Installed Agents ({len(agents)})")
-    table.add_column("Agent", style="cyan")
-    table.add_column("Path", style="green")
+    table.add_column("Agent", style="cyan", no_wrap=True)
+    table.add_column("Version", style="magenta")
+    table.add_column("Description", style="green")
+
+    # Initialize loader to get agent descriptions
+    storage = LocalStorage()
+    loader = AgentLoader(storage=storage)
 
     for agent_name, path in agents.items():
-        table.add_row(agent_name, path)
+        try:
+            # Parse agent name
+            if "/" in agent_name:
+                namespace, name = agent_name.split("/", 1)
+                
+                # Try to load agent info for description
+                try:
+                    agent_info = loader.load_agent(namespace, name)
+                    version = agent_info.get("version", "unknown")
+                    description = agent_info.get("description", "No description available")
+                    
+                    # Truncate long descriptions
+                    if len(description) > 50:
+                        description = description[:47] + "..."
+                        
+                except Exception:
+                    # Fallback if agent info can't be loaded
+                    version = "unknown"
+                    description = "Error loading description"
+            else:
+                version = "unknown"
+                description = "Invalid agent name format"
+                
+        except Exception:
+            version = "unknown"
+            description = "Error loading agent info"
+
+        table.add_row(agent_name, version, description)
 
     console.print(table)
 
