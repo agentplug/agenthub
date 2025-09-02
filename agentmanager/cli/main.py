@@ -2,6 +2,7 @@
 
 import json
 import sys
+from pathlib import Path
 from typing import Any, Optional
 
 import click
@@ -10,10 +11,10 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
 
-from agentmanager.core.agent_loader import AgentLoader
+from agentmanager.core.agents.loader import AgentLoader
 from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
-from agentmanager.cli.commands import agent
+from agentmanager.cli.commands import agent, tools
 from agentmanager.cli.config import CLIConfig
 
 console = Console()
@@ -523,6 +524,9 @@ def remove(agent_name: str, base_path: Optional[str], force: bool):
 
 # Add agent management commands
 cli.add_command(agent)
+
+# Add tool management commands
+cli.add_command(tools)
 
 
 def main():
