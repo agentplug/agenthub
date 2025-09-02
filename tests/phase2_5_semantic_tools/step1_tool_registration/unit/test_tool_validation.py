@@ -272,7 +272,7 @@ class TestToolValidator:
         def safe_tool(x: int) -> int:
             return x * 2
         
-        config = ToolValidationConfig(enable_sandboxing=False)
+        config = ToolValidationConfig(enable_sandboxing=False, enable_execution_monitoring=False)
         validator = ToolValidator(config)
         
         result = validator.execute_tool_safely(safe_tool, {"x": 5})
@@ -338,6 +338,8 @@ class TestValidationIntegration:
         assert validation_result.is_valid is True
         
         # Execute tool safely (without monitoring to avoid SecureToolExecutor issues)
+        # Clear singleton to force new instance
+        ToolValidator._instance = None
         config_no_monitoring = ToolValidationConfig(
             enable_security_validation=False, 
             enable_execution_monitoring=False
