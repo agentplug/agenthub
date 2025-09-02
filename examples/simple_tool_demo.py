@@ -16,9 +16,9 @@ import signal
 import sys
 
 # Import our new Phase 2.5 capabilities
-from agentmanager.core.tool_decorators import tool, get_global_registry
-from agentmanager.core.tool_registration import register_function
-from agentmanager.core.tool_service_host import start_tool_service, stop_tool_service
+from agentmanager.core.tools import tool, get_global_registry
+from agentmanager.core.tools import register_function
+from agentmanager.core.tools import start_tool_service, stop_tool_service
 
 
 # 1. CAPABILITY: Tool Registration with @tool decorator
