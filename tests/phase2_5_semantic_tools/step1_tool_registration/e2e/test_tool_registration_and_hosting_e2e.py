@@ -271,7 +271,7 @@ class TestE2EToolRegistrationAndHosting:
         
         # Step 5: Start service and verify all tools accessible
         with patch('agentmanager.core.tools.service.uvicorn.Server'):
-            with patch('agentmanager.core.tool_service_host.ToolServiceHost.start'):
+            with patch('agentmanager.core.tools.service.ToolServiceHost.start'):
                 service = start_tool_service(port=8888, background=True)
                 service._is_running = True  # Mock running state
                 
@@ -320,7 +320,7 @@ class TestE2EToolRegistrationAndHosting:
         
         # Test service can handle errors gracefully
         with patch('agentmanager.core.tools.service.uvicorn.Server'):
-            with patch('agentmanager.core.tool_service_host.ToolServiceHost.start'):
+            with patch('agentmanager.core.tools.service.ToolServiceHost.start'):
                 service = start_tool_service(port=8889, background=True)
                 service._is_running = True
                 

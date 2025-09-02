@@ -329,7 +329,7 @@ class TestGlobalServiceFunctions:
         assert get_global_service_host() is None
         assert is_service_running() is False
     
-    @patch('agentmanager.core.tool_service_host.ToolServiceHost.start')
+    @patch('agentmanager.core.tools.service.ToolServiceHost.start')
     def test_start_tool_service(self, mock_start):
         """Test starting global tool service."""
         service = start_tool_service(port=8002, host="localhost")
@@ -338,7 +338,7 @@ class TestGlobalServiceFunctions:
         assert get_global_service_host() is service
         mock_start.assert_called_once_with(background=False)
     
-    @patch('agentmanager.core.tool_service_host.ToolServiceHost.start')
+    @patch('agentmanager.core.tools.service.ToolServiceHost.start')
     def test_start_tool_service_background(self, mock_start):
         """Test starting global tool service in background."""
         service = start_tool_service(port=8003, background=True)
@@ -346,8 +346,8 @@ class TestGlobalServiceFunctions:
         assert service is not None
         mock_start.assert_called_once_with(background=True)
     
-    @patch('agentmanager.core.tool_service_host.ToolServiceHost.start')
-    @patch('agentmanager.core.tool_service_host.ToolServiceHost.is_running', return_value=True)
+    @patch('agentmanager.core.tools.service.ToolServiceHost.start')
+    @patch('agentmanager.core.tools.service.ToolServiceHost.is_running', return_value=True)
     def test_start_already_running_service(self, mock_is_running, mock_start):
         """Test starting service when already running."""
         # First start
@@ -359,11 +359,11 @@ class TestGlobalServiceFunctions:
         # Should only start once
         assert mock_start.call_count == 1
     
-    @patch('agentmanager.core.tool_service_host.ToolServiceHost.stop')
+    @patch('agentmanager.core.tools.service.ToolServiceHost.stop')
     def test_stop_tool_service(self, mock_stop):
         """Test stopping global tool service."""
         # Start service first
-        with patch('agentmanager.core.tool_service_host.ToolServiceHost.start'):
+        with patch('agentmanager.core.tools.service.ToolServiceHost.start'):
             start_tool_service()
         
         # Stop service
@@ -398,7 +398,7 @@ class TestServiceIntegration:
             return f"Processed: {message}"
         
         # Mock the FastAPI app and server to avoid actual HTTP server
-        with patch('agentmanager.core.tool_service_host.ToolServiceHost.start'):
+        with patch('agentmanager.core.tools.service.ToolServiceHost.start'):
             service = start_tool_service(port=8006)
             
             # Verify tool is accessible through service

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from agentmanager.core.manifest_parser import ManifestParser, ManifestValidationError
+from agentmanager.core.agents.manifest import ManifestParser, ManifestValidationError
 
 
 class TestManifestParser:
