@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from agentmanager.runtime.environment_manager import EnvironmentManager
+from agentmanager.core.agents.dynamic_executor import DynamicAgentExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -14,17 +15,20 @@ logger = logging.getLogger(__name__)
 class ProcessManager:
     """Manages agent subprocess execution with isolation."""
 
-    def __init__(self, timeout: int = 300):
+    def __init__(self, timeout: int = 300, use_dynamic_execution: bool = True):
         """
         Initialize the process manager.
 
         Args:
             timeout: Maximum execution time in seconds
+            use_dynamic_execution: Whether to use dynamic execution (default: True)
         """
         self.timeout = timeout
         self.environment_manager = EnvironmentManager()
+        self.use_dynamic_execution = use_dynamic_execution
+        self.dynamic_executor = DynamicAgentExecutor() if use_dynamic_execution else None
 
-    def execute_agent(self, agent_path: str, method: str, parameters: dict) -> dict:
+    def execute_agent(self, agent_path: str, method: str, parameters: dict, manifest: dict = None) -> dict:
         """
         Execute an agent method in an isolated subprocess.
 
@@ -32,6 +36,7 @@ class ProcessManager:
             agent_path: Path to the agent directory
             method: Name of the method to execute
             parameters: Dictionary of method parameters
+            manifest: Optional manifest data for dynamic execution
 
         Returns:
             dict: Execution result with 'result' or 'error' key
@@ -51,6 +56,20 @@ class ProcessManager:
         if not agent_script.exists():
             raise ValueError(f"Agent script not found: {agent_script}")
 
+        # Try dynamic execution first if enabled
+        if self.use_dynamic_execution and self.dynamic_executor:
+            try:
+                start_time = time.time()
+                result = self.dynamic_executor.execute_agent_method(
+                    agent_path, method, parameters, manifest
+                )
+                execution_time = time.time() - start_time
+                result["execution_time"] = execution_time
+                return result
+            except Exception as e:
+                logger.warning(f"Dynamic execution failed, falling back to subprocess: {e}")
+
+        # Fallback to subprocess execution
         # Prepare execution data
         execution_data = {"method": method, "parameters": parameters}
 
