@@ -78,6 +78,10 @@ data_agent = amg.load_agent("openai/data_analyzer")
 insights = data_agent.analyze("sales_data.csv")
 
 # All agents auto-install in isolated environments - zero conflicts!
+
+# 💻 Or use CLI for quick execution:
+# agenthub exec agentplug/scientific-paper-analyzer analyze_paper "research.pdf"
+# agenthub exec agentplug/coding-agent generate_code "React component for data table"
 ```
 
 ### 🏪 Agent Marketplace
@@ -102,35 +106,53 @@ insights = data_agent.analyze("sales_data.csv")
 
 AgentHub uses a **three-layer architecture** designed for security, scalability, and simplicity:
 
-```mermaid
-graph TB
-    subgraph "User Layer"
-        A[Client SDK] -->|"one line"| B[Agent Loader]
-        B --> C[Environment Manager]
-    end
-    
-    subgraph "Core Services"
-        C --> D[Repository Cloner]
-        C --> E[Dependency Manager]
-        C --> F[Process Manager]
-        D --> G[GitHub Integration]
-        E --> H[UV Environment]
-        F --> I[Runtime Isolation]
-    end
-    
-    subgraph "Storage Layer"
-        J[Local Cache]
-        K[Virtual Environments]
-        L[Configuration Store]
-    end
-    
-    C --> J
-    C --> K
-    C --> L
-    
-    style A fill:#f9f,stroke:#333
-    style C fill:#bbf,stroke:#333
-    style G fill:#9f9,stroke:#333
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        AgentHub Architecture                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐ │
+│  │   User Layer    │    │  Core Services  │    │Storage Layer│ │
+│  │                 │    │                 │    │             │ │
+│  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────┐ │ │
+│  │ │Client SDK   │─────▶│Agent Loader  │─────▶│Local     │ │ │
+│  │ │             │ │    │ │             │ │    │ Cache    │ │ │
+│  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────┘ │ │
+│  │                 │    │                 │    │             │ │
+│  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────┐ │ │
+│  │ │Environment  │◀─────│ │Repository   │ │    │ │Virtual  │ │ │
+│  │ │Manager      │ │    │ │Cloner       │ │    │ │Environ. │ │ │
+│  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────┘ │ │
+│  │                 │    │                 │    │             │ │
+│  │                 │    │ ┌─────────────┐ │    │ ┌─────────┐ │ │
+│  │                 │    │ │Dependency   │ │    │ │Config   │ │ │
+│  │                 │    │ │Manager      │ │    │ │Store    │ │ │
+│  │                 │    │ └─────────────┘ │    │ └─────────┘ │ │
+│  │                 │    │                 │    │             │ │
+│  │                 │    │ ┌─────────────┐ │    │             │ │
+│  │                 │    │ │Process      │ │    │             │ │
+│  │                 │    │ │Manager      │ │    │             │ │
+│  │                 │    │ └─────────────┘ │    │             │ │
+│  │                 │    │                 │    │             │ │
+│  │                 │    │ ┌─────────────┐ │    │             │ │
+│  │                 │    │ │GitHub       │ │    │             │ │
+│  │                 │    │ │Integration  │ │    │             │ │
+│  │                 │    │ └─────────────┘ │    │             │ │
+│  │                 │    │                 │    │             │ │
+│  │                 │    │ ┌─────────────┐ │    │             │ │
+│  │                 │    │ │UV           │ │    │             │ │
+│  │                 │    │ │Environment  │ │    │             │ │
+│  │                 │    │ └─────────────┘ │    │             │ │
+│  │                 │    │                 │    │             │ │
+│  │                 │    │ ┌─────────────┐ │    │             │ │
+│  │                 │    │ │Runtime      │ │    │             │ │
+│  │                 │    │ │Isolation    │ │    │             │ │
+│  │                 │    │ └─────────────┘ │    │             │ │
+│  └─────────────────┘    └─────────────────┘    └─────────────┘ │
+│                                                                 │
+│  🔒 Security: Isolated environments, dependency sandboxing,    │
+│     Git-based trust, runtime monitoring                         │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 🔒 Security Model
@@ -173,17 +195,23 @@ print(f"📊 Summary: {result['summary'][:200]}...")
 ### 🛠️ CLI Power User
 
 ```bash
-# Discover agents
-agenthub search "paper analysis"
+# List all agents
+agenthub list
 
-# Install with specific version
-agenthub install agentplug/scientific-paper-analyzer@v2.1.0
+# Get agent information
+agenthub info agentplug/scientific-paper-analyzer
 
-# List your agents
-agenthub list --detailed
+# Install new agent
+agenthub agent install agentplug/scientific-paper-analyzer
+
+# Execute agent method
+agenthub exec agentplug/scientific-paper-analyzer analyze_paper "research.pdf"
+
+# Check agent status
+agenthub agent status agentplug/scientific-paper-analyzer
 
 # Remove an agent
-agenthub remove agentplug/scientific-paper-analyzer
+agenthub agent remove agentplug/scientific-paper-analyzer
 ```
 
 ### 🧑‍💻 Developer Workflow
@@ -191,15 +219,15 @@ agenthub remove agentplug/scientific-paper-analyzer
 Create and publish your first agent:
 
 ```bash
-# Create agent template
-agenthub create my-coding-agent
+# Create agent template (manual process)
+mkdir my-coding-agent
 cd my-coding-agent/
 
-# Edit agent.py and agent.yaml
+# Create agent.py and agent.yaml
 # ... write your agent code ...
 
 # Test locally
-agenthub test .
+agenthub exec ./my-coding-agent generate_code "hello world"
 
 # Publish to GitHub (public or private)
 git push origin main
@@ -219,13 +247,27 @@ git push origin main
 
 ### 📋 Quick Reference
 
-**CLI Commands:**
+**Core CLI Commands:**
 ```bash
-agenthub --help                    # All commands
-agenthub install user/agent        # Install agent
-agenthub list --detailed          # List with details
-agenthub remove user/agent        # Remove agent
-agenthub status user/agent        # Check health
+agenthub --help                    # Show all available commands
+agenthub list                      # List all installed agents
+agenthub info user/agent           # Show detailed agent information
+agenthub exec user/agent method    # Execute agent method with parameters
+agenthub validate                  # Validate system health and agents
+```
+
+**Agent Management Commands:**
+```bash
+agenthub agent install user/agent  # Install new agent from GitHub
+agenthub agent list                # List installed agents with details
+agenthub agent status user/agent   # Check agent health and status
+agenthub agent remove user/agent   # Remove installed agent
+agenthub agent repair user/agent   # Repair broken agent environment
+agenthub agent backup user/agent   # Create agent backup
+agenthub agent restore user/agent  # Restore agent from backup
+agenthub agent analyze-deps user/agent  # Analyze dependencies
+agenthub agent optimize user/agent # Optimize agent environment
+agenthub agent migrate user/agent  # Migrate to different Python version
 ```
 
 **Python SDK:**
@@ -356,6 +398,18 @@ Contributors are featured in:
 - ⚡ **Scalability**: Validated for 10,000+ agents
 - 📊 **Monitoring**: Real-time agent health dashboards
 - 🏢 **Governance**: Enterprise-grade access controls
+
+## 📝 **Important CLI Note**
+
+**Command Structure**: All agent management commands use the `agenthub agent` prefix:
+- ✅ **Correct**: `agenthub agent install user/agent`
+- ❌ **Incorrect**: `agenthub install user/agent`
+
+**Core Commands**: Direct commands for basic operations:
+- `agenthub list` - List agents
+- `agenthub info user/agent` - Show agent details  
+- `agenthub exec user/agent method` - Execute agent methods
+- `agenthub validate` - System health check
 
 ## 🤝 Community
 
