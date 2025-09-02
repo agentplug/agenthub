@@ -9,8 +9,7 @@ __author__ = "William"
 
 # Import implemented modules
 from agentmanager import core, runtime, storage
-from agentmanager.core.agent_loader import AgentLoader
-from agentmanager.core.agent_wrapper import AgentWrapper
+from agentmanager.core.agents import AgentLoader, AgentWrapper
 from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
 

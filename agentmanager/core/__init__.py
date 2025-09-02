@@ -1,20 +1,74 @@
-"""Core Module - Agent loading and interface management."""
+"""Core Module - Modular architecture for agent and tool management.
 
-from agentmanager.core.agent_loader import AgentLoader, AgentLoadError
-from agentmanager.core.agent_wrapper import AgentExecutionError, AgentWrapper
-from agentmanager.core.interface_validator import (
-    InterfaceValidationError,
-    InterfaceValidator,
+This module provides a modular architecture organized into:
+- agents/: Agent lifecycle management, loading, and execution
+- tools/: Tool registration, validation, security, and execution  
+- runtime/: Runtime management and component coordination
+- common/: Shared utilities, types, and exceptions
+"""
+
+# Import from agents package
+from .agents import (
+    AgentLoader, AgentLoadError, AgentWrapper, AgentExecutionError,
+    InterfaceValidator, InterfaceValidationError, ManifestParser, ManifestValidationError
 )
-from agentmanager.core.manifest_parser import ManifestParser, ManifestValidationError
+
+# Import from tools package
+from .tools import (
+    ToolMetadata, ToolRegistry, tool, register_tool, get_global_registry, get_tool_metadata,
+    ToolRegistrationManager, ToolRegistrationError, ToolRegistrationResult, get_registered_tools_global,
+    register_function,
+    SecurityLevel, SecurityResult, ToolExecutionContext, ToolSecurityValidator, SecureToolExecutor, 
+    ToolExecutionMonitor, SecurityError,
+    ToolServiceHost, ServiceConfiguration, ToolExecutionRequest, ToolExecutionResponse, 
+    ToolInfoResponse, ToolListResponse, start_tool_service, stop_tool_service, 
+    get_global_service_host, is_service_running,
+    ToolValidationConfig, ToolValidationResult, SignatureValidationResult, ToolValidator
+)
 
 __all__ = [
-    "ManifestParser",
-    "ManifestValidationError",
-    "InterfaceValidator",
-    "InterfaceValidationError",
+    # Agent components
     "AgentLoader",
     "AgentLoadError",
-    "AgentWrapper",
+    "AgentWrapper", 
     "AgentExecutionError",
+    "InterfaceValidator",
+    "InterfaceValidationError",
+    "ManifestParser",
+    "ManifestValidationError",
+    
+    # Tool components
+    "ToolMetadata",
+    "ToolRegistry",
+    "tool",
+    "register_tool", 
+    "get_global_registry",
+    "get_tool_metadata",
+    "ToolRegistrationManager",
+    "ToolRegistrationError",
+    "ToolRegistrationResult",
+    "get_registered_tools_global",
+    "register_function",
+    "SecurityLevel",
+    "SecurityResult",
+    "ToolExecutionContext",
+    "ToolSecurityValidator",
+    "SecureToolExecutor",
+    "ToolExecutionMonitor", 
+    "SecurityError",
+    "ToolServiceHost",
+    "ServiceConfiguration",
+    "ToolExecutionRequest",
+    "ToolExecutionResponse",
+    "ToolInfoResponse",
+    "ToolListResponse",
+    "start_tool_service",
+    "stop_tool_service",
+    "get_global_service_host",
+    "is_service_running",
+    "ToolValidationConfig",
+    "ToolValidationResult",
+    "SignatureValidationResult",
+    "ToolValidator",
+
 ]
