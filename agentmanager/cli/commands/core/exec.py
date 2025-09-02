@@ -33,16 +33,15 @@ def exec_agent(
     """Execute any agent method with full flexibility.
 
     Examples:
-      agenthub exec agentplug/coding-agent generate_code '{"prompt": "create hello world"}'
-      agenthub exec agentplug/analysis-agent analyze_text '{"text": "great product"}'
-      agenthub exec agentplug/coding-agent generate_code --interactive
-      agenthub exec agentplug/coding-agent generate_code "create a calculator"
+      agenthub exec <namespace>/<agent> <method> '{"param": "value"}'
+      agenthub exec <namespace>/<agent> <method> --interactive
+      agenthub exec <namespace>/<agent> <method> "simple text input"
     """
     try:
         # Parse agent name
         if "/" not in agent_name:
             rprint("❌ [red]Agent name must be in format 'namespace/name'[/red]")
-            rprint("💡 [dim]Example: agentplug/coding-agent[/dim]")
+            rprint("💡 [dim]Example: <namespace>/<agent-name>[/dim]")
             sys.exit(1)
 
         namespace, name = agent_name.split("/", 1)
@@ -60,7 +59,7 @@ def exec_agent(
             except Exception as e:
                 rprint(f"❌ [red]Failed to load agent info: {e}[/red]")
                 rprint("💡 [yellow]Falling back to basic parameter input[/yellow]")
-                params = {"input": Prompt.ask("Please provide input", default="")}
+                params = {"data": Prompt.ask("Please provide input", default="")}
 
         # Handle parameters (JSON or simple text)
         elif parameters:
@@ -83,7 +82,7 @@ def exec_agent(
                     except Exception as e:
                         rprint(f"❌ [red]Failed to load agent info: {e}[/red]")
                         rprint("💡 [yellow]Falling back to basic parameter mapping[/yellow]")
-                        params = {"input": parameters}
+                        params = {"data": parameters}
             except json.JSONDecodeError as e:
                 rprint(f"❌ [red]JSON parsing failed: {e}[/red]")
                 rprint("💡 [yellow]Tip: Use simple text instead of JSON![/yellow]")

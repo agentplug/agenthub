@@ -131,7 +131,7 @@ def info_agent(agent_name: str):
                     f'"your input"[/dim]'
                 )
             
-            rprint(f"  [dim]agenthub agent analyze-deps {agent_name}[/dim]")
+            rprint(f"  [dim]agenthub agent status {agent_name}[/dim]")
 
     except Exception as e:
         rprint(f"❌ [red]Error getting agent info: {e}[/red]")
