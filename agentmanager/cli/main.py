@@ -14,7 +14,8 @@ from rich.table import Table
 from agentmanager.core.agents.loader import AgentLoader
 from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
-from agentmanager.cli.commands import agent, tools
+from agentmanager.cli.commands.agent import agent
+from agentmanager.cli.commands.tools import tools
 from agentmanager.cli.config import CLIConfig
 
 console = Console()
