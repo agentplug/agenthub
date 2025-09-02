@@ -79,7 +79,7 @@ class EnhancedAgentWrapper(AgentWrapper):
         # Initialize base wrapper
         super().__init__(agent_info, runtime)
         
-        # Initialize tool discovery
+        # Initialize tool discovery and information provider
         self.tool_manager = tool_manager or ToolManager()
         self.tool_discovery = ToolDiscovery(self.tool_manager)
         self.tool_info_provider = ToolInformationProvider(self.tool_discovery)
