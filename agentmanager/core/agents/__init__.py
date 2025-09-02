@@ -11,6 +11,7 @@ from .loader import AgentLoader, AgentLoadError
 from .wrapper import AgentWrapper, AgentExecutionError
 from .validator import InterfaceValidator, InterfaceValidationError
 from .manifest import ManifestParser, ManifestValidationError
+from .dynamic_executor import DynamicAgentExecutor, DynamicExecutionError
 
 __all__ = [
     "AgentLoader",
@@ -21,4 +22,6 @@ __all__ = [
     "InterfaceValidationError",
     "ManifestParser",
     "ManifestValidationError",
+    "DynamicAgentExecutor",
+    "DynamicExecutionError",
 ]
