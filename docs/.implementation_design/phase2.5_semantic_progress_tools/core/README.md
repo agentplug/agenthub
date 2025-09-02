@@ -13,21 +13,42 @@
 
 The Core Components module provides the fundamental building blocks for Phase 2.5: Semantic Progress and Tool Integration. These components extend the existing agent architecture to support external tool integration and human-readable progress tracking.
 
-## 🏗️ **Core Architecture**
+## 🏗️ **Modular Core Architecture**
 
 ```mermaid
 graph TB
-    subgraph "Core Components"
-        TR[Tool Registry]
-        EAW[Enhanced Agent Wrapper]
-        TEA[Tool-Enabled Agent Base]
-    end
-
-    subgraph "Existing Components"
-        AW[Agent Wrapper - Base]
-        AL[Agent Loader]
-        IV[Interface Validator]
-        MP[Manifest Parser]
+    subgraph "Modular Core Structure"
+        subgraph "agents/"
+            AL[Agent Loader]
+            AW[Agent Wrapper]
+            IV[Interface Validator]
+            MP[Manifest Parser]
+        end
+        
+        subgraph "tools/"
+            TR[Tool Registry]
+            TD[Tool Decorators]
+            TS[Tool Security]
+            TV[Tool Validation]
+            TH[Tool Service Host]
+            subgraph "execution/"
+                TE[Tool Executor]
+                TM[Tool Monitor]
+                TC[Tool Context]
+            end
+        end
+        
+        subgraph "runtime/"
+            RM[Runtime Manager]
+            RL[Runtime Lifecycle]
+            RC[Runtime Coordination]
+        end
+        
+        subgraph "common/"
+            CE[Common Exceptions]
+            CT[Common Types]
+            CU[Common Utils]
+        end
     end
 
     subgraph "Integration Points"
@@ -36,48 +57,74 @@ graph TB
         EM[Environment Manager]
     end
 
-    TR --> EAW
-    EAW --> AW
-    TEA --> EAW
-    EAW --> RT
+    TR --> AW
+    AW --> RT
     RT --> PM
     RT --> EM
+    RM --> AL
+    RM --> TR
+    RM --> CE
 ```
 
-## 🔧 **Core Components**
+## 🔧 **Modular Core Components**
 
-### **1. Tool Registry System**
-Centralized tool management for built-in and external tools with automatic discovery and validation.
+### **1. Agents Package (`core/agents/`)**
+Agent lifecycle management, loading, and execution components.
+
+**Components**:
+- **`loader.py`**: Agent discovery and loading logic
+- **`wrapper.py`**: Agent execution wrapper and interface
+- **`validator.py`**: Agent interface validation
+- **`manifest.py`**: Agent manifest parsing and validation
+
+**Key Features**:
+- Agent discovery and loading
+- Interface validation and compliance checking
+- Manifest parsing and validation
+- Agent execution wrapper with error handling
+
+### **2. Tools Package (`core/tools/`)**
+Tool registration, validation, security, and execution components.
+
+**Components**:
+- **`decorators.py`**: Tool decorator system and metadata
+- **`registry.py`**: Tool registration and management
+- **`security.py`**: Tool security validation and sandboxing
+- **`service.py`**: HTTP service hosting for tools
+- **`validation.py`**: Tool validation and compliance checking
+- **`execution/`**: Tool execution engine and monitoring
 
 **Key Features**:
 - Tool registration and discovery
-- Tool validation and categorization
-- Security assessment
-- Performance metrics tracking
+- Security validation and sandboxing
+- HTTP service hosting
+- Execution monitoring and context management
 
-**Location**: `01_tool_registry_design.md`
+### **3. Runtime Package (`core/runtime/`)**
+Runtime management and component coordination.
 
-### **2. Enhanced Agent Wrapper**
-Extends the existing `AgentWrapper` class with tool integration capabilities while maintaining backward compatibility.
-
-**Key Features**:
-- Tool context injection
-- Progress tracking integration
-- Backward compatibility
-- Enhanced execution capabilities
-
-**Location**: `02_enhanced_agent_wrapper_design.md`
-
-### **3. Tool-Enabled Agent Base Classes**
-Base classes for agents that can intelligently use tools with semantic progress reporting.
+**Components**:
+- **`manager.py`**: Runtime lifecycle management
+- **`lifecycle.py`**: Component lifecycle management
+- **`coordination.py`**: Component coordination and communication
 
 **Key Features**:
-- Tool integration interfaces
-- Progress tracking patterns
-- Tool usage templates
-- Error handling patterns
+- Runtime lifecycle management
+- Component coordination
+- Service orchestration
 
-**Location**: `03_tool_enabled_agent_design.md`
+### **4. Common Package (`core/common/`)**
+Shared utilities, types, and exceptions.
+
+**Components**:
+- **`exceptions.py`**: Common exception classes
+- **`types.py`**: Common type definitions and protocols
+- **`utils.py`**: Shared utility functions
+
+**Key Features**:
+- Centralized exception handling
+- Common type definitions
+- Shared utility functions
 
 ## 🔄 **Integration with Existing System**
 
@@ -97,6 +144,7 @@ Base classes for agents that can intelligently use tools with semantic progress 
 1. **[Tool Registry Design](01_tool_registry_design.md)** - Comprehensive tool management system
 2. **[Enhanced Agent Wrapper Design](02_enhanced_agent_wrapper_design.md)** - Tool integration and progress tracking
 3. **[Tool-Enabled Agent Design](03_tool_enabled_agent_design.md)** - Base classes for tool-using agents
+4. **[Modular Architecture Design](04_modular_architecture_design.md)** - Modular core architecture and migration strategy
 
 ## 🎯 **Success Criteria**
 

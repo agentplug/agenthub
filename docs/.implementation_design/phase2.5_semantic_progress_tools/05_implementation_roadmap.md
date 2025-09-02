@@ -21,8 +21,8 @@ gantt
     dateFormat  YYYY-MM-DD
     section Week 1
     Tool Decorator System     :a1, 2025-06-30, 7d
-    Runtime Integration       :a2, 2025-06-30, 7d
-    Core Architecture        :a3, 2025-06-30, 7d
+    CLI Tool Management       :a2, 2025-06-30, 7d
+    Auto-Recovery System      :a3, 2025-06-30, 7d
     
     section Week 2
     Progress Tracking      :b1, 2025-07-07, 7d
@@ -52,9 +52,9 @@ gantt
 
 ## 📅 **Detailed Timeline**
 
-### **Week 1: Tool Decorator System and Runtime Integration**
+### **Week 1: Tool Decorator System and CLI-Managed Registry**
 **Dates**: June 30 - July 6, 2025
-**Focus**: Foundation and core architecture
+**Focus**: Foundation and CLI-managed architecture
 
 #### **Day 1-2: Tool Decorator System**
 - [ ] Design `@tool` decorator interface
@@ -74,14 +74,16 @@ gantt
 - Tool validation prevents unsafe tools
 - Basic categorization works
 
-#### **Day 3-4: Tool Registration System**
-- [ ] Design explicit tool registration system
-- [ ] Implement tool registration interface
-- [ ] Add tool registration coordination
-- [ ] Create tool assignment management
+#### **Day 3-4: CLI Tool Management System**
+- [ ] Design CLI commands for tool registry management
+- [ ] Implement `agenthub tools start/stop/status/list`
+- [ ] Add persistent service mode
+- [ ] Create auto-recovery mechanism
 
 **Deliverables**:
-- Tool registration system
+- CLI tool management commands
+- Persistent tool registry service
+- Auto-recovery system
 - Tool registration interface
 - Tool assignment management
 - Tool registration coordination

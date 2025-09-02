@@ -10,59 +10,133 @@ This document provides the detailed step-by-step implementation plan for Phase 2
 - No time is wasted on building upon broken foundations
 - Progress is measurable and validated
 
+## Architecture: CLI-Managed Tool Registry with Auto-Recovery
+**Design Decision**: The tool registry will be managed via CLI commands while supporting automatic tool registration through decorators. This provides:
+
+### Benefits:
+- **Production Ready**: Persistent service independent of agent sessions
+- **Developer Friendly**: Tools auto-register with `@tool` decorator
+- **Operations Control**: CLI management for production environments
+- **Fault Tolerant**: Auto-recovery when service restarts
+- **Scalable**: Multiple agents can use the same tool service
+
+### Architecture Flow:
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│    CLI      │───▶│ Tool Registry │◀───│   Agents    │
+│ (Management)│    │   Service     │    │ (Consumers) │
+└─────────────┘    └──────────────┘    └─────────────┘
+       │                   │                   │
+       │                   │                   │
+   Start/Stop          Auto-Recovery        HTTP API
+   List/Status         @tool decorators     Tool Calls
+   Unregister          Manual registration
+```
+
+### CLI Commands:
+- `agenthub tools start` - Start persistent tool registry service
+- `agenthub tools stop` - Stop tool registry service  
+- `agenthub tools status` - Check service status
+- `agenthub tools list` - List registered tools
+- `agenthub tools unregister <name>` - Remove specific tool
+- `agenthub tools restart` - Reload auto-registered tools
+
 ## Implementation Timeline: 5 Weeks
 
-### Step 1: Tool Decorator System and Runtime Integration (Week 1-2)
-**Goal**: Build the foundational decorator-based tool system that integrates with user code execution
+### Step 1: Modular Core Architecture and Tool System (Week 1-2)
+**Goal**: Refactor core into modular architecture and build the foundational decorator-based tool system with CLI management and auto-recovery
 
 #### Deliverables
-- **Tool Decorator System** (`agentmanager/core/tool_decorators.py`)
+- **Modular Core Architecture** (`agentmanager/core/`)
+  - `agents/` package: Agent lifecycle management components
+  - `tools/` package: Tool registration, validation, security, and execution
+  - `runtime/` package: Runtime management and component coordination
+  - `common/` package: Shared utilities, types, and exceptions
+  
+- **Tool Decorator System** (`agentmanager/core/tools/decorators.py`)
   - `@tool` decorator for automatic tool registration
   - `@register_tool` decorator for manual registration
   - Tool metadata extraction and validation
   
-- **Tool Registration System** (`agentmanager/core/tool_registration.py`)
+- **Tool Registration System** (`agentmanager/core/tools/registry.py`)
   - Handles explicit tool registration by users
   - Manages tool metadata and validation
   - Coordinates tool registration with framework
+  - Auto-recovery mechanism for service restarts
 
-- **Tool Service Hosting** (`agentmanager/core/tool_service_host.py`)
+- **Tool Service Hosting** (`agentmanager/core/tools/service.py`)
   - Hosts registered tools as HTTP/GRPC services
   - Creates API endpoints for each registered function
   - Manages tool service lifecycle
+  - Persistent service mode with CLI management
+
+- **CLI Tool Management** (`agentmanager/cli/commands/tools.py`)
+  - `agenthub tools start` - Start persistent tool registry service
+  - `agenthub tools stop` - Stop tool registry service
+  - `agenthub tools status` - Check service status
+  - `agenthub tools list` - List registered tools
+  - `agenthub tools unregister <name>` - Remove specific tool
+  - `agenthub tools restart` - Reload auto-registered tools
 
 #### Implementation Order
-1. Create tool decorator system with metadata extraction
-2. Implement explicit tool registration system
-3. Build tool service hosting for registered tools
-4. Add tool validation and security checks
-5. Create integration with user code execution
+1. **Modular Architecture Setup**
+   - Create modular directory structure (`agents/`, `tools/`, `runtime/`, `common/`)
+   - Move existing files to appropriate packages
+   - Update package `__init__.py` files
+   - Create new common components (exceptions, types, utils)
+
+2. **Tool System Implementation**
+   - Create tool decorator system with metadata extraction
+   - Implement explicit tool registration system with auto-recovery
+   - Build persistent tool service hosting with CLI management
+   - Add tool validation and security checks
+
+3. **CLI Integration**
+   - Add CLI commands for tool registry management
+   - Create integration with user code execution
+   - Implement auto-recovery mechanisms
+
+4. **Migration and Testing**
+   - Update all import statements throughout codebase
+   - Update tests to work with new modular structure
+   - Validate backward compatibility
 
 #### Success Criteria
-- Decorators can register tools when user code runs
-- Tools are explicitly registered by users
-- Tool services are hosted for registered tools
-- No breaking changes to existing codebase
+- **Modular Architecture**: Core components are properly organized into logical packages
+- **Backward Compatibility**: All existing functionality preserved with new modular structure
+- **Tool System**: Decorators can register tools when user code runs
+- **CLI Management**: CLI can manage tool registry service lifecycle
+- **Persistence**: Tool services persist independently of agent sessions
+- **Auto-Recovery**: Auto-recovery works when service restarts
+- **Testing**: All tests pass with new modular structure
 
 #### End-to-End Test After Step 1
-**Test Name**: `test_tool_registration_and_hosting_e2e`
-**Purpose**: Validate complete tool registration and hosting workflow
+**Test Name**: `test_cli_managed_tool_registry_e2e`
+**Purpose**: Validate CLI-managed tool registry with auto-recovery
 **Test Steps**:
-1. Create a test tool with `@tool` decorator
-2. Register the tool using `register_tools([test_tool])`
-3. Verify tool is hosted as HTTP service
-4. Make API call to tool endpoint
-5. Verify tool executes correctly and returns expected result
-6. Verify tool metadata is properly extracted and available
+1. Start tool registry service via CLI (`agenthub tools start`)
+2. Create a test tool with `@tool` decorator
+3. Register the tool using `register_tools([test_tool])`
+4. Verify tool is accessible via CLI (`agenthub tools list`)
+5. Verify tool is hosted as HTTP service
+6. Make API call to tool endpoint
+7. Test CLI management (`agenthub tools status`, `agenthub tools unregister`)
+8. Simulate service restart and verify auto-recovery
+9. Verify tool executes correctly and returns expected result
+10. Stop service via CLI (`agenthub tools stop`)
 
 **Validation Criteria**:
+- ✅ CLI can start/stop tool registry service
 - ✅ Tool registration completes without errors
+- ✅ CLI management commands work correctly
 - ✅ Tool service starts and responds to health checks
 - ✅ Tool API endpoint returns correct response
+- ✅ Auto-recovery restores tools after service restart
 - ✅ Tool metadata is accessible via API
+- ✅ Service persists independently of agent sessions
 - ✅ No memory leaks or resource issues
 
-**Blocking Criteria**: If this test fails, Step 2 cannot begin until issues are resolved.
+**Blocking Criteria**: If CLI management or auto-recovery fails, Step 2 cannot begin until issues are resolved.
 
 ---
 
