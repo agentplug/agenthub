@@ -250,7 +250,11 @@ Provides tool information to agents for their own selection logic.
 
 ```python
 class ToolInformationProvider:
-    """Provides tool information to agents for their own selection logic."""
+    """Provides tool information to agents for their own selection logic.
+    
+    This class enables agents to discover and understand available tools
+    so they can make informed decisions about which tools to use.
+    """
     
     def __init__(self, tool_discovery: ToolDiscovery):
         self.tool_discovery = tool_discovery
