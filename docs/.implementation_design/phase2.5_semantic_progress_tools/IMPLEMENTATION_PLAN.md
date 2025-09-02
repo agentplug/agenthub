@@ -14,33 +14,33 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - `@register_tool` decorator for manual registration
   - Tool metadata extraction and validation
   
-- **Runtime Tool Discovery** (`agentmanager/core/runtime_tool_discovery.py`)
-  - Discovers decorated tools when user code runs
-  - Integrates with Python import system
-  - Automatic tool registration during execution
+- **Tool Registration System** (`agentmanager/core/tool_registration.py`)
+  - Handles explicit tool registration by users
+  - Manages tool metadata and validation
+  - Coordinates tool registration with framework
 
 - **Tool Service Hosting** (`agentmanager/core/tool_service_host.py`)
-  - Automatically hosts discovered tools as HTTP/GRPC services
-  - Creates API endpoints for each decorated function
+  - Hosts registered tools as HTTP/GRPC services
+  - Creates API endpoints for each registered function
   - Manages tool service lifecycle
 
 #### Implementation Order
 1. Create tool decorator system with metadata extraction
-2. Implement runtime tool discovery during code execution
-3. Build automatic tool service hosting
+2. Implement explicit tool registration system
+3. Build tool service hosting for registered tools
 4. Add tool validation and security checks
 5. Create integration with user code execution
 
 #### Success Criteria
 - Decorators can register tools when user code runs
-- Tools are automatically discovered during execution
-- Tool services are automatically hosted
+- Tools are explicitly registered by users
+- Tool services are hosted for registered tools
 - No breaking changes to existing codebase
 
 ---
 
-### Step 2: Auto-API Generation and Tool Management (Week 2-3)
-**Goal**: Automatically generate API endpoints for discovered functions and manage tool communication
+### Step 2: Tool API Generation and Management (Week 2-3)
+**Goal**: Generate API endpoints for registered functions and manage tool communication
 
 #### Deliverables
 - **Auto-API Generator** (`agentmanager/core/auto_api_generator.py`)
@@ -54,19 +54,19 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - Response formatting and error handling
 
 - **Tool Manager** (`agentmanager/core/tool_manager.py`)
-  - Tool discovery and registration
+  - Tool registration and assignment
   - Agent-tool coordination
   - Tool availability management
 
 #### Implementation Order
 1. Design API generation framework
-2. Implement endpoint creation for discovered functions
+2. Implement endpoint creation for registered functions
 3. Add parameter validation and error handling
 4. Build tool communication layer
 5. Create tool manager for coordination
 
 #### Success Criteria
-- Auto-generates working API endpoints for all discovered functions
+- Generates working API endpoints for all registered functions
 - Handles parameter validation correctly
 - Provides comprehensive error handling
 - API endpoints are secure and performant
@@ -74,11 +74,11 @@ This document provides the detailed step-by-step implementation plan for Phase 2
 ---
 
 ### Step 3: Agent Integration and Progress Tracking (Week 3-4)
-**Goal**: Integrate agents with tool discovery and implement semantic progress tracking
+**Goal**: Integrate agents with assigned tools and implement semantic progress tracking
 
 #### Deliverables
 - **Enhanced Agent Wrapper** (`agentmanager/core/enhanced_agent_wrapper.py`)
-  - Tool discovery integration
+  - Tool access integration
   - Tool usage coordination
   - Progress tracking integration
 
@@ -93,16 +93,16 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - Tool recommendation system
 
 #### Implementation Order
-1. Enhance agent wrapper with tool discovery
+1. Enhance agent wrapper with tool access
 2. Implement semantic progress tracking
-3. Add autonomous tool selection
+3. Add tool assignment and access
 4. Create progress reporting system
 5. Integrate all components
 
 #### Success Criteria
-- Agents can discover and use available tools
+- Agents can access and use assigned tools
 - Progress tracking provides meaningful updates
-- Tool selection works autonomously
+- Tool assignment and access works correctly
 - All components integrate seamlessly
 
 ---

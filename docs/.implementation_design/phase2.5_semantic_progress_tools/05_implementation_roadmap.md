@@ -74,23 +74,23 @@ gantt
 - Tool validation prevents unsafe tools
 - Basic categorization works
 
-#### **Day 3-4: Runtime Tool Discovery**
-- [ ] Design runtime tool discovery system
-- [ ] Implement integration with Python import system
-- [ ] Add automatic tool registration during execution
-- [ ] Create tool discovery coordination
+#### **Day 3-4: Tool Registration System**
+- [ ] Design explicit tool registration system
+- [ ] Implement tool registration interface
+- [ ] Add tool registration coordination
+- [ ] Create tool assignment management
 
 **Deliverables**:
-- Runtime tool discovery system
-- Python import system integration
-- Automatic tool registration
-- Tool discovery coordination
+- Tool registration system
+- Tool registration interface
+- Tool assignment management
+- Tool registration coordination
 
 **Success Criteria**:
-- Tools are discovered when user code runs
-- Integration with import system works
-- Automatic registration is reliable
-- Discovery coordination is seamless
+- Tools are explicitly registered by users
+- Tool registration interface works correctly
+- Tool assignment management is reliable
+- Registration coordination is seamless
 
 #### **Day 5-7: Core Architecture**
 - [ ] Design overall system architecture
@@ -169,54 +169,54 @@ gantt
 
 #### **Day 1-2: Enhanced Agent Wrapper**
 - [ ] Extend existing `AgentWrapper` class
-- [ ] Add tool integration capabilities
+- [ ] Add tool access capabilities
 - [ ] Implement progress tracking integration
 - [ ] Maintain backward compatibility
 
 **Deliverables**:
 - Enhanced `AgentWrapper` class
-- Tool integration capabilities
+- Tool access capabilities
 - Progress tracking integration
 - Backward compatibility validation
 
 **Success Criteria**:
 - Existing agents work without changes
 - New features are opt-in
-- Tool integration works seamlessly
+- Tool access works seamlessly
 
 #### **Day 3-4: Runtime Integration**
 - [ ] Enhance existing `AgentRuntime` class
-- [ ] Add tool context injection
+- [ ] Add tool assignment and access
 - [ ] Implement progress coordination
 - [ ] Add enhanced process management
 
 **Deliverables**:
 - Enhanced `AgentRuntime` class
-- Tool context injection system
+- Tool assignment and access system
 - Progress coordination
 - Enhanced process management
 
 **Success Criteria**:
-- Runtime supports tool integration
-- Context injection works reliably
+- Runtime supports tool assignment and access
+- Tool assignment works reliably
 - Progress coordination is seamless
 
-#### **Day 5-7: Tool Context Management**
-- [ ] Implement `ToolContextInjector`
-- [ ] Add environment variable management
-- [ ] Create context cleanup mechanisms
-- [ ] Add context validation
+#### **Day 5-7: Tool Assignment Management**
+- [ ] Implement `ToolAssignmentManager`
+- [ ] Add tool assignment validation
+- [ ] Create tool access mechanisms
+- [ ] Add assignment cleanup
 
 **Deliverables**:
-- Tool context injector
-- Environment variable management
-- Context cleanup mechanisms
-- Context validation
+- Tool assignment manager
+- Tool assignment validation
+- Tool access mechanisms
+- Assignment cleanup
 
 **Success Criteria**:
-- Tool context is properly injected
-- Environment variables are managed
-- Context cleanup is reliable
+- Tool assignments are properly managed
+- Tool access is validated
+- Assignment cleanup is reliable
 
 ### **Week 4: Integration Testing and Documentation**
 **Dates**: July 21 - July 27, 2025
