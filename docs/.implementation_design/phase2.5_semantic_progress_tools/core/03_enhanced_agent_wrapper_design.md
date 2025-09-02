@@ -124,8 +124,8 @@ class EnhancedAgentWrapper(AgentWrapper):
     def execute_with_tools(self, method_name: str, parameters: dict, use_tools: list = None):
         """Execute agent method with optional tool usage.
         
-        Note: Agents are responsible for selecting which tools to use.
-        This method only provides the tools that agents request.
+        This is internal agent logic - users never call this directly.
+        Agents use this internally to decide whether to use assigned tools or built-in capabilities.
         """
         
         # Start progress tracking
@@ -374,26 +374,24 @@ print(f"Available tools: {available_tools}")
 # Output: Available tools: ['data_analyzer', 'file_processor', 'text_extractor']
 ```
 
-### **Agent-Driven Tool Selection**
+### **Simple Agent Usage**
 ```python
-# Agent discovers available tools and selects appropriate ones
-available_tools = enhanced_agent.discover_tools()
-print(f"Available tools: {available_tools}")
+# User writes simple code - no tool selection logic needed
+import agentmanager as amg
 
-# Agent can get detailed tool information for decision-making
-data_tools = enhanced_agent.get_tools_by_category("data_processing")
-file_tools = enhanced_agent.search_tools("file")
-tool_categories = enhanced_agent.get_tool_categories()
+# Load agent with assigned tools (framework handles tool assignment)
+agent = amg.load_agent("agentplug/analyzer", tools=["data_analyzer", "file_processor"])
 
-# Agent selects tools based on its own logic
-selected_tools = ["data_analyzer", "file_processor"]  # Agent's choice
+# User just calls agent methods - agent handles everything internally
+result = agent.analyze_data("customer_data.csv")
+# Agent internally decides: use assigned tools OR built-in capabilities OR both
 
-# Execute with agent-selected tools
-result = enhanced_agent.execute_with_tools(
-    method_name="analyze_data",
-    parameters={"data": "customer_data.csv"},
-    use_tools=selected_tools  # Agent specifies which tools to use
-)
+# User can call any agent method
+summary = agent.summarize_data("large_dataset.json")
+# Agent internally chooses the best approach
+
+print(f"Analysis result: {result}")
+# Output shows agent's processing results (built-in + assigned tools as needed)
 ```
 
 ### **Progress Tracking Integration**
@@ -451,10 +449,10 @@ with enhanced_agent.progress_tracker.track_method("analyze_data"):
 - **Progressive Enhancement**: New features are opt-in
 - **Unified Interface**: Consistent tool access across all agents
 
-### **2. Agent-Driven Tool Usage**
-- **Tool Discovery**: Agents can discover available tools
-- **Agent Selection**: Agents choose appropriate tools based on their own logic
-- **Information Access**: Agents get detailed tool information for decision-making
+### **2. Simple User Experience**
+- **Easy Agent Loading**: Users just specify tools when loading agents
+- **Simple Method Calls**: Users call agent methods without tool selection logic
+- **Automatic Tool Usage**: Agents internally decide when to use assigned tools
 
 ### **3. Enhanced User Experience**
 - **Progress Transparency**: Users see exactly what's happening
@@ -480,6 +478,6 @@ with enhanced_agent.progress_tracker.track_method("analyze_data"):
 
 ## 📝 **Conclusion**
 
-The Enhanced Agent Wrapper provides a powerful bridge between agents and the user endpoint tool system. By combining tool discovery, information provision, and progress tracking, it gives agents access to powerful tools while maintaining agent autonomy in tool selection.
+The Enhanced Agent Wrapper provides a powerful bridge between agents and the user endpoint tool system. By combining tool discovery, assignment, and progress tracking, it gives agents access to powerful tools while maintaining a simple user experience.
 
-**Key Takeaway**: The Enhanced Agent Wrapper makes tools accessible to agents through discovery and information provision, while agents maintain full control over tool selection based on their own logic and understanding of tasks.
+**Key Takeaway**: The Enhanced Agent Wrapper makes tools accessible to agents through automatic discovery and assignment, while users enjoy a simple interface where they just call agent methods and agents handle tool selection internally.

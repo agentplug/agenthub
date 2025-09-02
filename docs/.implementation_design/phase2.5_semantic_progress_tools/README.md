@@ -151,41 +151,26 @@ python user_script.py
 # Direct call result: {'insights': 'analyzed string data: sample data...', 'score': 0.85}
 ```
 
-### **3. Agents Use Both Built-in Capabilities AND Select Their Own Tools**
-Agents can execute their own logic AND select which tools to use based on their own decision-making.
+### **3. Agents Use Both Built-in Capabilities AND Assigned Tools**
+Agents can execute their own logic AND use assigned tools - all handled internally by the agent.
 
 ```python
-# Agent execution with dual capabilities
+# User writes simple code - no tool selection logic needed
 import agentmanager as amg
 
-# Load agent with access to both built-in capabilities and assigned tools
+# Load agent with assigned tools (framework handles tool assignment)
 agent = amg.load_agent(base_agent="agentplug/analyzer", tools=["data_analyzer", "file_processor"])
 
-# Agent can use its built-in capabilities
-agent_result = agent.analyze_data("Process this data")
+# User just calls agent methods - agent handles everything internally
+result = agent.analyze_data("customer_data.csv")
+# Agent internally decides: use assigned tools OR built-in capabilities OR both
 
-# Agent discovers available tools and selects which ones to use
-available_tools = agent.discover_tools()
-# Output: ["data_analyzer", "file_processor"] - Only tools assigned to this specific agent
+# User can call any agent method
+summary = agent.summarize_data("large_dataset.json")
+# Agent internally chooses the best approach
 
-# Agent can get detailed tool information for decision-making
-data_tools = agent.get_tools_by_category("data_processing")
-file_tools = agent.search_tools("file")
-tool_categories = agent.get_tool_categories()
-
-# Agent selects tools based on its own logic and understanding
-selected_tools = ["data_analyzer", "file_processor"]  # Agent's choice
-
-# Agent uses both built-in logic AND its selected tools
-final_result = agent.process_with_tools(
-    data="data.csv",
-    use_tools=selected_tools,  # Agent specifies which tools to use
-    agent_capabilities=["text_analysis", "data_processing"]
-)
-
-# Result combines agent's built-in capabilities + agent-selected tool outputs
-print(f"Final result: {final_result}")
-# Output shows both agent processing and agent-selected tool execution results
+print(f"Analysis result: {result}")
+# Output shows agent's processing results (built-in + assigned tools as needed)
 ```
 
 ### **4. Semantic Progress Tracking**
@@ -222,33 +207,26 @@ Tools are assigned directly when loading the agent - clean and intuitive.
 # Tool assignment happens when agent is loaded
 import agentmanager as amg
 
-# Define available tools
-tools = ["data_analyzer", "file_processor"]
-
 # Load agent with specific tools assigned
-agent = amg.load_agent(base_agent="agentplug/analyzer", tools=tools)
+agent = amg.load_agent(base_agent="agentplug/analyzer", tools=["data_analyzer", "file_processor"])
 
-# Agent can now use only the assigned tools
-available_tools = agent.get_assigned_tools()
-# Output: ["data_analyzer", "file_processor"]
-
-# Agent cannot access unassigned tools
-try:
-    result = agent.use_tool("unassigned_tool", {"data": "test"})
-except ToolAccessError:
-    print("Agent does not have access to this tool")
+# User just calls agent methods - agent handles tool access internally
+result = agent.analyze_data("data.csv")
+# Agent internally uses assigned tools as needed
 
 # Alternative: Load agent without tools (built-in capabilities only)
 agent_basic = amg.load_agent(base_agent="agentplug/analyzer")
 # This agent has no external tools, only built-in capabilities
+result = agent_basic.analyze_data("data.csv")
+# Agent uses only built-in logic
 
 # Alternative: Load agent with different tool sets
 coding_agent = amg.load_agent(base_agent="agentplug/coding-agent", tools=["code_analyzer", "git_tools"])
 analysis_agent = amg.load_agent(base_agent="agentplug/analysis-agent", tools=["data_analyzer", "file_processor"])
 
-# Alternative: Load agent with no tools (built-in only)
-basic_agent = amg.load_agent(base_agent="agentplug/analyzer")
-# This agent has no external tools, only built-in capabilities
+# Each agent uses its assigned tools internally
+code_result = coding_agent.analyze_code("project.py")
+analysis_result = analysis_agent.process_data("dataset.csv")
 ```
 
 ## 🏗️ **Implementation Components**
