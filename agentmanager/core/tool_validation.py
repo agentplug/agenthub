@@ -239,8 +239,8 @@ class ToolValidator:
             
             # Execute with monitoring if enabled
             if self.config.enable_execution_monitoring:
-                result = self.secure_executor.execute_safely(
-                    tool_function, parameters, execution_context
+                result = self.secure_executor.execute_secure(
+                    tool_function, execution_context
                 )
                 
                 # Log execution
