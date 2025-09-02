@@ -151,37 +151,40 @@ python user_script.py
 # Direct call result: {'insights': 'analyzed string data: sample data...', 'score': 0.85}
 ```
 
-### **3. Agents Use Both Built-in Capabilities AND Assigned Tools**
-Agents can execute their own logic AND use only the tools that are specifically assigned to them.
+### **3. Agents Use Both Built-in Capabilities AND Select Their Own Tools**
+Agents can execute their own logic AND select which tools to use based on their own decision-making.
 
 ```python
 # Agent execution with dual capabilities
 import agentmanager as amg
 
-# Load agent with access to both built-in capabilities and specifically assigned tools
+# Load agent with access to both built-in capabilities and assigned tools
 agent = amg.load_agent(base_agent="agentplug/analyzer", tools=["data_analyzer", "file_processor"])
 
 # Agent can use its built-in capabilities
 agent_result = agent.analyze_data("Process this data")
 
-# Agent can only discover and use tools that are assigned to it
-assigned_tools = agent.get_assigned_tools()
+# Agent discovers available tools and selects which ones to use
+available_tools = agent.discover_tools()
 # Output: ["data_analyzer", "file_processor"] - Only tools assigned to this specific agent
 
-# Agent cannot see or use unassigned tools
-all_registered_tools = agent.discover_all_tools()
-# Output: ["data_analyzer", "file_processor", "other_tool"] - But agent can't use unassigned ones
+# Agent can get detailed tool information for decision-making
+data_tools = agent.get_tools_by_category("data_processing")
+file_tools = agent.search_tools("file")
 
-# Agent uses both built-in logic AND only its assigned tools
+# Agent selects tools based on its own logic and understanding
+selected_tools = ["data_analyzer", "file_processor"]  # Agent's choice
+
+# Agent uses both built-in logic AND its selected tools
 final_result = agent.process_with_tools(
     data="data.csv",
-    use_tools=["data_analyzer", "file_processor"],  # Can only use assigned tools
+    use_tools=selected_tools,  # Agent specifies which tools to use
     agent_capabilities=["text_analysis", "data_processing"]
 )
 
-# Result combines agent's built-in capabilities + only assigned tool outputs
+# Result combines agent's built-in capabilities + agent-selected tool outputs
 print(f"Final result: {final_result}")
-# Output shows both agent processing and assigned tool execution results
+# Output shows both agent processing and agent-selected tool execution results
 ```
 
 ### **4. Semantic Progress Tracking**

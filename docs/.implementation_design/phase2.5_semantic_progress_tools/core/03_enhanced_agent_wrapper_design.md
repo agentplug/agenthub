@@ -21,7 +21,7 @@ graph TB
         EAW[Enhanced Agent Wrapper]
         TD[Tool Discovery]
         SPT[Semantic Progress Tracker]
-        TSL[Tool Selection Logic]
+        TIP[Tool Information Provider]
         TCM[Tool Communication Manager]
     end
 
@@ -46,13 +46,13 @@ graph TB
     EAW --> AW
     EAW --> TD
     EAW --> SPT
-    EAW --> TSL
+    EAW --> TIP
     EAW --> TCM
     AW --> IV
     AW --> RT
     TD --> UES
     SPT --> SPTR
-    TSL --> TDM
+    TIP --> TDM
     TCM --> AG
     AG --> TM
     AG --> PM
@@ -82,7 +82,7 @@ class EnhancedAgentWrapper(AgentWrapper):
         # Initialize tool discovery
         self.tool_manager = tool_manager or ToolManager()
         self.tool_discovery = ToolDiscovery(self.tool_manager)
-        self.tool_selection = ToolSelectionLogic()
+        self.tool_info_provider = ToolInformationProvider(self.tool_discovery)
         
         # Initialize progress tracking
         agent_type = agent_info.get("type", "general")
@@ -105,8 +105,24 @@ class EnhancedAgentWrapper(AgentWrapper):
         """Get list of available tools."""
         return self.available_tools
     
+    def get_tool_info(self, tool_name: str) -> dict:
+        """Get detailed information about a specific tool for agent decision-making."""
+        return self.tool_info_provider.get_tool_info(tool_name)
+    
+    def get_tools_by_category(self, category: str) -> list:
+        """Get tools filtered by category for agent selection."""
+        return self.tool_info_provider.get_tools_by_category(category)
+    
+    def search_tools(self, query: str) -> list:
+        """Search for tools based on query for agent selection."""
+        return self.tool_info_provider.search_tools(query)
+    
     def execute_with_tools(self, method_name: str, parameters: dict, use_tools: list = None):
-        """Execute agent method with optional tool usage."""
+        """Execute agent method with optional tool usage.
+        
+        Note: Agents are responsible for selecting which tools to use.
+        This method only provides the tools that agents request.
+        """
         
         # Start progress tracking
         self.progress_tracker.start_task(f"Executing {method_name}")
@@ -115,7 +131,7 @@ class EnhancedAgentWrapper(AgentWrapper):
             # Execute the method
             result = self.execute(method_name, parameters)
             
-            # If tools are requested, use them
+            # If agent specified tools to use, apply them
             if use_tools and self.available_tools:
                 result = self._enhance_result_with_tools(result, use_tools)
             
@@ -225,14 +241,15 @@ class ToolDiscovery:
         return matching_tools
 ```
 
-### **3. Tool Selection Logic**
-Intelligently selects appropriate tools for given tasks.
+### **3. Tool Information Provider**
+Provides tool information to agents for their own selection logic.
 
 ```python
-class ToolSelectionLogic:
-    """Intelligent tool selection for agents."""
+class ToolInformationProvider:
+    """Provides tool information to agents for their own selection logic."""
     
-    def __init__(self):
+    def __init__(self, tool_discovery: ToolDiscovery):
+        self.tool_discovery = tool_discovery
         self.tool_categories = {
             "file_operations": ["file", "read", "write", "process"],
             "data_processing": ["data", "analyze", "process", "transform"],
@@ -240,74 +257,33 @@ class ToolSelectionLogic:
             "text_processing": ["text", "string", "parse", "extract"]
         }
     
-    def select_tools_for_task(self, task_description: str, available_tools: list, tool_info: dict) -> list:
-        """Select appropriate tools for a given task."""
-        task_lower = task_description.lower()
-        selected_tools = []
-        
-        # Analyze task requirements
-        task_requirements = self._analyze_task_requirements(task_lower)
-        
-        # Score each available tool
-        tool_scores = {}
-        for tool_name in available_tools:
-            tool_info_data = tool_info.get(tool_name, {})
-            score = self._score_tool_for_task(tool_name, tool_info_data, task_requirements)
-            tool_scores[tool_name] = score
-        
-        # Select tools with highest scores
-        sorted_tools = sorted(tool_scores.items(), key=lambda x: x[1], reverse=True)
-        
-        # Select top tools (limit to reasonable number)
-        max_tools = min(3, len(sorted_tools))
-        for tool_name, score in sorted_tools[:max_tools]:
-            if score > 0.3:  # Minimum relevance threshold
-                selected_tools.append(tool_name)
-        
-        return selected_tools
+    def get_available_tools(self) -> list:
+        """Get list of all available tools."""
+        return self.tool_discovery.discover_tools()
     
-    def _analyze_task_requirements(self, task_description: str) -> dict:
-        """Analyze task description to identify requirements."""
-        requirements = {
-            "file_operations": 0,
-            "data_processing": 0,
-            "network_operations": 0,
-            "text_processing": 0
-        }
-        
-        # Count relevant keywords
-        for category, keywords in self.tool_categories.items():
-            for keyword in keywords:
-                if keyword in task_description:
-                    requirements[category] += 1
-        
-        return requirements
+    def get_tool_info(self, tool_name: str) -> dict:
+        """Get detailed information about a specific tool."""
+        return self.tool_discovery.get_tool_info(tool_name)
     
-    def _score_tool_for_task(self, tool_name: str, tool_info: dict, task_requirements: dict) -> float:
-        """Score how well a tool matches task requirements."""
-        score = 0.0
+    def get_tools_by_category(self, category: str) -> list:
+        """Get tools filtered by category."""
+        all_tools = self.get_available_tools()
+        category_tools = []
         
-        # Base score from tool category
-        tool_category = tool_info.get("category", "general")
-        if tool_category in task_requirements:
-            score += task_requirements[tool_category] * 0.3
+        for tool_name in all_tools:
+            tool_info = self.get_tool_info(tool_name)
+            if tool_info.get("category") == category:
+                category_tools.append(tool_name)
         
-        # Description relevance
-        description = tool_info.get("description", "").lower()
-        task_words = set(task_description.lower().split())
-        description_words = set(description.split())
-        
-        # Calculate word overlap
-        overlap = len(task_words.intersection(description_words))
-        score += overlap * 0.2
-        
-        # Parameter relevance
-        parameters = tool_info.get("parameters", {})
-        if parameters:
-            # More parameters might indicate more complex/capable tool
-            score += min(len(parameters) * 0.1, 0.3)
-        
-        return min(score, 1.0)  # Cap at 1.0
+        return category_tools
+    
+    def search_tools(self, query: str) -> list:
+        """Search for tools based on query - agents can use this for their own selection."""
+        return self.tool_discovery.search_tools(query)
+    
+    def get_tool_categories(self) -> dict:
+        """Get available tool categories for agent reference."""
+        return self.tool_categories.copy()
 ```
 
 ### **4. Tool Communication Manager**
@@ -390,20 +366,24 @@ print(f"Available tools: {available_tools}")
 # Output: Available tools: ['data_analyzer', 'file_processor', 'text_extractor']
 ```
 
-### **Intelligent Tool Selection**
+### **Agent-Driven Tool Selection**
 ```python
-# Agent can automatically select appropriate tools
+# Agent discovers available tools and selects appropriate ones
+available_tools = enhanced_agent.discover_tools()
+print(f"Available tools: {available_tools}")
+
+# Agent can get detailed tool information for decision-making
+data_tools = enhanced_agent.get_tools_by_category("data_processing")
+file_tools = enhanced_agent.search_tools("file")
+
+# Agent selects tools based on its own logic
+selected_tools = ["data_analyzer", "file_processor"]  # Agent's choice
+
+# Execute with agent-selected tools
 result = enhanced_agent.execute_with_tools(
     method_name="analyze_data",
     parameters={"data": "customer_data.csv"},
-    use_tools=["data_analyzer", "file_processor"]  # Explicit tool selection
-)
-
-# Or let the system choose automatically
-result = enhanced_agent.execute_with_tools(
-    method_name="analyze_data",
-    parameters={"data": "customer_data.csv"}
-    # No use_tools specified - system selects automatically
+    use_tools=selected_tools  # Agent specifies which tools to use
 )
 ```
 
@@ -462,10 +442,10 @@ with enhanced_agent.progress_tracker.track_method("analyze_data"):
 - **Progressive Enhancement**: New features are opt-in
 - **Unified Interface**: Consistent tool access across all agents
 
-### **2. Intelligent Tool Usage**
-- **Automatic Discovery**: Agents find tools automatically
-- **Smart Selection**: System chooses appropriate tools
-- **Context Awareness**: Tool selection based on task context
+### **2. Agent-Driven Tool Usage**
+- **Tool Discovery**: Agents can discover available tools
+- **Agent Selection**: Agents choose appropriate tools based on their own logic
+- **Information Access**: Agents get detailed tool information for decision-making
 
 ### **3. Enhanced User Experience**
 - **Progress Transparency**: Users see exactly what's happening
@@ -474,10 +454,10 @@ with enhanced_agent.progress_tracker.track_method("analyze_data"):
 
 ## 🔮 **Future Enhancements**
 
-### **1. Advanced Tool Selection**
-- **Machine Learning**: Learn from tool usage patterns
-- **Performance History**: Consider historical tool performance
-- **User Preferences**: Learn user tool preferences
+### **1. Enhanced Tool Information**
+- **Tool Performance Metrics**: Provide historical tool performance data to agents
+- **Usage Analytics**: Share tool usage patterns with agents for better selection
+- **Tool Recommendations**: Suggest tools based on similar tasks (optional)
 
 ### **2. Tool Composition**
 - **Workflow Creation**: Automatically create tool workflows
@@ -491,6 +471,6 @@ with enhanced_agent.progress_tracker.track_method("analyze_data"):
 
 ## 📝 **Conclusion**
 
-The Enhanced Agent Wrapper provides a powerful bridge between agents and the user endpoint tool system. By combining tool discovery, intelligent selection, and progress tracking, it gives agents access to powerful tools while maintaining the simplicity and reliability of the existing system.
+The Enhanced Agent Wrapper provides a powerful bridge between agents and the user endpoint tool system. By combining tool discovery, information provision, and progress tracking, it gives agents access to powerful tools while maintaining agent autonomy in tool selection.
 
-**Key Takeaway**: The Enhanced Agent Wrapper makes tools accessible to agents through intelligent discovery and selection, while providing transparent progress tracking and robust error handling.
+**Key Takeaway**: The Enhanced Agent Wrapper makes tools accessible to agents through discovery and information provision, while agents maintain full control over tool selection based on their own logic and understanding of tasks.
