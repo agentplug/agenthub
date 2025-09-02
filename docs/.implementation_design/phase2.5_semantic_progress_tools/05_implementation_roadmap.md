@@ -20,9 +20,9 @@ gantt
     title Phase 2.5 Implementation Timeline
     dateFormat  YYYY-MM-DD
     section Week 1
-    Tool Registry System     :a1, 2025-06-30, 7d
-    Base Classes            :a2, 2025-06-30, 7d
-    Core Architecture      :a3, 2025-06-30, 7d
+    Tool Decorator System     :a1, 2025-06-30, 7d
+    Runtime Integration       :a2, 2025-06-30, 7d
+    Core Architecture        :a3, 2025-06-30, 7d
     
     section Week 2
     Progress Tracking      :b1, 2025-07-07, 7d
@@ -52,41 +52,45 @@ gantt
 
 ## 📅 **Detailed Timeline**
 
-### **Week 1: Tool Registry and Base Classes**
+### **Week 1: Tool Decorator System and Runtime Integration**
 **Dates**: June 30 - July 6, 2025
 **Focus**: Foundation and core architecture
 
-#### **Day 1-2: Tool Registry System**
-- [ ] Design tool registry data structures
-- [ ] Implement `ToolRegistry` class
-- [ ] Add tool validation and categorization
-- [ ] Create tool discovery mechanisms
+#### **Day 1-2: Tool Decorator System**
+- [ ] Design `@tool` decorator interface
+- [ ] Implement `@register_tool` decorator
+- [ ] Add tool metadata extraction
+- [ ] Create tool validation system
 
 **Deliverables**:
-- `ToolRegistry` class implementation
-- Tool validation system
-- Basic tool categorization
+- `@tool` decorator implementation
+- `@register_tool` decorator implementation
+- Tool metadata extraction system
+- Basic tool validation
 
 **Success Criteria**:
-- Tools can be registered and discovered
+- Decorators can register tools correctly
+- Tool metadata is extracted accurately
 - Tool validation prevents unsafe tools
 - Basic categorization works
 
-#### **Day 3-4: Tool-Enabled Base Classes**
-- [ ] Design tool-enabled agent base classes
-- [ ] Implement `ToolEnabledAgent` base class
-- [ ] Add tool integration interfaces
-- [ ] Create tool usage patterns
+#### **Day 3-4: Runtime Tool Discovery**
+- [ ] Design runtime tool discovery system
+- [ ] Implement integration with Python import system
+- [ ] Add automatic tool registration during execution
+- [ ] Create tool discovery coordination
 
 **Deliverables**:
-- `ToolEnabledAgent` base class
-- Tool integration interfaces
-- Basic tool usage patterns
+- Runtime tool discovery system
+- Python import system integration
+- Automatic tool registration
+- Tool discovery coordination
 
 **Success Criteria**:
-- Base classes can be inherited from
-- Tool integration interfaces are clear
-- Basic tool usage works
+- Tools are discovered when user code runs
+- Integration with import system works
+- Automatic registration is reliable
+- Discovery coordination is seamless
 
 #### **Day 5-7: Core Architecture**
 - [ ] Design overall system architecture
@@ -450,8 +454,9 @@ agenthub/agentmanager/
 ### **Key Classes and Interfaces**
 ```python
 # Core Components
-class ToolRegistry:           # Tool management
-class ToolEnabledAgent:       # Base class for tool-using agents
+class ToolDecorator:          # Base decorator class (@tool, @register_tool)
+class RuntimeToolDiscovery:   # Discovers tools during code execution
+class ToolServiceHost:        # Automatically hosts tools as services
 class SemanticProgressTracker: # Progress tracking
 class TaskPhaseManager:       # Task phase management
 
