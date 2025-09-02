@@ -155,7 +155,9 @@ def _get_method_definition(agent_info: dict, method_name: str) -> Optional[dict]
 
 def _find_best_parameter_for_input(parameters: dict, user_input: str) -> Optional[str]:
     """
-    Find the best parameter to map user input to based on parameter descriptions and types.
+    Find the best parameter to map user input to based on parameter characteristics.
+    
+    Uses a dynamic scoring system that doesn't rely on hardcoded keywords.
     
     Args:
         parameters: Parameter definitions from agent interface
@@ -180,20 +182,27 @@ def _find_best_parameter_for_input(parameters: dict, user_input: str) -> Optiona
         if param_def.get("required", False):
             score += 5
         
-        # Boost score based on description keywords
-        description_keywords = [
-            "text", "content", "input", "prompt", "query", "message", 
-            "data", "value", "string", "description"
-        ]
-        for keyword in description_keywords:
-            if keyword in param_desc:
-                score += 2
+        # Boost score for parameters with longer descriptions (more specific)
+        if len(param_desc) > 20:
+            score += 2
         
-        # Boost score for parameters that seem to be the "main" input
-        main_input_keywords = ["prompt", "text", "content", "input", "query"]
-        for keyword in main_input_keywords:
-            if keyword in param_name.lower() or keyword in param_desc:
-                score += 3
+        # Boost score for parameters that don't have default values (likely main input)
+        if param_def.get("default") is None:
+            score += 3
+        
+        # Boost score for parameters with descriptive names (not generic)
+        if len(param_name) > 3:
+            score += 2
+        
+        # Boost score for parameters that seem to be the primary input based on position
+        # (first parameter is often the main input)
+        param_names = list(parameters.keys())
+        if param_name == param_names[0]:
+            score += 1
+        
+        # Boost score for parameters with detailed descriptions (more informative)
+        if len(param_desc) > 30:
+            score += 1
         
         param_scores[param_name] = score
     
