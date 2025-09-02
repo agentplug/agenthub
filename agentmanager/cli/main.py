@@ -4,7 +4,11 @@ import click
 
 from .commands.agent import agent
 from .commands.tools import tools
-from .commands.core import core
+from .commands.core.list import core_list
+from .commands.core.info import core_info
+from .commands.core.exec import core_exec
+from .commands.core.validate import core_validate
+from .commands.core.remove import core_remove
 
 
 @click.group()
@@ -17,7 +21,13 @@ def cli():
 # Add command groups
 cli.add_command(agent)
 cli.add_command(tools)
-cli.add_command(core)
+
+# Add core commands directly (without core prefix for better UX)
+cli.add_command(core_list.commands["list"])
+cli.add_command(core_info.commands["info"])
+cli.add_command(core_exec.commands["exec"])
+cli.add_command(core_validate.commands["validate"])
+cli.add_command(core_remove.commands["remove"])
 
 
 def main():
