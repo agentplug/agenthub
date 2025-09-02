@@ -74,8 +74,15 @@ class AgentRuntime:
                 ),
             }
 
+        # Load manifest for dynamic execution
+        manifest = None
+        try:
+            manifest = self.load_agent_manifest(agent_path)
+        except Exception as e:
+            logger.debug(f"Could not load manifest for dynamic execution: {e}")
+
         # Execute the agent
-        return self.process_manager.execute_agent(agent_path, method, parameters)
+        return self.process_manager.execute_agent(agent_path, method, parameters, manifest)
 
     def validate_method(self, agent_path: str, method: str) -> bool:
         """
