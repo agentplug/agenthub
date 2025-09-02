@@ -14,7 +14,7 @@ from .manifest import ManifestParser, ManifestValidationError
 
 __all__ = [
     "AgentLoader",
-    "AgentLoadError", 
+    "AgentLoadError",
     "AgentWrapper",
     "AgentExecutionError",
     "InterfaceValidator",
