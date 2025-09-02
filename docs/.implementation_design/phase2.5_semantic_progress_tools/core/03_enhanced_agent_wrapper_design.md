@@ -379,6 +379,7 @@ print(f"Available tools: {available_tools}")
 # Agent can get detailed tool information for decision-making
 data_tools = enhanced_agent.get_tools_by_category("data_processing")
 file_tools = enhanced_agent.search_tools("file")
+tool_categories = enhanced_agent.get_tool_categories()
 
 # Agent selects tools based on its own logic
 selected_tools = ["data_analyzer", "file_processor"]  # Agent's choice
