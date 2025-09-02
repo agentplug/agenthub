@@ -144,7 +144,10 @@ class TestToolRegistrationManager:
     
     def test_register_decorated_function(self):
         """Test registering function that's already decorated."""
-        @tool(name="decorated_func", description="Already decorated")
+        # Clear any existing tools first
+        self.registry.clear()
+        
+        @tool(name="decorated_func", description="Already decorated", auto_register=False)
         def decorated_func():
             pass
         

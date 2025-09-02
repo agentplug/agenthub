@@ -176,11 +176,14 @@ class ToolValidator:
             # 3. Create execution context if sandboxing enabled
             if self.config.enable_sandboxing:
                 execution_context = ToolExecutionContext(
+                    tool_name=tool_name,
+                    parameters={},
                     timeout=self.config.default_timeout,
                     memory_limit=self.config.default_memory_limit,
                     cpu_limit=self.config.default_cpu_limit,
-                    allowed_modules=["builtins", "math", "json", "datetime"],
-                    sandbox_enabled=True
+                    network_access=False,
+                    file_access=False,
+                    allowed_paths=[]
                 )
             
             # 4. Overall validation result
@@ -224,10 +227,14 @@ class ToolValidator:
             # Use provided context or create default
             if execution_context is None:
                 execution_context = ToolExecutionContext(
+                    tool_name=getattr(tool_function, '__name__', 'unknown'),
+                    parameters=parameters,
                     timeout=self.config.default_timeout,
                     memory_limit=self.config.default_memory_limit,
                     cpu_limit=self.config.default_cpu_limit,
-                    sandbox_enabled=self.config.enable_sandboxing
+                    network_access=False,
+                    file_access=False,
+                    allowed_paths=[]
                 )
             
             # Execute with monitoring if enabled
