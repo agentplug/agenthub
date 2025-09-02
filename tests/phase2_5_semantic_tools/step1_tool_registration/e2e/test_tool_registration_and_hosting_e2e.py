@@ -7,9 +7,7 @@ import requests
 from typing import Dict, Any
 from unittest.mock import patch
 
-from agentmanager.core.tool_decorators import tool, get_global_registry
-from agentmanager.core.tool_registration import register_function, get_registered_tools_global
-from agentmanager.core.tool_service_host import start_tool_service, stop_tool_service, is_service_running
+from agentmanager.core.tools import tool, get_global_registry, register_function, get_registered_tools_global, start_tool_service, stop_tool_service, is_service_running
 
 
 class TestE2EToolRegistrationAndHosting:
@@ -83,11 +81,11 @@ class TestE2EToolRegistrationAndHosting:
         service_port = 8887  # Use unique port for E2E test
         
         # Mock the actual server to avoid binding to real port in tests
-        with patch('agentmanager.core.tool_service_host.uvicorn.Server') as mock_server_class:
+        with patch('agentmanager.core.tools.service.uvicorn.Server') as mock_server_class:
             mock_server = mock_server_class.return_value
             mock_server.run = lambda: None  # Mock run method
             
-            with patch('agentmanager.core.tool_service_host.ToolServiceHost._start_background') as mock_start_bg:
+            with patch('agentmanager.core.tools.service.ToolServiceHost._start_background') as mock_start_bg:
                 # Mock background start to avoid actual threading
                 def mock_start():
                     service = start_tool_service(port=service_port, background=False)
@@ -272,7 +270,7 @@ class TestE2EToolRegistrationAndHosting:
         assert func3() == "tool3_result"
         
         # Step 5: Start service and verify all tools accessible
-        with patch('agentmanager.core.tool_service_host.uvicorn.Server'):
+        with patch('agentmanager.core.tools.service.uvicorn.Server'):
             with patch('agentmanager.core.tool_service_host.ToolServiceHost.start'):
                 service = start_tool_service(port=8888, background=True)
                 service._is_running = True  # Mock running state
@@ -321,7 +319,7 @@ class TestE2EToolRegistrationAndHosting:
         assert reliable_func(10) == 20  # Still works after error in other tool
         
         # Test service can handle errors gracefully
-        with patch('agentmanager.core.tool_service_host.uvicorn.Server'):
+        with patch('agentmanager.core.tools.service.uvicorn.Server'):
             with patch('agentmanager.core.tool_service_host.ToolServiceHost.start'):
                 service = start_tool_service(port=8889, background=True)
                 service._is_running = True

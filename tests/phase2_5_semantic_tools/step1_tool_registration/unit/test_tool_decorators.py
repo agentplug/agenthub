@@ -4,10 +4,9 @@ import pytest
 from typing import Optional
 from unittest.mock import patch, MagicMock
 
-from agentmanager.core.tool_decorators import (
+from agentmanager.core.tools import (
     tool, register_tool, ToolMetadata, ToolRegistry,
-    get_global_registry, get_tool_metadata, is_tool,
-    _extract_function_metadata
+    get_global_registry, get_tool_metadata, is_tool, _extract_function_metadata
 )
 
 

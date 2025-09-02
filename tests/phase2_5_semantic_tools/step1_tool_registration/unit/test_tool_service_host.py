@@ -7,13 +7,13 @@ import time
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, Any
 
-from agentmanager.core.tool_service_host import (
+from agentmanager.core.tools import (
     ToolServiceHost, ServiceConfiguration,
     ToolExecutionRequest, ToolExecutionResponse, 
     ToolInfoResponse, ToolListResponse,
     start_tool_service, stop_tool_service, get_global_service_host, is_service_running
 )
-from agentmanager.core.tool_decorators import tool, get_global_registry
+from agentmanager.core.tools import tool, get_global_registry
 
 
 class TestServiceConfiguration:
@@ -149,7 +149,7 @@ class TestToolServiceHost:
         host = ToolServiceHost()
         assert host.is_running() is False
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     def test_parameter_validation_success(self, mock_server):
         """Test successful parameter validation."""
         def test_func(x: int, y: str = "default") -> str:
@@ -163,7 +163,7 @@ class TestToolServiceHost:
         
         assert validated == {"x": 42, "y": "test"}
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     def test_parameter_validation_missing_required(self, mock_server):
         """Test parameter validation with missing required parameter."""
         def test_func(x: int, y: str) -> str:
@@ -177,7 +177,7 @@ class TestToolServiceHost:
         with pytest.raises(ValueError, match="Missing required parameter: y"):
             host._validate_parameters(test_func, params)
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     def test_parameter_validation_unexpected_params(self, mock_server):
         """Test parameter validation with unexpected parameters."""
         def test_func(x: int) -> str:
@@ -191,7 +191,7 @@ class TestToolServiceHost:
         with pytest.raises(ValueError, match="Unexpected parameters: unexpected"):
             host._validate_parameters(test_func, params)
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     def test_parameter_validation_optional_params(self, mock_server):
         """Test parameter validation with optional parameters."""
         def test_func(x: int, y: str = "default") -> str:
@@ -216,7 +216,7 @@ class TestAsyncToolExecution:
         get_global_registry().clear()
         ToolServiceHost._instance = None
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     async def test_execute_sync_tool(self, mock_server):
         """Test executing synchronous tool."""
         @tool(name="sync_tool")
@@ -232,7 +232,7 @@ class TestAsyncToolExecution:
         assert response.result == 10
         assert response.error is None
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     async def test_execute_async_tool(self, mock_server):
         """Test executing asynchronous tool."""
         @tool(name="async_tool")
@@ -249,7 +249,7 @@ class TestAsyncToolExecution:
         assert response.result == 12
         assert response.error is None
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     async def test_execute_nonexistent_tool(self, mock_server):
         """Test executing non-existent tool."""
         host = ToolServiceHost()
@@ -261,7 +261,7 @@ class TestAsyncToolExecution:
         assert response.result is None
         assert "not found" in response.error
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     async def test_execute_tool_with_error(self, mock_server):
         """Test executing tool that raises an error."""
         @tool(name="error_tool")
@@ -277,7 +277,7 @@ class TestAsyncToolExecution:
         assert response.result is None
         assert "Test error" in response.error
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     async def test_execute_tool_parameter_validation_error(self, mock_server):
         """Test executing tool with parameter validation error."""
         @tool(name="param_tool")
@@ -293,7 +293,7 @@ class TestAsyncToolExecution:
         assert response.result is None
         assert "validation failed" in response.error.lower()
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     async def test_execution_time_recording(self, mock_server):
         """Test that execution time is recorded."""
         @tool(name="timed_tool")
@@ -405,7 +405,7 @@ class TestServiceIntegration:
             registry = get_global_registry()
             assert "integration_tool" in registry.list_tools()
     
-    @patch('agentmanager.core.tool_service_host.uvicorn.Server')
+    @patch('agentmanager.core.tools.service.uvicorn.Server')
     def test_cleanup_on_stop(self, mock_server):
         """Test proper cleanup when service stops."""
         host = ToolServiceHost()

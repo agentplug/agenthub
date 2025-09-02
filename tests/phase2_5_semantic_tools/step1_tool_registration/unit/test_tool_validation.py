@@ -5,13 +5,11 @@ import time
 from unittest.mock import Mock, patch
 from typing import Optional
 
-from agentmanager.core.tool_validation import (
+from agentmanager.core.tools import (
     ToolValidator, ToolValidationConfig, ToolValidationResult,
-    SignatureValidationResult, validate_tool, execute_tool_safely,
-    get_security_report, get_global_validator
+    SignatureValidationResult, tool, ToolMetadata, SecurityLevel, SecurityResult,
+    validate_tool, execute_tool_safely, get_security_report, get_global_validator
 )
-from agentmanager.core.tool_decorators import tool, ToolMetadata
-from agentmanager.core.tool_security import SecurityLevel, SecurityResult
 
 
 class TestToolValidationConfig:
@@ -308,7 +306,7 @@ class TestToolValidator:
             return x + 10
         
         # Mock global validator to avoid security validation issues
-        with patch('agentmanager.core.tool_validation._global_validator') as mock_validator:
+        with patch('agentmanager.core.tools.validation._global_validator') as mock_validator:
             mock_validator.execute_tool_safely.return_value = 15
             
             result = execute_tool_safely(global_tool, {"x": 5})
@@ -396,7 +394,7 @@ class TestGlobalValidationFunctions:
             return "test"
         
         # Mock global validator to avoid security validation
-        with patch('agentmanager.core.tool_validation._global_validator') as mock_validator:
+        with patch('agentmanager.core.tools.validation._global_validator') as mock_validator:
             mock_result = ToolValidationResult(
                 tool_name="global_test_tool",
                 is_valid=True
@@ -410,7 +408,7 @@ class TestGlobalValidationFunctions:
     
     def test_global_get_security_report(self):
         """Test global get_security_report function."""
-        with patch('agentmanager.core.tool_validation._global_validator') as mock_validator:
+        with patch('agentmanager.core.tools.validation._global_validator') as mock_validator:
             mock_validator.get_security_report.return_value = {"total_executions": 5}
             
             report = get_security_report()

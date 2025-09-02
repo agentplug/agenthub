@@ -3,13 +3,12 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from agentmanager.core.tool_registration import (
+from agentmanager.core.tools import (
     ToolRegistrationManager, ToolRegistrationResult, ToolRegistrationError,
-    register_tools, register_function, get_registered_tools_global,
-    is_tool_registered_global, get_tool_function_global,
-    get_global_registration_manager
+    register_function, register_tools, get_registered_tools_global, 
+    is_tool_registered_global, get_tool_function_global, get_global_registration_manager,
+    tool, ToolRegistry
 )
-from agentmanager.core.tool_decorators import tool, ToolRegistry
 
 
 class TestToolRegistrationResult:
