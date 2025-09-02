@@ -171,6 +171,7 @@ available_tools = agent.discover_tools()
 # Agent can get detailed tool information for decision-making
 data_tools = agent.get_tools_by_category("data_processing")
 file_tools = agent.search_tools("file")
+tool_categories = agent.get_tool_categories()
 
 # Agent selects tools based on its own logic and understanding
 selected_tools = ["data_analyzer", "file_processor"]  # Agent's choice
