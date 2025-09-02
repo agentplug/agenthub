@@ -117,6 +117,10 @@ class EnhancedAgentWrapper(AgentWrapper):
         """Search for tools based on query for agent selection."""
         return self.tool_info_provider.search_tools(query)
     
+    def get_tool_categories(self) -> dict:
+        """Get available tool categories for agent reference."""
+        return self.tool_info_provider.get_tool_categories()
+    
     def execute_with_tools(self, method_name: str, parameters: dict, use_tools: list = None):
         """Execute agent method with optional tool usage.
         
