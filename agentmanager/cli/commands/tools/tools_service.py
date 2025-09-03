@@ -112,14 +112,62 @@ def stop_tools(host: str, port: int):
 
         rprint(f"🛑 [cyan]Stopping tool service on {host}:{port}...[/cyan]")
 
-        # Get the global service host and stop it
+        # Try to get the global service host and stop it
         service_host = get_global_service_host()
         if service_host and service_host.is_running():
             service_host.stop()
             rprint("✅ [green]Tool service stopped successfully![/green]")
-        else:
-            rprint("⚠️  [yellow]Service instance not accessible, but service appears to be running[/yellow]")
+            return
+
+        # If global service host is not accessible, try to find and kill the process
+        rprint("⚠️  [yellow]Service instance not accessible via global host[/yellow]")
+        rprint("🔍 [cyan]Attempting to find and stop the service process...[/cyan]")
+        
+        # Find the process using the port
+        import subprocess
+        try:
+            # Use lsof to find the process using the port
+            result = subprocess.run(
+                ["lsof", "-t", f"-i:{port}"], 
+                capture_output=True, 
+                text=True, 
+                timeout=5
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                pid = result.stdout.strip()
+                rprint(f"🎯 [cyan]Found service process: PID {pid}[/cyan]")
+                
+                # Kill the process
+                subprocess.run(["kill", pid], timeout=5)
+                
+                # Wait a moment and check if it's stopped
+                import time
+                time.sleep(1)
+                
+                if not check_service_health(host, port):
+                    rprint("✅ [green]Tool service stopped successfully![/green]")
+                else:
+                    rprint("⚠️  [yellow]Service may still be running, trying force kill...[/yellow]")
+                    subprocess.run(["kill", "-9", pid], timeout=5)
+                    time.sleep(1)
+                    if not check_service_health(host, port):
+                        rprint("✅ [green]Tool service force-stopped successfully![/green]")
+                    else:
+                        rprint("❌ [red]Failed to stop service process[/red]")
+                        sys.exit(1)
+            else:
+                rprint("❌ [red]Could not find service process on port {port}[/red]")
+                rprint("💡 [dim]You may need to stop the service manually or restart your terminal[/dim]")
+                sys.exit(1)
+                
+        except subprocess.TimeoutExpired:
+            rprint("❌ [red]Timeout while trying to stop service process[/red]")
+            sys.exit(1)
+        except Exception as e:
+            rprint(f"❌ [red]Failed to stop service process: {e}[/red]")
             rprint("💡 [dim]You may need to stop the service manually or restart your terminal[/dim]")
+            sys.exit(1)
 
     except Exception as e:
         rprint(f"❌ [red]Failed to stop tool service: {e}[/red]")
