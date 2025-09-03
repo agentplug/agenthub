@@ -159,16 +159,9 @@ def main():
     print("   Example: curl -X POST http://127.0.0.1:8000/tools/text_transformer/execute \\")
     print("            -H 'Content-Type: application/json' \\")
     print("            -d '{\"parameters\": {\"text\": \"hello\", \"style\": \"upper\"}}'")
-    print("\n✅ Demo script will continue running to keep the service alive")
+    print("\n✅ Demo completed! Tool service is running in the background")
     print("🔄 Use 'agenthub tools stop' to stop the service when done")
-    
-    # Keep the script running silently to maintain the service
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\n🛑 Demo script terminating...")
-        print("🌐 Tool service will stop with the script")
+    print("\n💡 Demo script exiting - service will continue running")
 
 
 if __name__ == "__main__":
