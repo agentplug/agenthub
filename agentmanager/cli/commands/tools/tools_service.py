@@ -135,27 +135,48 @@ def stop_tools(host: str, port: int):
             )
             
             if result.returncode == 0 and result.stdout.strip():
-                pid = result.stdout.strip()
-                rprint(f"🎯 [cyan]Found service process: PID {pid}[/cyan]")
+                # Handle multiple PIDs (one per line)
+                pids = [pid.strip() for pid in result.stdout.strip().split('\n') if pid.strip()]
+                rprint(f"🎯 [cyan]Found {len(pids)} process(es) using port {port}: {', '.join(pids)}[/cyan]")
                 
-                # Kill the process
-                subprocess.run(["kill", pid], timeout=5)
+                # Try to kill all processes
+                killed_any = False
+                for pid in pids:
+                    try:
+                        # Try graceful kill first
+                        subprocess.run(["kill", pid], timeout=5, check=False)
+                        killed_any = True
+                        rprint(f"   🛑 Sent SIGTERM to PID {pid}")
+                    except Exception as e:
+                        rprint(f"   ⚠️  Failed to kill PID {pid}: {e}")
                 
-                # Wait a moment and check if it's stopped
-                import time
-                time.sleep(1)
-                
-                if not check_service_health(host, port):
-                    rprint("✅ [green]Tool service stopped successfully![/green]")
-                else:
-                    rprint("⚠️  [yellow]Service may still be running, trying force kill...[/yellow]")
-                    subprocess.run(["kill", "-9", pid], timeout=5)
-                    time.sleep(1)
+                if killed_any:
+                    # Wait a moment and check if service is stopped
+                    import time
+                    time.sleep(2)
+                    
                     if not check_service_health(host, port):
-                        rprint("✅ [green]Tool service force-stopped successfully![/green]")
+                        rprint("✅ [green]Tool service stopped successfully![/green]")
                     else:
-                        rprint("❌ [red]Failed to stop service process[/red]")
-                        sys.exit(1)
+                        rprint("⚠️  [yellow]Service still running, trying force kill...[/yellow]")
+                        # Try force kill on remaining processes
+                        for pid in pids:
+                            try:
+                                subprocess.run(["kill", "-9", pid], timeout=5, check=False)
+                                rprint(f"   💥 Sent SIGKILL to PID {pid}")
+                            except Exception as e:
+                                rprint(f"   ⚠️  Failed to force kill PID {pid}: {e}")
+                        
+                        time.sleep(1)
+                        if not check_service_health(host, port):
+                            rprint("✅ [green]Tool service force-stopped successfully![/green]")
+                        else:
+                            rprint("❌ [red]Failed to stop service processes[/red]")
+                            rprint("💡 [dim]You may need to stop the service manually[/dim]")
+                            sys.exit(1)
+                else:
+                    rprint("❌ [red]Failed to kill any processes[/red]")
+                    sys.exit(1)
             else:
                 rprint("❌ [red]Could not find service process on port {port}[/red]")
                 rprint("💡 [dim]You may need to stop the service manually or restart your terminal[/dim]")
