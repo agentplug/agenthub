@@ -150,7 +150,6 @@ def main():
     print("\n🎉 Demo completed successfully!")
     print("🌐 Tool service is running in the background")
     print("💡 Use 'agenthub tools stop' to stop the service when needed")
-    print("⚠️  Note: Service may stop when demo script exits (daemon thread limitation)")
     print("\n📋 Available CLI commands:")
     print("   agenthub tools list    - List available tools")
     print("   agenthub tools status  - Check service status")
@@ -160,6 +159,16 @@ def main():
     print("   Example: curl -X POST http://127.0.0.1:8000/tools/text_transformer/execute \\")
     print("            -H 'Content-Type: application/json' \\")
     print("            -d '{\"parameters\": {\"text\": \"hello\", \"operation\": \"upper\"}}'")
+    print("\n💡 Press Ctrl+C to exit and stop the service")
+    
+    # Keep the script running to maintain the service
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n🛑 Demo script terminating...")
+        print("🌐 Tool service will stop with the script")
+        print("💡 Use 'agenthub tools stop' to stop the service if it's still running")
 
 
 if __name__ == "__main__":
