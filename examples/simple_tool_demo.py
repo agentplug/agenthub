@@ -93,37 +93,9 @@ def main():
     print("\n🌐 Starting HTTP service for tool access...")
     port = 8000  # Use default port to match CLI commands
     
-    # Start the persistent service script
-    import subprocess
-    import sys
-    import os
-    
-    print("   🚀 Starting persistent service script...")
-    
-    # Get the path to the persistent service script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    service_script = os.path.join(script_dir, "persistent_tool_service.py")
-    
-    # Start the service in a detached subprocess
-    service_process = subprocess.Popen(
-        [sys.executable, service_script],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        stdin=subprocess.DEVNULL,
-        start_new_session=True  # Detach from parent process
-    )
-    
-    print(f"   ✅ Service started in detached process (PID: {service_process.pid})")
-    print(f"   🌐 Service URL: http://127.0.0.1:{port}")
-    
-    # Create a mock service object for the demo
-    class MockService:
-        def is_running(self):
-            return True
-        def get_service_url(self):
-            return f"http://127.0.0.1:{port}"
-    
-    service = MockService()
+    # Start service using the standard approach
+    service = start_tool_service(port=port, background=True)
+    print(f"   ✅ Service running at {service.get_service_url()}")
     
     # Wait a moment for service to start
     time.sleep(1)
@@ -176,9 +148,9 @@ def main():
     print("   ✅ Service management")
     
     print("\n💡 Press Ctrl+C to exit the demo")
-    print("🌐 Tool service is running in the background (started via CLI)")
+    print("🌐 Tool service is running in the background")
     print("💡 Use 'agenthub tools stop' to stop the service when needed")
-    print("✅ Service will persist after demo script exits")
+    print("⚠️  Note: Service may stop when demo script exits (daemon thread limitation)")
     
     # Keep running until interrupted
     try:
@@ -186,9 +158,9 @@ def main():
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n🛑 Demo script terminating...")
-        print("🌐 Tool service will continue running in the background")
-        print("💡 Use 'agenthub tools stop' to stop the service when needed")
-        print("✅ Service started via CLI - it will persist independently")
+        print("🌐 Tool service may continue running in the background")
+        print("💡 Use 'agenthub tools stop' to stop the service if needed")
+        print("⚠️  Note: Due to daemon thread limitations, service may stop with the script")
 
 
 if __name__ == "__main__":
