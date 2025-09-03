@@ -7,7 +7,10 @@ This demo shows:
 2. Manual tool registration  
 3. HTTP service hosting
 4. Tool execution via API
-5. Clean shutdown
+5. Persistent service (continues running after script ends)
+
+The tool service will continue running in the background after the demo script terminates.
+Use 'agenthub tools stop' to stop the service when needed.
 """
 
 import time
@@ -49,10 +52,10 @@ def math_calculator(a: float, b: float, operation: str) -> float:
 
 
 def cleanup_handler(signum, frame):
-    """Handle Ctrl+C gracefully."""
-    print(f"\n🛑 Shutting down...")
-    stop_tool_service()
-    print("✅ Clean shutdown complete!")
+    """Handle Ctrl+C gracefully - keep service running."""
+    print(f"\n🛑 Demo script terminating...")
+    print("🌐 Tool service will continue running in the background")
+    print("💡 Use 'agenthub tools stop' to stop the service")
     sys.exit(0)
 
 
@@ -142,16 +145,18 @@ def main():
     print("   ✅ Error handling")
     print("   ✅ Service management")
     
-    print("\n💡 Press Ctrl+C to cleanly shutdown the service")
+    print("\n💡 Press Ctrl+C to exit the demo (service will keep running)")
+    print("🌐 Tool service will continue running in the background")
+    print("💡 Use 'agenthub tools stop' to stop the service when needed")
     
     # Keep running until interrupted
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down...")
-        stop_tool_service()
-        print("✅ Clean shutdown complete!")
+        print("\n🛑 Demo script terminating...")
+        print("🌐 Tool service will continue running in the background")
+        print("💡 Use 'agenthub tools stop' to stop the service")
 
 
 if __name__ == "__main__":
