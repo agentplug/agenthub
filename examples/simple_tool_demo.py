@@ -92,6 +92,8 @@ def main():
     # 5. CAPABILITY: HTTP Service Hosting
     print("\n🌐 Starting HTTP service for tool access...")
     port = 8000  # Use default port to match CLI commands
+    
+    # Start service using the standard approach
     service = start_tool_service(port=port, background=True)
     print(f"   ✅ Service running at {service.get_service_url()}")
     
@@ -145,9 +147,10 @@ def main():
     print("   ✅ Error handling")
     print("   ✅ Service management")
     
-    print("\n💡 Press Ctrl+C to exit the demo (service will keep running)")
-    print("🌐 Tool service will continue running in the background")
+    print("\n💡 Press Ctrl+C to exit the demo")
+    print("🌐 Tool service is running in the background")
     print("💡 Use 'agenthub tools stop' to stop the service when needed")
+    print("⚠️  Note: Service may stop when demo script exits (daemon thread limitation)")
     
     # Keep running until interrupted
     try:
@@ -155,8 +158,9 @@ def main():
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n🛑 Demo script terminating...")
-        print("🌐 Tool service will continue running in the background")
-        print("💡 Use 'agenthub tools stop' to stop the service")
+        print("🌐 Tool service may continue running in the background")
+        print("💡 Use 'agenthub tools stop' to stop the service if needed")
+        print("⚠️  Note: Due to daemon thread limitations, service may stop with the script")
 
 
 if __name__ == "__main__":
