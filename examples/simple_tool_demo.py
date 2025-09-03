@@ -91,7 +91,7 @@ def main():
     
     # 5. CAPABILITY: HTTP Service Hosting
     print("\n🌐 Starting HTTP service for tool access...")
-    port = 8090
+    port = 8000  # Use default port to match CLI commands
     service = start_tool_service(port=port, background=True)
     print(f"   ✅ Service running at {service.get_service_url()}")
     
