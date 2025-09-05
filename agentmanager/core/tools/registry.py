@@ -1,210 +1,101 @@
-"""Tool registration system for AgentHub.
-
-This module provides the ToolRegistrationManager for explicit tool registration,
-including validation and error handling.
-"""
+"""Tool registry for managing registered tools."""
 
 import logging
-from typing import Any, Callable, List, Optional
-from dataclasses import dataclass, field
-
-from .decorators import ToolMetadata, ToolRegistry, get_global_registry, get_tool_metadata
+from typing import Dict, Any, List, Optional, Callable
+from .decorators import ToolMetadata
 
 logger = logging.getLogger(__name__)
 
 
-class ToolRegistrationError(Exception):
-    """Custom exception for tool registration failures."""
-    pass
+class ToolRegistry:
+    """Central registry for all registered tools."""
+    
+    def __init__(self) -> None:
+        self._tools: Dict[str, ToolMetadata] = {}
+        self._tool_functions: Dict[str, Callable[..., Any]] = {}
 
+    def register(self, metadata: ToolMetadata) -> None:
+        """Register a tool with its metadata."""
+        if metadata.name in self._tools:
+            raise ValueError(f"Tool '{metadata.name}' is already registered")
 
-@dataclass
-class ToolRegistrationResult:
-    """Result of a tool registration attempt."""
-    success: bool
-    tool_name: str
-    message: str
-    metadata: Optional[ToolMetadata] = None
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+        self._tools[metadata.name] = metadata
+        self._tool_functions[metadata.name] = metadata.function
+        logger.info(f"Registered tool: {metadata.name}")
 
+    def get_tool(self, name: str) -> Optional[ToolMetadata]:
+        """Get tool metadata by name."""
+        return self._tools.get(name)
 
-class ToolRegistrationManager:
-    """Manager for explicit tool registration with validation."""
-
-    def __init__(self, registry: Optional[ToolRegistry] = None):
-        self.registry = registry if registry is not None else get_global_registry()
-        self._enable_validation = True
-
-    def enable_validation(self, enable: bool) -> None:
-        """Enable or disable validation during registration."""
-        self._enable_validation = enable
-
-    def register_function(
-        self,
-        func: Callable[..., Any],
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        force: bool = False,
-    ) -> ToolRegistrationResult:
-        """Register a function as a tool with validation."""
-        try:
-            tool_name = name or getattr(func, '__name__', 'unknown')
-
-            # Check if tool already exists
-            if not force and self.registry.get_tool(tool_name) is not None:
-                return ToolRegistrationResult(
-                    success=False,
-                    tool_name=tool_name,
-                    message=f"Tool '{tool_name}' already registered. Use force=True to override.",
-                    errors=[f"Duplicate tool name: {tool_name}"]
-                )
-
-            # Basic function validation
-            if not callable(func):
-                return ToolRegistrationResult(
-                    success=False,
-                    tool_name=tool_name,
-                    message="Object is not callable",
-                    errors=["Function must be callable"]
-                )
-
-            if not hasattr(func, '__name__'):
-                return ToolRegistrationResult(
-                    success=False,
-                    tool_name=tool_name,
-                    message="Function does not have a name",
-                    errors=["Function must have __name__ attribute"]
-                )
-
-            # Get or create metadata
-            metadata = get_tool_metadata(func)
-            if metadata is None:
-                # Create metadata manually if not decorated
-                from .decorators import _extract_function_metadata
-                import inspect
-
-                parameters = _extract_function_metadata(func)
-                return_type = inspect.signature(func).return_annotation
-                if return_type == inspect.Signature.empty:
-                    return_type = None
-
-                metadata = ToolMetadata(
-                    name=tool_name,
-                    description=description or (func.__doc__ or "").strip() or f"Tool: {tool_name}",
-                    function=func,
-                    parameters=parameters,
-                    return_type=return_type,
-                    is_async=inspect.iscoroutinefunction(func),
-                    tags=tags or [],
-                )
-
-            # Register the tool
-            if force and self.registry.get_tool(tool_name) is not None:
-                # Clear existing registration for force override
-                self.registry._tools.pop(tool_name, None)
-                self.registry._tool_functions.pop(tool_name, None)
-
-            self.registry.register(metadata)
-
-            logger.info(f"Successfully registered tool: {tool_name}")
-            return ToolRegistrationResult(
-                success=True,
-                tool_name=tool_name,
-                message=f"Tool '{tool_name}' registered successfully",
-                metadata=metadata
-            )
-
-        except Exception as e:
-            error_msg = f"Registration failed for {getattr(func, '__name__', 'unknown')}: {str(e)}"
-            logger.error(error_msg)
-            return ToolRegistrationResult(
-                success=False,
-                tool_name=getattr(func, '__name__', 'unknown'),
-                message=error_msg,
-                errors=[str(e)]
-            )
-
-    def register_multiple(
-        self,
-        functions: List[Callable[..., Any]],
-        force: bool = False
-    ) -> List[ToolRegistrationResult]:
-        """Register multiple functions as tools."""
-        results = []
-        for func in functions:
-            result = self.register_function(func, force=force)
-            results.append(result)
-        return results
-
-    def get_registered_tools(self) -> List[ToolMetadata]:
-        """Get all registered tool metadata."""
-        return list(self.registry.get_all_metadata().values())
-
-    def is_tool_registered(self, name: str) -> bool:
-        """Check if a tool is registered."""
-        return self.registry.get_tool(name) is not None
-
-    def get_tool_function(self, name: str) -> Optional[Callable[..., Any]]:
+    def get_function(self, name: str) -> Optional[Callable[..., Any]]:
         """Get tool function by name."""
-        return self.registry.get_function(name)
+        return self._tool_functions.get(name)
 
-    def unregister_tool(self, name: str) -> bool:
-        """Unregister a tool by name."""
-        if name in self.registry._tools:
-            del self.registry._tools[name]
-            del self.registry._tool_functions[name]
-            logger.info(f"Unregistered tool: {name}")
-            return True
-        return False
+    def list_tools(self) -> List[str]:
+        """Get list of all registered tool names."""
+        return list(self._tools.keys())
 
-    def clear_all(self) -> None:
+    def get_all_metadata(self) -> Dict[str, ToolMetadata]:
+        """Get all tool metadata."""
+        return self._tools.copy()
+
+    def clear(self) -> None:
         """Clear all registered tools."""
-        self.registry.clear()
-        logger.info("Cleared all registered tools")
+        self._tools.clear()
+        self._tool_functions.clear()
+        logger.info("Cleared all tools from registry")
+    
+    def get_tool_count(self) -> int:
+        """Get the number of registered tools."""
+        return len(self._tools)
+    
+    def get_tool_names(self) -> List[str]:
+        """Get list of all registered tool names."""
+        return list(self._tools.keys())
+    
+    def execute_tool(self, name: str, **kwargs) -> Any:
+        """Execute a tool by name with given parameters."""
+        if name not in self._tools:
+            raise KeyError(f"Tool '{name}' not found in registry")
+        
+        metadata = self._tools[name]
+        logger.info(f"Executing tool: {name}")
+        try:
+            result = metadata.function(**kwargs)
+            logger.info(f"Tool {name} executed successfully")
+            return result
+        except Exception as e:
+            logger.error(f"Tool {name} execution failed: {e}")
+            raise
+    
+    def get_tool_schemas(self) -> Dict[str, Dict[str, Any]]:
+        """Get MCP-compatible schemas for all tools."""
+        schemas = {}
+        for name, metadata in self._tools.items():
+            if metadata.input_schema:
+                schemas[name] = metadata.input_schema
+            else:
+                # Generate basic schema from parameters
+                schema = {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+                for param_name, param_info in metadata.parameters.items():
+                    if param_info.get("default") is None:
+                        schema["required"].append(param_name)
+                    schema["properties"][param_name] = {
+                        "type": "string",  # Default to string, could be improved
+                        "description": f"Parameter {param_name}"
+                    }
+                schemas[name] = schema
+        return schemas
 
 
-# Global registration manager instance
-_global_registration_manager = ToolRegistrationManager()
+# Global tool registry instance
+_global_registry = ToolRegistry()
 
 
-def register_tools(
-    tools: List[Callable[..., Any]],
-    force: bool = False
-) -> List[ToolRegistrationResult]:
-    """Register multiple tools using the global manager."""
-    return _global_registration_manager.register_multiple(tools, force=force)
-
-
-def register_function(
-    func: Callable[..., Any],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    tags: Optional[List[str]] = None,
-    force: bool = False,
-) -> ToolRegistrationResult:
-    """Register a single function using the global manager."""
-    return _global_registration_manager.register_function(
-        func, name=name, description=description, tags=tags, force=force
-    )
-
-
-def get_registered_tools_global() -> List[ToolMetadata]:
-    """Get all registered tools from global manager."""
-    return _global_registration_manager.get_registered_tools()
-
-
-def is_tool_registered_global(name: str) -> bool:
-    """Check if tool is registered in global manager."""
-    return _global_registration_manager.is_tool_registered(name)
-
-
-def get_tool_function_global(name: str) -> Optional[Callable[..., Any]]:
-    """Get tool function from global manager."""
-    return _global_registration_manager.get_tool_function(name)
-
-
-def get_global_registration_manager() -> ToolRegistrationManager:
-    """Get the global registration manager instance."""
-    return _global_registration_manager
+def get_global_registry() -> ToolRegistry:
+    """Get the global tool registry instance."""
+    return _global_registry

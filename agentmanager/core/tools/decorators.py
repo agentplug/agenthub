@@ -24,6 +24,7 @@ class ToolMetadata:
     created_at: datetime = field(default_factory=datetime.now)
     is_async: bool = False
     tags: List[str] = field(default_factory=list)
+    input_schema: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert metadata to dictionary representation."""
@@ -35,53 +36,11 @@ class ToolMetadata:
             "created_at": self.created_at.isoformat(),
             "is_async": self.is_async,
             "tags": self.tags,
+            "input_schema": self.input_schema,
         }
 
 
-class ToolRegistry:
-    """Central registry for all registered tools."""
-
-    def __init__(self) -> None:
-        self._tools: Dict[str, ToolMetadata] = {}
-        self._tool_functions: Dict[str, Callable[..., Any]] = {}
-
-    def register(self, metadata: ToolMetadata) -> None:
-        """Register a tool with its metadata."""
-        if metadata.name in self._tools:
-            raise ValueError(f"Tool '{metadata.name}' is already registered")
-
-        self._tools[metadata.name] = metadata
-        self._tool_functions[metadata.name] = metadata.function
-
-    def get_tool(self, name: str) -> Optional[ToolMetadata]:
-        """Get tool metadata by name."""
-        return self._tools.get(name)
-
-    def get_function(self, name: str) -> Optional[Callable[..., Any]]:
-        """Get tool function by name."""
-        return self._tool_functions.get(name)
-
-    def list_tools(self) -> List[str]:
-        """Get list of all registered tool names."""
-        return list(self._tools.keys())
-
-    def get_all_metadata(self) -> Dict[str, ToolMetadata]:
-        """Get all tool metadata."""
-        return self._tools.copy()
-
-    def clear(self) -> None:
-        """Clear all registered tools."""
-        self._tools.clear()
-        self._tool_functions.clear()
-
-
-# Global tool registry instance
-_global_registry = ToolRegistry()
-
-
-def get_global_registry() -> ToolRegistry:
-    """Get the global tool registry instance."""
-    return _global_registry
+# Note: ToolRegistry moved to registry.py for better separation of concerns
 
 
 def _extract_function_metadata(func: Callable[..., Any]) -> Dict[str, Any]:
@@ -106,6 +65,7 @@ def tool(
     description: Optional[str] = None,
     tags: Optional[List[str]] = None,
     auto_register: bool = True,
+    input_schema: Optional[Dict[str, Any]] = None,
 ) -> Callable[[F], F]:
     """Decorator to mark a function as a tool."""
     if tags is None:
@@ -132,6 +92,7 @@ def tool(
             return_type=return_type,
             is_async=is_async,
             tags=tags.copy(),
+            input_schema=input_schema,
         )
 
         # Store metadata as function attribute
@@ -139,7 +100,8 @@ def tool(
 
         # Auto-register if requested
         if auto_register:
-            _global_registry.register(metadata)
+            from .registry import get_global_registry
+            get_global_registry().register(metadata)
 
         return func
 
@@ -159,3 +121,6 @@ def get_tool_metadata(func: Callable[..., Any]) -> Optional[ToolMetadata]:
 def is_tool(func: Callable[..., Any]) -> bool:
     """Check if a function is decorated as a tool."""
     return hasattr(func, '__tool_metadata__')
+
+
+# Note: ToolDiscovery moved to discovery.py for better separation of concerns

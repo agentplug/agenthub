@@ -13,40 +13,20 @@ from .agents import (
     InterfaceValidator, InterfaceValidationError, ManifestParser, ManifestValidationError
 )
 
-# Import from tools package
+# Import from tools package (Phase 2.5 MCP implementation)
 from .tools import (
-    ToolMetadata,
-    ToolRegistry,
     tool,
-    register_tool,
-    get_global_registry,
-    get_tool_metadata,
-    ToolRegistrationManager,
-    ToolRegistrationError,
-    ToolRegistrationResult,
-    get_registered_tools_global,
-    register_function,
-    SecurityLevel,
-    SecurityResult,
-    ToolExecutionContext,
-    ToolSecurityValidator,
-    SecureToolExecutor,
-    ToolExecutionMonitor,
-    SecurityError,
-    ToolServiceHost,
-    ServiceConfiguration,
-    ToolExecutionRequest,
-    ToolExecutionResponse,
-    ToolInfoResponse,
-    ToolListResponse,
-    start_tool_service,
-    stop_tool_service,
-    get_global_service_host,
-    is_service_running,
-    ToolValidationConfig,
-    ToolValidationResult,
-    SignatureValidationResult,
-    ToolValidator)
+    ToolDiscovery,
+    ToolRegistry
+)
+
+# Import from MCP package
+from .mcp import (
+    MCPServer,
+    MCPClient,
+    MCPToolRegistry,
+    MCPClientManager
+)
 
 __all__ = [
     # Agent components
@@ -59,38 +39,14 @@ __all__ = [
     "ManifestParser",
     "ManifestValidationError",
 
-    # Tool components
-    "ToolMetadata",
-    "ToolRegistry",
+    # Tool components (Phase 2.5 MCP implementation)
     "tool",
-    "register_tool",
-    "get_global_registry",
-    "get_tool_metadata",
-    "ToolRegistrationManager",
-    "ToolRegistrationError",
-    "ToolRegistrationResult",
-    "get_registered_tools_global",
-    "register_function",
-    "SecurityLevel",
-    "SecurityResult",
-    "ToolExecutionContext",
-    "ToolSecurityValidator",
-    "SecureToolExecutor",
-    "ToolExecutionMonitor",
-    "SecurityError",
-    "ToolServiceHost",
-    "ServiceConfiguration",
-    "ToolExecutionRequest",
-    "ToolExecutionResponse",
-    "ToolInfoResponse",
-    "ToolListResponse",
-    "start_tool_service",
-    "stop_tool_service",
-    "get_global_service_host",
-    "is_service_running",
-    "ToolValidationConfig",
-    "ToolValidationResult",
-    "SignatureValidationResult",
-    "ToolValidator",
+    "ToolDiscovery",
+    "ToolRegistry",
 
+    # MCP components
+    "MCPServer",
+    "MCPClient",
+    "MCPToolRegistry",
+    "MCPClientManager",
 ]
