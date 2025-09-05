@@ -65,6 +65,12 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - Coordinates tool registration with framework
   - Auto-recovery mechanism for service restarts
 
+- **Agent-Tools Tracker** (`agentmanager/core/tools/agent_tools_tracker.py`)
+  - Tracks which tools are assigned to which agents
+  - Provides bidirectional lookup (agent → tools, tool → agents)
+  - Manages usage statistics and monitoring
+  - Integrates with CLI and runtime systems
+
 - **Tool Service Hosting** (`agentmanager/core/tools/service.py`)
   - Hosts registered tools as HTTP/GRPC services
   - Creates API endpoints for each registered function
@@ -78,6 +84,10 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - `agenthub tools list` - List registered tools
   - `agenthub tools unregister <name>` - Remove specific tool
   - `agenthub tools restart` - Reload auto-registered tools
+  - `agenthub tools tracker` - Show agent-tools tracker status
+  - `agenthub tools assign <agent> <tools>` - Assign tools to agent
+  - `agenthub tools agent <agent>` - Show agent's assigned tools
+  - `agenthub tools stats` - Show tool usage statistics
 
 #### Implementation Order
 1. **Modular Architecture Setup**
@@ -91,6 +101,7 @@ This document provides the detailed step-by-step implementation plan for Phase 2
    - Implement explicit tool registration system with auto-recovery
    - Build persistent tool service hosting with CLI management
    - Add tool validation and security checks
+   - **Implement Agent-Tools Tracker** with full functionality
 
 3. **CLI Integration**
    - Add CLI commands for tool registry management
@@ -142,7 +153,7 @@ This document provides the detailed step-by-step implementation plan for Phase 2
 ---
 
 ### Step 2: Tool API Generation and Management (Week 2-3)
-**Goal**: Generate API endpoints for registered functions and manage tool communication
+**Goal**: Generate API endpoints for registered functions, manage tool communication, and implement agent-tools tracking
 
 #### Deliverables
 - **Auto-API Generator** (`agentmanager/core/auto_api_generator.py`)
@@ -160,22 +171,41 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - Agent-tool coordination
   - Tool availability management
 
+- **Agent-Tools Tracker** (`agentmanager/core/tools/agent_tools_tracker.py`)
+  - Centralized tracking of tool assignments to agents
+  - Bidirectional lookup (agent → tools, tool → agents)
+  - Usage statistics and monitoring
+  - CLI management integration
+  - **Module Placement**: New module within existing `tools` package
+  - **Design Documents**: [Core Module Design](core/05_agent_tools_tracker_module_design.md) | [Component Design](core/06_agent_tools_tracker_design.md)
+
 #### Implementation Order
 1. Design API generation framework
 2. Implement endpoint creation for registered functions
 3. Add parameter validation and error handling
 4. Build tool communication layer
 5. Create tool manager for coordination
+6. Implement agent-tools tracker for assignment management
+7. Add CLI commands for tool assignment management
+8. Integrate tracker with agent loading and execution
 
 #### Success Criteria
 - Generates working API endpoints for all registered functions
 - Handles parameter validation correctly
 - Provides comprehensive error handling
 - API endpoints are secure and performant
+- **Agent-Tools Tracker** manages tool assignments correctly
+- **Bidirectional lookup** works (agent → tools, tool → agents)
+- **O(1) lookup performance** for all operations
+- **CLI commands** work for tool assignment management
+- **Usage statistics** are accurate and up-to-date
+- **Tool assignments** are properly tracked during agent execution
+- **Error handling** prevents invalid assignments
+- **Module placement** is correct (`agentmanager/core/tools/agent_tools_tracker.py`)
 
 #### End-to-End Test After Step 2
 **Test Name**: `test_tool_api_generation_and_management_e2e`
-**Purpose**: Validate complete API generation and tool management workflow
+**Purpose**: Validate complete API generation, tool management workflow, and agent-tools tracking
 **Test Steps**:
 1. Register multiple tools with different parameter types
 2. Verify API endpoints are auto-generated for all tools
@@ -184,6 +214,14 @@ This document provides the detailed step-by-step implementation plan for Phase 2
 5. Test tool manager coordination between multiple tools
 6. Verify API documentation is generated correctly
 7. Test concurrent tool execution
+8. **Test Agent-Tools Tracker assignment management**
+9. **Test bidirectional lookup (agent → tools, tool → agents)**
+10. **Test O(1) lookup performance for all operations**
+11. **Verify CLI commands for tool assignment work correctly**
+12. **Test tool assignment tracking during agent execution**
+13. **Verify usage statistics are accurate and up-to-date**
+14. **Test error handling prevents invalid assignments**
+15. **Verify module placement is correct**
 
 **Validation Criteria**:
 - ✅ All registered tools have working API endpoints
@@ -193,6 +231,14 @@ This document provides the detailed step-by-step implementation plan for Phase 2
 - ✅ API documentation is complete and accurate
 - ✅ Concurrent execution doesn't cause conflicts
 - ✅ Performance meets requirements (<100ms response time)
+- ✅ **Agent-Tools Tracker manages assignments correctly**
+- ✅ **Bidirectional lookup works (agent → tools, tool → agents)**
+- ✅ **O(1) lookup performance for all operations**
+- ✅ **CLI commands for tool assignment work properly**
+- ✅ **Tool assignments are tracked during agent execution**
+- ✅ **Usage statistics are accurate and up-to-date**
+- ✅ **Error handling prevents invalid assignments**
+- ✅ **Module placement is correct**
 
 **Blocking Criteria**: If this test fails, Step 3 cannot begin until issues are resolved.
 
@@ -212,20 +258,23 @@ This document provides the detailed step-by-step implementation plan for Phase 2
   - Task phase management
   - Real-time status updates
 
-- **Tool Selection Logic** (`agentmanager/core/tool_selection.py`)
-  - Autonomous tool selection
-  - Tool capability matching
-  - Tool recommendation system
+- **Tool Context Injection** (`agentmanager/runtime/tool_context.py`)
+  - Provides available tools to agents
+  - Injects tool context during agent execution
+  - **Note**: Tool selection logic is handled by individual agents, not AgentHub
 
 #### Implementation Order
 1. Enhance agent wrapper with tool access
 2. Implement semantic progress tracking
 3. Add tool assignment and access
 4. Create progress reporting system
-5. Integrate all components
+5. **Implement tool context injection** (agents handle tool selection)
+6. Integrate all components
 
 #### Success Criteria
 - Agents can access and use assigned tools
+- **Tool context is properly injected** to agents
+- **Agents handle their own tool selection logic**
 - Progress tracking provides meaningful updates
 - Tool assignment and access works correctly
 - All components integrate seamlessly

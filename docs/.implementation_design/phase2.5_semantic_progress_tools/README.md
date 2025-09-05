@@ -32,21 +32,22 @@
 graph TB
     subgraph "User Environment"
         UF[User Functions with @tool decorator]
-        TR[Tool Registry & Discovery]
-        AM[Agent Manager]
+        AM[Agent Manager with tool names]
     end
 
     subgraph "AgentHub Framework Layer"
-        MCP_S[Real MCP Server<br/>FastMCP + stdio/HTTP]
-        MCP_C[Real MCP Client<br/>ClientSession + stdio/HTTP]
-        TM[Tool Manager]
+        TR[Global Tool Registry]
+        MCP_S[Single Global MCP Server<br/>FastMCP + stdio/HTTP]
+        FC1[Filtered MCP Client 1]
+        FC2[Filtered MCP Client 2]
+        FC3[Filtered MCP Client 3]
         SPT[Semantic Progress Tracker]
     end
 
     subgraph "Agent Layer - Isolated"
-        AG1[Agent A with MCP Client]
-        AG2[Agent B with MCP Client]
-        AG3[Agent C with MCP Client]
+        AG1[Agent A with Filtered Client]
+        AG2[Agent B with Filtered Client]
+        AG3[Agent C with Filtered Client]
     end
 
     subgraph "Official MCP Protocol Layer"
@@ -60,15 +61,95 @@ graph TB
     TR --> MCP_S
     MCP_S --> JSONRPC
     MCP_S --> MCP_PRIMITIVES
-    JSONRPC --> MCP_C
-    MCP_C --> AG1
-    MCP_C --> AG2
-    MCP_C --> AG3
-    AM --> MCP_S
-    TM --> MCP_S
+    JSONRPC --> FC1
+    JSONRPC --> FC2
+    JSONRPC --> FC3
+    FC1 --> AG1
+    FC2 --> AG2
+    FC3 --> AG3
+    AM --> FC1
+    AM --> FC2
+    AM --> FC3
     SPT --> AG1
     SPT --> AG2
     SPT --> AG3
+```
+
+## 🔄 **Tool Lifecycle Flow**
+
+1. **Tool Registration**: `@tool` decorator automatically registers tool in global registry
+2. **MCP Server Creation**: First tool registration creates single global MCP server
+3. **Agent Loading**: `load_agent(tools=["tool1", "tool2"])` creates filtered MCP client
+4. **Tool Assignment Tracking**: Agent-tools tracker records which tools are assigned to which agents
+5. **Tool Access**: Agent only sees tools specified in its `tools` list
+6. **Tool Execution**: Agent calls tools via MCP protocol through filtered client
+
+## 🎯 **Tool Assignment Management System**
+
+### **Agent-Tools Tracker**
+Centralized system that manages tool assignments and provides tracking capabilities.
+
+**Module Location**: `agentmanager/core/tools/agent_tools_tracker.py`  
+**Design Documents**: [Core Module Design](core/05_agent_tools_tracker_module_design.md) | [Component Design](core/06_agent_tools_tracker_design.md)
+
+```python
+# Agent-tools tracker usage
+from agentmanager.core.tools.agent_tools_tracker import get_agent_tools_tracker
+
+tracker = get_agent_tools_tracker()
+
+# Assign tools to agents
+tracker.assign_tools_to_agent("agentplug/coding-agent", ["code_analyzer", "file_writer"])
+tracker.assign_tools_to_agent("agentplug/analysis-agent", ["data_analyzer", "file_processor"])
+
+# Query assignments
+coding_tools = tracker.get_agent_tools("agentplug/coding-agent")  # ["code_analyzer", "file_writer"]
+agents_with_data_analyzer = tracker.get_agents_with_tool("data_analyzer")  # ["agentplug/analysis-agent"]
+
+# Get statistics
+stats = tracker.get_tool_usage_stats()  # {"code_analyzer": 1, "data_analyzer": 1, ...}
+```
+
+### **CLI Tool Management Commands**
+```bash
+# Show all tool assignments
+agenthub tools tracker
+
+# Assign tools to specific agent
+agenthub tools assign agentplug/coding-agent code_analyzer file_writer
+
+# Show tools assigned to agent
+agenthub tools agent agentplug/coding-agent
+
+# Show tool usage statistics
+agenthub tools stats
+```
+
+### **Runtime Tool Context Injection**
+```python
+# Framework automatically injects tool context via environment variables
+AGENTHUB_TOOLS='["code_analyzer", "file_writer"]' \
+AGENTHUB_AGENT_TOOLS='code_analyzer,file_writer' \
+AGENTHUB_TOOL_CONTEXT='{"available_tools": [...], "tool_names": ["code_analyzer", "file_writer"]}' \
+python /Users/nguyennm/.agenthub/agents/agentplug/coding-agent/agent.py '{"method": "generate_code", "parameters": {"prompt": "Create a function"}}'
+```
+
+### **Agent Tool Context Access**
+```python
+# Inside agent code
+class CodingAgent:
+    def generate_code(self, prompt: str, tool_context: dict = None):
+        # Check available tools from environment
+        if 'AGENTHUB_AGENT_TOOLS' in os.environ:
+            available_tools = os.environ['AGENTHUB_AGENT_TOOLS'].split(',')
+            print(f"🔧 Agent has access to tools: {available_tools}")
+            
+            if 'code_analyzer' in available_tools:
+                # Use external tool
+                result = call_external_tool('code_analyzer', code=generated_code)
+        
+        # Fallback to built-in functionality
+        return generate_code_builtin(prompt)
 ```
 
 ## 🎯 **Core Features**
@@ -241,13 +322,13 @@ result = agent.analyze_data("data.csv")
 # MCP server dies when agent finishes
 ```
 
-#### **Option B: Persistent MCP Tools (Multi-Agent Coordination)**
+#### **Option B: Global Tool Registry with Tool Names**
 ```python
 # main_script.py - User's main coordination script
 from agentmanager.core.tools import tool
 import agentmanager as amg
 
-# 1. User registers tools in main script
+# 1. User registers tools - MCP server created automatically
 @tool(name="data_analyzer", description="Analyze data")
 def my_data_analyzer(data: str) -> dict:
     return {"insights": f"analyzed: {data}"}
@@ -256,100 +337,97 @@ def my_data_analyzer(data: str) -> dict:
 def my_file_processor(file_path: str) -> dict:
     return {"processed": file_path}
 
+@tool(name="web_scraper", description="Scrape web content")
+def my_web_scraper(url: str) -> dict:
+    return {"scraped": url}
+
 def main():
-    # 2. Start persistent MCP server with shared external tools (via official SDK)
-    with amg.mcp_server("shared-tools", tools=[my_data_analyzer, my_file_processor]) as server:
-        # 3. All agents connect to same persistent MCP server
-        analysis_agent = amg.load_agent(
-            base_agent="agentplug/analysis-agent",
-            mcp_server=server  # Connect to persistent server
-        )
-        
-        coding_agent = amg.load_agent(
-            base_agent="agentplug/coding-agent", 
-            mcp_server=server  # Connect to same persistent server
-        )
-        
-        # Each agent now has access to:
-        # 1. Built-in tools (from base_agent parameter):
-        #    - analysis_agent: file_reader, data_processor, web_scraper (from "agentplug/analysis-agent")
-        #    - coding_agent: code_generator, syntax_checker, git_tools (from "agentplug/coding-agent")
-        # 2. External tools (from tools=[...] parameter, shared via persistent MCP server):
-        #    - my_data_analyzer (user's custom analysis tool)
-        #    - my_file_processor (user's custom file processing tool)
-        
-        # 4. Main script coordinates agents with shared tools
-        result1 = analysis_agent.analyze_data("dataset.csv")
-        # Agent can use: built-in data_processor OR external my_data_analyzer OR both
-        
-        result2 = coding_agent.generate_code("create API endpoint")
-        # Agent can use: built-in code_generator OR external my_file_processor OR both
-        
-        # 5. Main script continues running and coordinating
-        print(f"Analysis: {result1}")
-        print(f"Code: {result2}")
+    # 2. Load agents with specific tool names (MCP server already running)
+    analysis_agent = amg.load_agent(
+        base_agent="agentplug/analysis-agent",
+        tools=["data_analyzer", "file_processor"]  # Tool names only
+    )
     
-    # MCP server automatically cleaned up when context exits
+    scraping_agent = amg.load_agent(
+        base_agent="agentplug/web-agent",
+        tools=["web_scraper"]  # Different tool set
+    )
+    
+    # 3. Use agents with their assigned tools
+    result1 = analysis_agent.analyze_data("dataset.csv")
+    result2 = scraping_agent.scrape_website("https://example.com")
+    
+    print(f"Analysis: {result1}")
+    print(f"Scraping: {result2}")
 
 if __name__ == "__main__":
-    main()  # Main script runs continuously with persistent MCP server
+    main()
 ```
-
-#### **Benefits of Persistent MCP Server:**
-- ✅ **Resource Efficiency** - Tools loaded once, shared by all agents
-- ✅ **Tool State Sharing** - Agents can share tool results/state
-- ✅ **Better Performance** - No duplicate tool loading
-- ✅ **Multi-Agent Coordination** - Perfect for complex workflows
 
 ## 🏗️ **Implementation Components**
 
-### **1. Real MCP Server Implementation**
-**Real MCP server** using official MCP Python SDK (FastMCP) with JSON-RPC 2.0 protocol for tool hosting.
+### **1. Global MCP Server Implementation**
+**Single MCP server** created automatically when first tool is registered using official MCP Python SDK (FastMCP) with JSON-RPC 2.0 protocol for tool hosting.
 
-### **2. Real MCP Client Implementation**
-**Real MCP client** using official MCP Python SDK (ClientSession) for agent communication with tool discovery and execution.
+### **2. Filtered MCP Client Implementation**
+**Filtered MCP client** using official MCP Python SDK (ClientSession) that only exposes allowed tools to specific agents.
 
-### **3. MCP Server Manager**
-**MCP Server Manager** that handles both **ephemeral** and **persistent** MCP servers using official SDK.
+### **3. Global Tool Registry with MCP Integration**
+**Enhanced tool registry** that automatically creates MCP server and registers tools when `@tool` decorator is used.
 
-### **4. Tool Registry with Real MCP Integration**
-Enhanced tool registry that works with **real MCP protocol** and official SDK.
+### **4. Tool Discovery and Metadata Management**
+**Tool discovery system** that extracts metadata from `@tool` decorated functions and manages tool schemas for MCP protocol.
 
-### **5. Agent Manager with Real MCP Support**
-Extended agent manager that creates **real MCP servers** and injects **real MCP clients**.
+### **5. Agent-Tools Tracker**
+**Centralized tracking system** that manages which tools are assigned to which agents, providing bidirectional lookup and usage statistics.
 
-### **6. Semantic Progress Tracker**
+### **6. Agent Manager with Tool Name Support**
+**Extended agent manager** that accepts tool names and creates filtered MCP clients for agent-specific tool access.
+
+### **7. Semantic Progress Tracker**
 Provides human-readable progress updates during agent execution with MCP protocol awareness.
 
-### **7. Enhanced Agent Wrapper**
+### **8. Enhanced Agent Wrapper**
 Integrates agents with **real MCP tool discovery** and progress tracking using official MCP SDK.
 
 ## 🔧 **Technical Implementation**
 
-### **Real MCP Server Implementation**
+### **Global MCP Server Implementation**
+- **Single Server Instance**: One MCP server created when first tool is registered
 - **Official MCP Python SDK**: Uses FastMCP from official MCP SDK
 - **JSON-RPC 2.0 Protocol**: Standard MCP protocol implementation via official SDK
 - **stdio Transport**: Primary transport for local tool communication via official SDK
 - **HTTP Transport**: Alternative transport for remote tool access via official SDK
 - **MCP Primitives**: Implements Tools, Resources, and Prompts via official SDK
-- **Tool Discovery**: Automatic tool registration and discovery via MCP protocol
+- **Automatic Tool Registration**: Tools added to server when `@tool` decorator is used
 - **Error Handling**: Comprehensive MCP error handling using official SDK
 
-### **Real MCP Client Implementation**
+### **Filtered MCP Client Implementation**
 - **Official MCP Python SDK**: Uses ClientSession from official MCP SDK
-- **Tool Discovery**: Discovers available tools via MCP protocol (list_tools)
+- **Tool Filtering**: Only exposes allowed tools to specific agents
+- **Tool Discovery**: Discovers filtered tools via MCP protocol (list_tools)
 - **Tool Execution**: Executes tools via MCP JSON-RPC calls (call_tool)
 - **Resource Access**: Reads resources via MCP protocol (read_resource)
 - **Prompt Usage**: Uses prompts via MCP protocol (get_prompt)
 - **Connection Management**: Manages MCP server connections via official SDK
 - **Error Recovery**: Handles MCP communication failures gracefully via official SDK
 
-### **MCP Server Manager Implementation**
-- **Ephemeral MCP Servers**: Creates temporary MCP servers for single-agent use cases
-- **Persistent MCP Servers**: Creates long-lived MCP servers for multi-agent coordination
-- **Server Lifecycle Management**: Handles server creation, connection, and cleanup
-- **Resource Optimization**: Prevents duplicate tool loading across multiple agents
+### **Global Tool Registry Implementation**
+- **Automatic MCP Server Creation**: Creates MCP server when first tool is registered
+- **Tool Metadata Management**: Stores tool metadata and function references
+- **MCP Integration**: Automatically adds tools to MCP server when registered
+- **Tool Discovery**: Provides tool discovery and metadata extraction
+- **Schema Generation**: Converts tool metadata to MCP-compatible schemas
 - **Official SDK Integration**: Uses FastMCP and ClientSession from official SDK
+
+### **Agent-Tools Tracker Implementation**
+- **Centralized Assignment Management**: Tracks which tools are assigned to which agents
+- **Bidirectional Lookup**: Agent → Tools and Tool → Agents mapping
+- **Assignment Validation**: Ensures tools exist before assignment
+- **Usage Statistics**: Tracks tool usage across agents
+- **Runtime Integration**: Provides assignment info during agent execution
+- **CLI Management**: Command-line interface for assignment management
+- **Persistence Support**: Maintains assignments across sessions
 
 ### **Tool Registry with Real MCP Integration**
 - **@tool Decorator**: Automatic tool registration with metadata
@@ -373,6 +451,7 @@ Integrates agents with **real MCP tool discovery** and progress tracking using o
 
 ### **Step 2: Real MCP Tool Management (Week 2-3)**
 - [x] Implement **real MCP tool discovery** and registration via official SDK
+- [ ] Create **agent-tools tracker** for assignment management
 - [ ] Create agent manager with **real MCP support**
 - [ ] Add **real MCP parameter validation** and error handling via official SDK
 - [ ] Implement **real MCP tool execution framework** via official SDK
@@ -405,26 +484,26 @@ Integrates agents with **real MCP tool discovery** and progress tracking using o
 
 ### **Simple Tool Definition**
 ```python
-# Users just write normal functions with @tool decorator - becomes REAL MCP tool
+# Users just write normal functions with @tool decorator - MCP server created automatically
 from agentmanager.core.tools import tool
 
 @tool(name="my_custom_tool", description="Custom tool description")
 def my_custom_tool(param1, param2):
     """Custom tool description"""
-    # Tool implementation - becomes REAL MCP tool via official SDK
+    # Tool implementation - automatically registered in global MCP server
     return result
 
-# Framework handles REAL MCP server creation automatically via official MCP Python SDK
+# MCP server created automatically when first @tool decorator is used
 ```
 
 ### **Agent Usage**
 ```python
-# Load agent with REAL MCP tools (framework creates MCP server via official SDK)
+# Load agent with tool names (MCP server already running)
 import agentmanager as amg
-agent = amg.load_agent("agentplug/my-agent", tools=[my_custom_tool])
+agent = amg.load_agent("agentplug/my-agent", tools=["my_custom_tool"])
 
-# Use agent - it automatically uses REAL MCP tools via MCP protocol (official SDK)
-result = agent.process_data("Process this data using available REAL MCP tools")
+# Use agent - it automatically uses MCP tools via MCP protocol
+result = agent.process_data("Process this data using available MCP tools")
 ```
 
 ### **Progress Monitoring**
@@ -465,6 +544,7 @@ Real-time progress updates showing exactly what the agent is accomplishing with 
 
 - [x] **Real MCP server** implementation works for 100% of user-defined tools via official SDK
 - [x] **Real MCP client** can discover and execute tools for all discovered functions via official SDK
+- [ ] **Agent-tools tracker** manages tool assignments for 100% of agents
 - [ ] Agents can discover and use **real MCP tools** in 95% of scenarios via official SDK
 - [ ] Progress tracking provides meaningful updates in 95% of scenarios with **real MCP protocol**
 - [ ] Backward compatibility maintained for all existing agents
@@ -475,10 +555,11 @@ Real-time progress updates showing exactly what the agent is accomplishing with 
 
 Phase 2.5 represents a significant enhancement to the Agent Hub platform, introducing native MCP tool integration and semantic progress tracking while maintaining the simplicity and reliability established in previous phases. 
 
-The new **real MCP architecture** provides:
-- **Maximum simplicity for users** - Just write functions with @tool decorator, framework handles **real MCP server creation** via official SDK
-- **Complete agent isolation** - No shared memory or process risks
+The new **global MCP architecture** provides:
+- **Maximum simplicity for users** - Just write functions with @tool decorator, framework automatically creates **global MCP server**
+- **Efficient resource usage** - Single MCP server serves all agents with filtered access
+- **Tool name-based access control** - Agents specify which tools they can use via simple string lists
 - **Real MCP protocol** - Standard MCP protocol for tool communication via **official MCP Python SDK**
-- **Seamless agent integration** - Agents use **real MCP tools** naturally with progress tracking via **official SDK**
+- **Seamless agent integration** - Agents use **MCP tools** naturally with progress tracking via **official SDK**
 
-**Key Takeaway**: Phase 2.5 successfully balances simplicity for users with sophisticated **real MCP functionality** for agents, creating a system where users can easily provide tools via @tool decorator and agents can autonomously use them via **real MCP protocol** (using official MCP Python SDK) to accomplish complex tasks with clear, human-readable progress updates.
+**Key Takeaway**: Phase 2.5 successfully balances simplicity for users with sophisticated **MCP functionality** for agents, creating a system where users can easily provide tools via @tool decorator (automatically creating a global MCP server) and agents can access specific tools via **tool names** using **real MCP protocol** (official MCP Python SDK) to accomplish complex tasks with clear, human-readable progress updates.

@@ -79,6 +79,7 @@ gantt
 - [ ] Implement `agenthub tools start/stop/status/list`
 - [ ] Add persistent service mode
 - [ ] Create auto-recovery mechanism
+- [ ] Implement agent-tools tracker system
 
 **Deliverables**:
 - CLI tool management commands
@@ -87,12 +88,14 @@ gantt
 - Tool registration interface
 - Tool assignment management
 - Tool registration coordination
+- **Agent-Tools Tracker** (`agentmanager/core/tools/agent_tools_tracker.py`)
 
 **Success Criteria**:
 - Tools are explicitly registered by users
 - Tool registration interface works correctly
 - Tool assignment management is reliable
 - Registration coordination is seamless
+- Agent-tools assignments are tracked and managed
 
 #### **Day 5-7: Core Architecture**
 - [ ] Design overall system architecture
@@ -119,17 +122,20 @@ gantt
 - [ ] Create `TaskPhaseManager` class
 - [ ] Add phase transition logic
 - [ ] Implement progress tracking
+- [ ] Integrate agent-tools tracker with task phases
 
 **Deliverables**:
 - `TaskPhase` enum with all phases
 - `TaskPhaseManager` implementation
 - Phase transition logic
 - Basic progress tracking
+- **Agent-Tools Tracker Integration** with task phases
 
 **Success Criteria**:
 - All task phases are defined
 - Phase transitions work correctly
 - Progress tracking is accurate
+- Agent-tools assignments are tracked per task phase
 
 #### **Day 3-4: Domain-Specific Trackers**
 - [ ] Implement `DomainTracker` base class
@@ -153,17 +159,20 @@ gantt
 - [ ] Add emoji and formatting support
 - [ ] Create message templates
 - [ ] Add progress bar generation
+- [ ] Include agent-tools tracker status in progress messages
 
 **Deliverables**:
 - Progress message generator
 - Emoji and formatting support
 - Message templates
 - Progress bar generation
+- **Agent-Tools Tracker Status** in progress messages
 
 **Success Criteria**:
 - Progress messages are human-readable
 - Emojis enhance readability
 - Templates provide consistency
+- Agent-tools assignments are visible in progress reports
 
 ### **Week 3: Enhanced Agent Wrapper and Runtime**
 **Dates**: July 14 - July 20, 2025
@@ -171,26 +180,51 @@ gantt
 
 #### **Day 1-2: Enhanced Agent Wrapper**
 - [ ] Extend existing `AgentWrapper` class
-- [ ] Add tool access capabilities
+- [ ] Add tool context injection capabilities
 - [ ] Implement progress tracking integration
 - [ ] Maintain backward compatibility
+- [ ] **Note**: Tool selection logic handled by individual agents
 
 **Deliverables**:
 - Enhanced `AgentWrapper` class
-- Tool access capabilities
+- **Tool context injection** capabilities
 - Progress tracking integration
 - Backward compatibility validation
 
 **Success Criteria**:
 - Existing agents work without changes
 - New features are opt-in
-- Tool access works seamlessly
+- **Tool context is properly injected** to agents
+- **Agents handle their own tool selection logic**
 
-#### **Day 3-4: Runtime Integration**
+#### **Day 3-4: Agent-Tools Tracker Implementation**
+- [ ] Implement `AgentToolAssignment` dataclass
+- [ ] Create `AgentToolsTracker` class
+- [ ] Add bidirectional lookup mappings
+- [ ] Implement usage statistics tracking
+- [ ] Add CLI management commands
+
+**Deliverables**:
+- **Agent-Tools Tracker** (`agentmanager/core/tools/agent_tools_tracker.py`)
+- `AgentToolAssignment` dataclass
+- `AgentToolsTracker` class with full functionality
+- Bidirectional lookup system (agent → tools, tool → agents)
+- Usage statistics and monitoring
+- CLI commands for tracker management
+
+**Success Criteria**:
+- Agent-tools assignments are tracked correctly
+- O(1) lookup performance for all operations
+- CLI commands work for all management operations
+- Usage statistics are accurate and up-to-date
+- Error handling prevents invalid assignments
+
+#### **Day 5-7: Runtime Integration**
 - [ ] Enhance existing `AgentRuntime` class
 - [ ] Add tool assignment and access
 - [ ] Implement progress coordination
 - [ ] Add enhanced process management
+- [ ] Integrate agent-tools tracker with runtime
 
 **Deliverables**:
 - Enhanced `AgentRuntime` class

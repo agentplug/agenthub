@@ -142,9 +142,11 @@ Shared utilities, types, and exceptions.
 ## 📋 **Design Documents**
 
 1. **[Tool Registry Design](01_tool_registry_design.md)** - Comprehensive tool management system
-2. **[Enhanced Agent Wrapper Design](02_enhanced_agent_wrapper_design.md)** - Tool integration and progress tracking
-3. **[Tool-Enabled Agent Design](03_tool_enabled_agent_design.md)** - Base classes for tool-using agents
+2. **[Tool-Enabled Agent Design](02_tool_enabled_agent_design.md)** - Base classes for tool-using agents
+3. **[Enhanced Agent Wrapper Design](03_enhanced_agent_wrapper_design.md)** - Tool integration and progress tracking
 4. **[Modular Architecture Design](04_modular_architecture_design.md)** - Modular core architecture and migration strategy
+5. **[Agent-Tools Tracker Module Design](05_agent_tools_tracker_module_design.md)** - Module structure and placement for agent-tools tracker
+6. **[Agent-Tools Tracker Design](06_agent_tools_tracker_design.md)** - Comprehensive agent-tools assignment tracking system
 
 ## 🎯 **Success Criteria**
 
