@@ -1,17 +1,17 @@
-# Enhanced Agent Wrapper Design
+# Real MCP Enhanced Agent Wrapper Design
 
 **Document Type**: Phase 2.5 Component Design
-**Component**: Enhanced Agent Wrapper
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Enhanced Agent Wrapper
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Design the enhanced agent wrapper with tool discovery and progress tracking
+**Purpose**: Design the enhanced agent wrapper with real MCP tool discovery and progress tracking using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Enhanced Agent Wrapper extends the existing `AgentWrapper` class to provide tool discovery capabilities and semantic progress tracking while maintaining full backward compatibility. This component serves as the bridge between agents and the new user endpoint tool system.
+The Real MCP Enhanced Agent Wrapper extends the existing `AgentWrapper` class to provide **real MCP tool discovery** capabilities for **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`) and semantic progress tracking while maintaining full backward compatibility. This component serves as the bridge between agents and the **real MCP tool system** using the **official MCP Python SDK**.
 
 ## 🏗️ **Architecture**
 

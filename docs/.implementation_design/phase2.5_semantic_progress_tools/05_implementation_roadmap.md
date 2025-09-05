@@ -1,17 +1,17 @@
-# Implementation Roadmap
+# Real MCP Implementation Roadmap
 
 **Document Type**: Phase 2.5 Implementation Plan
-**Component**: Implementation Roadmap and Timeline
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Implementation Roadmap and Timeline
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Comprehensive implementation plan for Phase 2.5 with detailed timeline and milestones
+**Purpose**: Comprehensive implementation plan for Phase 2.5 with real MCP integration using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-This document provides a detailed 6-week implementation roadmap for Phase 2.5: Semantic Progress and Tool Integration. The implementation follows an incremental approach, building upon the existing Phase 1 and Phase 2 foundations while maintaining backward compatibility and ensuring high quality.
+This document provides a detailed implementation roadmap for Phase 2.5: **Real MCP Tool Integration** using the **official MCP Python SDK** from [https://github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk). The implementation follows an incremental approach, building upon the existing Phase 1 and Phase 2 foundations while maintaining backward compatibility and ensuring high quality **real MCP protocol** integration.
 
 ## 🏗️ **Implementation Strategy**
 
@@ -20,9 +20,9 @@ gantt
     title Phase 2.5 Implementation Timeline
     dateFormat  YYYY-MM-DD
     section Week 1
-    Tool Decorator System     :a1, 2025-06-30, 7d
-    CLI Tool Management       :a2, 2025-06-30, 7d
-    Auto-Recovery System      :a3, 2025-06-30, 7d
+    Real MCP Foundation       :a1, 2025-06-30, 7d
+    Official SDK Integration  :a2, 2025-06-30, 7d
+    Real MCP Server/Client    :a3, 2025-06-30, 7d
     
     section Week 2
     Progress Tracking      :b1, 2025-07-07, 7d

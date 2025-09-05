@@ -1,17 +1,17 @@
-# Runtime Integration Design
+# Real MCP Runtime Integration Design
 
 **Document Type**: Phase 2.5 Component Design
-**Component**: Runtime Integration with Tool Context
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Runtime Integration with Tool Context
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Design the runtime integration system for tool context injection and enhanced execution
+**Purpose**: Design the runtime integration system for real MCP tool context injection and enhanced execution using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Runtime Integration system extends the existing Agent Runtime to support tool context injection, enhanced process management, and coordination with the semantic progress tracking system. This component ensures that tools are properly available to agents during execution while maintaining the existing runtime architecture.
+The Real MCP Runtime Integration system extends the existing Agent Runtime to support **real MCP tool context injection** for **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`), enhanced process management, and coordination with the semantic progress tracking system. This component ensures that **real MCP tools** are properly available to agents during execution via the **official MCP Python SDK** while maintaining the existing runtime architecture.
 
 ## 🏗️ **Architecture**
 

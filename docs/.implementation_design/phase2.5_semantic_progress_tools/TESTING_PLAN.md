@@ -1,7 +1,7 @@
-# Phase 2.5 Semantic Progress & Tool Integration - Step-by-Step Testing Plan
+# Phase 2.5 Real MCP Tool Integration - Step-by-Step Testing Plan
 
 ## Overview
-This document outlines the step-by-step implementation and testing plan for Phase 2.5. Each step includes end-to-end tests in the `tests/` folder that can be run independently to verify progress.
+This document outlines the step-by-step implementation and testing plan for Phase 2.5: **Real MCP Tool Integration** using the **official MCP Python SDK** from [https://github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk). Each step includes end-to-end tests in the `tests/` folder that can be run independently to verify progress with **real MCP protocol**.
 
 ## Directory Structure
 ```
@@ -19,19 +19,20 @@ tests/phase2.5_semantic_tools/
 
 ---
 
-## Step 1: Core Tool Registry Foundation
+## Step 1: Real MCP Foundation
 **Duration**: Week 1-2  
-**Focus**: Basic tool registration, discovery, and validation
+**Focus**: Real MCP server/client implementation using official MCP Python SDK
 
 ### Implementation Files
-- `agentmanager/core/tool_registry.py`
-- `agentmanager/core/tool_validator.py`
-- `agentmanager/core/tool_discovery.py`
+- `agentmanager/core/mcp/server.py` (Real MCP Server using FastMCP)
+- `agentmanager/core/mcp/client.py` (Real MCP Client using ClientSession)
+- `agentmanager/core/tools/` (Tool registry with real MCP integration)
 
 ### Test Files
-- `tests/phase2.5_semantic_tools/step1_tool_registry/`
-  - `test_tool_registry.py` - Basic registration and retrieval
-  - `test_tool_validation.py` - Security and signature validation
+- `tests/phase2.5_semantic_tools/step1_mcp_foundation/`
+  - `test_mcp_server.py` - Real MCP server using FastMCP
+  - `test_mcp_client.py` - Real MCP client using ClientSession
+  - `test_mcp_integration.py` - End-to-end real MCP protocol testing
   - `test_tool_discovery.py` - File-based tool discovery
   - `test_end_to_end.py` - Complete step verification
 

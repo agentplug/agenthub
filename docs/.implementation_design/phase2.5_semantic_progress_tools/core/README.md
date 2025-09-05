@@ -1,17 +1,17 @@
-# Phase 2.5 Core Components
+# Phase 2.5 Real MCP Core Components
 
-**Document Type**: Phase 2.5 Core Components Overview
-**Component**: Core Components
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Document Type**: Phase 2.5 Real MCP Core Components Overview
+**Component**: Real MCP Core Components
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Overview of core components for tool integration and semantic progress tracking
+**Purpose**: Overview of core components for real MCP tool integration using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Core Components module provides the fundamental building blocks for Phase 2.5: Semantic Progress and Tool Integration. These components extend the existing agent architecture to support external tool integration and human-readable progress tracking.
+The Real MCP Core Components module provides the fundamental building blocks for Phase 2.5: **Real MCP Tool Integration** using the **official MCP Python SDK** from [https://github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk). These components extend the existing agent architecture to support **real MCP tool integration** and human-readable progress tracking via **official MCP protocol**.
 
 ## 🏗️ **Modular Core Architecture**
 
@@ -26,8 +26,8 @@ graph TB
         end
         
         subgraph "tools/"
-            TR[Tool Registry]
-            TD[Tool Decorators]
+            TR[Real MCP Tool Registry]
+            TD[Real MCP Tool Decorators]
             TS[Tool Security]
             TV[Tool Validation]
             TH[Tool Service Host]

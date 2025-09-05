@@ -1,7 +1,7 @@
-# Phase 2.5 Semantic Progress & Tool Integration - Implementation Plan
+# Phase 2.5 Real MCP Tool Integration - Implementation Plan
 
 ## Overview
-This document provides the detailed step-by-step implementation plan for Phase 2.5, divided into 4 sequential steps. Each step is designed to be testable end-to-end before proceeding to the next.
+This document provides the detailed step-by-step implementation plan for Phase 2.5: **Real MCP Tool Integration** using the **official MCP Python SDK** from [https://github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk). The plan is divided into 4 sequential steps, each designed to be testable end-to-end before proceeding to the next.
 
 ## Core Principle: End-to-End Validation After Each Phase
 **Critical**: After each implementation phase, a comprehensive end-to-end test must be completed to validate the work and prevent redundant effort. This ensures that:
@@ -10,22 +10,23 @@ This document provides the detailed step-by-step implementation plan for Phase 2
 - No time is wasted on building upon broken foundations
 - Progress is measurable and validated
 
-## Architecture: CLI-Managed Tool Registry with Auto-Recovery
-**Design Decision**: The tool registry will be managed via CLI commands while supporting automatic tool registration through decorators. This provides:
+## Architecture: Real MCP Tool Registry with Official SDK Integration
+**Design Decision**: The tool registry will use **real MCP protocol** via the **official MCP Python SDK** while supporting automatic tool registration through decorators. This provides:
 
 ### Benefits:
-- **Production Ready**: Persistent service independent of agent sessions
-- **Developer Friendly**: Tools auto-register with `@tool` decorator
-- **Operations Control**: CLI management for production environments
-- **Fault Tolerant**: Auto-recovery when service restarts
-- **Scalable**: Multiple agents can use the same tool service
+- **Production Ready**: Persistent **real MCP service** independent of agent sessions using official SDK
+- **Developer Friendly**: Tools auto-register with `@tool` decorator and become **real MCP tools**
+- **Built-in + External Tools**: Supports **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`)
+- **Operations Control**: CLI management for production environments with **real MCP protocol**
+- **Fault Tolerant**: Auto-recovery when **real MCP service** restarts
+- **Scalable**: Multiple agents can use the same **real MCP tool service** via official SDK
 
 ### Architecture Flow:
 ```
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│    CLI      │───▶│ Tool Registry │◀───│   Agents    │
-│ (Management)│    │   Service     │    │ (Consumers) │
-└─────────────┘    └──────────────┘    └─────────────┘
+┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
+│    CLI      │───▶│ Real MCP Server  │◀───│   Agents    │
+│ (Management)│    │ (Official SDK)   │    │ (MCP Clients)│
+└─────────────┘    └──────────────────┘    └─────────────┘
        │                   │                   │
        │                   │                   │
    Start/Stop          Auto-Recovery        HTTP API

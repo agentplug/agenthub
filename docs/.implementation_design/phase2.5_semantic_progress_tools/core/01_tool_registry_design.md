@@ -1,270 +1,414 @@
-# User Endpoint Tool System Design
+# Real MCP Tool System Design
 
 **Document Type**: Phase 2.5 Component Design
-**Component**: User Endpoint Tool System
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Tool System
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Design the user endpoint tool system for automatic function discovery and API generation
+**Purpose**: Design the real MCP tool system for automatic function discovery and real MCP server generation using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The User Endpoint Tool System provides automatic discovery of user-defined functions and generates API endpoints that agents can use to access these tools. This system eliminates the need for users to manually register tools or create APIs - they just write functions and the framework handles everything else.
+The Real MCP Tool System provides automatic discovery of user-defined functions with @tool decorator and generates **real MCP servers** using the **official MCP Python SDK** that agents can use to access these tools via the **standard MCP protocol**. This system eliminates the need for users to manually register tools or create APIs - they just write functions with @tool decorator and the framework handles **real MCP server creation** automatically using the **official MCP Python SDK**.
 
 ## 🏗️ **Architecture**
 
 ```mermaid
 graph TB
     subgraph "User Environment"
-        UF[User Functions]
-        UE[User Endpoint]
-        UA[User APIs]
+        UF[User Functions with @tool decorator]
+        TR[Tool Registry]
+        AM[Agent Manager]
     end
 
     subgraph "Framework Layer"
-        FD[Function Discovery]
-        AG[Auto-API Generator]
+        MCP_S[Real MCP Server<br/>FastMCP + Official SDK]
+        MCP_C[Real MCP Client<br/>ClientSession + Official SDK]
         TM[Tool Manager]
-        TC[Tool Communication]
+        TC[Real MCP Tool Communication]
     end
 
     subgraph "Agent Layer"
-        AG1[Agent A]
-        AG2[Agent B]
-        AG3[Agent C]
+        AG1[Agent A with MCP Client]
+        AG2[Agent B with MCP Client]
+        AG3[Agent C with MCP Client]
     end
 
-    subgraph "Communication"
-        API[HTTP/GRPC APIs]
-        IPC[Inter-Process Communication]
+    subgraph "Official MCP Protocol Layer"
+        JSONRPC[JSON-RPC 2.0 Protocol]
+        STDIO[stdio Transport]
+        HTTP[HTTP Transport]
+        MCP_PRIMITIVES[Tools + Resources + Prompts]
     end
 
-    UF --> FD
-    FD --> AG
-    AG --> UE
-    UE --> UA
-    UA --> API
-    TM --> API
-    API --> AG1
-    API --> AG2
-    API --> AG3
+    UF --> TR
+    TR --> MCP_S
+    MCP_S --> JSONRPC
+    MCP_S --> MCP_PRIMITIVES
+    JSONRPC --> MCP_C
+    MCP_C --> AG1
+    MCP_C --> AG2
+    MCP_C --> AG3
+    AM --> MCP_S
+    TM --> MCP_S
     TC --> TM
 ```
 
 ## 🔧 **Core Components**
 
-### **1. Function Discovery System**
-Automatically scans user directories and discovers available functions.
+### **1. MCP Tool Discovery System**
+Automatically discovers user functions with @tool decorator and extracts MCP metadata.
 
 ```python
-class FunctionDiscovery:
-    """Automatically discovers user functions and extracts metadata."""
+class MCPToolDiscovery:
+    """Automatically discovers user functions with @tool decorator and extracts MCP metadata."""
     
-    def __init__(self, user_modules_path: str = "./user_tools"):
-        self.user_modules_path = user_modules_path
-        self.discovered_functions = {}
+    def __init__(self):
+        self.discovered_tools = {}
+        self.tool_registry = get_global_registry()
     
-    def discover_functions(self):
-        """Scan user_tools directory and discover all functions."""
-        for file_path in Path(self.user_modules_path).glob("*.py"):
-            if file_path.name.startswith("_"):
-                continue  # Skip private files
-            
-            module_name = file_path.stem
-            module = self._load_module(file_path)
-            
-            # Find all functions in module
-            for name, obj in inspect.getmembers(module):
-                if inspect.isfunction(obj) and not name.startswith("_"):
-                    function_info = self._analyze_function(obj)
-                    self.discovered_functions[name] = function_info
+    def discover_tools(self, tool_functions: List[callable]) -> List[MCPTool]:
+        """Discover tools from decorated functions and create MCP tools."""
+        mcp_tools = []
+        
+        for tool_func in tool_functions:
+            if hasattr(tool_func, '__tool_metadata__'):
+                metadata = tool_func.__tool_metadata__
+                mcp_tool = self._create_mcp_tool(metadata)
+                mcp_tools.append(mcp_tool)
+            else:
+                # Auto-register undecorated functions
+                decorated_func = self._auto_register_function(tool_func)
+                metadata = decorated_func.__tool_metadata__
+                mcp_tool = self._create_mcp_tool(metadata)
+                mcp_tools.append(mcp_tool)
+        
+        return mcp_tools
+    
+    def _create_mcp_tool(self, metadata: ToolMetadata) -> MCPTool:
+        """Create MCP tool from tool metadata."""
+        return MCPTool(
+            name=metadata.name,
+            description=metadata.description,
+            function=metadata.function,
+            parameters=metadata.parameters
+        )
+    
+    def _auto_register_function(self, func: callable) -> callable:
+        """Auto-register function with @tool decorator."""
+        from agentmanager.core.tools import tool
+        return tool()(func)
     
     def _analyze_function(self, func: callable) -> dict:
-        """Analyze function and extract metadata."""
+        """Analyze function and extract MCP-compatible metadata."""
         signature = inspect.signature(func)
         
-        # Extract parameter information
+        # Extract parameter information for MCP schema
         parameters = {}
         for param_name, param in signature.parameters.items():
             if param_name == "self":
                 continue
                 
             param_info = {
-                "type": str(param.annotation) if param.annotation != inspect.Parameter.empty else "any",
+                "type": self._map_python_type_to_mcp(param.annotation),
                 "required": param.default == inspect.Parameter.empty,
-                "default": param.default if param.default != inspect.Parameter.empty else None
+                "default": param.default if param.default != inspect.Parameter.empty else None,
+                "description": f"Parameter {param_name}"
             }
             parameters[param_name] = param_info
         
         return {
             "function": func,
             "name": func.__name__,
-            "docstring": func.__doc__ or "",
+            "description": func.__doc__ or "",
             "parameters": parameters,
             "module": func.__module__,
             "file": inspect.getfile(func)
         }
+    
+    def _map_python_type_to_mcp(self, python_type) -> str:
+        """Map Python types to MCP schema types."""
+        type_mapping = {
+            str: "string",
+            int: "integer",
+            float: "number",
+            bool: "boolean",
+            list: "array",
+            dict: "object"
+        }
+        return type_mapping.get(python_type, "string")
 ```
 
-### **2. Auto-API Generator**
-Automatically generates RESTful API endpoints for discovered functions.
+### **2. Real MCP Server Generator**
+Automatically generates **real MCP servers** for **both built-in tools AND external tools** using the **official MCP Python SDK**.
 
 ```python
-class AutoAPIGenerator:
-    """Automatically generates API endpoints for discovered functions."""
+from mcp.server.fastmcp import FastMCP
+from mcp.server.stdio import stdio_server
+from mcp.types import Tool, TextContent
+
+class RealMCPServerGenerator:
+    """Automatically generates REAL MCP servers for built-in + external tools using official SDK."""
     
-    def __init__(self, discovered_functions: dict):
-        self.functions = discovered_functions
-        self.app = Flask(__name__)
-        self._generate_endpoints()
+    def __init__(self, builtin_tools: List[MCPTool], external_tools: List[MCPTool]):
+        self.builtin_tools = {tool.name: tool for tool in builtin_tools}
+        self.external_tools = {tool.name: tool for tool in external_tools}
+        self.all_tools = {**self.builtin_tools, **self.external_tools}  # Combined tool set
+        self.app = FastMCP("AgentHub Combined Tool Server")
+        self._register_all_tools()
     
-    def _generate_endpoints(self):
-        """Generate API endpoints for all discovered functions."""
+    def _register_all_tools(self):
+        """Register ALL tools (built-in + external) with REAL MCP server using official SDK."""
+        # Register built-in tools
+        for tool_name, tool in self.builtin_tools.items():
+            @self.app.tool()
+            async def builtin_tool_handler(name: str = tool_name, **kwargs) -> list[TextContent]:
+                """Built-in tool handler using REAL MCP protocol via official SDK."""
+                try:
+                    result = tool.function(**kwargs)
+                    return [TextContent(type="text", text=str(result))]
+                except Exception as e:
+                    return [TextContent(type="text", text=f"Built-in tool error: {str(e)}")]
         
-        @self.app.route('/tools', methods=['GET'])
-        def list_tools():
-            """List all available tools."""
-            tools_info = []
-            for name, func_info in self.functions.items():
-                tools_info.append({
-                    "name": name,
-                    "description": func_info["docstring"],
-                    "parameters": func_info["parameters"],
-                    "module": func_info["module"]
-                })
-            return jsonify({"tools": tools_info})
+        # Register external tools
+        for tool_name, tool in self.external_tools.items():
+            @self.app.tool()
+            async def external_tool_handler(name: str = tool_name, **kwargs) -> list[TextContent]:
+                """External tool handler using REAL MCP protocol via official SDK."""
+                try:
+                    result = tool.function(**kwargs)
+                    return [TextContent(type="text", text=str(result))]
+                except Exception as e:
+                    return [TextContent(type="text", text=f"External tool error: {str(e)}")]
+    
+    async def start_server(self, transport: str = "stdio"):
+        """Start REAL MCP server with ALL tools using official SDK."""
+        if transport == "stdio":
+            # Use official MCP SDK stdio server
+            async with stdio_server() as (read_stream, write_stream):
+                await self.app.run(read_stream, write_stream)
+        elif transport == "http":
+            # Use official MCP SDK HTTP server
+            self.app.run(transport="streamable-http", mount_path="/mcp")
+        else:
+            raise ValueError(f"Unsupported transport: {transport}")
+    
+    def get_available_tools(self) -> dict:
+        """Get all available tools (built-in + external)."""
+        return {
+            "builtin_tools": list(self.builtin_tools.keys()),
+            "external_tools": list(self.external_tools.keys()),
+            "all_tools": list(self.all_tools.keys())
+        }
+    
+    async def _handle_request(self, request: dict) -> dict:
+        """Handle MCP requests."""
+        method = request.get("method")
+        params = request.get("params", {})
+        request_id = request.get("id")
         
-        @self.app.route('/tools/<tool_name>/execute', methods=['POST'])
-        def execute_tool(tool_name):
-            """Execute a specific tool."""
-            if tool_name not in self.functions:
-                return jsonify({"success": False, "error": f"Tool {tool_name} not found"}), 404
+        if method == "tools/list":
+            return await self._handle_tools_list(request_id)
+        elif method == "tools/call":
+            return await self._handle_tools_call(request_id, params)
+        else:
+            raise ValueError(f"Unknown method: {method}")
+    
+    async def _handle_tools_list(self, request_id: any) -> dict:
+        """Handle tools/list request."""
+        tools = []
+        for tool_name, tool in self.mcp_tools.items():
+            tools.append({
+                "name": tool.name,
+                "description": tool.description,
+                "inputSchema": self._generate_mcp_schema(tool.parameters)
+            })
+        
+        return {
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "result": {"tools": tools}
+        }
+    
+    async def _handle_tools_call(self, request_id: any, params: dict) -> dict:
+        """Handle tools/call request."""
+        tool_name = params.get("name")
+        arguments = params.get("arguments", {})
+        
+        if tool_name not in self.mcp_tools:
+            raise ValueError(f"Tool '{tool_name}' not found")
+        
+        tool = self.mcp_tools[tool_name]
+        
+        # Execute tool function
+        if asyncio.iscoroutinefunction(tool.function):
+            result = await tool.function(**arguments)
+        else:
+            result = tool.function(**arguments)
+        
+        return {
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "result": {
+                "content": [{"type": "text", "text": str(result)}]
+            }
+        }
+    
+    def _generate_mcp_schema(self, parameters: dict) -> dict:
+        """Generate MCP schema for tool parameters."""
+        properties = {}
+        required = []
+        
+        for param_name, param_info in parameters.items():
+            properties[param_name] = {
+                "type": param_info.get("type", "string"),
+                "description": param_info.get("description", "")
+            }
             
-            func_info = self.functions[tool_name]
-            data = request.json
-            
-            try:
-                # Validate parameters
-                validated_params = self._validate_parameters(func_info, data)
-                
-                # Execute function
-                result = func_info["function"](**validated_params)
-                
-                return jsonify({
-                    "success": True,
-                    "result": result,
-                    "tool_name": tool_name
-                })
-                
-            except Exception as e:
-                return jsonify({
-                    "success": False,
-                    "error": str(e),
-                    "tool_name": tool_name
-                }), 500
-    
-    def _validate_parameters(self, func_info: dict, data: dict) -> dict:
-        """Validate and prepare parameters for function execution."""
-        validated = {}
+            if param_info.get("required", True):
+                required.append(param_name)
         
-        for param_name, param_info in func_info["parameters"].items():
-            if param_name in data:
-                validated[param_name] = data[param_name]
-            elif param_info["required"]:
-                raise ValueError(f"Required parameter '{param_name}' not provided")
-            elif param_info["default"] is not None:
-                validated[param_name] = param_info["default"]
-        
-        return validated
-    
-    def start_server(self, host: str = "0.0.0.0", port: int = 8000):
-        """Start the auto-generated API server."""
-        self.app.run(host=host, port=port)
+        return {
+            "type": "object",
+            "properties": properties,
+            "required": required
+        }
 ```
 
-### **3. Tool Manager**
-Coordinates tool discovery and execution between agents and user endpoints.
+### **3. MCP Server Manager**
+Manages both **ephemeral** and **persistent** MCP servers using the **official MCP Python SDK**.
 
 ```python
-class ToolManager:
-    """Manages tool discovery and execution coordination."""
+from mcp import ClientSession
+from mcp.client.stdio import stdio_client
+from mcp.types import StdioServerParameters
+from contextlib import contextmanager
+
+class MCPServerManager:
+    """Manages both ephemeral and persistent MCP servers using official SDK."""
     
     def __init__(self):
-        self.user_endpoints = {}
+        self.ephemeral_servers = {}
+        self.persistent_servers = {}
+        self.mcp_clients = {}
+    
+    def create_ephemeral_server(self, builtin_tools: List[Tool], external_tools: List[Tool]) -> RealMCPServerGenerator:
+        """Create ephemeral MCP server for single agent with built-in + external tools."""
+        server = RealMCPServerGenerator(builtin_tools, external_tools)
+        server_id = f"ephemeral_{id(server)}"
+        self.ephemeral_servers[server_id] = server
+        return server
+    
+    def create_persistent_server(self, name: str, builtin_tools: List[Tool], external_tools: List[Tool]) -> RealMCPServerGenerator:
+        """Create persistent MCP server for multiple agents with built-in + external tools."""
+        server = RealMCPServerGenerator(builtin_tools, external_tools)
+        self.persistent_servers[name] = server
+        return server
+    
+    @contextmanager
+    def mcp_server(self, name: str, external_tools: List[Tool]):
+        """Context manager for persistent MCP server with external tools (built-in tools added per agent)."""
+        # External tools are provided here, built-in tools added when agents connect
+        server = self.create_persistent_server(name, [], external_tools)
+        try:
+            yield server
+        finally:
+            self.cleanup_persistent_server(name)
+    
+    def cleanup_persistent_server(self, name: str):
+        """Clean up persistent MCP server."""
+        if name in self.persistent_servers:
+            del self.persistent_servers[name]
+    
+    def get_persistent_server(self, name: str) -> Optional[RealMCPServerGenerator]:
+        """Get existing persistent server by name."""
+        return self.persistent_servers.get(name)
+```
+
+### **4. Real MCP Tool Manager**
+Coordinates **real MCP tool discovery** and execution between agents and **real MCP servers** using the **official MCP Python SDK**.
+
+```python
+class RealMCPToolManager:
+    """Manages REAL MCP tool discovery and execution coordination using official SDK."""
+    
+    def __init__(self, server_manager: MCPServerManager):
+        self.server_manager = server_manager
+        self.mcp_clients = {}
         self.tool_cache = {}
     
-    def register_user_endpoint(self, name: str, endpoint_url: str, auth_token: str = None):
-        """Register a user endpoint."""
-        self.user_endpoints[name] = {
-            "url": endpoint_url,
-            "auth_token": auth_token,
-            "tools": {}
-        }
+    def register_mcp_server(self, name: str, mcp_server: RealMCPServerGenerator, mcp_client: ClientSession):
+        """Register a REAL MCP server and client using official SDK."""
+        self.mcp_clients[name] = mcp_client
         
-        # Discover available tools
-        self._discover_tools(name)
+        # Discover available tools via REAL MCP protocol
+        self._discover_mcp_tools(name)
     
-    def _discover_tools(self, endpoint_name: str):
-        """Discover tools available at user endpoint."""
-        endpoint = self.user_endpoints[endpoint_name]
+    def _discover_mcp_tools(self, server_name: str):
+        """Discover tools available via MCP server."""
+        mcp_client = self.mcp_clients[server_name]
         
         try:
-            response = requests.get(f"{endpoint['url']}/tools")
-            if response.status_code == 200:
-                tools = response.json()["tools"]
-                endpoint["tools"] = {tool["name"]: tool for tool in tools}
-                
-                # Cache tool information
-                for tool_name, tool_info in endpoint["tools"].items():
-                    cache_key = f"{endpoint_name}:{tool_name}"
-                    self.tool_cache[cache_key] = {
-                        "endpoint": endpoint_name,
-                        "info": tool_info
-                    }
+            # Use MCP client to discover tools
+            tools = asyncio.run(mcp_client.discover_tools())
+            
+            # Cache tool information
+            for tool_info in tools:
+                tool_name = tool_info["name"]
+                cache_key = f"{server_name}:{tool_name}"
+                self.tool_cache[cache_key] = {
+                    "server": server_name,
+                    "info": tool_info,
+                    "client": mcp_client
+                }
                     
         except Exception as e:
-            logger.warning(f"Failed to discover tools from {endpoint_name}: {e}")
+            logger.warning(f"Failed to discover MCP tools from {server_name}: {e}")
     
-    def execute_tool(self, tool_name: str, args: dict):
-        """Execute tool through appropriate user endpoint."""
-        # Find which endpoint has this tool
+    async def execute_tool(self, tool_name: str, args: dict):
+        """Execute tool through appropriate MCP server."""
+        # Find which MCP server has this tool
         for cache_key, tool_data in self.tool_cache.items():
             if tool_data["info"]["name"] == tool_name:
-                endpoint_name = tool_data["endpoint"]
-                endpoint = self.user_endpoints[endpoint_name]
+                mcp_client = tool_data["client"]
                 
-                # Execute tool via user endpoint
-                return self._execute_via_endpoint(endpoint, tool_name, args)
+                # Execute tool via MCP client
+                return await mcp_client.call_tool(tool_name, args)
         
-        raise ToolNotFoundError(f"Tool {tool_name} not found in any endpoint")
+        raise ToolNotFoundError(f"Tool {tool_name} not found in any MCP server")
     
-    def _execute_via_endpoint(self, endpoint: dict, tool_name: str, args: dict):
-        """Execute tool via specific user endpoint."""
-        url = f"{endpoint['url']}/tools/{tool_name}/execute"
+    def get_available_tools(self) -> List[dict]:
+        """Get list of all available MCP tools."""
+        tools = []
+        for cache_key, tool_data in self.tool_cache.items():
+            tools.append({
+                "name": tool_data["info"]["name"],
+                "description": tool_data["info"]["description"],
+                "server": tool_data["server"]
+            })
+        return tools
+    
+    def get_tool_schema(self, tool_name: str) -> dict:
+        """Get MCP schema for a specific tool."""
+        for cache_key, tool_data in self.tool_cache.items():
+            if tool_data["info"]["name"] == tool_name:
+                return tool_data["info"].get("inputSchema", {})
         
-        headers = {}
-        if endpoint["auth_token"]:
-            headers["Authorization"] = f"Bearer {endpoint['auth_token']}"
-        
-        response = requests.post(url, json=args, headers=headers)
-        
-        if response.status_code == 200:
-            result = response.json()
-            if result["success"]:
-                return result["result"]
-            else:
-                raise ToolExecutionError(result["error"])
-        else:
-            raise ToolExecutionError(f"HTTP {response.status_code}: {response.text}")
+        raise ToolNotFoundError(f"Tool {tool_name} not found")
 ```
 
 ## 🚀 **User Experience**
 
-### **Simple Function Definition**
+### **External Tools Population via amg.load_agent(tools=[])**
 ```python
-# user_tools/my_tools.py
+# user_script.py
+from agentmanager.core.tools import tool
+import agentmanager as amg
+
+# 1. User defines external tools with @tool decorator
+@tool(name="analyze_customer_data", description="Analyze customer data and return insights")
 def analyze_customer_data(customer_data):
     """Analyze customer data and return insights"""
     # User just writes normal business logic
@@ -274,6 +418,7 @@ def analyze_customer_data(customer_data):
         "insights": "custom analysis logic here"
     }
 
+@tool(name="process_sales_data", description="Process sales data with different analysis types")
 def process_sales_data(sales_data, analysis_type="basic"):
     """Process sales data with different analysis types"""
     if analysis_type == "basic":
@@ -283,34 +428,45 @@ def process_sales_data(sales_data, analysis_type="basic"):
     else:
         raise ValueError(f"Unknown analysis type: {analysis_type}")
 
-# That's it! User doesn't need to do anything else
+# 2. External tools populated through amg.load_agent(tools=[])
+agent = amg.load_agent(
+    base_agent="agentplug/analyzer",  # Built-in tools from base_agent
+    tools=[analyze_customer_data, process_sales_data]  # External tools populated here
+)
+
+# 3. Framework creates combined MCP server with:
+#    - Built-in tools (from base_agent)
+#    - External tools (from tools=[] parameter)
 ```
 
-### **Automatic API Generation**
+### **Automatic MCP Server Generation**
 ```bash
 # Framework automatically:
-# 1. Scans user_tools/ directory
-# 2. Finds all functions
-# 3. Analyzes parameters and docstrings
-# 4. Generates API endpoints
-# 5. Starts server
+# 1. Discovers @tool decorated functions
+# 2. Extracts MCP metadata
+# 3. Creates MCP server with JSON-RPC 2.0
+# 4. Starts MCP server in subprocess
+# 5. Creates MCP client for agent communication
 
-python -m agenthub start
+python user_script.py
 # Output:
-# 🔍 Discovering user functions...
-# ✅ Discovered 2 user functions
-# 🚀 Generating API endpoints...
-# 🌐 Starting API server...
-# 🎉 Framework ready! Agents can now use discovered tools
+# 🔍 Discovering MCP tools...
+# ✅ Discovered 2 MCP tools
+# 🚀 Creating MCP server...
+# 📡 Starting MCP server with stdio transport
+# 🔗 Creating MCP client for agent communication
+# 🎉 Framework ready! Agents can now use MCP tools
 ```
 
-### **Agent Usage**
+### **Agent Usage with MCP**
 ```python
-# Agent can discover and use tools
-agent = load_agent("agentplug/analyzer")
-agent.tool_manager = framework.get_tool_manager()
+# Agent can discover and use MCP tools
+agent = amg.load_agent(
+    base_agent="agentplug/analyzer", 
+    tools=[analyze_customer_data, process_sales_data]
+)
 
-# Agent calls tools by name - framework handles everything
+# Agent calls tools by name via MCP - framework handles everything
 result = agent.analyze_customers(
     customer_data="customers.csv",
     use_tools=["analyze_customer_data", "process_sales_data"]
@@ -319,76 +475,76 @@ result = agent.analyze_customers(
 
 ## 🔒 **Security and Validation**
 
-### **Parameter Validation**
-- **Type Checking**: Automatic parameter type validation
+### **MCP Parameter Validation**
+- **Type Checking**: Automatic MCP parameter type validation
 - **Required Parameters**: Ensures all required parameters are provided
 - **Default Values**: Handles optional parameters with defaults
-- **Input Sanitization**: Prevents malicious input
+- **Input Sanitization**: Prevents malicious input via MCP protocol
 
-### **Error Handling**
-- **Comprehensive Error Reporting**: Detailed error messages for debugging
-- **Graceful Degradation**: System continues working even if some tools fail
-- **Logging and Monitoring**: All tool executions are logged
+### **MCP Error Handling**
+- **Comprehensive MCP Error Reporting**: Detailed MCP error messages for debugging
+- **Graceful Degradation**: System continues working even if some MCP tools fail
+- **MCP Logging and Monitoring**: All MCP tool executions are logged
 
-### **Access Control**
-- **Authentication**: Optional token-based authentication
-- **Authorization**: Control which agents can access which tools
-- **Rate Limiting**: Prevent abuse of tool endpoints
+### **MCP Access Control**
+- **MCP Authentication**: Optional MCP-based authentication
+- **MCP Authorization**: Control which agents can access which MCP tools
+- **MCP Rate Limiting**: Prevent abuse of MCP tool endpoints
 
 ## 📊 **Performance and Scalability**
 
-### **Tool Discovery**
-- **Efficient Scanning**: Only scans when needed
-- **Caching**: Tool metadata is cached for performance
-- **Incremental Updates**: Only updates changed functions
+### **MCP Tool Discovery**
+- **Efficient MCP Scanning**: Only scans when needed
+- **MCP Caching**: MCP tool metadata is cached for performance
+- **Incremental MCP Updates**: Only updates changed MCP functions
 
-### **API Generation**
-- **Optimized Endpoints**: Generated APIs are optimized for performance
-- **Connection Pooling**: Efficient HTTP connection management
-- **Response Caching**: Cache frequently requested results
+### **MCP Server Generation**
+- **Optimized MCP Servers**: Generated MCP servers are optimized for performance
+- **MCP Connection Pooling**: Efficient MCP connection management
+- **MCP Response Caching**: Cache frequently requested MCP results
 
-### **Scalability**
-- **Multiple Endpoints**: Support for multiple user endpoints
-- **Load Balancing**: Distribute load across endpoints
-- **Horizontal Scaling**: Add more endpoints as needed
+### **MCP Scalability**
+- **Multiple MCP Servers**: Support for multiple MCP servers
+- **MCP Load Balancing**: Distribute load across MCP servers
+- **Horizontal MCP Scaling**: Add more MCP servers as needed
 
 ## 🎯 **Benefits**
 
 ### **1. User Simplicity**
-- **Just write functions** - No API setup, no server code
+- **Just write functions with @tool decorator** - No MCP setup, no server code
 - **Normal Python code** - Use any libraries, any logic
-- **Automatic discovery** - Framework finds everything
+- **Automatic MCP discovery** - Framework finds everything
 
 ### **2. Framework Intelligence**
-- **Auto-API generation** - No manual endpoint creation
-- **Parameter validation** - Automatic type checking
-- **Error handling** - Framework manages failures
-- **Tool discovery** - Agents know what's available
+- **Auto-MCP server generation** - No manual MCP server creation
+- **MCP parameter validation** - Automatic MCP type checking
+- **MCP error handling** - Framework manages MCP failures
+- **MCP tool discovery** - Agents know what's available via MCP
 
 ### **3. Agent Integration**
-- **Seamless tool access** - Agents use tools by name
-- **Automatic routing** - Framework handles communication
-- **Error recovery** - Framework manages tool failures
+- **Seamless MCP tool access** - Agents use MCP tools by name
+- **Automatic MCP routing** - Framework handles MCP communication
+- **MCP error recovery** - Framework manages MCP tool failures
 
 ## 🔮 **Future Enhancements**
 
-### **1. Advanced Function Analysis**
-- **Dependency Detection**: Automatically detect required libraries
-- **Type Inference**: Better type information extraction
-- **Security Analysis**: Identify potentially unsafe operations
+### **1. Advanced MCP Function Analysis**
+- **MCP Dependency Detection**: Automatically detect required libraries for MCP tools
+- **MCP Type Inference**: Better MCP type information extraction
+- **MCP Security Analysis**: Identify potentially unsafe MCP operations
 
-### **2. Enhanced API Generation**
-- **GraphQL Support**: Generate GraphQL schemas
-- **OpenAPI Documentation**: Automatic API documentation
-- **Custom Endpoints**: User-defined endpoint customization
+### **2. Enhanced MCP Server Generation**
+- **MCP GraphQL Support**: Generate MCP GraphQL schemas
+- **MCP OpenAPI Documentation**: Automatic MCP API documentation
+- **Custom MCP Endpoints**: User-defined MCP endpoint customization
 
-### **3. Tool Composition**
-- **Workflow Creation**: Combine multiple tools into workflows
-- **Tool Chaining**: Automatic tool execution chains
-- **Result Aggregation**: Combine results from multiple tools
+### **3. MCP Tool Composition**
+- **MCP Workflow Creation**: Combine multiple MCP tools into workflows
+- **MCP Tool Chaining**: Automatic MCP tool execution chains
+- **MCP Result Aggregation**: Combine results from multiple MCP tools
 
 ## 📝 **Conclusion**
 
-The User Endpoint Tool System provides a clean, simple, and powerful way for users to make their functions available to agents. By eliminating the need for manual tool registration and API creation, users can focus on writing business logic while the framework handles all the complexity of tool discovery, API generation, and agent coordination.
+The **Real MCP Tool System** provides a clean, simple, and powerful way for users to make their functions available to agents via the **standard MCP protocol** using the **official MCP Python SDK**. By eliminating the need for manual tool registration and MCP server creation, users can focus on writing business logic while the framework handles all the complexity of **real MCP tool discovery**, **real MCP server generation**, and agent coordination via the **official MCP Python SDK**.
 
-**Key Takeaway**: Users just write functions, framework handles everything else, agents get seamless access to powerful tools.
+**Key Takeaway**: Users just write functions with @tool decorator, framework handles **real MCP server creation** automatically via **official MCP Python SDK**, agents get seamless access to powerful **real MCP tools** via **native MCP protocol** using the **official MCP Python SDK**.

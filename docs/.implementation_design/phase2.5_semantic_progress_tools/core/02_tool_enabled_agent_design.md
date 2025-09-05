@@ -1,41 +1,41 @@
-# Tool-Enabled Agent Base Classes Design
+# Real MCP Tool-Enabled Agent Base Classes Design
 
 **Document Type**: Phase 2.5 Component Design
-**Component**: Tool-Enabled Agent Base Classes
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Tool-Enabled Agent Base Classes
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Design base classes for agents that can intelligently use tools with semantic progress reporting
+**Purpose**: Design base classes for agents that can intelligently use real MCP tools with semantic progress reporting using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Tool-Enabled Agent Base Classes provide the foundation for agents that can autonomously select and use external tools while providing human-readable progress updates. These base classes extend the existing agent architecture to support intelligent tool integration and semantic progress tracking.
+The Real MCP Tool-Enabled Agent Base Classes provide the foundation for agents that can autonomously select and use **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`) while providing human-readable progress updates. These base classes extend the existing agent architecture to support intelligent **real MCP tool integration** using the **official MCP Python SDK** and semantic progress tracking.
 
 ## 🏗️ **Architecture**
 
 ```mermaid
 graph TB
-    subgraph "Tool-Enabled Agent System"
-        TEA[Tool-Enabled Agent Base]
-        TR[Tool Registry]
+    subgraph "Real MCP Tool-Enabled Agent System"
+        TEA[Real MCP Tool-Enabled Agent Base]
+        MCP_C[Real MCP Client<br/>ClientSession + Official SDK]
         SPT[Semantic Progress Tracker]
-        TSM[Tool Selection Manager]
+        TSM[Real MCP Tool Selection Manager]
     end
 
     subgraph "Agent Implementation"
-        SA[Scientific Agent]
-        CA[Coding Agent]
-        AA[Analysis Agent]
-        GA[General Agent]
+        SA[Scientific Agent with MCP]
+        CA[Coding Agent with MCP]
+        AA[Analysis Agent with MCP]
+        GA[General Agent with MCP]
     end
 
-    subgraph "Tool Integration"
-        TI[Tool Interface]
-        TE[Tool Executor]
-        TV[Tool Validator]
-        TC[Tool Context]
+    subgraph "MCP Tool Integration"
+        MCP_TI[MCP Tool Interface]
+        MCP_TE[MCP Tool Executor]
+        MCP_TV[MCP Tool Validator]
+        MCP_TC[MCP Tool Context]
     end
 
     subgraph "Progress Tracking"
@@ -45,17 +45,24 @@ graph TB
         PS[Progress Summary]
     end
 
-    TEA --> TR
+    subgraph "MCP Protocol"
+        MCP_S[MCP Server]
+        JSONRPC[JSON-RPC 2.0]
+    end
+
+    TEA --> MCP_C
     TEA --> SPT
     TEA --> TSM
     TEA --> SA
     TEA --> CA
     TEA --> AA
     TEA --> GA
-    TEA --> TI
-    TI --> TE
-    TE --> TV
-    TE --> TC
+    TEA --> MCP_TI
+    MCP_TI --> MCP_TE
+    MCP_TE --> MCP_TV
+    MCP_TE --> MCP_TC
+    MCP_C --> MCP_S
+    MCP_S --> JSONRPC
     SPT --> TP
     SPT --> PM
     SPT --> AL
@@ -64,75 +71,75 @@ graph TB
 
 ## 🔧 **Core Components**
 
-### **1. Tool-Enabled Agent Base Class**
-Main base class that provides tool integration and progress tracking capabilities.
+### **1. MCP Tool-Enabled Agent Base Class**
+Main base class that provides MCP tool integration and progress tracking capabilities.
 
 ```python
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from agentmanager.utils.semantic_progress import SemanticProgressTracker
-from agentmanager.core.tool_registry import ToolRegistry
+from agentmanager.core.mcp.client import MCPClient
 
-class ToolEnabledAgent(ABC):
-    """Base class for agents with tool integration and progress tracking."""
+class MCPToolEnabledAgent(ABC):
+    """Base class for agents with MCP tool integration and progress tracking."""
     
-    def __init__(self, agent_type: str = "general", tools: List[dict] = None):
+    def __init__(self, agent_type: str = "general", mcp_client: MCPClient = None):
         """
-        Initialize tool-enabled agent.
+        Initialize MCP tool-enabled agent.
         
         Args:
             agent_type: Type of agent for domain-specific tracking
-            tools: Optional list of external tools
+            mcp_client: Optional MCP client for tool communication
         """
         self.agent_type = agent_type
         self.progress_tracker = SemanticProgressTracker(agent_type)
-        self.tool_registry = ToolRegistry()
-        
-        # Register external tools if provided
-        if tools:
-            self.register_tools(tools)
+        self.mcp_client = mcp_client
         
         # Load built-in tools
         self._load_builtin_tools()
     
-    def register_tools(self, tools: List[dict]):
-        """Register external tools with this agent."""
-        for tool_info in tools:
-            self.tool_registry.register_tool(tool_info)
+    async def get_available_mcp_tools(self) -> List[dict]:
+        """Get list of available REAL MCP tools via official SDK."""
+        if self.mcp_client:
+            # Use official MCP SDK to discover tools
+            tools_response = await self.mcp_client.list_tools()
+            return [{"name": tool.name, "description": tool.description} for tool in tools_response.tools]
+        return []
     
-    def get_available_tools(self) -> List[dict]:
-        """Get list of available tools."""
-        return self.tool_registry.list_tools()
+    async def get_mcp_tool(self, tool_name: str) -> Optional[dict]:
+        """Get specific REAL MCP tool by name via official SDK."""
+        available_tools = await self.get_available_mcp_tools()
+        
+        for tool in available_tools:
+            if tool.get("name") == tool_name:
+                return tool
+        
+        return None
     
-    def select_tool(self, purpose: str, context: dict = None) -> Optional[dict]:
-        """Select appropriate tool for given purpose."""
-        return self.tool_registry.select_tool(purpose, context)
-    
-    def execute_tool(self, tool_name: str, **kwargs) -> Any:
-        """Execute a tool with given parameters."""
-        tool_info = self.tool_registry.get_tool(tool_name)
-        if not tool_info:
-            raise ValueError(f"Tool '{tool_name}' not found")
+    async def execute_mcp_tool(self, tool_name: str, **kwargs) -> Any:
+        """Execute a REAL MCP tool with given parameters via official SDK."""
+        if not self.mcp_client:
+            raise ValueError("No REAL MCP client available")
         
         try:
-            # Log tool execution
-            self.progress_tracker.log_activity(f"Using {tool_name} for {purpose}")
+            # Log REAL MCP tool execution
+            self.progress_tracker.log_activity(f"Using REAL MCP tool {tool_name} via official SDK")
             
-            # Execute tool
-            result = tool_info["tool"](**kwargs)
+            # Execute REAL MCP tool via official SDK
+            result = await self.mcp_client.call_tool(tool_name, kwargs)
             
             # Log successful execution
-            self.progress_tracker.log_activity(f"Tool {tool_name} executed successfully")
+            self.progress_tracker.log_activity(f"REAL MCP tool {tool_name} executed successfully via official SDK")
             
             return result
         except Exception as e:
-            # Log tool execution error
-            self.progress_tracker.log_activity(f"Tool {tool_name} failed: {str(e)}", "error")
+            # Log REAL MCP tool execution error
+            self.progress_tracker.log_activity(f"REAL MCP tool {tool_name} failed: {str(e)}", "error")
             raise
     
     @abstractmethod
-    def process_task(self, task_description: str, **kwargs) -> Any:
-        """Process a task using available tools and progress tracking."""
+    async def process_task(self, task_description: str, **kwargs) -> Any:
+        """Process a task using available MCP tools and progress tracking."""
         pass
     
     def _load_builtin_tools(self):

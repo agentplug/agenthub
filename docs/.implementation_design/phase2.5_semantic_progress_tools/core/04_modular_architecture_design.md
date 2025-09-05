@@ -1,17 +1,17 @@
-# Modular Core Architecture Design
+# Real MCP Modular Core Architecture Design
 
 **Document Type**: Phase 2.5 Core Architecture Design
-**Component**: Modular Core Architecture
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Modular Core Architecture
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Design modular architecture for core components to improve scalability and maintainability
+**Purpose**: Design modular architecture for real MCP core components to improve scalability and maintainability using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The current core module structure is flat and not modular enough for scalability. This document outlines a comprehensive modular architecture that organizes components by responsibility and provides clear separation of concerns.
+The current core module structure is flat and not modular enough for scalability. This document outlines a comprehensive modular architecture that organizes **real MCP components** by responsibility and provides clear separation of concerns for **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`) using the **official MCP Python SDK**.
 
 ## 🏗️ **Current vs. Proposed Architecture**
 

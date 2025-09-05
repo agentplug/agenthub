@@ -1,28 +1,28 @@
-# Phase 2.5 Runtime Integration
+# Phase 2.5 Real MCP Runtime Integration
 
-**Document Type**: Phase 2.5 Runtime Integration Overview
-**Component**: Runtime Integration
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Document Type**: Phase 2.5 Real MCP Runtime Integration Overview
+**Component**: Real MCP Runtime Integration
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Overview of runtime integration components for tool context injection and enhanced execution
+**Purpose**: Overview of runtime integration components for real MCP tool context injection and enhanced execution using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Runtime Integration module extends the existing Agent Runtime system to support tool context injection, enhanced process management, and coordination with the semantic progress tracking system. This ensures tools are properly available to agents during execution while maintaining the existing runtime architecture.
+The Real MCP Runtime Integration module extends the existing Agent Runtime system to support **real MCP tool context injection**, enhanced process management, and coordination with the semantic progress tracking system using the **official MCP Python SDK** from [https://github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk). This ensures **real MCP tools** are properly available to agents during execution via **official MCP protocol** while maintaining the existing runtime architecture.
 
 ## 🏗️ **Runtime Architecture**
 
 ```mermaid
 graph TB
-    subgraph "Enhanced Runtime System"
-        EAR[Enhanced Agent Runtime]
-        EPM[Enhanced Process Manager]
-        EEM[Enhanced Environment Manager]
-        TCI[Tool Context Injector]
-        SPC[Semantic Progress Coordinator]
+    subgraph "Enhanced Real MCP Runtime System"
+        EAR[Enhanced Agent Runtime with Real MCP]
+        EPM[Enhanced Process Manager with Real MCP]
+        EEM[Enhanced Environment Manager with Real MCP]
+        TCI[Real MCP Tool Context Injector]
+        SPC[Semantic Progress Coordinator with Real MCP]
     end
 
     subgraph "Existing Runtime Components"

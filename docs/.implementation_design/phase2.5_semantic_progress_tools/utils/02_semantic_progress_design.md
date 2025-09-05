@@ -1,17 +1,17 @@
-# Semantic Progress Tracking System Design
+# Real MCP Semantic Progress Tracking System Design
 
 **Document Type**: Phase 2.5 Component Design
-**Component**: Semantic Progress Tracking System
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Semantic Progress Tracking System
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Design the semantic progress tracking system for human-readable progress updates
+**Purpose**: Design the semantic progress tracking system for human-readable progress updates with real MCP tool integration using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Semantic Progress Tracking System provides human-readable, meaningful progress updates that show what agents are accomplishing rather than technical system details. This system transforms cryptic progress indicators into clear, actionable information that users can understand and act upon.
+The Real MCP Semantic Progress Tracking System provides human-readable, meaningful progress updates that show what agents are accomplishing with **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`) rather than technical system details. This system transforms cryptic progress indicators into clear, actionable information that users can understand and act upon, with full awareness of **real MCP tool usage** via the **official MCP Python SDK**.
 
 ## 🏗️ **Architecture**
 

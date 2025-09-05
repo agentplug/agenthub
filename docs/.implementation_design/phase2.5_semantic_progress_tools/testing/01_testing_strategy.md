@@ -1,17 +1,17 @@
-# Testing Strategy
+# Real MCP Testing Strategy
 
 **Document Type**: Phase 2.5 Component Design
-**Component**: Testing Strategy
-**Phase**: 2.5 - Semantic Progress and Tool Integration
+**Component**: Real MCP Testing Strategy
+**Phase**: 2.5 - Real MCP Tool Integration
 **Author**: William
 **Date Created**: 2025-06-28
 **Last Updated**: 2025-06-28
 **Status**: Active
-**Purpose**: Comprehensive testing approach covering all aspects of the Phase 2.5 implementation
+**Purpose**: Comprehensive testing approach covering all aspects of the Phase 2.5 real MCP implementation using official MCP Python SDK
 
 ## 🎯 **Overview**
 
-The Testing Strategy module provides comprehensive testing approaches for Phase 2.5: Semantic Progress and Tool Integration. This ensures high quality, reliability, and backward compatibility while validating new tool integration and progress tracking capabilities.
+The Real MCP Testing Strategy module provides comprehensive testing approaches for Phase 2.5: **Real MCP Tool Integration** using the **official MCP Python SDK**. This ensures high quality, reliability, and backward compatibility while validating new **real MCP tool integration** for **both built-in tools AND external tools** (populated through `amg.load_agent(tools=[])`) and progress tracking capabilities via the **official MCP Python SDK**.
 
 ## 🏗️ **Testing Architecture**
 
