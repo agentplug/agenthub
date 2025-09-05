@@ -9,6 +9,11 @@ from .decorators import (
 )
 from .registry import ToolRegistry, get_global_registry
 from .discovery import ToolDiscovery
+from .agent_tools_tracker import (
+    AgentToolsTracker, 
+    AgentToolAssignment,
+    get_agent_tools_tracker
+)
 
 __all__ = [
     "tool",
@@ -16,6 +21,9 @@ __all__ = [
     "ToolMetadata",
     "ToolRegistry",
     "ToolDiscovery",
+    "AgentToolsTracker",      # NEW
+    "AgentToolAssignment",    # NEW
+    "get_agent_tools_tracker", # NEW
     "get_global_registry",
     "get_tool_metadata",
     "is_tool",
