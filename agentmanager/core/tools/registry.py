@@ -64,9 +64,7 @@ class ToolRegistry:
         def tool_wrapper(**kwargs):
             return func(**kwargs)
         
-        # Verify the tool was registered with FastMCP
-        if name not in self.mcp_server._tool_manager._tools:
-            print(f"Warning: Tool {name} not found in FastMCP server after registration")
+        # Tool is now registered with FastMCP
         
         return func
     
