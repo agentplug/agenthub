@@ -4,23 +4,103 @@ Core Tools Module - Phase 2.5
 Provides tool registry, decorator, and FastMCP integration for tool injection.
 """
 
-# Mock FastMCP implementation for development
-class MockFastMCP:
-    """Mock FastMCP implementation for development and testing."""
+# Real MCP implementation using core MCP library
+from mcp.server import Server
+from mcp.types import Tool, TextContent
+from typing import Any, Dict, List
+import asyncio
+import json
+
+class MCPToolServer:
+    """Real MCP server implementation for tool registration."""
     
     def __init__(self, name: str):
         self.name = name
+        self.server = Server(name)
         self._tools = []
+        self._tool_functions = {}
+        
+        # Register the list_tools handler
+        @self.server.list_tools()
+        async def list_tools() -> List[Tool]:
+            return [
+                Tool(
+                    name=tool_name,
+                    description=func.__doc__ or f"Tool: {tool_name}",
+                    inputSchema={
+                        "type": "object",
+                        "properties": self._get_tool_schema(tool_name),
+                        "required": self._get_required_params(tool_name)
+                    }
+                )
+                for tool_name, func in self._tool_functions.items()
+            ]
+        
+        # Register the call_tool handler
+        @self.server.call_tool()
+        async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
+            if name not in self._tool_functions:
+                raise ValueError(f"Tool '{name}' not found")
+            
+            try:
+                result = self._tool_functions[name](**arguments)
+                if isinstance(result, dict):
+                    result_text = json.dumps(result, indent=2)
+                else:
+                    result_text = str(result)
+                
+                return [TextContent(type="text", text=result_text)]
+            except Exception as e:
+                error_text = json.dumps({"error": str(e)}, indent=2)
+                return [TextContent(type="text", text=error_text)]
+    
+    def _get_tool_schema(self, tool_name: str) -> Dict[str, Any]:
+        """Get JSON schema for tool parameters."""
+        func = self._tool_functions[tool_name]
+        import inspect
+        sig = inspect.signature(func)
+        properties = {}
+        
+        for param_name, param in sig.parameters.items():
+            param_type = param.annotation if param.annotation != inspect.Parameter.empty else str
+            properties[param_name] = {
+                "type": "string" if param_type == str else "number" if param_type in [int, float] else "boolean" if param_type == bool else "string"
+            }
+        
+        return properties
+    
+    def _get_required_params(self, tool_name: str) -> List[str]:
+        """Get list of required parameters for tool."""
+        func = self._tool_functions[tool_name]
+        import inspect
+        sig = inspect.signature(func)
+        required = []
+        
+        for param_name, param in sig.parameters.items():
+            if param.default == inspect.Parameter.empty:
+                required.append(param_name)
+        
+        return required
     
     def tool(self):
-        """Mock tool decorator."""
+        """Real tool decorator that registers with MCP server."""
         def decorator(func):
+            # Store the function for MCP registration
+            self._tool_functions[func.__name__] = func
             self._tools.append(func)
             return func
         return decorator
+    
+    async def start(self):
+        """Start the MCP server."""
+        await self.server.start()
+    
+    async def stop(self):
+        """Stop the MCP server."""
+        await self.server.stop()
 
-# Use mock implementation for now
-FastMCP = MockFastMCP
+# Use real MCP implementation
+FastMCP = MCPToolServer
 from typing import Dict, List, Callable, Any, Optional
 import threading
 import requests
@@ -102,7 +182,7 @@ class ToolRegistry:
             examples=self._generate_examples(name, func)
         )
         
-        # Register with FastMCP
+        # Register with MCP server
         @self.mcp_server.tool()
         def tool_wrapper(**kwargs):
             return func(**kwargs)
