@@ -43,7 +43,7 @@ def calculator(operation: str, a: float, b: float) -> dict:
         "result": operations[operation]
     }
 
-def main():
+async def main():
     """Demonstrate Step 1 capabilities."""
     print("🚀 Step 1 Demo: Core Tools Foundation")
     print("=" * 50)
@@ -56,19 +56,27 @@ def main():
     print(f"MCP server: {mcp_server.name}")
     print(f"Tools in MCP server: {len(mcp_server._tool_manager._tools)}")
     
-    # Test custom tools
-    print("\n📝 Testing Custom Tools:")
+    # Test custom tools through MCP server
+    print("\n📝 Testing Custom Tools via MCP:")
     
-    # Test greeting tool
-    greeting_result = greeting_tool("Alice", "es")
-    print(f"Greeting: {greeting_result}")
+    # Test greeting tool through MCP
+    greeting_result = await mcp_server.call_tool("greeting_tool", {"name": "Alice", "language": "es"})
+    print(f"Greeting via MCP: {greeting_result[0].text}")
     
-    # Test calculator tool
-    calc_result = calculator("multiply", 5, 3)
-    print(f"Calculator: {calc_result}")
+    # Test calculator tool through MCP
+    calc_result = await mcp_server.call_tool("calculator", {"operation": "multiply", "a": 5, "b": 3})
+    print(f"Calculator via MCP: {calc_result[0].text}")
+    
+    # Show that direct function calls still work (for comparison)
+    print("\n📝 Direct Function Calls (for comparison):")
+    direct_greeting = greeting_tool("Bob", "fr")
+    direct_calc = calculator("add", 10, 5)
+    print(f"Direct greeting: {direct_greeting}")
+    print(f"Direct calculator: {direct_calc}")
     
     print("\n✅ Step 1 Demo Complete!")
     print("Tools are registered and ready for agent integration.")
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())

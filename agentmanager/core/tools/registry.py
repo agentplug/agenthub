@@ -60,9 +60,8 @@ class ToolRegistry:
         self.tool_metadata[name] = metadata
         
         # Register with FastMCP server
-        @self.mcp_server.tool(name=name, description=description)
-        def tool_wrapper(**kwargs):
-            return func(**kwargs)
+        # Register the original function directly with FastMCP
+        self.mcp_server.tool(name=name, description=description)(func)
         
         # Tool is now registered with FastMCP
         
