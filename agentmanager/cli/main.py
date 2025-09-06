@@ -3,7 +3,6 @@
 import click
 
 from .commands.agent import agent
-from .commands.tools import tools
 from .commands.core.list import core_list
 from .commands.core.info import core_info
 from .commands.core.exec import core_exec
@@ -20,7 +19,6 @@ def cli():
 
 # Add command groups
 cli.add_command(agent)
-cli.add_command(tools)
 
 # Add core commands directly (without core prefix for better UX)
 cli.add_command(core_list.commands["list"])
