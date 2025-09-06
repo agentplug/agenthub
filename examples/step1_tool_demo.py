@@ -4,10 +4,56 @@
 This demo shows the basic tool registration and MCP integration capabilities.
 """
 
+import asyncio
+import requests
 import agentmanager as amg
 from agentmanager.core.tools import tool, get_available_tools, get_mcp_server
 
 # Define custom tools
+@tool(name="web_search", description="Search the web for information using DuckDuckGo")
+def web_search(query: str, max_results: int = 5) -> dict:
+    """Real web search using DuckDuckGo API"""
+    try:
+        response = requests.get(
+            "https://api.duckduckgo.com/",
+            params={
+                "q": query,
+                "format": "json",
+                "no_html": "1",
+                "skip_disambig": "1"
+            },
+            timeout=10
+        )
+        data = response.json()
+        
+        results = []
+        if data.get("Abstract"):
+            results.append({
+                "title": data.get("Heading", "No title"),
+                "snippet": data.get("Abstract", ""),
+                "url": data.get("AbstractURL", "")
+            })
+        
+        for topic in data.get("RelatedTopics", [])[:max_results-1]:
+            if isinstance(topic, dict) and "Text" in topic:
+                results.append({
+                    "title": topic.get("FirstURL", "").split("/")[-1].replace("_", " "),
+                    "snippet": topic.get("Text", ""),
+                    "url": topic.get("FirstURL", "")
+                })
+        
+        return {
+            "query": query,
+            "results": results[:max_results],
+            "total_found": len(results)
+        }
+    except Exception as e:
+        return {
+            "query": query,
+            "error": str(e),
+            "results": []
+        }
+
 @tool(name="greeting_tool", description="Generate personalized greetings")
 def greeting_tool(name: str, language: str = "en") -> dict:
     """Generate a greeting in different languages."""
@@ -58,6 +104,14 @@ async def main():
     
     # Test custom tools through MCP server
     print("\n📝 Testing Custom Tools via MCP:")
+    
+    # Test web search tool through MCP (real API call)
+    print("Testing web search tool...")
+    search_result = await mcp_server.call_tool("web_search", {"query": "Python programming", "max_results": 3})
+    search_data = eval(search_result[0].text)  # Parse JSON string
+    print(f"Web search via MCP: Found {search_data.get('total_found', 0)} results")
+    if search_data.get('results'):
+        print(f"  First result: {search_data['results'][0].get('title', 'No title')}")
     
     # Test greeting tool through MCP
     greeting_result = await mcp_server.call_tool("greeting_tool", {"name": "Alice", "language": "es"})
