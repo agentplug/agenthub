@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""
-Tool-related exceptions for Phase 2.5.
-"""
+"""Tool-related exceptions for Phase 2.5."""
 
 class ToolError(Exception):
     """Base exception for tool-related errors."""
@@ -29,8 +26,4 @@ class ToolAccessDeniedError(ToolError):
 
 class ToolNotFoundError(ToolError):
     """Tool not found."""
-    pass
-
-class ToolTimeoutError(ToolError):
-    """Tool execution timed out."""
     pass
