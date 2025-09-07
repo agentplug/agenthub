@@ -13,6 +13,9 @@ from agentmanager.core.agents import AgentLoader, AgentWrapper
 from agentmanager.runtime.agent_runtime import AgentRuntime
 from agentmanager.storage.local_storage import LocalStorage
 
+# Import SDK functionality
+from agentmanager.sdk import load_agent as enhanced_load_agent
+
 
 def load_agent(agent_name, setup_environment=True):
     """
@@ -71,4 +74,5 @@ __all__ = [
     "runtime",
     "core",
     "load_agent",
+    "enhanced_load_agent",
 ]
