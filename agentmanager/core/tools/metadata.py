@@ -9,7 +9,7 @@ class ToolMetadata:
     """Metadata for a registered tool."""
     name: str
     description: str
-    function: Callable
+    function: Optional[Callable] = None
     namespace: str = "custom"
     parameters: Optional[Dict[str, Any]] = None
     return_type: Optional[str] = None
@@ -17,11 +17,15 @@ class ToolMetadata:
     
     def __post_init__(self):
         """Initialize derived fields after object creation."""
-        if self.parameters is None:
+        if self.parameters is None and self.function is not None:
             self.parameters = self._extract_parameters()
+        elif self.parameters is None:
+            self.parameters = {}
         
-        if self.return_type is None:
+        if self.return_type is None and self.function is not None:
             self.return_type = self._extract_return_type()
+        elif self.return_type is None:
+            self.return_type = "Any"
         
         if self.examples is None:
             self.examples = self._generate_examples()
@@ -59,6 +63,9 @@ class ToolMetadata:
     
     def _generate_examples(self) -> List[str]:
         """Generate usage examples for the tool."""
+        if not self.parameters:
+            return [f"{self.name}()"]
+        
         param_names = list(self.parameters.keys())
         
         if not param_names:
