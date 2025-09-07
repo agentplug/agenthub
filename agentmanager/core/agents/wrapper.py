@@ -406,3 +406,153 @@ class AgentWrapper:
     def get_assigned_tools(self) -> List[str]:
         """Get list of tools assigned to this agent."""
         return self.assigned_tools.copy()
+    
+    def get_tool_instructions(self) -> str:
+        """
+        Generate tool usage instructions for the agent.
+        
+        Returns:
+            Formatted string with tool usage instructions
+        """
+        if not self.assigned_tools or not self.tool_registry:
+            return ""
+        
+        instructions = []
+        instructions.append("🔧 AVAILABLE TOOLS:")
+        instructions.append("You have access to the following tools. Use them when appropriate:")
+        instructions.append("")
+        
+        for tool_name in self.assigned_tools:
+            metadata = self.get_tool_metadata(tool_name)
+            if metadata:
+                instructions.append(f"• {tool_name}: {metadata['description']}")
+                
+                # Add usage example if available
+                if tool_name == "add":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
+                elif tool_name == "multiply":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
+                elif tool_name == "subtract":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
+                elif tool_name == "divide":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
+                elif tool_name == "greet":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', 'name')")
+                elif tool_name == "get_weather":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', 'location')")
+                elif tool_name == "process_text":
+                    instructions.append(f"  Usage: execute_tool('{tool_name}', 'text', 'operation')")
+                
+                instructions.append("")
+        
+        instructions.append("💡 TOOL USAGE GUIDELINES:")
+        instructions.append("- Use tools when they can help solve the user's request")
+        instructions.append("- Call execute_tool(tool_name, *args) to use a tool")
+        instructions.append("- Tools return results that you can use in your response")
+        instructions.append("- If a tool fails, explain the error to the user")
+        instructions.append("")
+        
+        return "\n".join(instructions)
+    
+    def inject_tool_context(self) -> None:
+        """
+        Inject tool context into the agent's environment.
+        This method should be called to make tools available to the agent.
+        """
+        if not self.assigned_tools or not self.tool_registry:
+            return
+        
+        # Add tool execution method to agent's context
+        if hasattr(self, 'execute_tool'):
+            # Make execute_tool available in the agent's namespace
+            if hasattr(self, 'agent_info') and 'manifest' in self.agent_info:
+                # This would be where we inject the tool context
+                # For now, we'll just store the instructions
+                self._tool_instructions = self.get_tool_instructions()
+                print(f"🔧 Injected tool context for agent '{self.agent_id}'")
+                print(f"📋 Available tools: {self.assigned_tools}")
+    
+    def get_tool_context(self) -> Dict[str, Any]:
+        """
+        Get tool context information for the agent.
+        
+        Returns:
+            Dictionary with tool context information
+        """
+        if not self.assigned_tools or not self.tool_registry:
+            return {}
+        
+        return {
+            "assigned_tools": self.assigned_tools,
+            "tool_instructions": self.get_tool_instructions(),
+            "execute_tool_method": self.execute_tool,
+            "can_access_tool_method": self.can_access_tool,
+            "get_tool_metadata_method": self.get_tool_metadata
+        }
+    
+    def get_tool_context_json(self) -> Dict[str, Any]:
+        """
+        Get tool context in JSON format compatible with agent execution.
+        
+        Returns:
+            Dictionary with tool context in the format expected by agents
+        """
+        if not self.assigned_tools or not self.tool_registry:
+            return {}
+        
+        # Get tool descriptions and usage examples
+        tool_descriptions = {}
+        tool_usage_examples = {}
+        
+        for tool_name in self.assigned_tools:
+            metadata = self.get_tool_metadata(tool_name)
+            if metadata:
+                tool_descriptions[tool_name] = metadata['description']
+                
+                # Generate usage examples based on tool type
+                if tool_name == "add":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
+                elif tool_name == "multiply":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
+                elif tool_name == "subtract":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
+                elif tool_name == "divide":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
+                elif tool_name == "greet":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"name\": \"string\"}})"]
+                elif tool_name == "get_weather":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"location\": \"string\"}})"]
+                elif tool_name == "process_text":
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"text\": \"string\", \"operation\": \"string\"}})"]
+                else:
+                    # Generic example for unknown tools
+                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"param\": \"value\"}})"]
+        
+        return {
+            "available_tools": self.assigned_tools,
+            "tool_descriptions": tool_descriptions,
+            "tool_usage_examples": tool_usage_examples
+        }
+    
+    def generate_agent_call_json(self, method: str, parameters: Dict[str, Any]) -> str:
+        """
+        Generate a complete agent call JSON with tool context.
+        
+        Args:
+            method: Agent method to call
+            parameters: Parameters for the method
+            
+        Returns:
+            JSON string ready for agent execution
+        """
+        import json
+        
+        tool_context = self.get_tool_context_json()
+        
+        call_data = {
+            "method": method,
+            "parameters": parameters,
+            "tool_context": tool_context
+        }
+        
+        return json.dumps(call_data, indent=2)
