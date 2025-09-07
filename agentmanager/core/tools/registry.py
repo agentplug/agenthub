@@ -5,6 +5,7 @@ from typing import Dict, List, Callable, Any, Optional
 from mcp.server import FastMCP
 from .exceptions import ToolNameConflictError, ToolValidationError, ToolNotFoundError
 from .metadata import ToolMetadata
+from multiprocessing import Process
 
 
 class ToolRegistry:
@@ -118,3 +119,8 @@ def get_tool_function(name: str) -> Optional[Callable]:
 def get_tool_registry() -> ToolRegistry:
     """Get the global tool registry instance."""
     return _registry
+
+def run_resources():
+    """Run the MCP server"""
+    mcp_server = get_mcp_server()
+    mcp_server.run(transport="sse")
