@@ -1,6 +1,11 @@
-"""Agent wrapper for unified agent interface."""
+"""Agent wrapper for unified agent interface with tool capabilities."""
 
 import logging
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import List, Optional, Dict, Any, Callable
 
 from .validator import InterfaceValidator
 
@@ -16,15 +21,21 @@ class AgentExecutionError(Exception):
 class AgentWrapper:
     """Unified wrapper for agent operations."""
 
-    def __init__(self, agent_info: dict, runtime=None):
+    def __init__(self, agent_info: dict, tool_registry=None, agent_id: str = None, assigned_tools: List[str] = None, runtime=None):
         """
-        Initialize the agent wrapper.
+        Initialize the agent wrapper with tool capabilities.
 
         Args:
             agent_info: Agent information from AgentLoader
+            tool_registry: Optional tool registry for tool capabilities
+            agent_id: Unique identifier for this agent
+            assigned_tools: List of tools assigned to this agent
             runtime: Optional runtime for executing methods
         """
         self.agent_info = agent_info
+        self.tool_registry = tool_registry
+        self.agent_id = agent_id or f"{agent_info.get('namespace', 'unknown')}/{agent_info.get('name', 'unknown')}"
+        self.assigned_tools = assigned_tools or []
         self.runtime = runtime
         self.interface_validator = InterfaceValidator()
 
@@ -328,4 +339,70 @@ class AgentWrapper:
             "methods": self.methods,
             "dependencies": self.dependencies,
             "has_runtime": self.runtime is not None,
+            "assigned_tools": self.assigned_tools,
         }
+    
+    def execute_tool(self, tool_name: str, *args, **kwargs) -> Any:
+        """
+        Execute a tool with access control.
+        
+        Args:
+            tool_name: Name of the tool to execute
+            *args: Positional arguments for the tool
+            **kwargs: Keyword arguments for the tool
+            
+        Returns:
+            Tool execution result
+            
+        Raises:
+            PermissionError: If agent doesn't have access to the tool
+            ValueError: If tool doesn't exist
+        """
+        if not self.tool_registry:
+            raise ValueError("No tool registry available")
+        
+        # Check if agent has access to this tool
+        from ..tools import can_agent_access_tool, get_tool_function
+        if not can_agent_access_tool(self.agent_id, tool_name):
+            raise PermissionError(f"Agent '{self.agent_id}' does not have access to tool '{tool_name}'")
+        
+        # Get tool function
+        tool_func = get_tool_function(tool_name)
+        if not tool_func:
+            raise ValueError(f"Tool '{tool_name}' not found")
+        
+        # Execute tool
+        try:
+            result = tool_func(*args, **kwargs)
+            print(f"🔧 Agent '{self.agent_id}' executed tool '{tool_name}': {result}")
+            return result
+        except Exception as e:
+            print(f"❌ Agent '{self.agent_id}' error executing tool '{tool_name}': {e}")
+            raise
+    
+    def can_access_tool(self, tool_name: str) -> bool:
+        """Check if agent can access a specific tool."""
+        if not self.tool_registry:
+            return False
+        
+        from ..tools import can_agent_access_tool
+        return can_agent_access_tool(self.agent_id, tool_name)
+    
+    def get_tool_metadata(self, tool_name: str) -> Optional[Dict[str, Any]]:
+        """Get metadata for a tool (only if agent has access)."""
+        if not self.can_access_tool(tool_name) or not self.tool_registry:
+            return None
+        
+        from ..tools import get_tool_metadata
+        metadata = get_tool_metadata(tool_name)
+        if metadata:
+            return {
+                "name": metadata.name,
+                "description": metadata.description,
+                "namespace": metadata.namespace
+            }
+        return None
+    
+    def get_assigned_tools(self) -> List[str]:
+        """Get list of tools assigned to this agent."""
+        return self.assigned_tools.copy()
