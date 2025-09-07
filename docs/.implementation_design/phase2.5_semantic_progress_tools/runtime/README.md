@@ -4,7 +4,7 @@
 
 ## 🎯 **Module Overview**
 
-The runtime module handles the injection of tool metadata and capabilities into agent contexts, enabling agents to discover and use assigned tools. It provides the bridge between the tool registry and agent execution.
+The runtime module handles the injection of tool metadata and capabilities into agent contexts, enabling agents to discover and use assigned tools. It provides the bridge between the tool registry and agent execution. **The key insight is that agents' AI automatically decides when to use tools in any method - users never call tools manually.**
 
 ## 🔧 **Key Features**
 
@@ -33,11 +33,13 @@ The runtime module handles the injection of tool metadata and capabilities into 
 
 ## 🔄 **Implementation Flow**
 
-1. **Tool Assignment**: Tools are assigned to agents
-2. **Metadata Injection**: Tool metadata is injected into agent context
-3. **Tool Discovery**: Agent discovers available tools
-4. **Tool Execution**: Agent requests tool execution
-5. **Result Processing**: Tool results are processed and returned
+1. **Tool Assignment**: Tools are assigned to agents via `amg.load_agent(tools=[...])`
+2. **Metadata Injection**: Tool metadata is injected into agent's AI context
+3. **Agent Method Call**: User calls any agent method (`run`, `analyze`, `process`, etc.)
+4. **AI Decision**: Agent's AI automatically decides when to use tools
+5. **Tool Execution**: Agent's AI calls tools via MCP when needed
+6. **Result Processing**: Tool results are processed by agent's AI
+7. **Response Generation**: Agent returns enhanced response with tool insights
 
 ## 📁 **Documentation Files**
 

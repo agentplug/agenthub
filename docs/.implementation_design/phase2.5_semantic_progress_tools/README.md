@@ -17,6 +17,7 @@ Phase 2.5 introduces **tool injection** capabilities that allow users to define 
 - **Agent Tool Assignment**: Tools can be assigned to specific agents via `amg.load_agent(tools=[...])`
 - **MCP Integration**: Full MCP protocol support for tool execution
 - **Concurrent Tool Access**: Multiple agents can use tools simultaneously
+- **Agent-Driven Tool Usage**: Agent's AI automatically decides when and how to use tools in any method
 
 ### **User Experience**
 ```python
@@ -37,6 +38,11 @@ agent = amg.load_agent(
     base_agent="agentplug/analyzer",
     tools=["data_analyzer", "sentiment_analysis"]
 )
+
+# Agent's AI automatically decides when to use tools in ANY method
+response = agent.run("What's the weather?")           # Agent might use web_search
+result = agent.analyze("sales_data.csv")              # Agent might use data_analyzer
+insights = agent.process("customer_feedback.txt")     # Agent might use sentiment_analysis
 ```
 
 ## 📁 **Module Structure**
@@ -72,18 +78,34 @@ agent = amg.load_agent(
 2. **Automatic Registration**: Tools are automatically registered with FastMCP
 3. **Agent Loading**: User loads agent with `amg.load_agent(tools=[...])`
 4. **Tool Assignment**: Framework assigns specific tools to agent
-5. **Tool Injection**: Tool metadata is injected into agent context
-6. **Tool Execution**: Agent can use assigned tools via MCP
+5. **Tool Injection**: Tool metadata is injected into agent's AI context
+6. **Agent-Driven Execution**: Agent's AI automatically decides when to use tools in any method
+7. **MCP Tool Execution**: When agent needs tools, they are executed via MCP
 
 ## 🎯 **Success Criteria**
 
 - ✅ `@tool` decorator works for custom tool registration
 - ✅ Global tool registry with per-agent access control works
 - ✅ Single MCP server with tool routing works
-- ✅ Tool metadata injection into agent context works
+- ✅ Tool metadata injection into agent's AI context works
 - ✅ `amg.load_agent(tools=[...])` functionality works
-- ✅ Agent can use assigned tools via MCP
+- ✅ Agent's AI automatically decides when to use tools in any method
+- ✅ Tool execution via MCP works seamlessly
 - ✅ Concurrency support for tool execution works
+
+## 🏗️ **Architecture Understanding**
+
+### **Tool Usage Pattern**
+- **Framework Role**: Provides tool injection and MCP client capabilities
+- **Agent Role**: Has its own methods (`run`, `analyze`, `process`, etc.)
+- **Agent's AI**: Automatically decides when to use tools in ANY method
+- **User Experience**: Just calls `agent.any_method()` and tools work automatically
+
+### **Key Architectural Points**
+- **No Manual Tool Calls**: Users never call tools manually
+- **Agent-Driven Decisions**: Agent's AI decides when and how to use tools
+- **Method Agnostic**: Tools work in any agent method, not just `run()`
+- **Seamless Integration**: Tool usage is transparent to the user
 
 ## 🔗 **Dependencies**
 
