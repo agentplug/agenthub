@@ -8,7 +8,19 @@ This module provides:
 """
 
 import sys
-from .registry import ToolRegistry, get_available_tools, get_mcp_server, get_tool_metadata, get_tool_registry, run_resources
+from .registry import (
+    ToolRegistry, 
+    get_available_tools, 
+    get_mcp_server, 
+    get_tool_metadata, 
+    get_tool_registry, 
+    get_tool_function,
+    run_resources,
+    assign_tools_to_agent,
+    get_agent_tools,
+    can_agent_access_tool,
+    get_agent_tool_metadata
+)
 from .decorator import tool
 from .exceptions import (
     ToolError,
@@ -28,7 +40,14 @@ __all__ = [
     "get_mcp_server",
     "get_tool_metadata",
     "get_tool_registry",
+    "get_tool_function",
     "run_resources",
+    
+    # Tool access control
+    "assign_tools_to_agent",
+    "get_agent_tools",
+    "can_agent_access_tool",
+    "get_agent_tool_metadata",
     
     # Exceptions
     "ToolError",

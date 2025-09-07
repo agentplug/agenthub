@@ -27,6 +27,8 @@ class ToolRegistry:
             self.mcp_server = FastMCP("AgentHub Tools")
             self.registered_tools: Dict[str, Callable] = {}
             self.tool_metadata: Dict[str, ToolMetadata] = {}
+            # Tool access control: agent_id -> list of allowed tool names
+            self.agent_tool_access: Dict[str, List[str]] = {}
             self._initialized = True
     
     def register_tool(self, name: str, func: Callable, description: str = "", namespace: str = "custom") -> Callable:
@@ -91,6 +93,31 @@ class ToolRegistry:
             del self.tool_metadata[name]
             return True
         return False
+    
+    def assign_tools_to_agent(self, agent_id: str, tool_names: List[str]) -> None:
+        """Assign specific tools to an agent."""
+        # Validate that all tools exist
+        for tool_name in tool_names:
+            if tool_name not in self.registered_tools:
+                raise ToolNotFoundError(f"Tool '{tool_name}' not found")
+        
+        # Assign tools to agent
+        self.agent_tool_access[agent_id] = tool_names.copy()
+        print(f"🔐 Assigned tools to agent '{agent_id}': {tool_names}")
+    
+    def get_agent_tools(self, agent_id: str) -> List[str]:
+        """Get tools assigned to a specific agent."""
+        return self.agent_tool_access.get(agent_id, [])
+    
+    def can_agent_access_tool(self, agent_id: str, tool_name: str) -> bool:
+        """Check if an agent can access a specific tool."""
+        agent_tools = self.agent_tool_access.get(agent_id, [])
+        return tool_name in agent_tools
+    
+    def get_agent_tool_metadata(self, agent_id: str) -> List[ToolMetadata]:
+        """Get tool metadata for tools assigned to an agent."""
+        agent_tools = self.agent_tool_access.get(agent_id, [])
+        return [self.tool_metadata[tool_name] for tool_name in agent_tools if tool_name in self.tool_metadata]
 
 
 # Global registry instance
@@ -119,6 +146,26 @@ def get_tool_function(name: str) -> Optional[Callable]:
 def get_tool_registry() -> ToolRegistry:
     """Get the global tool registry instance."""
     return _registry
+
+
+def assign_tools_to_agent(agent_id: str, tool_names: List[str]) -> None:
+    """Assign specific tools to an agent."""
+    _registry.assign_tools_to_agent(agent_id, tool_names)
+
+
+def get_agent_tools(agent_id: str) -> List[str]:
+    """Get tools assigned to a specific agent."""
+    return _registry.get_agent_tools(agent_id)
+
+
+def can_agent_access_tool(agent_id: str, tool_name: str) -> bool:
+    """Check if an agent can access a specific tool."""
+    return _registry.can_agent_access_tool(agent_id, tool_name)
+
+
+def get_agent_tool_metadata(agent_id: str) -> List[ToolMetadata]:
+    """Get tool metadata for tools assigned to an agent."""
+    return _registry.get_agent_tool_metadata(agent_id)
 
 def run_resources():
     """Run the MCP server"""
