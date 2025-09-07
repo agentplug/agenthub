@@ -98,7 +98,26 @@ async def main():
             print("\n⚠️  Testing error handling:")
             await call_tool(session, "divide", {"a": 10, "b": 0})  # Should handle division by zero
             await call_tool(session, "process_text", {"text": "hello", "operation": "invalid"})  # Should handle invalid operation
+
+            # Display tool information from MCP server
+            print("\n🔧 Tool Information from MCP Server:")
+            print("=" * 50)
             
+            # Get tools from MCP server (already done above, but let's show it again)
+            tools = await session.list_tools()
+            if hasattr(tools, 'tools'):
+                tool_list = [tool.name for tool in tools.tools]
+                print(f"📋 Available tools: {tool_list}")
+                
+                print("\n📊 Detailed Tool Information:")
+                for tool in tools.tools:
+                    print(f"\n🔹 {tool.name}:")
+                    print(f"   Description: {tool.description}")
+                    if hasattr(tool, 'inputSchema') and tool.inputSchema:
+                        print(f"   Input Schema: {tool.inputSchema}")
+                    if hasattr(tool, 'outputSchema') and tool.outputSchema:
+                        print(f"   Output Schema: {tool.outputSchema}")
+
             print("\n✅ All tests completed!")
 
 

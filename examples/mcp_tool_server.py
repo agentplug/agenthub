@@ -6,7 +6,7 @@ This example demonstrates how to use the framework-level run_resources() method
 for clean background server execution.
 """
 
-from agentmanager.core.tools import tool, run_resources
+from agentmanager.core.tools import tool, run_resources, get_available_tools
 
 #### Tool Registration using agentmanager.core.tools ####
 
@@ -81,20 +81,18 @@ def process_text(text: str, operation: str = "uppercase") -> str:
     return operations[operation]
 
 
-
-
-if __name__ == "__main__":
-    print("🚀 AgentManager Tool Server - Framework Background Execution")
-    print("=" * 60)
+# if __name__ == "__main__":
+#     print("🚀 AgentManager Tool Server - Framework Background Execution")
+#     print("=" * 60)
     
-    # Show available tools
-    tools = ["add", "subtract", "multiply", "divide", "greet", "get_weather", "process_text"]
-    print("📋 Available tools:")
-    for tool_name in tools:
-        print(f"  - {tool_name}")
+#     # Show available tools
+#     tools = get_available_tools()
+#     print("📋 Available tools:")
+#     for tool_name in tools:
+#         print(f"  - {tool_name}")
     
-    print("\n✨ Starting server with framework run_resources() method...")
+#     print("\n✨ Starting server with framework run_resources() method...")
     
-    # Use the clean framework-level run_resources() function
+#     # Use the clean framework-level run_resources() function
     
-    run_resources()
+#     run_resources()
