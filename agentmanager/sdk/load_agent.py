@@ -70,4 +70,8 @@ def load_agent(
     from ..core.agents import AgentWrapper
     agent_wrapper = AgentWrapper(agent_info, tool_registry=tool_registry, agent_id=agent_id, assigned_tools=tools)
     
+    # Inject tool context into the agent
+    if tools:
+        agent_wrapper.inject_tool_context()
+    
     return agent_wrapper

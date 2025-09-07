@@ -15,6 +15,7 @@ from agentmanager.storage.local_storage import LocalStorage
 
 # Import SDK functionality
 from agentmanager.sdk import load_agent as enhanced_load_agent, tool, get_available_tools, run_resources
+from agentmanager.core.tools import get_tool_metadata
 
 
 def load_agent(agent_name, tools=None, setup_environment=True):
@@ -77,10 +78,11 @@ def load_agent(agent_name, tools=None, setup_environment=True):
 
 __all__ = [
     "storage",
-    "runtime", 
+    "runtime",
     "core",
     "load_agent",
     "tool",
     "get_available_tools",
+    "get_tool_metadata",
     "run_resources",
 ]
