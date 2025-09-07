@@ -48,6 +48,7 @@ __all__ = [
     "ToolExecutionError",
     "ToolAccessDeniedError",
     "ToolNotFoundError",
+    "run_resources",
     
     # MCP components (new)
     "AgentToolManager",
