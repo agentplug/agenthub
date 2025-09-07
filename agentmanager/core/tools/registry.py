@@ -72,11 +72,71 @@ class ToolRegistry:
     
     def get_available_tools(self) -> List[str]:
         """Get list of available tool names."""
-        return list(self.registered_tools.keys())
+        # First check local registry
+        local_tools = list(self.registered_tools.keys())
+        
+        # Always try to discover from MCP server and combine with local tools
+        try:
+            import asyncio
+            from mcp.client.sse import sse_client
+            from mcp import ClientSession
+            
+            async def discover_tools():
+                async with sse_client(url="http://localhost:8000/sse") as streams:
+                    async with ClientSession(*streams) as session:
+                        await session.initialize()
+                        tools = await session.list_tools()
+                        return [tool.name for tool in tools.tools]
+            
+            # Run the async discovery using asyncio.run()
+            mcp_tools = asyncio.run(discover_tools())
+            # Combine local and MCP tools, removing duplicates
+            all_tools = list(set(local_tools + mcp_tools))
+            return all_tools
+        except Exception as e:
+            print(f"⚠️  Could not discover tools from MCP server: {e}")
+            return local_tools
     
     def get_tool_metadata(self, name: str) -> Optional[ToolMetadata]:
         """Get metadata for a specific tool."""
-        return self.tool_metadata.get(name)
+        # First check local registry
+        if name in self.tool_metadata:
+            return self.tool_metadata[name]
+        
+        # If not found locally, try to get from MCP server
+        try:
+            import asyncio
+            from mcp.client.sse import sse_client
+            from mcp import ClientSession
+            
+            async def get_tool_info():
+                async with sse_client(url="http://localhost:8000/sse") as streams:
+                    async with ClientSession(*streams) as session:
+                        await session.initialize()
+                        tools = await session.list_tools()
+                        for tool in tools.tools:
+                            if tool.name == name:
+                                return {
+                                    'name': tool.name,
+                                    'description': tool.description or '',
+                                    'function': None,  # Can't get function from MCP
+                                    'namespace': 'mcp'
+                                }
+                        return None
+            
+            # Run the async discovery using asyncio.run()
+            tool_info = asyncio.run(get_tool_info())
+            if tool_info:
+                return ToolMetadata(
+                    name=tool_info['name'],
+                    description=tool_info['description'],
+                    function=tool_info['function'],
+                    namespace=tool_info['namespace']
+                )
+        except Exception as e:
+            print(f"⚠️  Could not get tool metadata from MCP server: {e}")
+        
+        return None
     
     def get_tool_function(self, name: str) -> Optional[Callable]:
         """Get the function for a specific tool."""
@@ -96,9 +156,10 @@ class ToolRegistry:
     
     def assign_tools_to_agent(self, agent_id: str, tool_names: List[str]) -> None:
         """Assign specific tools to an agent."""
-        # Validate that all tools exist
+        # Validate that all tools exist (including MCP-discovered tools)
+        available_tools = self.get_available_tools()
         for tool_name in tool_names:
-            if tool_name not in self.registered_tools:
+            if tool_name not in available_tools:
                 raise ToolNotFoundError(f"Tool '{tool_name}' not found")
         
         # Assign tools to agent
