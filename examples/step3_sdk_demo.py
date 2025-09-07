@@ -97,8 +97,11 @@ async def main():
     print("🚀 Step 3 Demo: SDK Integration with Real Analysis Agent")
     print("=" * 60)
     
-    # Show available tools
-    print(f"📋 Available tools: {get_available_tools()}")
+    # Show available tools (should be empty initially)
+    print(f"📋 Available tools before registration: {get_available_tools()}")
+    
+    # The tools are registered by the @tool decorator above
+    print(f"📋 Available tools after registration: {get_available_tools()}")
     
     try:
         # Load real analysis agent with tools
