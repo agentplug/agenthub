@@ -17,25 +17,31 @@ from agentmanager.storage.local_storage import LocalStorage
 from agentmanager.sdk import load_agent as enhanced_load_agent
 
 
-def load_agent(agent_name, setup_environment=True):
+def load_agent(agent_name, tools=None, setup_environment=True):
     """
     Load an agent, automatically installing it if it doesn't exist.
-
+    
     This is the recommended way to use agents - just call this function
     and it will handle everything automatically!
 
     Args:
         agent_name (str): Agent name in format "developer/agent"
                           (e.g., "agentplug/scientific-paper-analyzer")
+        tools (list, optional): List of tool names to inject into the agent
         setup_environment (bool): Whether to set up virtual environment and install dependencies
 
     Returns:
-        AgentWrapper: Wrapped agent ready for method execution
+        AgentWrapper or EnhancedAgent: Wrapped agent ready for method execution
 
     Raises:
         ValueError: If agent name format is invalid
         RuntimeError: If agent installation fails
     """
+    # If tools are provided, use enhanced load_agent
+    if tools is not None:
+        return enhanced_load_agent(agent_name, tools=tools)
+    
+    # Otherwise, use the original load_agent logic
     # Parse agent name
     if "/" not in agent_name:
         raise ValueError(f"Invalid agent name format: {agent_name}. Expected: 'developer/agent'")
@@ -74,5 +80,4 @@ __all__ = [
     "runtime",
     "core",
     "load_agent",
-    "enhanced_load_agent",
 ]

@@ -106,8 +106,8 @@ async def main():
     try:
         # Load real analysis agent with tools
         print("\n🤖 Loading real analysis agent with tool injection...")
-        agent = amg.enhanced_load_agent(
-            base_agent="agentplug/analysis-agent",
+        agent = amg.load_agent(
+            agent_name="agentplug/analysis-agent",
             tools=["web_search", "data_analyzer", "calculator"]
         )
         
