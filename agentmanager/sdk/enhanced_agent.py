@@ -80,6 +80,9 @@ class EnhancedAgent:
                 import yaml
                 with open(manifest_path, 'r') as f:
                     return yaml.safe_load(f)
+            except ImportError:
+                # Fallback if yaml is not available
+                pass
             except Exception:
                 pass
         
