@@ -7,7 +7,7 @@ This module provides:
 - MCP server integration for tool execution
 """
 
-from .registry import ToolRegistry, get_available_tools, get_mcp_server, get_tool_metadata
+from .registry import ToolRegistry, get_available_tools, get_mcp_server, get_tool_metadata, get_tool_registry
 from .decorator import tool
 from .exceptions import (
     ToolError,
@@ -26,6 +26,7 @@ __all__ = [
     "get_available_tools",
     "get_mcp_server",
     "get_tool_metadata",
+    "get_tool_registry",
     
     # Exceptions
     "ToolError",

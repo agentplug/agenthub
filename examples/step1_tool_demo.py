@@ -107,7 +107,8 @@ async def main():
     
     # Test web search tool through MCP (real API call)
     print("Testing web search tool...")
-    search_result = await mcp_server.call_tool("web_search", {"query": "Python programming", "max_results": 3})
+    search_result = await mcp_server.call_tool("web_search", {"query": "C programming", "max_results": 3})
+    print(search_result)
     search_data = eval(search_result[0].text)  # Parse JSON string
     print(f"Web search via MCP: Found {search_data.get('total_found', 0)} results")
     if search_data.get('results'):

@@ -19,6 +19,12 @@ from .tools import (
     ToolExecutionError, ToolAccessDeniedError, ToolNotFoundError
 )
 
+# Import from mcp package
+from .mcp import (
+    AgentToolManager, MCPClient, ToolInjector,
+    get_tool_manager, get_mcp_client, get_tool_injector
+)
+
 __all__ = [
     # Agent components
     "AgentLoader",
@@ -42,4 +48,12 @@ __all__ = [
     "ToolExecutionError",
     "ToolAccessDeniedError",
     "ToolNotFoundError",
+    
+    # MCP components (new)
+    "AgentToolManager",
+    "MCPClient",
+    "ToolInjector",
+    "get_tool_manager",
+    "get_mcp_client",
+    "get_tool_injector",
 ]

@@ -114,3 +114,7 @@ def get_tool_metadata(name: str) -> Optional[ToolMetadata]:
 def get_tool_function(name: str) -> Optional[Callable]:
     """Get the function for a specific tool."""
     return _registry.get_tool_function(name)
+
+def get_tool_registry() -> ToolRegistry:
+    """Get the global tool registry instance."""
+    return _registry
