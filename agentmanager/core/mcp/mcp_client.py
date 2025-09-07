@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any, Optional, List
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
-from agentmanager.core.tools import get_tool_registry, get_available_tools, get_tool_metadata
+from agentmanager.core.tools import get_tool_registry
 
 
 class MCPClient:
