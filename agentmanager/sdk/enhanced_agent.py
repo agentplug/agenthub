@@ -144,8 +144,7 @@ class EnhancedAgent:
         # Execute agent
         try:
             result = subprocess.run(
-                [sys.executable, str(self.agent_path / "agent.py")],
-                input=json.dumps(input_data),
+                [sys.executable, str(self.agent_path / "agent.py"), json.dumps(input_data)],
                 text=True,
                 capture_output=True,
                 timeout=30
@@ -225,7 +224,17 @@ class EnhancedAgent:
     def __getattr__(self, name: str) -> Callable:
         """Dynamically create methods based on agent manifest."""
         if name in self.manifest.get("interface", {}).get("methods", {}):
-            def method_wrapper(**kwargs):
+            def method_wrapper(*args, **kwargs):
+                # Convert positional args to keyword args based on method signature
+                method_info = self.manifest.get("interface", {}).get("methods", {}).get(name, {})
+                parameters = method_info.get("parameters", {})
+                param_names = list(parameters.keys())
+                
+                # Map positional args to parameter names
+                for i, arg in enumerate(args):
+                    if i < len(param_names):
+                        kwargs[param_names[i]] = arg
+                
                 return self._execute_agent_method(name, kwargs)
             return method_wrapper
         
