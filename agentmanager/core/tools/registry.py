@@ -75,21 +75,35 @@ class ToolRegistry:
         # First check local registry
         local_tools = list(self.registered_tools.keys())
         
-        # Always try to discover from MCP server and combine with local tools
+        # Try to discover from MCP server and combine with local tools
         try:
             import asyncio
             from mcp.client.sse import sse_client
             from mcp import ClientSession
             
             async def discover_tools():
-                async with sse_client(url="http://localhost:8000/sse") as streams:
-                    async with ClientSession(*streams) as session:
-                        await session.initialize()
-                        tools = await session.list_tools()
-                        return [tool.name for tool in tools.tools]
+                try:
+                    async with sse_client(url="http://localhost:8000/sse") as streams:
+                        async with ClientSession(*streams) as session:
+                            await session.initialize()
+                            tools = await session.list_tools()
+                            return [tool.name for tool in tools.tools]
+                except Exception as e:
+                    print(f"⚠️  MCP discovery failed: {e}")
+                    return []
             
-            # Run the async discovery using asyncio.run()
-            mcp_tools = asyncio.run(discover_tools())
+            # Check if we're already in an event loop
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an event loop, create a task instead
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, discover_tools())
+                    mcp_tools = future.result(timeout=5)  # 5 second timeout
+            except RuntimeError:
+                # No event loop running, safe to use asyncio.run()
+                mcp_tools = asyncio.run(discover_tools())
+            
             # Combine local and MCP tools, removing duplicates
             all_tools = list(set(local_tools + mcp_tools))
             return all_tools
