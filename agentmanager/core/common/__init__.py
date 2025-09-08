@@ -1,16 +1,19 @@
-"""Common package - Shared utilities, types, and exceptions.
+"""Common utilities and types for the agent management system."""
 
-This package contains components for:
-- Common exception classes
-- Common type definitions and protocols
-- Shared utility functions
-"""
-
-# Future components will be added here
-# - CommonExceptions
-# - CommonTypes
-# - CommonUtils
+from .result import (
+    Result, Error, ErrorType,
+    validation_error, agent_not_found_error, execution_error, 
+    tool_error, timeout_error, permission_error
+)
 
 __all__ = [
-    # Components will be added as they are implemented
+    "Result",
+    "Error", 
+    "ErrorType",
+    "validation_error",
+    "agent_not_found_error", 
+    "execution_error",
+    "tool_error",
+    "timeout_error",
+    "permission_error",
 ]
