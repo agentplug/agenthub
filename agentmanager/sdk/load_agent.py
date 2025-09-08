@@ -66,9 +66,15 @@ def load_agent(
         assign_tools_to_agent(agent_id, tools)
         print(f"🔐 Assigned tools to agent '{agent_id}': {tools}")
     
-    # Create agent wrapper with tool capabilities
+    # Create agent wrapper with tool capabilities and runtime
     from ..core.agents import AgentWrapper
-    agent_wrapper = AgentWrapper(agent_info, tool_registry=tool_registry, agent_id=agent_id, assigned_tools=tools)
+    from ..runtime.agent_runtime import AgentRuntime
+    
+    # Create runtime with subprocess execution for proper environment isolation
+    runtime = AgentRuntime(storage=storage)
+    runtime.process_manager.use_dynamic_execution = False
+    
+    agent_wrapper = AgentWrapper(agent_info, tool_registry=tool_registry, agent_id=agent_id, assigned_tools=tools, runtime=runtime)
     
     # Inject tool context into the agent
     if tools:
