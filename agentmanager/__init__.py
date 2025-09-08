@@ -53,6 +53,9 @@ def load_agent(agent_name, tools=None, setup_environment=True):
     storage_manager = LocalStorage()
     runtime_manager = AgentRuntime(storage_manager)
     loader = AgentLoader(storage_manager)
+    
+    # Configure runtime to use subprocess execution for proper environment isolation
+    runtime_manager.process_manager.use_dynamic_execution = False
 
     # Check if agent exists
     if not storage_manager.agent_exists(developer, agent):
