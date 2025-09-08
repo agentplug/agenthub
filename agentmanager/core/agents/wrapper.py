@@ -404,7 +404,9 @@ class AgentWrapper:
             return {
                 "name": metadata.name,
                 "description": metadata.description,
-                "namespace": metadata.namespace
+                "namespace": metadata.namespace,
+                "parameters": metadata.parameters,
+                "examples": metadata.examples
             }
         return None
     
@@ -432,21 +434,21 @@ class AgentWrapper:
             if metadata:
                 instructions.append(f"• {tool_name}: {metadata['description']}")
                 
-                # Add usage example if available
-                if tool_name == "add":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
-                elif tool_name == "multiply":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
-                elif tool_name == "subtract":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
-                elif tool_name == "divide":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', number1, number2)")
-                elif tool_name == "greet":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', 'name')")
-                elif tool_name == "get_weather":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', 'location')")
-                elif tool_name == "process_text":
-                    instructions.append(f"  Usage: execute_tool('{tool_name}', 'text', 'operation')")
+                # Add usage examples from metadata
+                if metadata.get('examples'):
+                    for example in metadata['examples']:
+                        # Convert from function call format to execute_tool format
+                        if '(' in example:
+                            # Extract parameters from example like "add('param1', 'param2')"
+                            func_name = example.split('(')[0]
+                            params_part = example.split('(', 1)[1].rsplit(')', 1)[0]
+                            if params_part.strip():
+                                instructions.append(f"  Usage: execute_tool('{func_name}', {params_part})")
+                            else:
+                                instructions.append(f"  Usage: execute_tool('{func_name}')")
+                        else:
+                            instructions.append(f"  Usage: execute_tool('{tool_name}')")
+                        break  # Only show first example
                 
                 instructions.append("")
         
@@ -514,24 +516,12 @@ class AgentWrapper:
             if metadata:
                 tool_descriptions[tool_name] = metadata['description']
                 
-                # Generate usage examples based on tool type
-                if tool_name == "add":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
-                elif tool_name == "multiply":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
-                elif tool_name == "subtract":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
-                elif tool_name == "divide":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"a\": \"number1\", \"b\": \"number2\"}})"]
-                elif tool_name == "greet":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"name\": \"string\"}})"]
-                elif tool_name == "get_weather":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"location\": \"string\"}})"]
-                elif tool_name == "process_text":
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"text\": \"string\", \"operation\": \"string\"}})"]
+                # Use dynamically generated examples from ToolMetadata
+                if metadata.get('examples'):
+                    tool_usage_examples[tool_name] = metadata['examples']
                 else:
-                    # Generic example for unknown tools
-                    tool_usage_examples[tool_name] = [f"{tool_name}({{\"param\": \"value\"}})"]
+                    # Fallback to basic example if no examples available
+                    tool_usage_examples[tool_name] = [f"{tool_name}()"]
         
         return {
             "available_tools": self.assigned_tools,

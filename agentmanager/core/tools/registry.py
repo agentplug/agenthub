@@ -130,11 +130,23 @@ class ToolRegistry:
                         tools = await session.list_tools()
                         for tool in tools.tools:
                             if tool.name == name:
+                                # Extract parameters from MCP schema
+                                parameters = {}
+                                if tool.inputSchema and 'properties' in tool.inputSchema:
+                                    for param_name, param_info in tool.inputSchema['properties'].items():
+                                        parameters[param_name] = {
+                                            'name': param_name,
+                                            'type': param_info.get('type', 'Any'),
+                                            'required': param_name in tool.inputSchema.get('required', []),
+                                            'default': param_info.get('default', None)
+                                        }
+                                
                                 return {
                                     'name': tool.name,
                                     'description': tool.description or '',
                                     'function': None,  # Can't get function from MCP
-                                    'namespace': 'mcp'
+                                    'namespace': 'mcp',
+                                    'parameters': parameters
                                 }
                         return None
             
@@ -145,7 +157,8 @@ class ToolRegistry:
                     name=tool_info['name'],
                     description=tool_info['description'],
                     function=tool_info['function'],
-                    namespace=tool_info['namespace']
+                    namespace=tool_info['namespace'],
+                    parameters=tool_info.get('parameters', {})
                 )
         except Exception as e:
             print(f"⚠️  Could not get tool metadata from MCP server: {e}")

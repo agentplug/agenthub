@@ -71,18 +71,52 @@ class ToolMetadata:
         if not param_names:
             return [f"{self.name}()"]
         
-        # Generate simple examples
+        # Generate examples based on parameter types and names
         examples = []
         
-        # Example with all parameters
-        if len(param_names) == 1:
-            examples.append(f"{self.name}('example_value')")
-        elif len(param_names) == 2:
-            examples.append(f"{self.name}('param1', 'param2')")
+        # Build parameter examples based on type information
+        param_examples = []
+        for param_name, param_info in self.parameters.items():
+            param_type = param_info.get('type', 'Any')
+            default_value = param_info.get('default', None)
+            
+            if default_value is not None:
+                # Use the default value
+                if isinstance(default_value, str):
+                    param_examples.append(f'"{default_value}"')
+                else:
+                    param_examples.append(str(default_value))
+            elif param_type == 'integer':
+                # Generate meaningful examples for common math operations
+                if param_name in ['a', 'x', 'first', 'num1']:
+                    param_examples.append('12')
+                elif param_name in ['b', 'y', 'second', 'num2']:
+                    param_examples.append('5')
+                else:
+                    param_examples.append('42')
+            elif param_type == 'number':
+                if param_name in ['a', 'x', 'first', 'num1']:
+                    param_examples.append('12.5')
+                elif param_name in ['b', 'y', 'second', 'num2']:
+                    param_examples.append('2.5')
+                else:
+                    param_examples.append('3.14')
+            elif param_type == 'string':
+                if 'name' in param_name.lower():
+                    param_examples.append('"Alice"')
+                elif 'location' in param_name.lower():
+                    param_examples.append('"New York"')
+                elif 'text' in param_name.lower():
+                    param_examples.append('"Hello world"')
+                else:
+                    param_examples.append(f'"{param_name}_value"')
+            else:
+                param_examples.append(f'"{param_name}_value"')
+        
+        # Generate function call example
+        if param_examples:
+            examples.append(f"{self.name}({', '.join(param_examples)})")
         else:
-            # For more complex tools, show key parameters
-            key_params = param_names[:2]  # First 2 parameters
-            example_args = ', '.join([f"'{name}_value'" for name in key_params])
-            examples.append(f"{self.name}({example_args})")
+            examples.append(f"{self.name}()")
         
         return examples
