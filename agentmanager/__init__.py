@@ -71,6 +71,10 @@ def load_agent(agent_name, tools=None, setup_environment=True):
 
     # Now load the agent
     agent_data = loader.load_agent(developer, agent)
+    
+    # Configure runtime to use subprocess execution for proper environment isolation
+    runtime_manager.process_manager.use_dynamic_execution = False
+    
     agent_wrapper = AgentWrapper(agent_data, runtime=runtime_manager)
 
     return agent_wrapper
