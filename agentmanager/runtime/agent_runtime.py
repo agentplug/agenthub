@@ -26,7 +26,7 @@ class AgentRuntime:
         self.storage = storage
 
     def execute_agent(
-        self, namespace: str, agent_name: str, method: str, parameters: dict
+        self, namespace: str, agent_name: str, method: str, parameters: dict, tool_context: dict = None
     ) -> dict:
         """
         Execute an agent method with full runtime coordination.
@@ -82,7 +82,7 @@ class AgentRuntime:
             logger.debug(f"Could not load manifest for dynamic execution: {e}")
 
         # Execute the agent
-        return self.process_manager.execute_agent(agent_path, method, parameters, manifest)
+        return self.process_manager.execute_agent(agent_path, method, parameters, manifest, tool_context)
 
     def validate_method(self, agent_path: str, method: str) -> bool:
         """

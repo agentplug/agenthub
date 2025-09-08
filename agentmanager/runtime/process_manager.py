@@ -28,7 +28,7 @@ class ProcessManager:
         self.use_dynamic_execution = use_dynamic_execution
         self.dynamic_executor = DynamicAgentExecutor() if use_dynamic_execution else None
 
-    def execute_agent(self, agent_path: str, method: str, parameters: dict, manifest: dict = None) -> dict:
+    def execute_agent(self, agent_path: str, method: str, parameters: dict, manifest: dict = None, tool_context: dict = None) -> dict:
         """
         Execute an agent method in an isolated subprocess.
 
@@ -70,8 +70,10 @@ class ProcessManager:
                 logger.warning(f"Dynamic execution failed, falling back to subprocess: {e}")
 
         # Fallback to subprocess execution
-        # Prepare execution data
+        # Prepare execution data with tool context if available
         execution_data = {"method": method, "parameters": parameters}
+        if tool_context:
+            execution_data["tool_context"] = tool_context
 
         try:
             # Get Python executable for this agent's virtual environment
