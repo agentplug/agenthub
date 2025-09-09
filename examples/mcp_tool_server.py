@@ -8,8 +8,6 @@ for clean background server execution.
 
 from agentmanager.core.tools import tool, run_resources, get_available_tools
 
-#### Tool Registration using agentmanager.core.tools ####
-
 @tool(name="add", description="Add two numbers together")
 def add(a: int, b: int) -> int:
     """Add two numbers together."""
@@ -79,6 +77,49 @@ def process_text(text: str, operation: str = "uppercase") -> str:
         raise ValueError(f"Unknown operation: {operation}. Available: {list(operations.keys())}")
     
     return operations[operation]
+
+
+@tool(name="web_search", description="Search the web for a query and return summarized results")
+def web_search(query: str) -> list:
+    """
+    Search the web for a query using DuckDuckGo and return summarized results.
+
+    Args:
+        query (str): The search query.
+
+    Returns:
+        list: A list of dictionaries with 'title', 'url', and 'snippet' for each result.
+    """
+    print(f"[TOOL] Performing web search for: '{query}' (max_results={10})")
+    try:
+        from ddgs import DDGS
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        raise ImportError("Required packages 'ddgs', 'requests', and 'beautifulsoup4' are not installed.")
+
+    ddg = DDGS()
+    results = []
+    for r in ddg.text(query, max_results=5):
+        url = r.get("href")
+        title = r.get("title", "")
+        snippet = ""
+        if url:
+            try:
+                html = requests.get(url, timeout=10).text
+                soup = BeautifulSoup(html, "html.parser")
+                # crude text extraction: first 2 paragraphs
+                paragraphs = [p.get_text() for p in soup.find_all("p")]
+                snippet = " ".join(paragraphs)
+            except Exception as e:
+                snippet = f"Error fetching page: {e}"
+        results.append({
+            "title": title,
+            "url": url,
+            "snippet": snippet
+        })
+    return {"results": results}
+
 
 
 if __name__ == "__main__":
