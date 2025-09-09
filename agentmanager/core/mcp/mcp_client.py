@@ -49,20 +49,23 @@ class MCPClient:
         Returns:
             JSON string result from tool execution
         """
-        client = await self.connect()
+        from .connection_manager import get_connection_pool
         
         try:
-            result = await client.call_tool(tool_name, arguments)
-            
-            if result and len(result) > 0:
-                return result[0].text if hasattr(result[0], 'text') else str(result[0])
-            else:
-                return json.dumps({"error": "No result returned from tool"})
+            async with get_connection_pool().get_connection() as client:
+                result = await client.call_tool(tool_name, arguments)
                 
+                if result and len(result) > 0:
+                    return result[0].text if hasattr(result[0], 'text') else str(result[0])
+                else:
+                    return json.dumps({"error": "No result returned from tool"})
+                    
         except Exception as e:
+            logger.error(f"Tool execution failed for {tool_name}: {e}")
             return json.dumps({
                 "error": f"Tool execution failed: {str(e)}",
-                "tool_name": tool_name
+                "tool_name": tool_name,
+                "error_type": type(e).__name__
             })
     
     async def list_tools(self) -> List[str]:
