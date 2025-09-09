@@ -78,7 +78,21 @@ def example_4_math_focused_agent():
 
 def example_5_compare_numbers_agent():
     """Load agent with compare numbers tool"""
-    print("\n📋 Example 5: Compare Numbers Agent")
+
+    print("\n📋 Example 5: Compare Numbers Agent without tools")
+    agent = amg.load_agent('agentplug/analysis-agent')
+    question = "Compare 9.8 and 9.11, which number is larger?"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
+    # ================================================
+    status = result.get('result', {}).get('status', 'completed')
+    analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
+    tools_used = result.get('result', {}).get('tools_used', [])
+    print(f"✅ Status: {status}")
+    print(f"🔧 Tools used: {tools_used}")
+    print(f"📄 Analysis: {analysis}")
+    
+    print("\n📋 Example 5: Compare Numbers Agent with tools")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['compare_numbers'])
     question = "Compare 9.8 and 9.11, which number is larger?"
     print(f"📄 Input: {question}")
@@ -91,18 +105,6 @@ def example_5_compare_numbers_agent():
     print(f"🔧 Tools used: {tools_used}")
     print(f"📄 Analysis: {analysis}")
 
-    print("\n📋 Example 5: Compare Numbers Agent")
-    agent = amg.load_agent('agentplug/analysis-agent')
-    question = "Compare 9.8 and 9.11, which number is larger?"
-    print(f"📄 Input: {question}")
-    result = agent.analyze_text(question)
-    # ================================================
-    status = result.get('result', {}).get('status', 'completed')
-    analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
-    tools_used = result.get('result', {}).get('tools_used', [])
-    print(f"✅ Status: {status}")
-    print(f"🔧 Tools used: {tools_used}")
-    print(f"📄 Analysis: {analysis}")
     return result
 
 def example_6_web_search_agent():
