@@ -120,6 +120,16 @@ def web_search(query: str) -> list:
         })
     return {"results": results}
 
+@tool(name="compare_numbers", description="Compare two numbers and answer which one is larger")
+def compare_numbers(a: float, b: float) -> str:
+    """Compare two numbers and return the larger one."""
+    print(f"[TOOL] Comparing {a} and {b}")
+    if type(a) != float:
+        a = float(a)
+    if type(b) != float:
+        b = float(b)
+
+    return f"The larger number is {float(max(a, b))}"
 
 
 if __name__ == "__main__":
