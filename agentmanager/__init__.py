@@ -13,8 +13,15 @@ from agentmanager import core, runtime, storage
 # Import configuration
 from agentmanager.config import get_config, set_config, AgentHubConfig
 
-# Import logging utilities
-from agentmanager.utils.logging_config import setup_logging, set_quiet_mode, set_debug_mode
+# Import centralized logging utilities
+from agentmanager.core.logging import setup_logging, get_logger, set_quiet_mode
+
+# Suppress HTTP logs immediately on import
+import logging
+mcp_loggers = ['mcp', 'mcp.client', 'mcp.client.session', 'mcp.client.stdio', 'urllib3', 'httpx', 'httpcore', 'requests']
+for logger_name in mcp_loggers:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+    logging.getLogger(logger_name).disabled = True
 
 # Import unified loader
 from agentmanager.core.loader import load_agent
@@ -44,8 +51,8 @@ __all__ = [
     
     # Logging utilities
     "setup_logging",
+    "get_logger",
     "set_quiet_mode",
-    "set_debug_mode",
     
     # Modules
     "core",
