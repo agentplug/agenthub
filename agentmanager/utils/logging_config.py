@@ -5,6 +5,75 @@ import os
 import sys
 from typing import Optional
 
+# ANSI color codes for terminal output
+class Colors:
+    """ANSI color codes for terminal output."""
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    DIM = '\033[2m'
+    
+    # Text colors
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    
+    # Background colors
+    BG_BLACK = '\033[40m'
+    BG_RED = '\033[41m'
+    BG_GREEN = '\033[42m'
+    BG_YELLOW = '\033[43m'
+    BG_BLUE = '\033[44m'
+    BG_MAGENTA = '\033[45m'
+    BG_CYAN = '\033[46m'
+    BG_WHITE = '\033[47m'
+
+
+class ColorfulFormatter(logging.Formatter):
+    """Colorful formatter for agent logs."""
+    
+    def format(self, record):
+        # Get the original message
+        message = super().format(record)
+        
+        # Add colors to specific log messages
+        if hasattr(record, 'msg') and record.msg:
+            msg = str(record.msg)
+            
+            # Agent loading success
+            if 'Successfully loaded agent' in msg:
+                # Extract agent name and tool count
+                if 'with' in msg and 'tools' in msg:
+                    parts = msg.split('with')
+                    if len(parts) == 2:
+                        agent_part = parts[0].strip()
+                        tools_part = parts[1].strip()
+                        message = f"{Colors.GREEN}✅ {Colors.BOLD}{agent_part}{Colors.RESET} {Colors.CYAN}{tools_part}{Colors.RESET}"
+                else:
+                    message = f"{Colors.GREEN}✅ {Colors.BOLD}{msg}{Colors.RESET}"
+            
+            # Tool assignment
+            elif 'Assigned tools to agent' in msg:
+                message = f"{Colors.BLUE}🔧 {Colors.BOLD}{msg}{Colors.RESET}"
+            
+            # Agent processing
+            elif 'Agent processing' in msg or 'Tool execution' in msg:
+                message = f"{Colors.YELLOW}⚙️  {msg}{Colors.RESET}"
+            
+            # Error messages
+            elif record.levelno >= logging.ERROR:
+                message = f"{Colors.RED}❌ {msg}{Colors.RESET}"
+            
+            # Warning messages
+            elif record.levelno >= logging.WARNING:
+                message = f"{Colors.YELLOW}⚠️  {msg}{Colors.RESET}"
+        
+        return message
+
 
 class HTTPLogFilter(logging.Filter):
     """Filter to suppress HTTP request logs while keeping useful agent logs."""
@@ -73,9 +142,9 @@ def setup_logging(
     
     # Create formatter
     if quiet:
-        formatter = logging.Formatter('%(message)s')
+        formatter = ColorfulFormatter('%(message)s')
     else:
-        formatter = logging.Formatter(
+        formatter = ColorfulFormatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
     
