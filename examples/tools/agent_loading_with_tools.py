@@ -76,9 +76,38 @@ def example_4_math_focused_agent():
     print(f"📄 Analysis: {analysis}")
     return result
 
-def example_5_web_search_agent():
+def example_5_compare_numbers_agent():
+    """Load agent with compare numbers tool"""
+    print("\n📋 Example 5: Compare Numbers Agent")
+    agent = amg.load_agent('agentplug/analysis-agent', tools=['compare_numbers'])
+    question = "Compare 9.8 and 9.11, which number is larger?"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
+    # ================================================
+    status = result.get('result', {}).get('status', 'completed')
+    analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
+    tools_used = result.get('result', {}).get('tools_used', [])
+    print(f"✅ Status: {status}")
+    print(f"🔧 Tools used: {tools_used}")
+    print(f"📄 Analysis: {analysis}")
+
+    print("\n📋 Example 5: Compare Numbers Agent")
+    agent = amg.load_agent('agentplug/analysis-agent')
+    question = "Compare 9.8 and 9.11, which number is larger?"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
+    # ================================================
+    status = result.get('result', {}).get('status', 'completed')
+    analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
+    tools_used = result.get('result', {}).get('tools_used', [])
+    print(f"✅ Status: {status}")
+    print(f"🔧 Tools used: {tools_used}")
+    print(f"📄 Analysis: {analysis}")
+    return result
+
+def example_6_web_search_agent():
     """Load agent with web search tool"""
-    print("\n📋 Example 5: Web Search Agent")
+    print("\n📋 Example 6: Web Search Agent")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['web_search', 'add', 'subtract', 'multiply', 'divide'])
     question = "Who is the 2025 US President?"
     print(f"📄 Input: {question}")
@@ -115,7 +144,10 @@ if __name__ == "__main__":
     example_4_math_focused_agent()
     wait_for_key("Press Enter to continue to Example 5...")
 
-    example_5_web_search_agent()
+    example_5_compare_numbers_agent()
+    wait_for_key("Press Enter to continue to Example 6...")
+
+    example_6_web_search_agent()
     wait_for_key("Press Enter to finish...")
     
     print("\n🎉 All examples completed successfully!")
