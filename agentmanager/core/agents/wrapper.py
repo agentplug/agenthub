@@ -393,6 +393,59 @@ class AgentWrapper:
         from ..tools import can_agent_access_tool
         return can_agent_access_tool(self.agent_id, tool_name)
     
+    def get_available_tools(self) -> List[str]:
+        """Get list of tools available to this agent."""
+        return self.assigned_tools
+    
+    def has_tool(self, tool_name: str) -> bool:
+        """Check if agent has access to a specific tool."""
+        return self.can_access_tool(tool_name)
+    
+    def search_tools(self, query: str) -> List[str]:
+        """Search tools by name or description."""
+        if not query:
+            return self.assigned_tools
+        
+        matching_tools = []
+        for tool_name in self.assigned_tools:
+            if query.lower() in tool_name.lower():
+                matching_tools.append(tool_name)
+            else:
+                # Check tool description
+                try:
+                    metadata = self.get_tool_metadata(tool_name)
+                    if metadata and query.lower() in metadata.get('description', '').lower():
+                        matching_tools.append(tool_name)
+                except:
+                    pass
+        
+        return matching_tools
+    
+    def get_tool_help(self, tool_name: str) -> str:
+        """Get help information for a tool."""
+        if not self.has_tool(tool_name):
+            return f"Tool '{tool_name}' not available to this agent"
+        
+        try:
+            metadata = self.get_tool_metadata(tool_name)
+            if not metadata:
+                return f"Tool '{tool_name}' - No metadata available"
+            
+            help_text = f"Tool: {tool_name}\n"
+            help_text += f"Description: {metadata.get('description', 'No description')}\n"
+            
+            parameters = metadata.get('parameters', {})
+            if parameters:
+                help_text += "Parameters:\n"
+                for param_name, param_info in parameters.items():
+                    param_type = param_info.get('type', 'unknown')
+                    required = param_info.get('required', False)
+                    help_text += f"  {param_name} ({param_type}){'*' if required else ''}\n"
+            
+            return help_text
+        except Exception as e:
+            return f"Tool '{tool_name}' - Error getting help: {e}"
+    
     def get_tool_metadata(self, tool_name: str) -> Optional[Dict[str, Any]]:
         """Get metadata for a tool (only if agent has access)."""
         if not self.can_access_tool(tool_name) or not self.tool_registry:
