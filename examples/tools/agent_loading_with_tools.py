@@ -13,8 +13,10 @@ import json
 def example_1_basic_agent():
     """Load agent without tools"""
     print("📋 Example 1: Basic Agent (no tools)")
+    question = "That is a great product. I love to use AgentHub."
+    print(f"📄 Input: {question}")
     agent = amg.load_agent('agentplug/analysis-agent')
-    result = agent.analyze_text('That is a great product. I love to use AgentHub.')
+    result = agent.analyze_text(question)
     # ================================================
     status = result.get('result', {}).get('status', 'completed')
     analysis = json.loads(result.get('result', {}).get('result', 'No analysis').replace("```json", "").replace("```", "")).get("summary", "No analysis")
@@ -26,7 +28,9 @@ def example_2_agent_with_single_tool():
     """Load agent with single tool"""
     print("\n📋 Example 2: Agent with Single Tool")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['multiply'])
-    result = agent.analyze_text('Calculate 7 times 8')
+    question = "Calculate 7 times 8"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
     # ================================================
     status = result.get('result', {}).get('status', 'completed')
     analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
@@ -40,7 +44,9 @@ def example_3_agent_with_multiple_tools():
     """Load agent with multiple tools"""
     print("\n📋 Example 3: Agent with Multiple Tools")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['multiply', 'add'])
-    result = agent.analyze_text('Calculate 12 times 5, then add 8')
+    question = "Calculate 12 times 5, then add 8"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
     # ================================================
     status = result.get('result', {}).get('status', 'completed')
     analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
@@ -54,7 +60,9 @@ def example_4_math_focused_agent():
     """Load agent with all math tools"""
     print("\n📋 Example 4: Math-Focused Agent")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['multiply', 'add', 'subtract', 'divide'])
-    result = agent.analyze_text('What is 100 divided by 4, then multiply by 3?')
+    question = "What is 100 divided by 4, then multiply by 3?"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
     # ================================================
     status = result.get('result', {}).get('status', 'completed')
     analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
@@ -69,8 +77,9 @@ def example_5_web_search_agent():
     """Load agent with web search tool"""
     print("\n📋 Example 5: Web Search Agent")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['web_search', 'add', 'subtract', 'multiply', 'divide'])
-    result = agent.analyze_text("Who is the 2025 US President?")
-    print(f"📄 Results: {result}")
+    question = "Who is the 2025 US President?"
+    print(f"📄 Input: {question}")
+    result = agent.analyze_text(question)
     # ================================================
     status = result.get('result', {}).get('status', 'completed')
     analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
