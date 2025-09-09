@@ -32,6 +32,8 @@ class AgentHubConfig:
     # Logging
     log_level: str = "INFO"
     enable_debug_logging: bool = False
+    quiet_mode: bool = False
+    suppress_http_logs: bool = True
     
     @classmethod
     def from_env(cls) -> "AgentHubConfig":
@@ -57,6 +59,8 @@ class AgentHubConfig:
             
         config.enable_debug_logging = os.getenv("AGENTHUB_DEBUG", "").lower() in ("true", "1", "yes")
         config.use_subprocess_execution = os.getenv("AGENTHUB_USE_SUBPROCESS", "true").lower() in ("true", "1", "yes")
+        config.quiet_mode = os.getenv("AGENTHUB_QUIET", "").lower() in ("true", "1", "yes")
+        config.suppress_http_logs = os.getenv("AGENTHUB_SUPPRESS_HTTP", "true").lower() in ("true", "1", "yes")
         
         return config
     
@@ -76,6 +80,8 @@ class AgentHubConfig:
             "cache_ttl_seconds": self.cache_ttl_seconds,
             "log_level": self.log_level,
             "enable_debug_logging": self.enable_debug_logging,
+            "quiet_mode": self.quiet_mode,
+            "suppress_http_logs": self.suppress_http_logs,
         }
 
 

@@ -13,6 +13,9 @@ from agentmanager import core, runtime, storage
 # Import configuration
 from agentmanager.config import get_config, set_config, AgentHubConfig
 
+# Import logging utilities
+from agentmanager.utils.logging_config import setup_logging, set_quiet_mode, set_debug_mode
+
 # Import unified loader
 from agentmanager.core.loader import load_agent
 
@@ -38,6 +41,11 @@ __all__ = [
     "get_config",
     "set_config", 
     "AgentHubConfig",
+    
+    # Logging utilities
+    "setup_logging",
+    "set_quiet_mode",
+    "set_debug_mode",
     
     # Modules
     "core",

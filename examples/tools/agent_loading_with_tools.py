@@ -10,6 +10,9 @@ All examples are production-ready and validated.
 import agentmanager as amg
 import json
 
+# Configure logging to suppress HTTP logs
+amg.set_quiet_mode(True)
+
 def example_1_basic_agent():
     """Load agent without tools"""
     print("📋 Example 1: Basic Agent (no tools)")
