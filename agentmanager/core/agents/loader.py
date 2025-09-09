@@ -251,7 +251,6 @@ class AgentLoader:
             from ..tools import assign_tools_to_agent
             assign_tools_to_agent(agent_id, tools)
             self.assigned_tools[agent_id] = tools
-            print(f"🔐 Assigned tools to agent '{agent_id}': {tools}")
         
         # Create agent wrapper with tool capabilities
         return AgentWrapper(agent_info, self.tool_registry, agent_id, tools)
@@ -262,7 +261,6 @@ class AgentLoader:
             from ..tools import assign_tools_to_agent
             assign_tools_to_agent(agent_id, tools)
             self.assigned_tools[agent_id] = tools
-            print(f"🔐 Assigned tools to agent '{agent_id}': {tools}")
     
     def get_agent_tools(self, agent_id: str) -> List[str]:
         """Get tools assigned to an agent."""

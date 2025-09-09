@@ -191,7 +191,6 @@ class ToolRegistry:
         
         # Assign tools to agent
         self.agent_tool_access[agent_id] = tool_names.copy()
-        print(f"🔐 Assigned tools to agent '{agent_id}': {tool_names}")
     
     def get_agent_tools(self, agent_id: str) -> List[str]:
         """Get tools assigned to a specific agent."""

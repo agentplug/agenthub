@@ -12,7 +12,7 @@ class Colors:
     BOLD = '\033[1m'
     DIM = '\033[2m'
     
-    # Basic text colors
+    # Text colors
     BLACK = '\033[30m'
     RED = '\033[31m'
     GREEN = '\033[32m'
@@ -21,16 +21,6 @@ class Colors:
     MAGENTA = '\033[35m'
     CYAN = '\033[36m'
     WHITE = '\033[37m'
-    
-    # Bright colors (more vibrant)
-    BRIGHT_BLACK = '\033[90m'
-    BRIGHT_RED = '\033[91m'
-    BRIGHT_GREEN = '\033[92m'
-    BRIGHT_YELLOW = '\033[93m'
-    BRIGHT_BLUE = '\033[94m'
-    BRIGHT_MAGENTA = '\033[95m'
-    BRIGHT_CYAN = '\033[96m'
-    BRIGHT_WHITE = '\033[97m'
     
     # Background colors
     BG_BLACK = '\033[40m'
@@ -62,35 +52,25 @@ class ColorfulFormatter(logging.Formatter):
                     if len(parts) == 2:
                         agent_part = parts[0].strip()
                         tools_part = parts[1].strip()
-                        message = f"{Colors.BRIGHT_GREEN}✅ {Colors.BOLD}{agent_part}{Colors.RESET} {Colors.BRIGHT_CYAN}{Colors.BOLD}{tools_part}{Colors.RESET}"
+                        message = f"{Colors.GREEN}✅ {Colors.BOLD}{agent_part}{Colors.RESET} {Colors.CYAN}{tools_part}{Colors.RESET}"
                 else:
-                    message = f"{Colors.BRIGHT_GREEN}✅ {Colors.BOLD}{msg}{Colors.RESET}"
+                    message = f"{Colors.GREEN}✅ {Colors.BOLD}{msg}{Colors.RESET}"
             
             # Tool assignment
             elif 'Assigned tools to agent' in msg:
-                # Extract agent name and tools
-                if ':' in msg:
-                    parts = msg.split(':')
-                    if len(parts) == 2:
-                        agent_part = parts[0].strip()
-                        tools_part = parts[1].strip()
-                        # Use 🔧 for colorful version, keep 🔐 for original
-                        icon = "🔧" if msg.startswith("🔐") else "🔧"
-                        message = f"{Colors.BRIGHT_BLUE}{icon} {Colors.BOLD}{agent_part}{Colors.RESET}{Colors.BRIGHT_CYAN}:{Colors.RESET} {Colors.BRIGHT_MAGENTA}{tools_part}{Colors.RESET}"
-                else:
-                    message = f"{Colors.BRIGHT_BLUE}🔧 {Colors.BOLD}{msg}{Colors.RESET}"
+                message = f"{Colors.BLUE}🔧 {Colors.BOLD}{msg}{Colors.RESET}"
             
             # Agent processing
             elif 'Agent processing' in msg or 'Tool execution' in msg:
-                message = f"{Colors.YELLOW}⚙️  {Colors.BOLD}{msg}{Colors.RESET}"
+                message = f"{Colors.YELLOW}⚙️  {msg}{Colors.RESET}"
             
             # Error messages
             elif record.levelno >= logging.ERROR:
-                message = f"{Colors.RED}❌ {Colors.BOLD}{msg}{Colors.RESET}"
+                message = f"{Colors.RED}❌ {msg}{Colors.RESET}"
             
             # Warning messages
             elif record.levelno >= logging.WARNING:
-                message = f"{Colors.YELLOW}⚠️  {Colors.BOLD}{msg}{Colors.RESET}"
+                message = f"{Colors.YELLOW}⚠️  {msg}{Colors.RESET}"
         
         return message
 
@@ -99,17 +79,12 @@ class HTTPLogFilter(logging.Filter):
     """Filter to suppress HTTP request logs while keeping useful agent logs."""
     
     def filter(self, record):
-        # Keep useful agent logs but avoid duplicates
+        # Keep useful agent logs
         if hasattr(record, 'msg') and record.msg:
             msg = str(record.msg)
-            
-            # Skip duplicate tool assignment logs (keep only the colorful one)
-            if 'Assigned tools to agent' in msg and not msg.startswith('🔧') and not msg.startswith('🔐'):
-                return False
-                
-            # Keep other useful agent logs
             if any(pattern in msg for pattern in [
                 'Successfully loaded agent',
+                'Assigned tools to agent',
                 'Agent loaded',
                 'Tool execution',
                 'Agent processing'

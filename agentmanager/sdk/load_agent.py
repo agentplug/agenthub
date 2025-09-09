@@ -64,7 +64,6 @@ def load_agent(
     if tools:
         from ..core.tools import assign_tools_to_agent
         assign_tools_to_agent(agent_id, tools)
-        print(f"🔐 Assigned tools to agent '{agent_id}': {tools}")
     
     # Create agent wrapper with tool capabilities and runtime
     from ..core.agents import AgentWrapper
