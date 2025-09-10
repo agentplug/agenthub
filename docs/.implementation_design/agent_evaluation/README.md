@@ -73,20 +73,6 @@ This directory contains detailed implementation design documents for the Agent E
 
 **Status**: ⏳ Pending
 
-### Testing Strategy
-**Directory**: `testing/`
-
-**Purpose**: Comprehensive testing strategy for the evaluation system.
-
-**Documents**:
-- `README.md` - Testing overview and strategy
-- `unit_testing.md` - Unit testing specifications
-- `integration_testing.md` - Integration testing specifications
-- `performance_testing.md` - Performance testing specifications
-- `user_acceptance_testing.md` - User acceptance testing specifications
-
-**Status**: ⏳ Pending
-
 ## Implementation Phases
 
 ### Phase 1: Core Evaluation Engine
