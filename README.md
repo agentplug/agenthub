@@ -88,7 +88,7 @@ insights = data_agent.analyze("sales_data.csv")
 
 ```python
 # 🔧 Define custom tools with @tool decorator
-from agentmanager.core.tools import tool
+from agentmanager.core.tools import tool, run_resources
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 10) -> list:
@@ -105,10 +105,20 @@ def data_analyzer(data: list, analysis_type: str = "basic") -> dict:
         "insights": f"Analyzed {len(data)} items"
     }
 
-# 🚀 Load agent with custom tools
+# 🚀 Start the tool server with run_resources()
+if __name__ == "__main__":
+    print("🔧 Starting tool server...")
+    run_resources()  # This starts the MCP server for tool execution
+```
+
+```python
+# 🤖 Use tools with agents (run in separate process/terminal)
+import agentmanager as amg
+
+# Load agent with custom tools
 agent = amg.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
 
-# 🤖 Agent's AI decides when and how to use tools
+# Agent's AI decides when and how to use tools
 result = agent.analyze("What are the latest AI trends?")
 # Agent automatically uses web_search and data_analyzer as needed!
 ```
@@ -244,6 +254,56 @@ agenthub agent status agentplug/scientific-paper-analyzer
 agenthub agent remove agentplug/scientific-paper-analyzer
 ```
 
+### 🛠️ Tool Server Development
+
+Create and run your first tool server:
+
+```python
+#!/usr/bin/env python3
+"""
+Complete tool server example using run_resources()
+"""
+from agentmanager.core.tools import tool, run_resources
+
+@tool(name="calculator", description="Perform basic math operations")
+def calculator(operation: str, a: float, b: float) -> float:
+    """Perform basic math operations."""
+    operations = {
+        "add": a + b,
+        "subtract": a - b,
+        "multiply": a * b,
+        "divide": a / b if b != 0 else float('inf')
+    }
+    return operations.get(operation, 0)
+
+@tool(name="text_processor", description="Process text with various operations")
+def text_processor(text: str, operation: str = "uppercase") -> str:
+    """Process text with various operations."""
+    operations = {
+        "uppercase": text.upper(),
+        "lowercase": text.lower(),
+        "reverse": text[::-1],
+        "word_count": str(len(text.split()))
+    }
+    return operations.get(operation, text)
+
+if __name__ == "__main__":
+    print("🚀 Starting tool server with run_resources()...")
+    run_resources()  # Starts MCP server for tool execution
+```
+
+```python
+# Use the tools with agents (run in separate terminal/process)
+import agentmanager as amg
+
+# Load agent with your custom tools
+agent = amg.load_agent("agentplug/analysis-agent", tools=["calculator", "text_processor"])
+
+# Agent can now use your custom tools
+result = agent.analyze("Calculate 15 * 3 and convert 'hello world' to uppercase")
+print(result)
+```
+
 ### 🧑‍💻 Developer Workflow
 
 Create and publish your first agent:
@@ -303,7 +363,7 @@ agenthub agent migrate user/agent  # Migrate to different Python version
 **Python SDK:**
 ```python
 from agentmanager import load_agent, list_agents, remove_agent
-from agentmanager.core.tools import tool
+from agentmanager.core.tools import tool, run_resources
 
 # Core functions
 agent = load_agent("user/agent")      # Install if needed
@@ -311,10 +371,14 @@ agent_with_tools = load_agent("user/agent", tools=["tool1", "tool2"])  # With to
 agents = list_agents()                # Get all agents
 remove_agent("user/agent")            # Clean removal
 
-# Tool development
+# Tool development and server startup
 @tool(name="my_tool", description="My custom tool")
 def my_tool(param: str) -> str:
     return f"Processed: {param}"
+
+# Start tool server
+if __name__ == "__main__":
+    run_resources()  # Starts MCP server for tool execution
 ```
 
 ## 🤝 Contributing
