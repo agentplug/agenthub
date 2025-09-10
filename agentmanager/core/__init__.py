@@ -1,20 +1,60 @@
-"""Core Module - Agent loading and interface management."""
+"""Core Module - Modular architecture for agent management.
 
-from agentmanager.core.agent_loader import AgentLoader, AgentLoadError
-from agentmanager.core.agent_wrapper import AgentExecutionError, AgentWrapper
-from agentmanager.core.interface_validator import (
-    InterfaceValidationError,
-    InterfaceValidator,
+This module provides a modular architecture organized into:
+- agents/: Agent lifecycle management, loading, and execution
+- runtime/: Runtime management and component coordination
+- common/: Shared utilities, types, and exceptions
+"""
+
+# Import from agents package
+from .agents import (
+    AgentLoader, AgentLoadError, AgentWrapper, AgentExecutionError,
+    InterfaceValidator, InterfaceValidationError, ManifestParser, ManifestValidationError
 )
-from agentmanager.core.manifest_parser import ManifestParser, ManifestValidationError
+
+# Import from tools package
+from .tools import (
+    ToolRegistry, tool, get_available_tools, get_mcp_server,
+    ToolError, ToolRegistrationError, ToolNameConflictError, ToolValidationError,
+    ToolExecutionError, ToolAccessDeniedError, ToolNotFoundError
+)
+
+# Import from mcp package
+from .mcp import (
+    AgentToolManager, MCPClient, ToolInjector,
+    get_tool_manager, get_mcp_client, get_tool_injector
+)
 
 __all__ = [
-    "ManifestParser",
-    "ManifestValidationError",
-    "InterfaceValidator",
-    "InterfaceValidationError",
+    # Agent components
     "AgentLoader",
     "AgentLoadError",
     "AgentWrapper",
     "AgentExecutionError",
+    "InterfaceValidator",
+    "InterfaceValidationError",
+    "ManifestParser",
+    "ManifestValidationError",
+    
+    # Tool components
+    "ToolRegistry",
+    "tool",
+    "get_available_tools",
+    "get_mcp_server",
+    "ToolError",
+    "ToolRegistrationError",
+    "ToolNameConflictError",
+    "ToolValidationError",
+    "ToolExecutionError",
+    "ToolAccessDeniedError",
+    "ToolNotFoundError",
+    "run_resources",
+    
+    # MCP components (new)
+    "AgentToolManager",
+    "MCPClient",
+    "ToolInjector",
+    "get_tool_manager",
+    "get_mcp_client",
+    "get_tool_injector",
 ]

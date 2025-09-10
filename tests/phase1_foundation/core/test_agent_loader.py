@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from agentmanager.core.agent_loader import AgentLoader, AgentLoadError
+from agentmanager.core.agents.loader import AgentLoader, AgentLoadError
 
 
 class TestAgentLoader:

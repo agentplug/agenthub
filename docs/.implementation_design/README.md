@@ -53,6 +53,25 @@ This directory contains **implementation-level design documents** organized by d
 
 ---
 
+### **Phase 2.5: Tool Injection (Week 3.5)**
+**Goal**: Enable custom tool injection into agents using MCP (Model Context Protocol)
+
+**Modules**:
+- **core/tools/**: Tool registry, decorator, metadata management, validation
+- **core/mcp/**: MCP server, tool routing, context tracking
+- **runtime/**: Tool injection into agent context
+- **sdk/**: Enhanced `load_agent()` with tool assignment
+
+**Deliverables**:
+- ✅ Global tool registry with per-agent access control
+- ✅ Single MCP server with tool routing and concurrency support
+- ✅ `@tool` decorator for custom tool registration
+- ✅ `amg.load_agent(tools=[...])` functionality
+- ✅ Tool metadata injection into agent context
+- ✅ Foundation for Phase 3
+
+---
+
 ### **Phase 3: SDK Integration (Week 4)**
 **Goal**: Create complete Python SDK for one-line agent integration
 
@@ -92,6 +111,7 @@ This directory contains **implementation-level design documents** organized by d
 ```
 Phase 1: Basic process execution and environment management
 Phase 2: Enhanced with installation support
+Phase 2.5: Enhanced with tool injection and MCP integration
 Phase 3: Enhanced with method dispatching
 Phase 4: Enhanced with performance optimization and monitoring
 ```
@@ -112,10 +132,29 @@ Phase 3: Enhanced with agent management
 Phase 4: Enhanced with user experience and help
 ```
 
+### **Core/Tools Module**
+```
+Phase 1: Not implemented
+Phase 2: Not implemented
+Phase 2.5: Tool registry, decorator, metadata management, validation
+Phase 3: Enhanced with advanced tool features
+Phase 4: Enhanced with tool performance optimization
+```
+
+### **Core/MCP Module**
+```
+Phase 1: Not implemented
+Phase 2: Not implemented
+Phase 2.5: MCP server, tool routing, context tracking
+Phase 3: Enhanced with advanced MCP features
+Phase 4: Enhanced with MCP performance optimization
+```
+
 ### **SDK Module**
 ```
 Phase 1: Not implemented
 Phase 2: Not implemented
+Phase 2.5: Basic tool integration in load_agent()
 Phase 3: Basic SDK with agent loading
 Phase 4: Enhanced SDK with user experience
 ```
@@ -165,19 +204,26 @@ Phase 4: Enhanced SDK with user experience
 
 ## 📊 **Phase Progress Tracking**
 
-### **Phase 1 Status**: 🚧 In Progress
-- [ ] Runtime module complete
-- [ ] Storage module complete
-- [ ] Core module complete
-- [ ] CLI module complete
-- [ ] Phase 1 testing complete
+### **Phase 1 Status**: ✅ Completed
+- [x] Runtime module complete
+- [x] Storage module complete
+- [x] Core module complete
+- [x] CLI module complete
+- [x] Phase 1 testing complete
 
-### **Phase 2 Status**: ⏳ Not Started
-- [ ] Registry module complete
-- [ ] Cache module complete
-- [ ] Installer module complete
-- [ ] Storage enhancements complete
-- [ ] Phase 2 testing complete
+### **Phase 2 Status**: ✅ Completed
+- [x] Registry module complete
+- [x] Cache module complete
+- [x] Installer module complete
+- [x] Storage enhancements complete
+- [x] Phase 2 testing complete
+
+### **Phase 2.5 Status**: 🚧 In Progress
+- [ ] Tool registry module complete
+- [ ] MCP server module complete
+- [ ] Tool injection module complete
+- [ ] SDK tool integration complete
+- [ ] Phase 2.5 testing complete
 
 ### **Phase 3 Status**: ⏳ Not Started
 - [ ] SDK module complete
@@ -203,6 +249,13 @@ Phase 4: Enhanced SDK with user experience
 ### **Phase 2 Success**
 - ✅ Can auto-install new `agentplug` agents
 - ✅ Registry integration working
+- ✅ Foundation ready for Phase 3
+
+### **Phase 2.5 Success**
+- ✅ Can inject custom tools into agents
+- ✅ MCP server with tool routing working
+- ✅ `@tool` decorator and tool registry working
+- ✅ `amg.load_agent(tools=[...])` functionality working
 - ✅ Foundation ready for Phase 3
 
 ### **Phase 3 Success**

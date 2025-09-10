@@ -224,7 +224,7 @@ class TestBackwardCompatibility:
         """Test that existing module imports still work."""
         # These should still work after adding URLParser
         from agentmanager import load_agent
-        from agentmanager.core.agent_loader import AgentLoader
+        from agentmanager.core.agents.loader import AgentLoader
         from agentmanager.storage.local_storage import LocalStorage
 
         # Should be able to instantiate existing components
@@ -239,7 +239,7 @@ class TestBackwardCompatibility:
         """Test that importing URLParser has no side effects."""
         # Import URLParser
         # Existing functionality should still work
-        from agentmanager.core.agent_loader import AgentLoader
+        from agentmanager.core.agents.loader import AgentLoader
         from agentmanager.github.url_parser import URLParser
         from agentmanager.storage.local_storage import LocalStorage
 

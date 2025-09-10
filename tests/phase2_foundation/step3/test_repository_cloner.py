@@ -373,7 +373,7 @@ class TestBackwardCompatibility:
     def test_existing_imports_still_work(self):
         """Test that existing module imports still work."""
         # These should still work after adding RepositoryCloner
-        from agentmanager.core.agent_loader import AgentLoader
+        from agentmanager.core.agents.loader import AgentLoader
         from agentmanager.storage.local_storage import LocalStorage
         from agentmanager import load_agent
         from agentmanager.github import URLParser
@@ -394,7 +394,7 @@ class TestBackwardCompatibility:
         from agentmanager.github.repository_cloner import RepositoryCloner
         
         # Existing functionality should still work
-        from agentmanager.core.agent_loader import AgentLoader
+        from agentmanager.core.agents.loader import AgentLoader
         from agentmanager.storage.local_storage import LocalStorage
         from agentmanager.github import URLParser
         
