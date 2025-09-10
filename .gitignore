@@ -240,3 +240,5 @@ test_agent_repo/
 sample_docs/
 conversation.md
 agentplug/
+create_pr.py
+brainstorming.md
