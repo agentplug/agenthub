@@ -152,35 +152,60 @@ class DemoEvaluator:
         
         return evaluation_results
     
-    def _execute_agent(self, agent, input_text: str) -> AgentOutput:
-        """Execute agent with input text."""
+    def _execute_agent(self, agent, input_text: str, method_name: str = None) -> AgentOutput:
+        """Execute agent with input text, supporting AgentWrapper interface."""
         start_time = datetime.now()
         
         try:
-            # Try to call the agent's main method
-            if hasattr(agent, 'process') or hasattr(agent, 'run') or hasattr(agent, 'execute'):
-                # Try different common method names
-                if hasattr(agent, 'process'):
-                    output_text = agent.process(input_text)
-                elif hasattr(agent, 'run'):
-                    output_text = agent.run(input_text)
-                else:
-                    output_text = agent.execute(input_text)
+            # Check if this is an AgentWrapper instance
+            if hasattr(agent, 'execute') and hasattr(agent, 'methods'):
+                # Use AgentWrapper's execute method
+                method_name = method_name or self._detect_primary_method(agent)
+                parameters = self._prepare_parameters(agent, method_name, input_text)
+                
+                result = agent.execute(method_name, parameters)
+                output_text = self._extract_output_from_result(result)
+                
+                # Extract additional metadata from AgentWrapper
+                metadata = {
+                    'start_time': start_time.isoformat(),
+                    'end_time': datetime.now().isoformat(),
+                    'response_time': (datetime.now() - start_time).total_seconds(),
+                    'method_used': method_name,
+                    'parameters': parameters,
+                    'agent_type': 'AgentWrapper'
+                }
+                
+                # Add tool information if available
+                if hasattr(agent, 'assigned_tools') and agent.assigned_tools:
+                    metadata['assigned_tools'] = agent.assigned_tools
+                    metadata['tool_count'] = len(agent.assigned_tools)
+                
             else:
-                # Try to call the agent directly
-                output_text = agent(input_text)
-            
-            end_time = datetime.now()
+                # Fallback to generic agent execution
+                if hasattr(agent, 'process') or hasattr(agent, 'run') or hasattr(agent, 'execute'):
+                    if hasattr(agent, 'process'):
+                        output_text = agent.process(input_text)
+                    elif hasattr(agent, 'run'):
+                        output_text = agent.run(input_text)
+                    else:
+                        output_text = agent.execute(input_text)
+                else:
+                    # Try to call the agent directly
+                    output_text = agent(input_text)
+                
+                metadata = {
+                    'start_time': start_time.isoformat(),
+                    'end_time': datetime.now().isoformat(),
+                    'response_time': (datetime.now() - start_time).total_seconds(),
+                    'agent_type': 'Generic'
+                }
             
             return AgentOutput(
                 input_text=input_text,
                 output_text=str(output_text),
-                timestamp=end_time,
-                metadata={
-                    'start_time': start_time.isoformat(),
-                    'end_time': end_time.isoformat(),
-                    'response_time': (end_time - start_time).total_seconds()
-                }
+                timestamp=datetime.now(),
+                metadata=metadata
             )
             
         except Exception as e:
@@ -189,8 +214,77 @@ class DemoEvaluator:
                 input_text=input_text,
                 output_text=f"Error: {str(e)}",
                 timestamp=datetime.now(),
-                metadata={'error': str(e), 'error_type': type(e).__name__}
+                metadata={
+                    'error': str(e), 
+                    'error_type': type(e).__name__,
+                    'agent_type': 'AgentWrapper' if hasattr(agent, 'execute') and hasattr(agent, 'methods') else 'Generic'
+                }
             )
+    
+    def _detect_primary_method(self, agent) -> str:
+        """Detect the primary method to use for evaluation."""
+        if not hasattr(agent, 'methods') or not agent.methods:
+            raise ValueError("Agent has no available methods")
+        
+        # Priority order for method selection based on common AgentHub patterns
+        priority_methods = [
+            'analyze_text',      # analysis-agent
+            'generate_code',     # coding-agent  
+            'analyze_paper',     # scientific-paper-analyzer
+            'process',           # generic
+            'run',               # generic
+            'execute'            # generic
+        ]
+        
+        for method in priority_methods:
+            if method in agent.methods:
+                return method
+        
+        # Fallback to first available method
+        return agent.methods[0]
+    
+    def _prepare_parameters(self, agent, method_name: str, input_text: str) -> dict:
+        """Prepare parameters based on method signature."""
+        try:
+            method_info = agent.get_method_info(method_name)
+            interface_params = method_info.get("parameters", {})
+            
+            # Map input_text to the primary parameter
+            if interface_params:
+                # Find the first string parameter
+                for param_name, param_info in interface_params.items():
+                    param_type = param_info.get("type", "").lower()
+                    if param_type == "string" or "text" in param_name.lower() or "input" in param_name.lower():
+                        return {param_name: input_text}
+                
+                # Try common parameter names
+                common_names = ['text', 'input', 'prompt', 'query', 'data', 'content']
+                for name in common_names:
+                    if name in interface_params:
+                        return {name: input_text}
+                
+                # Last resort: use first parameter
+                first_param = list(interface_params.keys())[0]
+                return {first_param: input_text}
+            
+            return {}
+        except Exception:
+            # Fallback to simple text parameter
+            return {'text': input_text}
+    
+    def _extract_output_from_result(self, result) -> str:
+        """Extract output text from agent execution result."""
+        if isinstance(result, dict):
+            # Try common result keys
+            for key in ['result', 'output', 'response', 'data', 'content']:
+                if key in result:
+                    return str(result[key])
+            # If no common key found, convert entire dict to string
+            return str(result)
+        elif isinstance(result, str):
+            return result
+        else:
+            return str(result)
     
     def _calculate_demo_metrics(
         self, 
@@ -434,42 +528,139 @@ class BenchmarkEvaluator:
             timestamp=datetime.now()
         )
     
-    def _execute_agent(self, agent, input_text: str) -> AgentOutput:
-        """Execute agent with input text."""
+    def _execute_agent(self, agent, input_text: str, method_name: str = None) -> AgentOutput:
+        """Execute agent with input text, supporting AgentWrapper interface."""
         start_time = datetime.now()
         
         try:
-            # Try to call the agent's main method
-            if hasattr(agent, 'process') or hasattr(agent, 'run') or hasattr(agent, 'execute'):
-                if hasattr(agent, 'process'):
-                    output_text = agent.process(input_text)
-                elif hasattr(agent, 'run'):
-                    output_text = agent.run(input_text)
-                else:
-                    output_text = agent.execute(input_text)
+            # Check if this is an AgentWrapper instance
+            if hasattr(agent, 'execute') and hasattr(agent, 'methods'):
+                # Use AgentWrapper's execute method
+                method_name = method_name or self._detect_primary_method(agent)
+                parameters = self._prepare_parameters(agent, method_name, input_text)
+                
+                result = agent.execute(method_name, parameters)
+                output_text = self._extract_output_from_result(result)
+                
+                # Extract additional metadata from AgentWrapper
+                metadata = {
+                    'start_time': start_time.isoformat(),
+                    'end_time': datetime.now().isoformat(),
+                    'response_time': (datetime.now() - start_time).total_seconds(),
+                    'method_used': method_name,
+                    'parameters': parameters,
+                    'agent_type': 'AgentWrapper'
+                }
+                
+                # Add tool information if available
+                if hasattr(agent, 'assigned_tools') and agent.assigned_tools:
+                    metadata['assigned_tools'] = agent.assigned_tools
+                    metadata['tool_count'] = len(agent.assigned_tools)
+                
             else:
-                output_text = agent(input_text)
-            
-            end_time = datetime.now()
+                # Fallback to generic agent execution
+                if hasattr(agent, 'process') or hasattr(agent, 'run') or hasattr(agent, 'execute'):
+                    if hasattr(agent, 'process'):
+                        output_text = agent.process(input_text)
+                    elif hasattr(agent, 'run'):
+                        output_text = agent.run(input_text)
+                    else:
+                        output_text = agent.execute(input_text)
+                else:
+                    # Try to call the agent directly
+                    output_text = agent(input_text)
+                
+                metadata = {
+                    'start_time': start_time.isoformat(),
+                    'end_time': datetime.now().isoformat(),
+                    'response_time': (datetime.now() - start_time).total_seconds(),
+                    'agent_type': 'Generic'
+                }
             
             return AgentOutput(
                 input_text=input_text,
                 output_text=str(output_text),
-                timestamp=end_time,
-                metadata={
-                    'start_time': start_time.isoformat(),
-                    'end_time': end_time.isoformat(),
-                    'response_time': (end_time - start_time).total_seconds()
-                }
+                timestamp=datetime.now(),
+                metadata=metadata
             )
             
         except Exception as e:
+            # Return error output
             return AgentOutput(
                 input_text=input_text,
                 output_text=f"Error: {str(e)}",
                 timestamp=datetime.now(),
-                metadata={'error': str(e), 'error_type': type(e).__name__}
+                metadata={
+                    'error': str(e), 
+                    'error_type': type(e).__name__,
+                    'agent_type': 'AgentWrapper' if hasattr(agent, 'execute') and hasattr(agent, 'methods') else 'Generic'
+                }
             )
+    
+    def _detect_primary_method(self, agent) -> str:
+        """Detect the primary method to use for evaluation."""
+        if not hasattr(agent, 'methods') or not agent.methods:
+            raise ValueError("Agent has no available methods")
+        
+        # Priority order for method selection based on common AgentHub patterns
+        priority_methods = [
+            'analyze_text',      # analysis-agent
+            'generate_code',     # coding-agent  
+            'analyze_paper',     # scientific-paper-analyzer
+            'process',           # generic
+            'run',               # generic
+            'execute'            # generic
+        ]
+        
+        for method in priority_methods:
+            if method in agent.methods:
+                return method
+        
+        # Fallback to first available method
+        return agent.methods[0]
+    
+    def _prepare_parameters(self, agent, method_name: str, input_text: str) -> dict:
+        """Prepare parameters based on method signature."""
+        try:
+            method_info = agent.get_method_info(method_name)
+            interface_params = method_info.get("parameters", {})
+            
+            # Map input_text to the primary parameter
+            if interface_params:
+                # Find the first string parameter
+                for param_name, param_info in interface_params.items():
+                    param_type = param_info.get("type", "").lower()
+                    if param_type == "string" or "text" in param_name.lower() or "input" in param_name.lower():
+                        return {param_name: input_text}
+                
+                # Try common parameter names
+                common_names = ['text', 'input', 'prompt', 'query', 'data', 'content']
+                for name in common_names:
+                    if name in interface_params:
+                        return {name: input_text}
+                
+                # Last resort: use first parameter
+                first_param = list(interface_params.keys())[0]
+                return {first_param: input_text}
+            
+            return {}
+        except Exception:
+            # Fallback to simple text parameter
+            return {'text': input_text}
+    
+    def _extract_output_from_result(self, result) -> str:
+        """Extract output text from agent execution result."""
+        if isinstance(result, dict):
+            # Try common result keys
+            for key in ['result', 'output', 'response', 'data', 'content']:
+                if key in result:
+                    return str(result[key])
+            # If no common key found, convert entire dict to string
+            return str(result)
+        elif isinstance(result, str):
+            return result
+        else:
+            return str(result)
     
     def _calculate_benchmark_metrics(
         self, 

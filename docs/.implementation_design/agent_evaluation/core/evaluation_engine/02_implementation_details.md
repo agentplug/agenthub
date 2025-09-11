@@ -15,6 +15,114 @@ This document provides detailed implementation specifications for the core evalu
 
 ## Class Hierarchy and Architecture
 
+### AgentWrapper Integration
+
+The evaluation engine now includes comprehensive support for AgentHub's AgentWrapper interface, enabling seamless evaluation of prebuilt AgentHub agents.
+
+#### AgentWrapper Detection and Execution
+
+```python
+def _execute_agent(self, agent, input_text: str, method_name: str = None) -> AgentOutput:
+    """Execute agent with input text, supporting AgentWrapper interface."""
+    start_time = datetime.now()
+    
+    try:
+        # Check if this is an AgentWrapper instance
+        if hasattr(agent, 'execute') and hasattr(agent, 'methods'):
+            # Use AgentWrapper's execute method
+            method_name = method_name or self._detect_primary_method(agent)
+            parameters = self._prepare_parameters(agent, method_name, input_text)
+            
+            result = agent.execute(method_name, parameters)
+            output_text = self._extract_output_from_result(result)
+            
+            # Extract additional metadata from AgentWrapper
+            metadata = {
+                'start_time': start_time.isoformat(),
+                'end_time': datetime.now().isoformat(),
+                'response_time': (datetime.now() - start_time).total_seconds(),
+                'method_used': method_name,
+                'parameters': parameters,
+                'agent_type': 'AgentWrapper'
+            }
+            
+            # Add tool information if available
+            if hasattr(agent, 'assigned_tools') and agent.assigned_tools:
+                metadata['assigned_tools'] = agent.assigned_tools
+                metadata['tool_count'] = len(agent.assigned_tools)
+        else:
+            # Fallback to generic agent execution
+            # ... generic execution logic
+```
+
+#### Method Detection
+
+```python
+def _detect_primary_method(self, agent) -> str:
+    """Detect the primary method to use for evaluation."""
+    if not hasattr(agent, 'methods') or not agent.methods:
+        raise ValueError("Agent has no available methods")
+    
+    # Priority order for method selection based on common AgentHub patterns
+    priority_methods = [
+        'analyze_text',      # analysis-agent
+        'generate_code',     # coding-agent  
+        'analyze_paper',     # scientific-paper-analyzer
+        'process',           # generic
+        'run',               # generic
+        'execute'            # generic
+    ]
+    
+    for method in priority_methods:
+        if method in agent.methods:
+            return method
+    
+    # Fallback to first available method
+    return agent.methods[0]
+```
+
+#### Parameter Preparation
+
+```python
+def _prepare_parameters(self, agent, method_name: str, input_text: str) -> dict:
+    """Prepare parameters based on method signature."""
+    try:
+        method_info = agent.get_method_info(method_name)
+        interface_params = method_info.get("parameters", {})
+        
+        # Map input_text to the primary parameter
+        if interface_params:
+            # Find the first string parameter
+            for param_name, param_info in interface_params.items():
+                param_type = param_info.get("type", "").lower()
+                if param_type == "string" or "text" in param_name.lower() or "input" in param_name.lower():
+                    return {param_name: input_text}
+            
+            # Try common parameter names
+            common_names = ['text', 'input', 'prompt', 'query', 'data', 'content']
+            for name in common_names:
+                if name in interface_params:
+                    return {name: input_text}
+            
+            # Last resort: use first parameter
+            first_param = list(interface_params.keys())[0]
+            return {first_param: input_text}
+        
+        return {}
+    except Exception:
+        # Fallback to simple text parameter
+        return {'text': input_text}
+```
+
+#### Tool-Aware Evaluation
+
+The evaluation engine automatically detects and evaluates agents with assigned tools:
+
+- **Tool Detection**: Checks for `assigned_tools` attribute
+- **Tool Metadata**: Extracts tool count and names
+- **Tool Usage**: Monitors tool execution during evaluation
+- **Tool Metrics**: Calculates tool-specific performance metrics
+
 ### Core Class Structure
 
 ```python

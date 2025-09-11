@@ -53,6 +53,39 @@ This example demonstrates:
 python examples/evaluation/integration_example.py
 ```
 
+### 4. AgentHub Agent Evaluation (`agenthub_agent_evaluation.py`)
+**Purpose**: Evaluate prebuilt AgentHub agents  
+**Difficulty**: Beginner to Intermediate  
+**Duration**: 15-20 minutes  
+
+This example demonstrates:
+- Evaluating prebuilt agents (analysis-agent, coding-agent, scientific-paper-analyzer)
+- AgentWrapper interface support
+- Tool-aware evaluation
+- Custom evaluation configurations
+- Agent comparison
+- Report generation
+
+**Run it:**
+```bash
+python examples/evaluation/agenthub_agent_evaluation.py
+```
+
+### 5. Simple AgentHub Evaluation (`simple_agenthub_evaluation.py`)
+**Purpose**: Quick evaluation of AgentHub agents  
+**Difficulty**: Beginner  
+**Duration**: 5 minutes  
+
+This example demonstrates:
+- Basic AgentHub agent evaluation
+- Simple demo mode usage
+- Quick results overview
+
+**Run it:**
+```bash
+python examples/evaluation/simple_agenthub_evaluation.py
+```
+
 ## Quick Start
 
 ### Basic Evaluation
