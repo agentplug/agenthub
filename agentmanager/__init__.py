@@ -35,6 +35,17 @@ from agentmanager.storage.local_storage import LocalStorage
 from agentmanager.sdk import tool, get_available_tools, run_resources
 from agentmanager.core.tools import get_tool_metadata
 
+# Import evaluation functionality
+from agentmanager.evaluation import (
+    evaluate,
+    evaluate_demo,
+    evaluate_benchmark,
+    generate_report,
+    get_available_benchmarks,
+    get_available_modes,
+    get_available_report_formats
+)
+
 
 __all__ = [
     # Core functionality
@@ -43,6 +54,15 @@ __all__ = [
     "get_available_tools",
     "run_resources",
     "get_tool_metadata",
+    
+    # Evaluation functionality
+    "evaluate",
+    "evaluate_demo",
+    "evaluate_benchmark",
+    "generate_report",
+    "get_available_benchmarks",
+    "get_available_modes",
+    "get_available_report_formats",
     
     # Configuration
     "get_config",
