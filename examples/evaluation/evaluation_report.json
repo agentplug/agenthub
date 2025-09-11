@@ -1,0 +1,52 @@
+{
+  "agent_name": "MockAnalysisAgent",
+  "evaluation_mode": "demo",
+  "duration": 0.0,
+  "sample_count": 5,
+  "summary_metrics": {
+    "success_rate": 1.0,
+    "average_quality": 0.9
+  },
+  "results": [
+    {
+      "input": "What is the capital of France?",
+      "output": "The capital of France is Paris.",
+      "method": "analyze_text",
+      "metrics": {
+        "response_quality": 0.8
+      }
+    },
+    {
+      "input": "Calculate 2 + 2",
+      "output": "2 + 2 = 4",
+      "method": "analyze_text",
+      "metrics": {
+        "response_quality": 0.8500000000000001
+      }
+    },
+    {
+      "input": "Write a short poem about AI",
+      "output": "Here's a simple poem:\n\nRoses are red,\nViolets are blue,\nAI is amazing,\nAnd so are you!",
+      "method": "analyze_text",
+      "metrics": {
+        "response_quality": 0.9
+      }
+    },
+    {
+      "input": "Explain machine learning",
+      "output": "Hello! How can I help you today?",
+      "method": "analyze_text",
+      "metrics": {
+        "response_quality": 0.9500000000000001
+      }
+    },
+    {
+      "input": "What is the weather like today?",
+      "output": "I received your message: 'What is the weather like today?'. I'm a simple agent that can help with basic questions about capitals, math, and creative writing.",
+      "method": "analyze_text",
+      "metrics": {
+        "response_quality": 1.0
+      }
+    }
+  ]
+}

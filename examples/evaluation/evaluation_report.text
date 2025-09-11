@@ -1,0 +1,50 @@
+
+AgentHub Evaluation Report
+========================
+
+Agent: MockAnalysisAgent
+Mode: demo
+Duration: 0.00 seconds
+Samples: 5
+
+Summary Metrics:
+  success_rate: 1.000
+  average_quality: 0.900
+
+Individual Results:
+
+Sample 1:
+  Input: What is the capital of France?
+  Output: The capital of France is Paris....
+  Method: analyze_text
+
+
+Sample 2:
+  Input: Calculate 2 + 2
+  Output: 2 + 2 = 4...
+  Method: analyze_text
+
+
+Sample 3:
+  Input: Write a short poem about AI
+  Output: Here's a simple poem:
+
+Roses are red,
+Violets are blue,
+AI is amazing,
+And so are you!...
+  Method: analyze_text
+
+
+Sample 4:
+  Input: Explain machine learning
+  Output: Hello! How can I help you today?...
+  Method: analyze_text
+
+
+Sample 5:
+  Input: What is the weather like today?
+  Output: I received your message: 'What is the weather like today?'. I'm a simple agent that can help with ba...
+  Method: analyze_text
+
+        
