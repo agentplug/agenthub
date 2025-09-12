@@ -3,7 +3,7 @@ Accuracy metrics for evaluation.
 """
 
 import difflib
-from typing import Optional
+from typing import Optional, Dict, List
 from .base_metric import BaseMetric
 from ..core.data_models import AgentOutput, EvaluationContext, MetricResult
 

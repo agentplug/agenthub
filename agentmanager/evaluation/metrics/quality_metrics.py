@@ -3,7 +3,7 @@ Quality metrics for evaluation.
 """
 
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import Counter
 from .base_metric import BaseMetric
 from ..core.data_models import AgentOutput, EvaluationContext, MetricResult

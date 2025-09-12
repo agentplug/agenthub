@@ -2,7 +2,7 @@
 Reliability metrics for evaluation.
 """
 
-from typing import List
+from typing import List, Dict, Optional
 from .base_metric import BaseMetric
 from ..core.data_models import AgentOutput, EvaluationContext, MetricResult
 
