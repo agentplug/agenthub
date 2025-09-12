@@ -110,6 +110,18 @@ class SampleData:
 
 
 @dataclass
+class PublicBenchmark:
+    """Publicly available benchmark definition."""
+    name: str
+    source: str
+    format: str
+    metrics: List[str]
+    description: str = ""
+    version: str = "latest"
+    license: str = "varies"
+    citation: str = ""
+
+@dataclass
 class BenchmarkDefinition:
     """Definition of a benchmark."""
     name: str
@@ -118,6 +130,7 @@ class BenchmarkDefinition:
     metrics: List[str]
     evaluation_criteria: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
+    benchmark_type: str = "predefined"  # "public", "predefined", "custom"
 
 
 @dataclass

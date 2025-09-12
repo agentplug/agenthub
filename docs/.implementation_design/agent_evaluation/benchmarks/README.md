@@ -73,11 +73,16 @@ This directory contains detailed implementation design documents for the benchma
 
 ## Core Components
 
-### Predefined Benchmarks
+### Public Benchmarks (Primary Focus)
 - **Code Generation**: HumanEval, MBPP, CodeXGLUE
 - **Text Analysis**: GLUE, SuperGLUE, SQuAD
 - **Reasoning**: GSM8K, HellaSwag, ARC
-- **Domain-Specific**: Custom domain benchmarks
+- **Domain-Specific**: MMLU, Big-Bench, HELM
+
+### AgentHub Predefined Benchmarks
+- **Quick Tests**: Fast validation benchmarks
+- **Integration Tests**: AgentHub-specific scenarios
+- **Performance Tests**: Resource usage benchmarks
 
 ### Custom Benchmark Support
 - **Configuration-Based**: JSON/YAML configuration files
@@ -95,11 +100,16 @@ This directory contains detailed implementation design documents for the benchma
 
 ### Simple Benchmark API
 ```python
-# Load predefined benchmark
-benchmark = BenchmarkManager.load("code_generation")
-
-# Run benchmark
+# Load public benchmark (primary focus)
+benchmark = BenchmarkManager.load("humaneval")  # HumanEval code generation
 results = benchmark.evaluate(agent, samples=100)
+
+# Load other public benchmarks
+glue_benchmark = BenchmarkManager.load("glue")  # GLUE text analysis
+gsm8k_benchmark = BenchmarkManager.load("gsm8k")  # GSM8K math reasoning
+
+# Load AgentHub predefined benchmark
+quick_benchmark = BenchmarkManager.load("quick_test")
 
 # Load custom benchmark
 custom_benchmark = BenchmarkManager.load_custom("path/to/benchmark.json")
@@ -166,6 +176,12 @@ advanced_config = {
 
 ## Success Metrics
 
+### Public Benchmark Integration
+- **Coverage**: Support 10+ major public benchmarks (HumanEval, GLUE, GSM8K, etc.)
+- **Download Success**: 99% successful benchmark downloads and caching
+- **Format Support**: Support JSONL, TSV, JSON, and other common formats
+- **Source Integration**: GitHub, Hugging Face, and other major sources
+
 ### Technical Metrics
 - **Performance**: Meet all performance requirements
 - **Reliability**: 99.9% benchmark execution success
@@ -180,11 +196,12 @@ advanced_config = {
 
 ## Next Steps
 
-1. **Interface Design**: Define all benchmark APIs and contracts
-2. **Implementation Details**: Specify code structure and algorithms
-3. **Testing Strategy**: Plan comprehensive testing approach
-4. **Success Criteria**: Define technical acceptance criteria
-5. **Code Implementation**: Begin benchmark framework development
+1. **Public Benchmark Integration**: Implement downloaders and parsers for major benchmarks
+2. **Interface Design**: Define all benchmark APIs and contracts
+3. **Implementation Details**: Specify code structure and algorithms
+4. **Testing Strategy**: Plan comprehensive testing approach with public benchmarks
+5. **Success Criteria**: Define technical acceptance criteria
+6. **Code Implementation**: Begin benchmark framework development
 
 ---
 

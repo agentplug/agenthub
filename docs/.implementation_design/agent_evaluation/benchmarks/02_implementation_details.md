@@ -63,11 +63,81 @@ class BenchmarkCache:
         pass
 ```
 
+### Public Benchmark Implementation
+
+```python
+class PublicBenchmark(Benchmark):
+    """Implementation for publicly available benchmarks."""
+    
+    def __init__(self, name: str, source: str, format: str, metrics: List[str], 
+                 description: str = "", version: str = "latest"):
+        super().__init__(name, description)
+        self.source = source
+        self.format = format
+        self.metrics = metrics
+        self.version = version
+        self._loaded = False
+        self._downloader = BenchmarkDownloader()
+        self._parser = BenchmarkParser()
+    
+    def load_samples(self) -> List[BenchmarkSample]:
+        """Load samples from public benchmark source."""
+        if not self._loaded:
+            try:
+                # Download benchmark data if not cached
+                local_path = self._downloader.download_benchmark(self.name, self.source, self.version)
+                
+                # Parse benchmark data based on format
+                self.samples = self._parser.parse_benchmark(local_path, self.format)
+                self._loaded = True
+                self.logger.info(f"Loaded {len(self.samples)} samples for {self.name}")
+            except Exception as e:
+                self.logger.error(f"Failed to load samples for {self.name}: {e}")
+                raise BenchmarkLoadError(f"Failed to load benchmark {self.name}: {e}")
+        
+        return self.samples
+
+class BenchmarkDownloader:
+    """Downloads and caches public benchmarks."""
+    
+    def __init__(self, cache_dir: str = "~/.agenthub/benchmarks/"):
+        self.cache_dir = Path(cache_dir).expanduser()
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+    
+    def download_benchmark(self, name: str, source: str, version: str) -> str:
+        """Download benchmark data and return local path."""
+        cache_path = self.cache_dir / f"{name}_{version}"
+        
+        if cache_path.exists():
+            return str(cache_path)
+        
+        # Download from source (GitHub, Hugging Face, etc.)
+        if source.startswith("https://github.com/"):
+            return self._download_from_github(source, cache_path)
+        elif source.startswith("https://huggingface.co/"):
+            return self._download_from_huggingface(source, cache_path)
+        else:
+            raise ValueError(f"Unsupported source: {source}")
+
+class BenchmarkParser:
+    """Parses different benchmark formats."""
+    
+    def parse_benchmark(self, file_path: str, format: str) -> List[BenchmarkSample]:
+        """Parse benchmark file based on format."""
+        if format == "jsonl":
+            return self._parse_jsonl(file_path)
+        elif format == "tsv":
+            return self._parse_tsv(file_path)
+        elif format == "json":
+            return self._parse_json(file_path)
+        else:
+            raise ValueError(f"Unsupported format: {format}")
+
 ### Predefined Benchmark Implementation
 
 ```python
 class PredefinedBenchmark(Benchmark):
-    """Implementation for predefined benchmarks."""
+    """Implementation for AgentHub predefined benchmarks."""
     
     def __init__(self, name: str, dataset_path: str, description: str = ""):
         super().__init__(name, description)

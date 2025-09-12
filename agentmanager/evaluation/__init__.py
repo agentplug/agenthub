@@ -23,7 +23,7 @@ from .metrics import (
     PerformanceMetrics,
     ReliabilityMetrics
 )
-from .benchmarks import BenchmarkManager, PredefinedBenchmarks, CustomBenchmark
+from .benchmarks import BenchmarkManager, PredefinedBenchmarks, CustomBenchmark, PublicBenchmarkLoader
 from .reporting import ReportGenerator, HTMLReporter, JSONReporter
 from .evaluate import (
     evaluate,
@@ -55,6 +55,7 @@ __all__ = [
     'BenchmarkManager',
     'PredefinedBenchmarks',
     'CustomBenchmark',
+    'PublicBenchmarkLoader',
     'ReportGenerator',
     'HTMLReporter',
     'JSONReporter',

@@ -4,6 +4,7 @@ Benchmark manager for evaluation benchmarks.
 
 from typing import Dict, List, Optional
 from ..core.data_models import BenchmarkDefinition, SampleData
+from .public_benchmark_loader import PublicBenchmarkLoader
 
 
 class BenchmarkManager:
@@ -13,6 +14,7 @@ class BenchmarkManager:
         """Initialize benchmark manager."""
         self._benchmarks = {}
         self._predefined_benchmarks = PredefinedBenchmarks()
+        self._public_loader = PublicBenchmarkLoader()
         self._load_predefined_benchmarks()
     
     def _load_predefined_benchmarks(self):
@@ -21,12 +23,23 @@ class BenchmarkManager:
         self._benchmarks.update(predefined)
     
     def get_benchmark(self, name: str) -> Optional[BenchmarkDefinition]:
-        """Get benchmark by name."""
+        """Get benchmark by name, prioritizing public benchmarks."""
+        # Check if it's a public benchmark first
+        if self._public_loader.is_supported(name):
+            try:
+                return self._public_loader.load_benchmark(name)
+            except Exception as e:
+                print(f"Failed to load public benchmark {name}: {e}")
+                return None
+        
+        # Fall back to predefined benchmarks
         return self._benchmarks.get(name)
     
     def get_available_benchmarks(self) -> List[str]:
         """Get list of available benchmark names."""
-        return list(self._benchmarks.keys())
+        public_benchmarks = self._public_loader.list_supported()
+        predefined_benchmarks = list(self._benchmarks.keys())
+        return public_benchmarks + predefined_benchmarks
     
     def register_benchmark(self, benchmark: BenchmarkDefinition) -> bool:
         """Register a custom benchmark."""

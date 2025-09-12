@@ -4,7 +4,23 @@ This directory contains examples demonstrating how to use the AgentHub evaluatio
 
 ## 📁 Examples Overview
 
-### 1. Real Agent Evaluation Demo (`real_agent_evaluation_demo.py`)
+### 1. Complete Evaluation Example (`complete_evaluation_example.py`)
+**Purpose**: Complete demonstration with public benchmarks  
+**Difficulty**: Beginner  
+**Duration**: 5-10 minutes  
+
+This example shows:
+- Clean `amg.evaluate()` interface
+- Public benchmark support (HumanEval, GLUE, GSM8K, ARC, HellaSwag)
+- Automatic download and caching
+- Real agent integration
+
+**Run it:**
+```bash
+python examples/evaluation/complete_evaluation_example.py
+```
+
+### 2. Real Agent Evaluation Demo (`real_agent_evaluation_demo.py`)
 **Purpose**: Comprehensive demonstration with real agents  
 **Difficulty**: Beginner  
 **Duration**: 10-15 minutes  
@@ -38,6 +54,30 @@ This example demonstrates:
 python examples/evaluation/test_real_agents.py
 ```
 
+## 🏆 Public Benchmarks
+
+The evaluation framework supports major publicly available benchmarks:
+
+### Code Generation Benchmarks
+- **HumanEval**: 164 hand-written programming problems with test cases
+- **MBPP**: 974 Python programming problems
+- **CodeXGLUE**: Multi-lingual code generation tasks
+
+### Text Analysis Benchmarks
+- **GLUE**: 9 sentence-level language understanding tasks
+- **SuperGLUE**: 8 more challenging language understanding tasks
+- **SQuAD**: Reading comprehension tasks
+
+### Reasoning Benchmarks
+- **GSM8K**: 8,500 grade school math word problems
+- **HellaSwag**: 70,000 commonsense reasoning questions
+- **ARC**: Science exam questions requiring reasoning
+
+### Domain-Specific Benchmarks
+- **MMLU**: 57 tasks across various domains
+- **Big-Bench**: 200+ diverse tasks
+- **HELM**: Comprehensive evaluation suite
+
 ## 🤖 Available Test Agents
 
 The examples use real AgentHub agents located in `test_agents/`:
@@ -58,6 +98,23 @@ The examples use real AgentHub agents located in `test_agents/`:
 - **Features**: Comprehensive analysis, abstract extraction, metadata extraction
 
 ## 🚀 Quick Start
+
+### Clean Evaluation Interface
+```python
+import agentmanager as amg
+
+# Load an agent
+agent = amg.load_agent("agentplug/analysis-agent")
+
+# Run demo evaluation
+result = amg.evaluate(agent, mode="demo")
+
+# Run benchmark evaluation
+result = amg.evaluate(agent, mode="benchmark", benchmark_name="humaneval")
+
+# Generate report
+report = amg.generate_report(result, format_type="html")
+```
 
 ### Basic Real Agent Evaluation
 ```python

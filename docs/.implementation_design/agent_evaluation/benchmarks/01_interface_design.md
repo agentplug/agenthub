@@ -13,6 +13,91 @@
 
 This document defines the APIs, interfaces, and contracts for the benchmark framework. It specifies how benchmarks are loaded, executed, and integrated with the evaluation system.
 
+## Publicly Available Benchmarks
+
+### Supported Public Benchmarks
+
+The benchmark framework prioritizes integration with well-established, publicly available benchmarks that are widely used in the AI/ML community:
+
+#### Code Generation Benchmarks
+- **HumanEval**: 164 hand-written programming problems with test cases
+- **MBPP (Mostly Basic Python Problems)**: 974 Python programming problems
+- **CodeXGLUE**: Multi-lingual code generation and understanding tasks
+
+#### Text Analysis Benchmarks
+- **GLUE (General Language Understanding Evaluation)**: 9 sentence-level tasks
+- **SuperGLUE**: 8 more challenging language understanding tasks
+- **SQuAD (Stanford Question Answering Dataset)**: Reading comprehension tasks
+
+#### Reasoning Benchmarks
+- **GSM8K (Grade School Math 8K)**: 8,500 grade school math word problems
+- **HellaSwag**: Commonsense reasoning with 70,000 multiple choice questions
+- **ARC (AI2 Reasoning Challenge)**: Science exam questions requiring reasoning
+
+#### Domain-Specific Benchmarks
+- **MMLU (Massive Multitask Language Understanding)**: 57 tasks across various domains
+- **Big-Bench**: Large-scale benchmark with 200+ tasks
+- **HELM (Holistic Evaluation of Language Models)**: Comprehensive evaluation suite
+
+### Public Benchmark Integration
+
+```python
+class PublicBenchmarkLoader:
+    """Loader for publicly available benchmarks."""
+    
+    def __init__(self):
+        self.supported_benchmarks = {
+            "humaneval": {
+                "name": "HumanEval",
+                "description": "Code generation benchmark with 164 problems",
+                "source": "https://github.com/openai/human-eval",
+                "format": "jsonl",
+                "metrics": ["pass_at_k", "exact_match"]
+            },
+            "glue": {
+                "name": "GLUE",
+                "description": "General Language Understanding Evaluation",
+                "source": "https://gluebenchmark.com/",
+                "format": "tsv",
+                "metrics": ["accuracy", "f1", "matthews_correlation"]
+            },
+            "gsm8k": {
+                "name": "GSM8K",
+                "description": "Grade School Math 8K problems",
+                "source": "https://github.com/openai/grade-school-math",
+                "format": "jsonl",
+                "metrics": ["accuracy", "exact_match"]
+            }
+        }
+    
+    def load_benchmark(self, benchmark_name: str) -> PublicBenchmark:
+        """Load a publicly available benchmark."""
+        if benchmark_name not in self.supported_benchmarks:
+            raise ValueError(f"Unsupported public benchmark: {benchmark_name}")
+        
+        benchmark_info = self.supported_benchmarks[benchmark_name]
+        return PublicBenchmark(
+            name=benchmark_info["name"],
+            source=benchmark_info["source"],
+            format=benchmark_info["format"],
+            metrics=benchmark_info["metrics"]
+        )
+    
+    def is_supported(self, benchmark_name: str) -> bool:
+        """Check if a benchmark is supported."""
+        return benchmark_name in self.supported_benchmarks
+    
+    def list_supported(self) -> List[str]:
+        """List all supported public benchmarks."""
+        return list(self.supported_benchmarks.keys())
+    
+    def get_benchmark_info(self, benchmark_name: str) -> Dict[str, Any]:
+        """Get information about a public benchmark."""
+        if not self.is_supported(benchmark_name):
+            raise ValueError(f"Unsupported public benchmark: {benchmark_name}")
+        return self.supported_benchmarks[benchmark_name]
+```
+
 ## Core Benchmark Interface
 
 ### Base Benchmark Interface
@@ -25,10 +110,23 @@ from enum import Enum
 
 class BenchmarkType(Enum):
     """Benchmark type enumeration."""
-    PREDEFINED = "predefined"
-    CUSTOM = "custom"
-    FILE_BASED = "file_based"
-    API_BASED = "api_based"
+    PUBLIC = "public"          # Publicly available benchmarks (GLUE, HumanEval, etc.)
+    PREDEFINED = "predefined"  # AgentHub predefined benchmarks
+    CUSTOM = "custom"          # User-defined custom benchmarks
+    FILE_BASED = "file_based"  # File-based benchmarks
+    API_BASED = "api_based"    # API-based benchmarks
+
+@dataclass
+class PublicBenchmark:
+    """Publicly available benchmark definition."""
+    name: str
+    source: str
+    format: str
+    metrics: List[str]
+    description: str = ""
+    version: str = "latest"
+    license: str = "varies"
+    citation: str = ""
 
 @dataclass
 class BenchmarkSample:
@@ -215,21 +313,27 @@ class BenchmarkManager:
         self.storage_path = storage_path
         self.loaded_benchmarks: Dict[str, Benchmark] = {}
         self.registry = BenchmarkRegistry()
+        self.public_loader = PublicBenchmarkLoader()
     
     def load(self, benchmark_name: str) -> Benchmark:
-        """Load a benchmark by name."""
+        """Load a benchmark by name, prioritizing public benchmarks."""
         if benchmark_name in self.loaded_benchmarks:
             return self.loaded_benchmarks[benchmark_name]
         
-        # Try predefined benchmark first
-        if self.registry.is_predefined(benchmark_name):
+        # Priority order: Public -> Predefined -> Custom
+        if self.public_loader.is_supported(benchmark_name):
+            benchmark = self._load_public(benchmark_name)
+        elif self.registry.is_predefined(benchmark_name):
             benchmark = self._load_predefined(benchmark_name)
         else:
-            # Try custom benchmark
             benchmark = self._load_custom(benchmark_name)
         
         self.loaded_benchmarks[benchmark_name] = benchmark
         return benchmark
+    
+    def _load_public(self, benchmark_name: str) -> Benchmark:
+        """Load a publicly available benchmark."""
+        return self.public_loader.load_benchmark(benchmark_name)
     
     def load_custom(self, config_path: str) -> Benchmark:
         """Load custom benchmark from configuration file."""
@@ -240,9 +344,10 @@ class BenchmarkManager:
     
     def list_available(self) -> List[str]:
         """List all available benchmarks."""
+        public = self.public_loader.list_supported()
         predefined = self.registry.list_predefined()
         custom = self._list_custom_benchmarks()
-        return predefined + custom
+        return public + predefined + custom
     
     def get_benchmark_info(self, benchmark_name: str) -> Dict[str, Any]:
         """Get benchmark information."""

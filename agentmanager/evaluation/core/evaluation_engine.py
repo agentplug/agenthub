@@ -415,6 +415,9 @@ class BenchmarkEvaluator:
         self.config = config
         self._sample_generator = SampleGenerator()
         self._metrics_calculator = MetricsCalculator()
+        # Import here to avoid circular imports
+        from ..benchmarks import BenchmarkManager
+        self._benchmark_manager = BenchmarkManager()
     
     def evaluate(
         self,
@@ -426,11 +429,15 @@ class BenchmarkEvaluator:
         """Evaluate agent in benchmark mode."""
         start_time = time.time()
         
-        # Generate samples if not provided
+        # Load samples from benchmark if not provided
         if samples is None:
-            samples = self._sample_generator.generate_benchmark_samples(
-                self.config.benchmark_name or "default"
-            )
+            benchmark_name = self.config.benchmark_name or "humaneval"  # Default to HumanEval
+            benchmark = self._benchmark_manager.get_benchmark(benchmark_name)
+            if benchmark:
+                samples = benchmark.samples
+            else:
+                # Fallback to sample generator if benchmark not found
+                samples = self._sample_generator.generate_benchmark_samples(benchmark_name)
         
         # Set up context
         if context is None:
