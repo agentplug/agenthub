@@ -6,11 +6,12 @@ and dependency installation for auto-installed agents.
 """
 
 import logging
+import os
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +22,15 @@ ENVIRONMENT_AVAILABLE = True  # This module is self-contained
 @dataclass
 class EnvironmentSetupResult:
     """Result of environment setup operation."""
+
     success: bool
     agent_path: str
     venv_path: str
     setup_time_seconds: float
-    error_message: Optional[str] = None
-    warnings: Optional[List[str]] = None
-    next_steps: Optional[List[str]] = None
-    environment_info: Optional[Dict[str, Any]] = None
+    error_message: str | None = None
+    warnings: list[str] | None = None
+    next_steps: list[str] | None = None
+    environment_info: dict[str, Any] | None = None
 
     def __post_init__(self):
         """Initialize lists if they are None."""
@@ -43,14 +45,15 @@ class EnvironmentSetupResult:
 @dataclass
 class DependencyInstallResult:
     """Result of dependency installation operation."""
+
     success: bool
     agent_path: str
     venv_path: str
     install_time_seconds: float
-    installed_packages: List[str]
-    error_message: Optional[str] = None
-    warnings: Optional[List[str]] = None
-    next_steps: Optional[List[str]] = None
+    installed_packages: list[str]
+    error_message: str | None = None
+    warnings: list[str] | None = None
+    next_steps: list[str] | None = None
 
     def __post_init__(self):
         """Initialize lists if they are None."""
@@ -62,11 +65,13 @@ class DependencyInstallResult:
 
 class EnvironmentSetupError(Exception):
     """Base exception for environment setup errors."""
+
     pass
 
 
 class UVNotAvailableError(EnvironmentSetupError):
     """Raised when UV is not available on the system."""
+
     pass
 
 
@@ -85,10 +90,7 @@ class EnvironmentSetup:
         """Check if UV is available on the system."""
         try:
             result = subprocess.run(
-                ["uv", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10
+                ["uv", "--version"], capture_output=True, text=True, timeout=10
             )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -97,11 +99,11 @@ class EnvironmentSetup:
     def setup_environment(self, agent_path: str) -> EnvironmentSetupResult:
         """Set up a virtual environment for the agent."""
         start_time = time.time()
-        
+
         # Ensure the path is properly expanded (handle ~ characters)
-        if isinstance(agent_path, str) and '~' in agent_path:
+        if isinstance(agent_path, str) and "~" in agent_path:
             agent_path = str(Path(agent_path).expanduser())
-        
+
         agent_path_obj = Path(agent_path)
 
         if not agent_path_obj.exists():
@@ -111,14 +113,15 @@ class EnvironmentSetup:
                 venv_path="",
                 setup_time_seconds=time.time() - start_time,
                 error_message=f"Agent path does not exist: {agent_path}",
-                next_steps=["Verify the agent path is correct"]
+                next_steps=["Verify the agent path is correct"],
             )
 
         try:
-            # For testing purposes, allow setup without pyproject.toml if requirements.txt exists
+            # For testing purposes, allow setup without pyproject.toml
+            # if requirements.txt exists
             pyproject_path = agent_path_obj / "pyproject.toml"
             requirements_path = agent_path_obj / "requirements.txt"
-            
+
             if not pyproject_path.exists() and not requirements_path.exists():
                 return EnvironmentSetupResult(
                     success=False,
@@ -126,7 +129,7 @@ class EnvironmentSetup:
                     venv_path="",
                     setup_time_seconds=time.time() - start_time,
                     error_message="No pyproject.toml found - required for UV",
-                    next_steps=["Ensure the agent has a pyproject.toml file"]
+                    next_steps=["Ensure the agent has a pyproject.toml file"],
                 )
 
             # Create virtual environment using UV
@@ -139,7 +142,7 @@ class EnvironmentSetup:
                 cwd=agent_path,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
             )
 
             if create_result.returncode != 0:
@@ -152,72 +155,155 @@ class EnvironmentSetup:
                     next_steps=[
                         "Check if UV is properly installed",
                         "Verify system permissions",
-                        "Ensure sufficient disk space"
-                    ]
+                        "Ensure sufficient disk space",
+                    ],
                 )
 
-            # Step 2: Install dependencies from agent.yaml or requirements.txt
-            # First try to read dependencies from agent.yaml
+            # Step 2: Install dependencies using installation commands or dependencies
+            # from agent.yaml or requirements.txt
+            # First try to read installation commands and dependencies from agent.yaml
             agent_yaml_path = agent_path_obj / "agent.yaml"
             dependencies = []
-            
+            installation_commands = []
+
             if agent_yaml_path.exists():
                 try:
                     import yaml
-                    with open(agent_yaml_path, 'r') as f:
+
+                    with open(agent_yaml_path) as f:
                         agent_config = yaml.safe_load(f)
-                    
-                    if 'dependencies' in agent_config:
-                        dependencies = agent_config['dependencies']
-                        self.logger.info(f"Found {len(dependencies)} dependencies in agent.yaml")
+
+                    # Check for installation commands first (preferred method)
+                    if (
+                        "installation" in agent_config
+                        and "commands" in agent_config["installation"]
+                    ):
+                        installation_commands = agent_config["installation"]["commands"]
+                        self.logger.info(
+                            f"Found {len(installation_commands)} installation commands "
+                            f"in agent.yaml"
+                        )
+                    elif "dependencies" in agent_config:
+                        dependencies = agent_config["dependencies"]
+                        self.logger.info(
+                            f"Found {len(dependencies)} dependencies in agent.yaml"
+                        )
                     else:
-                        self.logger.info("No dependencies section in agent.yaml, falling back to requirements.txt")
+                        self.logger.info(
+                            "No installation commands or dependencies section in "
+                            "agent.yaml, falling back to requirements.txt"
+                        )
                 except Exception as e:
-                    self.logger.warning(f"Failed to parse agent.yaml: {e}, falling back to requirements.txt")
-            
-            # If no dependencies from agent.yaml, try requirements.txt
-            if not dependencies:
+                    self.logger.warning(
+                        f"Failed to parse agent.yaml: {e}, "
+                        f"falling back to requirements.txt"
+                    )
+
+            # If no installation commands or dependencies from agent.yaml,
+            # try requirements.txt
+            if not installation_commands and not dependencies:
                 requirements_path = agent_path_obj / "requirements.txt"
                 if requirements_path.exists():
-                    with open(requirements_path, 'r') as f:
-                        dependencies = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-                    self.logger.info(f"Found {len(dependencies)} dependencies in requirements.txt")
+                    with open(requirements_path) as f:
+                        dependencies = [
+                            line.strip()
+                            for line in f
+                            if line.strip() and not line.startswith("#")
+                        ]
+                    self.logger.info(
+                        f"Found {len(dependencies)} dependencies in requirements.txt"
+                    )
                 else:
                     return EnvironmentSetupResult(
                         success=False,
                         agent_path=agent_path,
                         venv_path=str(venv_path),
                         setup_time_seconds=time.time() - start_time,
-                        error_message="No dependencies found in agent.yaml or requirements.txt",
+                        error_message=(
+                            "No installation commands, dependencies found in "
+                            "agent.yaml or requirements.txt"
+                        ),
                         next_steps=[
-                            "Ensure agent.yaml has a dependencies section",
-                            "Or provide a requirements.txt file"
-                        ]
+                            "Ensure agent.yaml has an installation.commands section",
+                            "Or ensure agent.yaml has a dependencies section",
+                            "Or provide a requirements.txt file",
+                        ],
                     )
-            
-            # Install dependencies using UV with explicit Python path
+
+            # Get Python executable path for environment
             venv_python = venv_path / "bin" / "python"
             if not venv_python.exists():
                 # Fallback for Windows
                 venv_python = venv_path / "Scripts" / "python.exe"
-            
-            if dependencies:
-                self.logger.info(f"Installing {len(dependencies)} dependencies: {dependencies}")
+
+            # Set environment variables for installation commands
+            install_env = dict(os.environ)
+            install_env["VIRTUAL_ENV"] = str(venv_path)
+            install_env["PATH"] = f"{venv_path / 'bin'}:{install_env.get('PATH', '')}"
+
+            result = None
+
+            if installation_commands:
+                # Execute installation commands in sequence
+                self.logger.info(
+                    f"Executing {len(installation_commands)} installation commands"
+                )
+                for i, command in enumerate(installation_commands):
+                    self.logger.info(
+                        f"Running command {i+1}/{len(installation_commands)}: {command}"
+                    )
+
+                    # Parse command string into list for subprocess
+                    import shlex
+
+                    cmd_parts = shlex.split(command)
+
+                    result = subprocess.run(
+                        cmd_parts,
+                        cwd=agent_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=300,  # 5 minutes per command
+                        env=install_env,
+                    )
+
+                    if result.returncode != 0:
+                        self.logger.error(f"Installation command failed: {command}")
+                        break
+                    else:
+                        self.logger.info(f"Command completed successfully: {command}")
+
+            elif dependencies:
+                # Use dependencies with UV pip install
+                self.logger.info(
+                    f"Installing {len(dependencies)} dependencies: {dependencies}"
+                )
                 result = subprocess.run(
-                    ["uv", "pip", "install", "--python", str(venv_python)] + dependencies,
+                    ["uv", "pip", "install", "--python", str(venv_python)]
+                    + dependencies,
                     cwd=agent_path,
                     capture_output=True,
                     text=True,
-                    timeout=300  # 5 minutes for dependency installation
+                    timeout=300,  # 5 minutes for dependency installation
+                    env=install_env,
                 )
             else:
                 # Fallback to requirements.txt if no dependencies found
                 result = subprocess.run(
-                    ["uv", "pip", "install", "--python", str(venv_python), "-r", "requirements.txt"],
+                    [
+                        "uv",
+                        "pip",
+                        "install",
+                        "--python",
+                        str(venv_python),
+                        "-r",
+                        "requirements.txt",
+                    ],
                     cwd=agent_path,
                     capture_output=True,
                     text=True,
-                    timeout=300  # 5 minutes for dependency installation
+                    timeout=300,  # 5 minutes for dependency installation
+                    env=install_env,
                 )
 
             if result.returncode != 0:
@@ -229,8 +315,8 @@ class EnvironmentSetup:
                     error_message=f"UV sync failed: {result.stderr}",
                     next_steps=[
                         "Check if requirements.txt is valid",
-                        "Verify Python version compatibility"
-                    ]
+                        "Verify Python version compatibility",
+                    ],
                 )
 
             # Verify environment was created
@@ -240,12 +326,16 @@ class EnvironmentSetup:
                     agent_path=agent_path,
                     venv_path=str(venv_path),
                     setup_time_seconds=time.time() - start_time,
-                    error_message="Virtual environment was not created despite successful UV sync",
-                    next_steps=["Check UV installation and permissions"]
+                    error_message=(
+                        "Virtual environment was not created despite successful UV sync"
+                    ),
+                    next_steps=["Check UV installation and permissions"],
                 )
 
             setup_time = time.time() - start_time
-            self.logger.info(f"Virtual environment created successfully in {setup_time:.2f}s")
+            self.logger.info(
+                f"Virtual environment created successfully in {setup_time:.2f}s"
+            )
 
             # Collect environment information
             environment_info = self._collect_environment_info(agent_path_obj, venv_path)
@@ -258,8 +348,8 @@ class EnvironmentSetup:
                 environment_info=environment_info,
                 next_steps=[
                     "Virtual environment is ready",
-                    "Install dependencies with install_dependencies()"
-                ]
+                    "Install dependencies with install_dependencies()",
+                ],
             )
 
         except subprocess.TimeoutExpired:
@@ -269,7 +359,7 @@ class EnvironmentSetup:
                 venv_path="",
                 setup_time_seconds=time.time() - start_time,
                 error_message="UV sync timed out",
-                next_steps=["Check system resources and try again"]
+                next_steps=["Check system resources and try again"],
             )
         except Exception as e:
             return EnvironmentSetupResult(
@@ -278,19 +368,21 @@ class EnvironmentSetup:
                 venv_path="",
                 setup_time_seconds=time.time() - start_time,
                 error_message=f"Unexpected error during environment setup: {e}",
-                next_steps=["Check system logs for more details"]
+                next_steps=["Check system logs for more details"],
             )
 
-    def install_dependencies(self, agent_path: str, venv_path: str) -> DependencyInstallResult:
+    def install_dependencies(
+        self, agent_path: str, venv_path: str
+    ) -> DependencyInstallResult:
         """Install dependencies in the virtual environment."""
         start_time = time.time()
-        
+
         # Ensure the paths are properly expanded (handle ~ characters)
-        if isinstance(agent_path, str) and '~' in agent_path:
+        if isinstance(agent_path, str) and "~" in agent_path:
             agent_path = str(Path(agent_path).expanduser())
-        if isinstance(venv_path, str) and '~' in venv_path:
+        if isinstance(venv_path, str) and "~" in venv_path:
             venv_path = str(Path(venv_path).expanduser())
-        
+
         agent_path_obj = Path(agent_path)
         venv_path_obj = Path(venv_path)
 
@@ -302,7 +394,7 @@ class EnvironmentSetup:
                 install_time_seconds=time.time() - start_time,
                 installed_packages=[],
                 error_message="Virtual environment does not exist",
-                warnings=["Environment must be created before installing dependencies"]
+                warnings=["Environment must be created before installing dependencies"],
             )
 
         # Check for requirements.txt
@@ -315,7 +407,7 @@ class EnvironmentSetup:
                 install_time_seconds=time.time() - start_time,
                 installed_packages=[],
                 error_message="No requirements.txt found",
-                warnings=["Dependencies cannot be installed without requirements.txt"]
+                warnings=["Dependencies cannot be installed without requirements.txt"],
             )
 
         try:
@@ -327,7 +419,7 @@ class EnvironmentSetup:
                 cwd=agent_path,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minutes for dependency installation
+                timeout=300,  # 5 minutes for dependency installation
             )
 
             if result.returncode != 0:
@@ -338,11 +430,13 @@ class EnvironmentSetup:
                     install_time_seconds=time.time() - start_time,
                     installed_packages=[],
                     error_message=f"Dependency installation failed: {result.stderr}",
-                    warnings=["Check requirements.txt format and package availability"]
+                    warnings=["Check requirements.txt format and package availability"],
                 )
 
             install_time = time.time() - start_time
-            self.logger.info(f"Dependencies installed successfully in {install_time:.2f}s")
+            self.logger.info(
+                f"Dependencies installed successfully in {install_time:.2f}s"
+            )
 
             # Get list of installed packages
             installed_packages = self._get_installed_packages(venv_path)
@@ -353,7 +447,10 @@ class EnvironmentSetup:
                 venv_path=venv_path,
                 install_time_seconds=install_time,
                 installed_packages=installed_packages,
-                next_steps=["Dependencies are ready", "Agent can now be imported and used"]
+                next_steps=[
+                    "Dependencies are ready",
+                    "Agent can now be imported and used",
+                ],
             )
 
         except subprocess.TimeoutExpired:
@@ -364,7 +461,7 @@ class EnvironmentSetup:
                 install_time_seconds=time.time() - start_time,
                 installed_packages=[],
                 error_message="Dependency installation timed out",
-                warnings=["Large dependency trees may take longer to install"]
+                warnings=["Large dependency trees may take longer to install"],
             )
         except Exception as e:
             return DependencyInstallResult(
@@ -374,16 +471,18 @@ class EnvironmentSetup:
                 install_time_seconds=time.time() - start_time,
                 installed_packages=[],
                 error_message=f"Unexpected error during dependency installation: {e}",
-                warnings=["Check system logs for more details"]
+                warnings=["Check system logs for more details"],
             )
 
-    def _collect_environment_info(self, agent_path: Path, venv_path: Path) -> Dict[str, Any]:
+    def _collect_environment_info(
+        self, agent_path: Path, venv_path: Path
+    ) -> dict[str, Any]:
         """Collect information about the created environment."""
         info = {
             "venv_path": str(venv_path),
             "python_executable": str(venv_path / "bin" / "python"),
             "uv_version": self._get_uv_version(),
-            "project_files": self._get_project_files(agent_path)
+            "project_files": self._get_project_files(agent_path),
         }
         return info
 
@@ -391,23 +490,20 @@ class EnvironmentSetup:
         """Get UV version."""
         try:
             result = subprocess.run(
-                ["uv", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10
+                ["uv", "--version"], capture_output=True, text=True, timeout=10
             )
             return result.stdout.strip() if result.returncode == 0 else "Unknown"
         except Exception:
             return "Unknown"
 
-    def _get_project_files(self, agent_path: Path) -> List[str]:
+    def _get_project_files(self, agent_path: Path) -> list[str]:
         """Get list of project files."""
         try:
             return [f.name for f in agent_path.iterdir() if f.is_file()]
         except Exception:
             return []
 
-    def _get_installed_packages(self, venv_path: str) -> List[str]:
+    def _get_installed_packages(self, venv_path: str) -> list[str]:
         """Get list of installed packages in the virtual environment."""
         try:
             result = subprocess.run(
@@ -415,11 +511,11 @@ class EnvironmentSetup:
                 cwd=venv_path,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
             if result.returncode == 0:
                 # Parse the output to extract package names
-                lines = result.stdout.strip().split('\n')[2:]  # Skip header lines
+                lines = result.stdout.strip().split("\n")[2:]  # Skip header lines
                 packages = []
                 for line in lines:
                     if line.strip():
