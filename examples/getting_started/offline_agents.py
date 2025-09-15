@@ -12,8 +12,7 @@ def main():
         "with monthly contributions"
     )
     print("💰 Financial Calculator Code:")
-    print("Response structure:", code)
-    print("Code result:", code.get("result", code), "\n", "=" * 50)
+    print(code["result"], "\n", "=" * 50)
 
     # Analyze feedback using the correct method
     feedback = (
