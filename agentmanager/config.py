@@ -35,6 +35,9 @@ class AgentHubConfig:
     quiet_mode: bool = False
     suppress_http_logs: bool = True
     
+    # LLM settings
+    llm_temperature: float = 0.0
+    
     @classmethod
     def from_env(cls) -> "AgentHubConfig":
         """Create configuration from environment variables."""
@@ -56,6 +59,9 @@ class AgentHubConfig:
             
         if log_level := os.getenv("AGENTHUB_LOG_LEVEL"):
             config.log_level = log_level
+            
+        if llm_temperature := os.getenv("AGENTHUB_LLM_TEMPERATURE"):
+            config.llm_temperature = float(llm_temperature)
             
         config.enable_debug_logging = os.getenv("AGENTHUB_DEBUG", "").lower() in ("true", "1", "yes")
         config.use_subprocess_execution = os.getenv("AGENTHUB_USE_SUBPROCESS", "true").lower() in ("true", "1", "yes")
