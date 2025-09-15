@@ -23,40 +23,40 @@ dependencies = [
     "pyyaml>=6.0.1",
     "click>=8.1.7",
     "rich>=13.7.1",
-    "pydantic>=2.5.0",
+    "pydantic>=2.11.0",
     "mcp[cli]>=1.13.1",
-    
+
     # HTTP & Web
     "requests>=2.31.0",
     "aiohttp>=3.9.0",
     "httpx>=0.27.0",
     "beautifulsoup4>=4.12.0",
     "duckduckgo-search>=6.0.0",
-    
+
     # AI/LLM
     "aisuite>=0.1.0",
     "openai>=1.50.0",
     "anthropic>=0.45.0",
-    
+
     # Document processing
     "pypdf>=4.0.0",
     "python-docx>=1.1.0",
     "openpyxl>=3.1.0",
     "python-pptx>=0.6.0",
     "markdown>=3.5.0",
-    
+
     # Code analysis
     "docstring-parser>=0.16",
-    
+
     # Data processing
     "pandas>=2.2.0",
     "numpy>=1.26.0",
-    
+
     # Security & validation
     "cryptography>=42.0.0",
-    
+
     # Async & concurrency
-    "asyncio-throttle>=1.1.0",
+    "asyncio-throttle>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -70,7 +70,7 @@ dev = [
     "ruff>=0.2.0",
     "pre-commit>=3.6.0",
     "types-pyyaml>=6.0.12",
-    "safety>=3.6.0",
+    "safety>=3.0.0",
     "coverage>=7.9.0",
 ]
 rag = [
@@ -79,13 +79,8 @@ rag = [
     "sentence-transformers>=5.0.0",
     "faiss-cpu>=1.11.0",
 ]
-code = [
-    "docker>=7.0.0",
-    "ast-toolbox>=2.0.0",
-]
-full = [
-    "agentmanager[dev,rag,code]",
-]
+code = ["docker>=7.0.0"]
+full = ["agentmanager[dev,rag,code]"]
 
 [project.scripts]
 agenthub = "agentmanager.cli.main:main"
