@@ -83,7 +83,7 @@ class ProcessManager:
 
             # Execute agent in subprocess
             start_time = time.time()
-            # print(f"Executing agent in subprocess: {python_executable} {str(agent_script)} {json.dumps(execution_data)}")
+            logger.debug(f"Executing agent in subprocess: {python_executable} {str(agent_script)} {json.dumps(execution_data)}")
             result = subprocess.run(
                 [python_executable, str(agent_script), json.dumps(execution_data)],
                 cwd=str(agent_dir),
