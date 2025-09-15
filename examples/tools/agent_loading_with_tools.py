@@ -111,9 +111,10 @@ def example_6_web_search_agent():
     """Load agent with web search tool"""
     print("\n📋 Example 6: Web Search Agent")
     agent = amg.load_agent('agentplug/analysis-agent', tools=['web_search', 'add', 'subtract', 'multiply', 'divide'])
-    question = "Who is the 2025 US President?"
+    question = "Who is the US President 2025?"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
+    print(f"📊 Result: {result}")
     # ================================================
     status = result.get('result', {}).get('status', 'completed')
     analysis = json.loads(result.get('result', {}).get("result", "No analysis").replace("```json", "").replace("```", "")).get("summary", "No analysis")
