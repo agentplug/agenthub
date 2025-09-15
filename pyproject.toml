@@ -31,7 +31,7 @@ dependencies = [
     "aiohttp>=3.9.0",
     "httpx>=0.27.0",
     "beautifulsoup4>=4.12.0",
-    "duckduckgo-search>=6.0.0",
+    "ddgs>=9.5.0",
 
     # AI/LLM
     "aisuite>=0.1.0",
