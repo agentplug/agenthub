@@ -5,6 +5,7 @@ from pathlib import Path
 
 import yaml
 
+from agentmanager.environment.environment_setup import EnvironmentSetup
 from agentmanager.runtime.environment_manager import EnvironmentManager
 from agentmanager.runtime.process_manager import ProcessManager
 
@@ -25,8 +26,20 @@ class AgentRuntime:
         self.environment_manager = EnvironmentManager()
         self.storage = storage
 
+        # Initialize environment setup for automatic environment creation
+        try:
+            self.environment_setup = EnvironmentSetup()
+        except Exception as e:
+            logger.warning(f"Environment setup not available: {e}")
+            self.environment_setup = None
+
     def execute_agent(
-        self, namespace: str, agent_name: str, method: str, parameters: dict, tool_context: dict = None
+        self,
+        namespace: str,
+        agent_name: str,
+        method: str,
+        parameters: dict,
+        tool_context: dict = None,
     ) -> dict:
         """
         Execute an agent method with full runtime coordination.
@@ -54,12 +67,32 @@ class AgentRuntime:
             agent_path = f"~/.agenthub/agents/{namespace}/{agent_name}"
             agent_path = str(Path(agent_path).expanduser())
 
-        # Validate agent structure
-        if not self.process_manager.validate_agent_structure(agent_path):
+        # Validate agent structure (without requiring virtual environment initially)
+        if not self.process_manager.validate_agent_structure(
+            agent_path, require_venv=False
+        ):
             return {
                 "error": f"Invalid agent structure: {namespace}/{agent_name}",
                 "agent_path": agent_path,
             }
+
+        # Ensure virtual environment exists before execution
+        venv_path = self.environment_manager.get_agent_venv_path(agent_path)
+        if not venv_path.exists() and self.environment_setup:
+            logger.info(
+                f"Virtual environment not found for {namespace}/{agent_name}, "
+                f"setting up..."
+            )
+            setup_result = self.environment_setup.setup_environment(agent_path)
+            if not setup_result.success:
+                return {
+                    "error": (
+                        f"Failed to set up environment for {namespace}/{agent_name}: "
+                        f"{setup_result.error_message}"
+                    ),
+                    "agent_path": agent_path,
+                }
+            logger.info(f"Environment setup completed for {namespace}/{agent_name}")
 
         # Validate method exists in agent interface
         if not self.validate_method(agent_path, method):
@@ -82,7 +115,9 @@ class AgentRuntime:
             logger.debug(f"Could not load manifest for dynamic execution: {e}")
 
         # Execute the agent
-        return self.process_manager.execute_agent(agent_path, method, parameters, manifest, tool_context)
+        return self.process_manager.execute_agent(
+            agent_path, method, parameters, manifest, tool_context
+        )
 
     def validate_method(self, agent_path: str, method: str) -> bool:
         """

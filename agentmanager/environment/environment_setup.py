@@ -117,19 +117,44 @@ class EnvironmentSetup:
             )
 
         try:
-            # For testing purposes, allow setup without pyproject.toml
-            # if requirements.txt exists
+            # Check if we have any installation method available
             pyproject_path = agent_path_obj / "pyproject.toml"
             requirements_path = agent_path_obj / "requirements.txt"
+            agent_yaml_path = agent_path_obj / "agent.yaml"
 
-            if not pyproject_path.exists() and not requirements_path.exists():
+            has_installation_method = False
+
+            # Check for installation commands in agent.yaml
+            if agent_yaml_path.exists():
+                try:
+                    import yaml
+
+                    with open(agent_yaml_path, encoding="utf-8") as f:
+                        agent_config = yaml.safe_load(f)
+                    if (
+                        "installation" in agent_config
+                        and "commands" in agent_config["installation"]
+                    ):
+                        has_installation_method = True
+                except Exception:
+                    pass
+
+            # Check for other installation methods
+            if pyproject_path.exists() or requirements_path.exists():
+                has_installation_method = True
+
+            if not has_installation_method:
                 return EnvironmentSetupResult(
                     success=False,
                     agent_path=agent_path,
                     venv_path="",
                     setup_time_seconds=time.time() - start_time,
-                    error_message="No pyproject.toml found - required for UV",
-                    next_steps=["Ensure the agent has a pyproject.toml file"],
+                    error_message="No installation method found",
+                    next_steps=[
+                        "Add installation.commands to agent.yaml",
+                        "Or provide a pyproject.toml file",
+                        "Or provide a requirements.txt file",
+                    ],
                 )
 
             # Create virtual environment using UV

@@ -1,14 +1,11 @@
 """Agent loader for discovering and loading agents with tool capabilities."""
 
 import logging
-import json
-import subprocess
-import sys
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Callable
 
-from .validator import InterfaceValidator
 from .manifest import ManifestParser
+from .validator import InterfaceValidator
+from .wrapper import AgentWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +52,8 @@ class AgentLoader:
         if not agent_dir.exists():
             raise AgentLoadError(f"Agent directory does not exist: {agent_path}")
 
-        # Validate agent structure
-        if not self.validate_agent_structure(agent_path):
+        # Validate agent structure (without requiring virtual environment)
+        if not self.validate_agent_structure(agent_path, require_venv=False):
             raise AgentLoadError(f"Invalid agent structure: {agent_path}")
 
         try:
@@ -122,12 +119,15 @@ class AgentLoader:
 
         return agent_info
 
-    def validate_agent_structure(self, agent_path: str) -> bool:
+    def validate_agent_structure(
+        self, agent_path: str, require_venv: bool = False
+    ) -> bool:
         """
         Validate that an agent has the required structure.
 
         Args:
             agent_path: Path to the agent directory
+            require_venv: Whether to require virtual environment (default: False)
 
         Returns:
             True if agent structure is valid
@@ -141,23 +141,24 @@ class AgentLoader:
                 logger.debug(f"Missing required file: {file_name}")
                 return False
 
-        # Check if virtual environment exists
-        venv_path = agent_dir / ".venv"
-        if not venv_path.exists():
-            logger.debug(f"Missing virtual environment: {venv_path}")
-            return False
+        # Check virtual environment only if required
+        if require_venv:
+            venv_path = agent_dir / ".venv"
+            if not venv_path.exists():
+                logger.debug(f"Missing virtual environment: {venv_path}")
+                return False
 
-        # Check if Python executable exists in venv
-        import sys
+            # Check if Python executable exists in venv
+            import sys
 
-        if sys.platform == "win32":
-            python_executable = venv_path / "Scripts" / "python.exe"
-        else:
-            python_executable = venv_path / "bin" / "python"
+            if sys.platform == "win32":
+                python_executable = venv_path / "Scripts" / "python.exe"
+            else:
+                python_executable = venv_path / "bin" / "python"
 
-        if not python_executable.exists():
-            logger.debug(f"Python executable not found: {python_executable}")
-            return False
+            if not python_executable.exists():
+                logger.debug(f"Python executable not found: {python_executable}")
+                return False
 
         return True
 
@@ -225,43 +226,49 @@ class AgentLoader:
                 "error": str(e),
                 "valid_structure": False,
             }
-    
-    def load_agent_with_tools(self, agent_path: str, tools: Optional[List[str]] = None) -> 'AgentWrapper':
+
+    def load_agent_with_tools(
+        self, agent_path: str, tools: list[str] | None = None
+    ) -> "AgentWrapper":
         """
         Load an agent with tool capabilities.
-        
+
         Args:
             agent_path: Path to the agent directory
             tools: List of tool names to assign to the agent
-            
+
         Returns:
             AgentWrapper instance with tool capabilities
         """
         if tools is None:
             tools = []
-        
+
         # Load agent info
         agent_info = self.load_agent_by_path(agent_path)
         if not agent_info.get("valid", False):
             raise AgentLoadError(f"Invalid agent: {agent_path}")
-        
+
         # Assign tools if tool registry is available
-        agent_id = f"{agent_info.get('namespace', 'unknown')}/{agent_info.get('name', 'unknown')}"
+        namespace = agent_info.get("namespace", "unknown")
+        name = agent_info.get("name", "unknown")
+        agent_id = f"{namespace}/{name}"
         if self.tool_registry and tools:
             from ..tools import assign_tools_to_agent
+
             assign_tools_to_agent(agent_id, tools)
             self.assigned_tools[agent_id] = tools
-        
+
         # Create agent wrapper with tool capabilities
         return AgentWrapper(agent_info, self.tool_registry, agent_id, tools)
-    
-    def assign_tools_to_agent(self, agent_id: str, tools: List[str]) -> None:
+
+    def assign_tools_to_agent(self, agent_id: str, tools: list[str]) -> None:
         """Assign tools to an agent."""
         if self.tool_registry:
             from ..tools import assign_tools_to_agent
+
             assign_tools_to_agent(agent_id, tools)
             self.assigned_tools[agent_id] = tools
-    
-    def get_agent_tools(self, agent_id: str) -> List[str]:
+
+    def get_agent_tools(self, agent_id: str) -> list[str]:
         """Get tools assigned to an agent."""
         return self.assigned_tools.get(agent_id, [])

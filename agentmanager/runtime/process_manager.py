@@ -6,8 +6,8 @@ import subprocess
 import time
 from pathlib import Path
 
-from agentmanager.runtime.environment_manager import EnvironmentManager
 from agentmanager.core.agents.dynamic_executor import DynamicAgentExecutor
+from agentmanager.runtime.environment_manager import EnvironmentManager
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,18 @@ class ProcessManager:
         self.timeout = timeout
         self.environment_manager = EnvironmentManager()
         self.use_dynamic_execution = use_dynamic_execution
-        self.dynamic_executor = DynamicAgentExecutor() if use_dynamic_execution else None
+        self.dynamic_executor = (
+            DynamicAgentExecutor() if use_dynamic_execution else None
+        )
 
-    def execute_agent(self, agent_path: str, method: str, parameters: dict, manifest: dict = None, tool_context: dict = None) -> dict:
+    def execute_agent(
+        self,
+        agent_path: str,
+        method: str,
+        parameters: dict,
+        manifest: dict = None,
+        tool_context: dict = None,
+    ) -> dict:
         """
         Execute an agent method in an isolated subprocess.
 
@@ -67,7 +76,9 @@ class ProcessManager:
                 result["execution_time"] = execution_time
                 return result
             except Exception as e:
-                logger.warning(f"Dynamic execution failed, falling back to subprocess: {e}")
+                logger.warning(
+                    f"Dynamic execution failed, falling back to subprocess: {e}"
+                )
 
         # Fallback to subprocess execution
         # Prepare execution data with tool context if available
@@ -83,7 +94,10 @@ class ProcessManager:
 
             # Execute agent in subprocess
             start_time = time.time()
-            logger.info(f"Executing agent in subprocess: {python_executable} {str(agent_script)} '{json.dumps(execution_data)}'")
+            logger.info(
+                f"Executing agent in subprocess: {python_executable} "
+                f"{str(agent_script)} '{json.dumps(execution_data)}'"
+            )
             result = subprocess.run(
                 [python_executable, str(agent_script), json.dumps(execution_data)],
                 cwd=str(agent_dir),
@@ -126,12 +140,15 @@ class ProcessManager:
             logger.error(f"Unexpected error executing agent: {e}")
             return {"error": f"Unexpected execution error: {e}"}
 
-    def validate_agent_structure(self, agent_path: str) -> bool:
+    def validate_agent_structure(
+        self, agent_path: str, require_venv: bool = True
+    ) -> bool:
         """
         Validate that an agent has the required structure.
 
         Args:
             agent_path: Path to the agent directory
+            require_venv: Whether to require virtual environment (default: True)
 
         Returns:
             True if agent structure is valid
@@ -144,15 +161,18 @@ class ProcessManager:
                 logger.debug(f"Missing required file: {file_name}")
                 return False
 
-        # Check if virtual environment exists
-        venv_path = self.environment_manager.get_agent_venv_path(agent_path)
-        if not venv_path.exists():
-            logger.debug(f"Missing virtual environment: {venv_path}")
-            return False
+        # Check virtual environment only if required
+        if require_venv:
+            venv_path = self.environment_manager.get_agent_venv_path(agent_path)
+            if not venv_path.exists():
+                logger.debug(f"Missing virtual environment: {venv_path}")
+                return False
 
-        try:
-            self.environment_manager.get_python_executable(agent_path)
-            return True
-        except RuntimeError:
-            logger.debug("Python executable not found in virtual environment")
-            return False
+            try:
+                self.environment_manager.get_python_executable(agent_path)
+                return True
+            except RuntimeError:
+                logger.debug("Python executable not found in virtual environment")
+                return False
+
+        return True
