@@ -44,6 +44,12 @@ graph TD
             LOGGER[Logger]
             ANALYTICS[Analytics]
         end
+        
+        subgraph TOOLS["Tool Support"]
+            TOOL_DISCOVERY[Tool Discovery]
+            TOOL_INJECTION[Tool Injection]
+            TOOL_VALIDATION[Tool Validation]
+        end
     end
     
     MANAGER --> LOADER
@@ -52,14 +58,61 @@ graph TD
     WRAPPER --> CORE
     WRAPPER --> EXECUTION
     EXECUTION --> UTILS
+    LOADER --> TOOLS
+    TOOLS --> CORE
 ```
 
 ## 🔧 **Core Components**
 
+### **Tool Support System**
+
+The SDK provides infrastructure for agents to access their built-in tools and for users to inject custom tools:
+
+```python
+# agentmanager/tools/tool_support.py
+class ToolSupport:
+    """Provides infrastructure for agent tool access and custom tool injection."""
+    
+    def __init__(self):
+        self.tool_discovery = ToolDiscovery()
+        self.tool_injection = ToolInjection()
+        self.tool_validation = ToolValidation()
+    
+    def discover_agent_tools(self, agent_path: str) -> Dict[str, ToolInfo]:
+        """Discover agent's built-in tools from manifest."""
+        return self.tool_discovery.discover_tools(agent_path)
+    
+    def inject_custom_tools(self, agent_path: str, custom_tools: Dict[str, Callable]) -> None:
+        """Inject user's custom tools to an agent."""
+        # Validate custom tools
+        validation_result = self.tool_validation.validate_tools(custom_tools)
+        if not validation_result.is_valid:
+            raise ToolValidationError(f"Custom tools validation failed: {validation_result.errors}")
+        
+        # Inject tools
+        self.tool_injection.inject_tools(agent_path, custom_tools)
+    
+    def get_available_tools(self, agent_path: str) -> Dict[str, ToolInfo]:
+        """Get all available tools: built-in + custom."""
+        builtin_tools = self.discover_agent_tools(agent_path)
+        custom_tools = self.tool_injection.get_custom_tools(agent_path)
+        
+        return {
+            "builtin": builtin_tools,
+            "custom": custom_tools,
+            "all": {**builtin_tools, **custom_tools}
+        }
+```
+
+**Tool Discovery**: Automatically discovers agent's built-in tools from manifest  
+**Tool Injection**: Safely injects user-provided custom tools  
+**Tool Validation**: Validates tool safety and compatibility  
+**Tool Metadata**: Tracks tool information for discovery and usage
+
 ### **Public API Interface**
 
 ```python
-# agentmanagers/__init__.py
+# agentmanager/__init__.py
 """Agent Hub SDK - One-line agent integration."""
 
 __version__ = "1.0.0"
@@ -71,21 +124,28 @@ from .exceptions import AgentHubError, AgentNotFoundError, AgentExecutionError
 _manager = AgentManager()
 
 # Public API
-def load(agent_path: str) -> 'AgentWrapper':
-    """Load an agent for use.
+def load(agent_path: str, custom_tools: Optional[Dict[str, Callable]] = None) -> 'AgentWrapper':
+    """Load an agent for use with optional custom tools.
     
     Args:
         agent_path: Agent identifier (e.g., "meta/coding-agent")
+        custom_tools: Optional dictionary of custom tools to inject
         
     Returns:
         AgentWrapper: Configured agent ready for use
         
     Example:
-        >>> import agentmanagers as amg
+        >>> import agentmanager as amg
         >>> agent = amg.load("meta/coding-agent")
         >>> code = agent.generate_code("neural network class")
+        
+        # With custom tools
+        >>> def custom_analysis(data):
+        ...     return f"Custom analysis: {len(data)} items"
+        >>> agent = amg.load("meta/coding-agent", 
+        ...                  custom_tools={"custom_analysis": custom_analysis})
     """
-    return _manager.load(agent_path)
+    return _manager.load(agent_path, custom_tools)
 
 def install(agent_path: str, version: str = None) -> None:
     """Install an agent programmatically.
@@ -119,7 +179,7 @@ __all__ = ['load', 'install', 'list_installed', 'remove', 'AgentHubError']
 ### **Agent Manager**
 
 ```python
-# agentmanagers/core/manager.py
+# agentmanager/core/manager.py
 import os
 from typing import Dict, List, Optional
 from .loader import AgentLoader
@@ -204,7 +264,7 @@ class AgentManager:
 ### **Agent Loader**
 
 ```python
-# agentmanagers/core/loader.py
+# agentmanager/core/loader.py
 import os
 import yaml
 from pathlib import Path
@@ -289,7 +349,7 @@ class AgentLoader:
 ### **Agent Wrapper**
 
 ```python
-# agentmanagers/core/wrapper.py
+# agentmanager/core/wrapper.py
 import json
 import time
 from pathlib import Path
@@ -422,7 +482,7 @@ class AgentWrapper:
 ### **Manifest Parser**
 
 ```python
-# agentmanagers/core/manifest.py
+# agentmanager/core/manifest.py
 import yaml
 from pathlib import Path
 from typing import Dict, Any
@@ -492,7 +552,7 @@ class ManifestParser:
 ### **Process Manager Interface**
 
 ```python
-# agentmanagers/runtime/process_interface.py
+# agentmanager/runtime/process_interface.py
 from pathlib import Path
 from typing import Dict, Any
 from .process_manager import ProcessManager as CoreProcessManager
@@ -532,7 +592,7 @@ class ProcessManager:
 
 ```python
 # Basic agent loading and usage
-import agentmanagers as amg
+import agentmanager as amg
 
 # Load an agent
 coding_agent = amg.load("meta/coding-agent")
@@ -551,8 +611,8 @@ print(fixed_code["explanation"])
 
 ```python
 # Advanced usage with error handling
-import agentmanagers as amg
-from agentmanagers import AgentHubError
+import agentmanager as amg
+from agentmanager import AgentHubError
 
 try:
     # Load multiple agents
@@ -584,7 +644,7 @@ except Exception as e:
 
 ```python
 # Get agent information
-import agentmanagers as amg
+import agentmanager as amg
 
 # Load agent
 agent = amg.load("meta/coding-agent")
@@ -613,8 +673,8 @@ for method_name, method_def in methods.items():
 # tests/sdk/test_agent_manager.py
 import pytest
 from unittest.mock import Mock, patch
-from agentmanagers.core import AgentManager
-from agentmanagers.exceptions import AgentNotFoundError
+from agentmanager.core import AgentManager
+from agentmanager.exceptions import AgentNotFoundError
 
 class TestAgentManager:
     def test_load_installed_agent(self, mock_registry, mock_loader):
@@ -660,7 +720,7 @@ class TestAgentManager:
 import tempfile
 import os
 from pathlib import Path
-import agentmanagers as amg
+import agentmanager as amg
 
 class TestSDKIntegration:
     def test_full_agent_usage_flow(self, sample_agent_dir):

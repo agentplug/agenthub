@@ -60,7 +60,7 @@ graph TD
 ### **Process Manager**
 
 ```python
-# agentmanagers/runtime/process_manager.py
+# agentmanager/runtime/process_manager.py
 import subprocess
 import json
 import time
@@ -284,7 +284,7 @@ class ProcessManager:
 ### **Environment Manager**
 
 ```python
-# agentmanagers/runtime/environment_manager.py
+# agentmanager/runtime/environment_manager.py
 import os
 import subprocess
 import shutil
@@ -493,7 +493,7 @@ class EnvironmentManager:
 ### **Communication Handler**
 
 ```python
-# agentmanagers/runtime/communication.py
+# agentmanager/runtime/communication.py
 import json
 import select
 import threading
@@ -643,7 +643,7 @@ class MessageProtocol:
 ### **Process Sandbox**
 
 ```python
-# agentmanagers/runtime/security.py
+# agentmanager/runtime/security.py
 import os
 import resource
 import signal
@@ -769,7 +769,7 @@ class ResourceMonitor:
 import pytest
 import tempfile
 from unittest.mock import Mock, patch
-from agentmanagers.runtime import ProcessManager
+from agentmanager.runtime import ProcessManager
 
 class TestProcessManager:
     def test_execute_agent_success(self, sample_agent_dir):
@@ -818,7 +818,7 @@ class TestProcessManager:
 # tests/runtime/test_integration.py
 import tempfile
 from pathlib import Path
-from agentmanagers.runtime import ProcessManager, EnvironmentManager
+from agentmanager.runtime import ProcessManager, EnvironmentManager
 
 class TestRuntimeIntegration:
     def test_full_execution_cycle(self, sample_agent_dir):

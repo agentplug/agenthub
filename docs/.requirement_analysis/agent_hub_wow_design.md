@@ -110,7 +110,7 @@
 ## Design Principles for WOW
 
 ### Effortless Experience
-- **One-Click Integration**: `import agentmanagers as amg; coding_agent = amg.load("meta/coding_agent")`
+- **One-Click Integration**: `import agentmanager as amg; coding_agent = amg.load("meta/coding_agent")`
 - **Smart Defaults**: Automatic configuration based on environment and requirements
 - **Progressive Disclosure**: Show simple options first, reveal advanced features as needed
 - **Contextual Help**: Just-in-time assistance and tutorials

@@ -88,6 +88,9 @@ Pipfile.lock
 # poetry
 poetry.lock
 
+# uv
+uv.lock
+
 # pdm
 .pdm.toml
 
@@ -109,6 +112,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+agenthub-env/
 
 # Spyder project settings
 .spyderproject
@@ -235,3 +239,9 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+test_agent_repo/
+sample_docs/
+conversation.md
+agentplug/
+create_pr.py
+brainstorming.md

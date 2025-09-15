@@ -68,7 +68,7 @@ graph TD
 ### **Subprocess Sandboxing**
 
 ```python
-# agentmanagers/security/process_sandbox.py
+# agentmanager/security/process_sandbox.py
 import os
 import resource
 import subprocess
@@ -225,7 +225,7 @@ class ProcessSandbox:
 ### **Network Security Controls**
 
 ```python
-# agentmanagers/security/network_controls.py
+# agentmanager/security/network_controls.py
 import socket
 import urllib.parse
 from typing import List, Set, Optional
@@ -334,7 +334,7 @@ class NetworkSecurityControls:
 ### **Parameter Validation**
 
 ```python
-# agentmanagers/security/input_validator.py
+# agentmanager/security/input_validator.py
 import json
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -588,7 +588,7 @@ class InputValidator:
 ### **File System Security**
 
 ```python
-# agentmanagers/security/filesystem_security.py
+# agentmanager/security/filesystem_security.py
 import os
 import stat
 from pathlib import Path
@@ -739,7 +739,7 @@ class FileSystemSecurity:
 ### **Security Event Logging**
 
 ```python
-# agentmanagers/security/audit_logger.py
+# agentmanager/security/audit_logger.py
 import json
 import time
 from pathlib import Path
@@ -849,7 +849,7 @@ class SecurityAuditLogger:
 import pytest
 import tempfile
 from pathlib import Path
-from agentmanagers.security import ProcessSandbox, InputValidator, FileSystemSecurity
+from agentmanager.security import ProcessSandbox, InputValidator, FileSystemSecurity
 
 class TestProcessSecurity:
     def test_resource_limits(self):

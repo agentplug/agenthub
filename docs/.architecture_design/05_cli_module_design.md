@@ -143,7 +143,7 @@ def install(ctx, agent_path: str, version: str = None, force: bool = False, no_d
         # Success message
         OutputFormatter.success(f"Successfully installed {agent_path}")
         OutputFormatter.info(f"Install path: {installation_result.install_path}")
-        OutputFormatter.info(f"Usage: import agentmanagers as amg; agent = amg.load('{agent_path}')")
+        OutputFormatter.info(f"Usage: import agentmanager as amg; agent = amg.load('{agent_path}')")
         
         # Track analytics
         analytics.track_installation(agent_path, installation_result.install_time)
@@ -578,7 +578,7 @@ class OutputFormatter:
 # tests/cli/test_commands.py
 import pytest
 from click.testing import CliRunner
-from agentmanagers.cli.main import cli
+from agentmanager.cli.main import cli
 
 class TestInstallCommand:
     def test_install_valid_agent(self, mock_registry):
@@ -605,7 +605,7 @@ class TestInstallCommand:
 import tempfile
 import os
 from click.testing import CliRunner
-from agentmanagers.cli.main import cli
+from agentmanager.cli.main import cli
 
 class TestCLIIntegration:
     def test_full_agent_lifecycle(self):

@@ -14,7 +14,7 @@
 As AI agent developers and users, we struggle with the fragmented and complex process of sharing, discovering, and integrating AI agents into existing systems, which causes significant development overhead, reduced adoption rates, and prevents the AI agent ecosystem from reaching its full potential.
 
 ### Solution Vision
-Create a CLI-based Agent Hub MVP that enables one-line agent integration (`import agentmanagers as amg; agent = amg.load("meta/coding-agent")`) with process-based isolation for dependency management and local execution for fast development iteration.
+Create a CLI-based Agent Hub MVP that enables one-line agent integration (`import agentmanager as amg; agent = amg.load("meta/coding-agent")`) with process-based isolation for dependency management and local execution for fast development iteration.
 
 ### Business Value Justification
 - **For Developers**: Eliminate distribution infrastructure overhead, reach broader audience
@@ -55,6 +55,8 @@ C4Container
     Container(sdk, "Agent Hub SDK", "Python Library", "One-line agent loading and execution interface")
     Container(runtime, "Agent Runtime", "Process Manager", "Manages isolated agent execution with subprocess calls")
     Container(registry_client, "Registry Client", "HTTP Client", "Handles communication with remote agent registry")
+    Container(tool_support, "Agent Tool Support", "Tool Infrastructure", "Provides infrastructure for agents to access their tools")
+    Container(tool_validator, "Tool Validator", "Security Validator", "Validates agent access to tools and ensures safety")
     
     ContainerDb(local_cache, "Local Cache", "File System", "Cached agents, metadata, and dependencies")
     ContainerDb(agent_store, "Agent Store", "File System", "Installed agents with isolated virtual environments")
@@ -65,9 +67,12 @@ C4Container
     Rel(user, sdk, "Imports", "Python code")
     Rel(cli, registry_client, "Manages agents", "HTTPS requests")
     Rel(sdk, runtime, "Executes agents", "Function calls")
+    Rel(sdk, tool_support, "Accesses tool support", "Function calls")
     Rel(runtime, agent_store, "Loads agents", "File system")
     Rel(registry_client, local_cache, "Caches data", "File I/O")
     Rel(registry_client, github_registry, "Downloads registry.json", "HTTPS")
+    Rel(tool_support, tool_validator, "Validates tools", "Function calls")
+    Rel(tool_support, local_cache, "Stores tool metadata", "File I/O")
 ```
 
 ## Component Architecture
@@ -97,6 +102,18 @@ graph TD
         api_client["API Client<br/>HTTP Client"]
         cache_manager["Cache Manager<br/>Cache"]
         download_manager["Download Manager<br/>Downloader"]
+    end
+    
+    subgraph ToolSupport["Agent Tool Support"]
+        tool_discovery["Tool Discovery<br/>Built-in Tool Finder"]
+        tool_injection["Tool Injection<br/>Custom Tool Handler"]
+        tool_metadata["Tool Metadata<br/>Tool Information Manager"]
+    end
+    
+    subgraph ToolValidator["Tool Validator"]
+        access_validator["Access Validator<br/>Tool Access Checker"]
+        safety_validator["Safety Validator<br/>Tool Safety Checker"]
+        compatibility_validator["Compatibility Validator<br/>Tool Compatibility Checker"]
     end
     
     install_cmd --> download_manager
@@ -199,7 +216,7 @@ agenthub recommend                     # Get agent recommendations
 
 ### Python SDK Interface
 ```python
-import agentmanagers as amg
+import agentmanager as amg
 
 # Load and use agents
 agent = amg.load("meta/coding-agent")
@@ -288,6 +305,56 @@ sequenceDiagram
     AgentWrapper->>User: generated_code
 ```
 
+### Agent Tool Support Flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant SDK
+    participant ToolSupport
+    participant Validator
+    participant Storage
+    participant Runtime
+    participant Agent
+    
+    User->>SDK: agent = amg.load("agent", custom_tools={...})
+    SDK->>ToolSupport: discover_agent_tools(agent_path)
+    
+    ToolSupport->>Storage: get_agent_manifest(agent_path)
+    Storage->>ToolSupport: agent_manifest
+    
+    alt Custom Tools Provided
+        SDK->>ToolSupport: inject_custom_tools(agent_path, custom_tools)
+        ToolSupport->>ToolSupport: validate_custom_tools()
+        ToolSupport->>Storage: store_custom_tool_metadata()
+        Storage->>ToolSupport: custom_tools_registered
+    end
+    
+    ToolSupport->>Validator: validate_agent_tools(agent_path, all_tools)
+    Validator->>Validator: validate_tool_access_and_safety()
+    
+    alt Validation Failed
+        Validator->>ToolSupport: validation_errors
+        ToolSupport->>SDK: tool_validation_failed
+        SDK->>User: tool_validation_failed
+    else Validation Passed
+        Validator->>ToolSupport: validation_passed
+        ToolSupport->>Storage: register_agent_tools(agent_path, all_tools)
+        Storage->>ToolSupport: tools_registered
+    end
+    
+    ToolSupport->>SDK: agent_tools_ready
+    SDK->>User: agent_with_builtin_and_custom_tools
+    
+    Note over User,SDK: Agent built-in tools + user custom tools ready for use
+    
+    User->>SDK: agent.execute_method("analyze", data)
+    SDK->>Runtime: execute_agent(method, params)
+    Runtime->>Agent: run_subprocess(with tool access)
+    Agent->>Runtime: return result using its own tools
+    Runtime->>SDK: parsed result
+    SDK->>User: result generated by agent
+```
+
 ## Security Considerations
 
 ### Process Isolation Security
@@ -328,6 +395,13 @@ sequenceDiagram
 - **uv**: Fast Python package installer and virtual environment management
 - **PyYAML**: Configuration and manifest parsing
 - **requests**: HTTP client for registry communication
+
+### Tool Support Technologies
+- **inspect**: Python introspection for tool metadata extraction
+- **pickle**: Tool serialization and storage
+- **typing**: Type hints for tool validation
+- **numpy**: Numerical operations for tool validation
+- **pathlib**: Cross-platform path handling for tool discovery
 
 ### Development Tools
 - **pytest**: Testing framework
@@ -400,7 +474,19 @@ sequenceDiagram
 **Business Problem**: Agent dependency conflicts prevent reliable execution  
 **User Outcome**: Users can run multiple agents without compatibility issues  
 **Business Value**: Enables agent ecosystem growth through reliable execution  
-**Decision Rationale**: Process isolation provides clean separation with acceptable performance  
+**Decision Rationale**: Process isolation provides clean separation with acceptable performance
+
+### Agent Tool Support Container
+**Business Problem**: Agents need access to tools but Agent Hub shouldn't provide tools  
+**User Outcome**: Agents can use their built-in tools and users can inject custom tools  
+**Business Value**: Enables agent flexibility while maintaining platform simplicity  
+**Decision Rationale**: Tool support infrastructure separates concerns and enables customization
+
+### Tool Validator Container
+**Business Problem**: Custom tools need validation for safety and compatibility  
+**User Outcome**: Users can safely inject custom tools with automatic validation  
+**Business Value**: Reduces security risks while enabling customization  
+**Decision Rationale**: Validation ensures platform safety without limiting user capabilities  
 
 ### CLI Interface
 **Business Problem**: Developers need fast, scriptable agent management  
