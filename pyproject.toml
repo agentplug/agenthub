@@ -28,6 +28,9 @@ dependencies = [
     "mcp[cli]>=1.13.1",
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
+    "aisuite>=0.1.0",
+    "aiohttp>=3.9.0",
+    "duckduckgo-search>=6.0.0",
 ]
 
 [project.optional-dependencies]
