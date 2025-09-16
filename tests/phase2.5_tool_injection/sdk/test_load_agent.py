@@ -1,9 +1,11 @@
 """Unit tests for enhanced load_agent functionality."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from agenthub.sdk.load_agent import load_agent
+
 from agenthub.core.tools.exceptions import ToolNotFoundError
+from agenthub.sdk.load_agent import load_agent
 
 
 class TestLoadAgent:
@@ -14,7 +16,7 @@ class TestLoadAgent:
         # Mock the agent loader
         self.mock_agent_loader = MagicMock()
         self.mock_agent_wrapper = MagicMock()
-        
+
         # Mock agent info
         self.mock_agent_info = {
             "name": "test_agent",
@@ -24,201 +26,241 @@ class TestLoadAgent:
                 "description": "Test agent",
                 "version": "1.0.0",
                 "entry_point": "agent.py",
-                "methods": ["run", "analyze", "process"]
-            }
+                "methods": ["run", "analyze", "process"],
+            },
         }
-        
+
         self.mock_agent_loader.load_agent.return_value = self.mock_agent_info
         self.mock_agent_wrapper.return_value = self.mock_agent_wrapper
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_basic(self, mock_wrapper_class, mock_loader_class):
         """Test basic agent loading without tools."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Load agent
         agent = load_agent("test_agent")
-        
+
         # Verify calls
         mock_loader_instance.load_agent.assert_called_once_with("test_agent")
-        mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=None)
-        
+        mock_wrapper_class.assert_called_once_with(
+            self.mock_agent_info, tool_registry=None
+        )
+
         # Verify no tools were assigned
         mock_wrapper_instance.assign_tools.assert_not_called()
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_with_tools(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading with tools."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock tool registry
         mock_tool_registry = MagicMock()
-        mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2", "tool3"]
-        
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+        mock_tool_registry.get_available_tools.return_value = [
+            "tool1",
+            "tool2",
+            "tool3",
+        ]
+
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Load agent with tools
             agent = load_agent("test_agent", tools=["tool1", "tool2"])
-            
+
             # Verify calls
             mock_loader_instance.load_agent.assert_called_once_with("test_agent")
-            mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=mock_tool_registry)
-            mock_wrapper_instance.assign_tools.assert_called_once_with(["tool1", "tool2"])
+            mock_wrapper_class.assert_called_once_with(
+                self.mock_agent_info, tool_registry=mock_tool_registry
+            )
+            mock_wrapper_instance.assign_tools.assert_called_once_with(
+                ["tool1", "tool2"]
+            )
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_namespace_format(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading with namespace/agent_name format."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Load agent with namespace
         agent = load_agent("namespace/agent_name")
-        
-        # Verify calls
-        mock_loader_instance.load_agent.assert_called_once_with("namespace", "agent_name")
-        mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=None)
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+        # Verify calls
+        mock_loader_instance.load_agent.assert_called_once_with(
+            "namespace", "agent_name"
+        )
+        mock_wrapper_class.assert_called_once_with(
+            self.mock_agent_info, tool_registry=None
+        )
+
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_tool_not_found(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading with non-existent tools raises error."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock tool registry with limited tools
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2"]
-        
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Should raise error for non-existent tool
             with pytest.raises(ToolNotFoundError):
                 load_agent("test_agent", tools=["nonexistent_tool"])
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_empty_tools_list(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading with empty tools list."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Load agent with empty tools list
         agent = load_agent("test_agent", tools=[])
-        
+
         # Verify calls
         mock_loader_instance.load_agent.assert_called_once_with("test_agent")
-        mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=None)
-        
+        mock_wrapper_class.assert_called_once_with(
+            self.mock_agent_info, tool_registry=None
+        )
+
         # Should not assign tools
         mock_wrapper_instance.assign_tools.assert_not_called()
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_no_tool_registry(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading when no tool registry is available."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock no tool registry available
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=None):
+        with patch("agenthub.sdk.load_agent.get_tool_registry", return_value=None):
             # Should work without tools
             agent = load_agent("test_agent")
-            
+
             # Verify calls
             mock_loader_instance.load_agent.assert_called_once_with("test_agent")
-            mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=None)
-            
+            mock_wrapper_class.assert_called_once_with(
+                self.mock_agent_info, tool_registry=None
+            )
+
             # Should not assign tools
             mock_wrapper_instance.assign_tools.assert_not_called()
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_tool_validation(self, mock_wrapper_class, mock_loader_class):
         """Test tool validation during agent loading."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock tool registry
         mock_tool_registry = MagicMock()
-        mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2", "tool3"]
-        
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+        mock_tool_registry.get_available_tools.return_value = [
+            "tool1",
+            "tool2",
+            "tool3",
+        ]
+
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Load agent with valid tools
             agent = load_agent("test_agent", tools=["tool1", "tool2"])
-            
+
             # Verify tool validation was called
             mock_tool_registry.get_available_tools.assert_called_once()
-            mock_wrapper_instance.assign_tools.assert_called_once_with(["tool1", "tool2"])
+            mock_wrapper_instance.assign_tools.assert_called_once_with(
+                ["tool1", "tool2"]
+            )
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_agent_loader_error(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading when AgentLoader raises an error."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.side_effect = Exception("Agent not found")
         mock_loader_class.return_value = mock_loader_instance
-        
+
         # Should raise the error
         with pytest.raises(Exception, match="Agent not found"):
             load_agent("nonexistent_agent")
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
-    def test_load_agent_tool_assignment_error(self, mock_wrapper_class, mock_loader_class):
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
+    def test_load_agent_tool_assignment_error(
+        self, mock_wrapper_class, mock_loader_class
+    ):
         """Test agent loading when tool assignment raises an error."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
-        mock_wrapper_instance.assign_tools.side_effect = Exception("Tool assignment failed")
+        mock_wrapper_instance.assign_tools.side_effect = Exception(
+            "Tool assignment failed"
+        )
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock tool registry
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2"]
-        
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Should raise the error
             with pytest.raises(Exception, match="Tool assignment failed"):
                 load_agent("test_agent", tools=["tool1"])
@@ -233,68 +275,86 @@ class TestLoadAgent:
         with pytest.raises(TypeError):
             load_agent("test_agent", tools="not_a_list")
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_with_mcp_tools(self, mock_wrapper_class, mock_loader_class):
         """Test agent loading with MCP-discovered tools."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock tool registry with MCP tools
         mock_tool_registry = MagicMock()
-        mock_tool_registry.get_available_tools.return_value = ["local_tool", "mcp_tool1", "mcp_tool2"]
-        
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+        mock_tool_registry.get_available_tools.return_value = [
+            "local_tool",
+            "mcp_tool1",
+            "mcp_tool2",
+        ]
+
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Load agent with MCP tools
             agent = load_agent("test_agent", tools=["local_tool", "mcp_tool1"])
-            
+
             # Verify calls
             mock_loader_instance.load_agent.assert_called_once_with("test_agent")
-            mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=mock_tool_registry)
-            mock_wrapper_instance.assign_tools.assert_called_once_with(["local_tool", "mcp_tool1"])
+            mock_wrapper_class.assert_called_once_with(
+                self.mock_agent_info, tool_registry=mock_tool_registry
+            )
+            mock_wrapper_instance.assign_tools.assert_called_once_with(
+                ["local_tool", "mcp_tool1"]
+            )
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_load_agent_return_value(self, mock_wrapper_class, mock_loader_class):
         """Test that load_agent returns the agent wrapper."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Load agent
         agent = load_agent("test_agent")
-        
+
         # Should return the wrapper instance
         assert agent == mock_wrapper_instance
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
-    def test_load_agent_tool_registry_passed_to_wrapper(self, mock_wrapper_class, mock_loader_class):
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
+    def test_load_agent_tool_registry_passed_to_wrapper(
+        self, mock_wrapper_class, mock_loader_class
+    ):
         """Test that tool registry is passed to AgentWrapper."""
         # Setup mocks
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_agent.return_value = self.mock_agent_info
         mock_loader_class.return_value = mock_loader_instance
-        
+
         mock_wrapper_instance = MagicMock()
         mock_wrapper_class.return_value = mock_wrapper_instance
-        
+
         # Mock tool registry
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2"]
-        
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Load agent with tools
             load_agent("test_agent", tools=["tool1"])
-            
+
             # Verify tool registry was passed to wrapper
-            mock_wrapper_class.assert_called_once_with(self.mock_agent_info, tool_registry=mock_tool_registry)
+            mock_wrapper_class.assert_called_once_with(
+                self.mock_agent_info, tool_registry=mock_tool_registry
+            )

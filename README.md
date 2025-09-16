@@ -539,7 +539,7 @@ pytest tests/ --cov=agenthub --cov-report=html
 
 **Core Commands**: Direct commands for basic operations:
 - `agenthub list` - List agents
-- `agenthub info user/agent` - Show agent details  
+- `agenthub info user/agent` - Show agent details
 - `agenthub exec user/agent method` - Execute agent methods
 - `agenthub validate` - System health check
 

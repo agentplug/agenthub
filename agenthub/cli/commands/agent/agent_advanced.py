@@ -1,7 +1,6 @@
 """CLI commands for advanced agent operations (migrate, clone, optimize, analyze-deps, python-versions)."""
 
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich import print as rprint
@@ -38,7 +37,13 @@ def agent_advanced():
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def migrate_agent(agent_name: str, python_version: str, backup: bool, force: bool, base_path: Optional[str]):
+def migrate_agent(
+    agent_name: str,
+    python_version: str,
+    backup: bool,
+    force: bool,
+    base_path: str | None,
+):
     """Migrate agent environment to a different Python version."""
     try:
         # Validate agent name format
@@ -64,15 +69,15 @@ def migrate_agent(agent_name: str, python_version: str, backup: bool, force: boo
             console=console,
         ) as progress:
             task = progress.add_task("Migrating...", total=None)
-            
+
             # Perform migration
             result = manager.migrate_python_version(
                 agent_name=agent_name,
                 target_python_version=python_version,
                 create_backup=backup,
-                force=force
+                force=force,
             )
-            
+
             progress.update(task, completed=True)
 
         # Display results
@@ -81,10 +86,10 @@ def migrate_agent(agent_name: str, python_version: str, backup: bool, force: boo
             rprint(f"📊 From: Python {result.source_python}")
             rprint(f"📊 To: Python {result.target_python}")
             rprint(f"⏱️  Time: {result.migration_time:.2f}s")
-            
+
             if result.backup_path:
                 rprint(f"💾 Backup: {result.backup_path}")
-                
+
             if result.next_steps:
                 rprint("\n📋 [bold]Next steps:[/bold]")
                 for step in result.next_steps:
@@ -92,7 +97,7 @@ def migrate_agent(agent_name: str, python_version: str, backup: bool, force: boo
         else:
             rprint("❌ [red]Migration failed![/red]")
             rprint(f"Error: {result.error_message}")
-            
+
             if result.next_steps:
                 rprint("\n🔧 [bold]Troubleshooting:[/bold]")
                 for step in result.next_steps:
@@ -115,7 +120,9 @@ def migrate_agent(agent_name: str, python_version: str, backup: bool, force: boo
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def clone_agent(source_agent: str, target_agent: str, include_env: bool, base_path: Optional[str]):
+def clone_agent(
+    source_agent: str, target_agent: str, include_env: bool, base_path: str | None
+):
     """Clone an existing agent to a new agent."""
     try:
         # Validate agent name formats
@@ -136,14 +143,14 @@ def clone_agent(source_agent: str, target_agent: str, include_env: bool, base_pa
             console=console,
         ) as progress:
             task = progress.add_task("Cloning...", total=None)
-            
+
             # Perform cloning
             result = manager.clone_environment(
                 source_agent=source_agent,
                 target_agent=target_agent,
-                include_env=include_env
+                include_env=include_env,
             )
-            
+
             progress.update(task, completed=True)
 
         # Display results
@@ -152,7 +159,7 @@ def clone_agent(source_agent: str, target_agent: str, include_env: bool, base_pa
             rprint(f"📁 Source: {result.source_path}")
             rprint(f"📁 Target: {result.target_path}")
             rprint(f"⏱️  Time: {result.clone_time:.2f}s")
-            
+
             if result.warnings:
                 rprint("\n⚠️  [yellow]Warnings:[/yellow]")
                 for warning in result.warnings:
@@ -172,7 +179,7 @@ def clone_agent(source_agent: str, target_agent: str, include_env: bool, base_pa
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def optimize_agent(agent_name: str, base_path: Optional[str]):
+def optimize_agent(agent_name: str, base_path: str | None):
     """Optimize agent environment for size and performance."""
     try:
         # Validate agent name format
@@ -198,10 +205,10 @@ def optimize_agent(agent_name: str, base_path: Optional[str]):
             console=console,
         ) as progress:
             task = progress.add_task("Optimizing...", total=None)
-            
+
             # Perform optimization
             result = manager.optimize_environment(agent_name)
-            
+
             progress.update(task, completed=True)
 
         # Display results
@@ -211,7 +218,7 @@ def optimize_agent(agent_name: str, base_path: Optional[str]):
             rprint(f"📊 Optimized size: {result.optimized_size_mb:.2f} MB")
             rprint(f"📊 Space saved: {result.space_saved_mb:.2f} MB")
             rprint(f"⏱️  Time: {result.optimization_time:.2f}s")
-            
+
             if result.actions_taken:
                 rprint("\n🎯 [bold]Actions taken:[/bold]")
                 for action in result.actions_taken:
@@ -230,20 +237,20 @@ def list_python_versions():
     try:
         manager = AdvancedEnvironmentManager()
         versions = manager.list_python_versions()
-        
+
         if not versions:
             rprint("📦 [yellow]No Python versions found[/yellow]")
             return
-        
+
         table = Table(title="🐍 Available Python Versions")
         table.add_column("Version", style="cyan")
         table.add_column("Status", style="green")
-        
+
         for version in versions:
             table.add_row(version, "Available")
-        
+
         console.print(table)
-        
+
     except Exception as e:
         rprint(f"❌ [red]Error listing Python versions: {e}[/red]")
 
@@ -255,7 +262,7 @@ def list_python_versions():
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def analyze_dependencies(agent_name: str, base_path: Optional[str]):
+def analyze_dependencies(agent_name: str, base_path: str | None):
     """Analyze agent dependencies for conflicts and issues."""
     try:
         # Validate agent name format
@@ -281,29 +288,29 @@ def analyze_dependencies(agent_name: str, base_path: Optional[str]):
         if result["success"]:
             rprint("✅ [green]Dependency analysis complete[/green]")
             rprint(f"📦 Total packages: {result['total_packages']}")
-            
+
             if result["packages"]:
                 table = Table(title="📦 Installed Packages")
                 table.add_column("Package", style="cyan")
-                
+
                 for package in result["packages"][:20]:  # Show first 20
                     table.add_row(package)
-                
+
                 if len(result["packages"]) > 20:
                     table.add_row(f"... and {len(result['packages']) - 20} more")
-                
+
                 console.print(table)
-            
+
             if result["conflicts"]:
                 rprint("\n⚠️  [yellow]Conflicts found:[/yellow]")
                 for conflict in result["conflicts"]:
                     rprint(f"  • {conflict}")
-            
+
             if result["recommendations"]:
                 rprint("\n💡 [bold]Recommendations:[/bold]")
                 for rec in result["recommendations"]:
                     rprint(f"  • {rec}")
-            
+
         else:
             rprint("❌ [red]Analysis failed![/red]")
             rprint(f"Error: {result['error']}")

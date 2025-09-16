@@ -1,9 +1,9 @@
 # SDK Implementation Details - Phase 2.5
 
-**Document Type**: Implementation Details  
-**Module**: sdk  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Implementation Details
+**Module**: sdk
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 
@@ -59,51 +59,51 @@ class EnhancedAgent:
         self._tool_injector = None
         self._context_manager = None
         self._client_manager = None
-    
+
     def has_tool(self, tool_name: str) -> bool:
         """Check if agent has access to specific tool"""
         if not self.tool_metadata:
             return False
         return tool_name in self.tool_metadata.get("available_tools", [])
-    
+
     def get_available_tools(self) -> List[str]:
         """Get list of available tools for agent"""
         if not self.tool_metadata:
             return []
         return self.tool_metadata.get("available_tools", [])
-    
+
     def get_tool_metadata(self, tool_name: str) -> Optional[Dict[str, Any]]:
         """Get metadata for specific tool"""
         if not self.tool_metadata:
             return None
-        
+
         tools = self.tool_metadata.get("tools", {})
         if tool_name not in tools.get("available_tools", []):
             return None
-        
+
         return {
             "name": tool_name,
             "description": tools.get("tool_descriptions", {}).get(tool_name, ""),
             "parameters": tools.get("tool_parameters", {}).get(tool_name, {}),
             "examples": tools.get("tool_usage_examples", {}).get(tool_name, [])
         }
-    
+
     async def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """Execute tool for agent"""
         if not self.has_tool(tool_name):
             raise ToolAccessDeniedError(f"Agent does not have access to tool {tool_name}")
-        
+
         # Execute tool via MCP
         from agenthub.runtime import execute_tool_for_agent
         return await execute_tool_for_agent(self, tool_name, arguments)
 
 def load_agent(base_agent: str, tools: Optional[List[str]] = None, **kwargs) -> EnhancedAgent:
     """Load an agent with optional tool assignment"""
-    
+
     # Validate base agent
     if not base_agent:
         raise AgentLoadingError("Base agent is required")
-    
+
     # Create agent configuration
     config = AgentConfig(
         base_agent=base_agent,
@@ -111,29 +111,29 @@ def load_agent(base_agent: str, tools: Optional[List[str]] = None, **kwargs) -> 
         agent_id=kwargs.get("agent_id"),
         config=kwargs
     )
-    
+
     # Load base agent (existing functionality)
     base_agent_instance = _load_base_agent(base_agent, **kwargs)
-    
+
     # Create enhanced agent
     enhanced_agent = EnhancedAgent(
         base_agent=base_agent_instance,
         agent_id=config.agent_id
     )
-    
+
     # If tools are specified, inject them
     if tools:
         try:
             # Validate tool assignment
             valid_tools = _validate_tool_assignment(tools)
-            
+
             # Inject tools into agent context
             tool_injector = get_tool_injector()
             tool_metadata = tool_injector.inject_tools_into_agent(
                 enhanced_agent.agent_id,
                 valid_tools
             )
-            
+
             # Create agent context with tools
             context_manager = get_context_manager()
             agent_context = context_manager.create_agent_context(
@@ -141,17 +141,17 @@ def load_agent(base_agent: str, tools: Optional[List[str]] = None, **kwargs) -> 
                 base_context={"name": f"Agent {enhanced_agent.agent_id}"},
                 tool_metadata=tool_metadata
             )
-            
+
             # Add tool metadata to agent
             enhanced_agent.tool_metadata = tool_metadata
             enhanced_agent._tool_injector = tool_injector
             enhanced_agent._context_manager = context_manager
-            
+
         except Exception as e:
             # If tool injection fails, return agent without tools
             print(f"Warning: Tool injection failed: {e}")
             print("Agent loaded without tools")
-    
+
     return enhanced_agent
 
 def _load_base_agent(base_agent: str, **kwargs):
@@ -161,21 +161,21 @@ def _load_base_agent(base_agent: str, **kwargs):
     class MockBaseAgent:
         def __init__(self, name):
             self.name = name
-        
+
         def __getattr__(self, name):
             # Delegate to base agent functionality
             return getattr(self, name)
-    
+
     return MockBaseAgent(base_agent)
 
 def _validate_tool_assignment(tool_names: List[str]) -> List[str]:
     """Validate tool assignment and return valid tools"""
     available_tools = get_available_tools()
     valid_tools = [name for name in tool_names if name in available_tools]
-    
+
     if not valid_tools:
         raise ToolAssignmentError("No valid tools found for assignment")
-    
+
     return valid_tools
 ```
 
@@ -200,16 +200,16 @@ def assign_tools_to_agent(agent: EnhancedAgent, tool_names: List[str]) -> List[s
             "tool_return_types": {},
             "tool_namespaces": {}
         }
-    
+
     # Validate tool assignment
     valid_tools = _validate_tool_assignment(tool_names)
-    
+
     # Get existing tools
     existing_tools = agent.tool_metadata.get("available_tools", [])
-    
+
     # Add new tools
     new_tools = [name for name in valid_tools if name not in existing_tools]
-    
+
     if new_tools:
         # Inject new tools
         tool_injector = get_tool_injector()
@@ -217,7 +217,7 @@ def assign_tools_to_agent(agent: EnhancedAgent, tool_names: List[str]) -> List[s
             agent.agent_id,
             new_tools
         )
-        
+
         # Update agent tool metadata
         agent.tool_metadata["available_tools"].extend(new_tools)
         agent.tool_metadata["tool_descriptions"].update(tool_metadata.get("tool_descriptions", {}))
@@ -225,14 +225,14 @@ def assign_tools_to_agent(agent: EnhancedAgent, tool_names: List[str]) -> List[s
         agent.tool_metadata["tool_parameters"].update(tool_metadata.get("tool_parameters", {}))
         agent.tool_metadata["tool_return_types"].update(tool_metadata.get("tool_return_types", {}))
         agent.tool_metadata["tool_namespaces"].update(tool_metadata.get("tool_namespaces", {}))
-        
+
         # Update agent context
         if agent._context_manager:
             agent._context_manager.update_agent_context(
                 agent.agent_id,
                 {"tools": agent.tool_metadata}
             )
-    
+
     return valid_tools
 
 def get_agent_tools(agent: EnhancedAgent) -> List[str]:
@@ -243,10 +243,10 @@ def remove_tools_from_agent(agent: EnhancedAgent, tool_names: List[str]) -> List
     """Remove tools from agent"""
     if not agent.tool_metadata:
         return []
-    
+
     available_tools = agent.tool_metadata.get("available_tools", [])
     removed_tools = [name for name in tool_names if name in available_tools]
-    
+
     if removed_tools:
         # Remove tools from metadata
         for tool_name in removed_tools:
@@ -256,14 +256,14 @@ def remove_tools_from_agent(agent: EnhancedAgent, tool_names: List[str]) -> List
             agent.tool_metadata["tool_parameters"].pop(tool_name, None)
             agent.tool_metadata["tool_return_types"].pop(tool_name, None)
             agent.tool_metadata["tool_namespaces"].pop(tool_name, None)
-        
+
         # Update agent context
         if agent._context_manager:
             agent._context_manager.update_agent_context(
                 agent.agent_id,
                 {"tools": agent.tool_metadata}
             )
-    
+
     return removed_tools
 ```
 
@@ -280,7 +280,7 @@ async def execute_tool_for_agent(agent: EnhancedAgent, tool_name: str, arguments
     """Execute tool for agent"""
     if not agent.has_tool(tool_name):
         raise ToolAccessDeniedError(f"Agent does not have access to tool {tool_name}")
-    
+
     try:
         # Execute tool via MCP
         from agenthub.runtime import execute_tool_for_agent as runtime_execute_tool
@@ -318,33 +318,33 @@ from .exceptions import ToolNotFoundError
 class ToolDiscovery:
     def __init__(self, agent: EnhancedAgent):
         self.agent = agent
-    
+
     def search_tools(self, query: str) -> List[str]:
         """Search tools available to agent"""
         available_tools = self.agent.get_available_tools()
         if not query:
             return available_tools
-        
+
         matching_tools = []
         for tool_name in available_tools:
             metadata = self.agent.get_tool_metadata(tool_name)
             if metadata:
                 description = metadata.get("description", "")
-                if (query.lower() in tool_name.lower() or 
+                if (query.lower() in tool_name.lower() or
                     query.lower() in description.lower()):
                     matching_tools.append(tool_name)
-        
+
         return matching_tools
-    
+
     def get_tool_help(self, tool_name: str) -> Optional[str]:
         """Get help information for tool"""
         metadata = self.agent.get_tool_metadata(tool_name)
         if not metadata:
             return None
-        
+
         help_text = f"Tool: {tool_name}\n"
         help_text += f"Description: {metadata.get('description', 'No description')}\n"
-        
+
         parameters = metadata.get("parameters", {})
         if parameters:
             help_text += "Parameters:\n"
@@ -352,20 +352,20 @@ class ToolDiscovery:
                 param_type = param_info.get("type", "unknown")
                 required = param_info.get("required", False)
                 help_text += f"  {param_name} ({param_type}){'*' if required else ''}\n"
-        
+
         examples = metadata.get("examples", [])
         if examples:
             help_text += "Examples:\n"
             for example in examples:
                 help_text += f"  {example}\n"
-        
+
         return help_text
-    
+
     def list_tools(self) -> List[Dict[str, Any]]:
         """List all tools available to agent"""
         available_tools = self.agent.get_available_tools()
         tool_list = []
-        
+
         for tool_name in available_tools:
             metadata = self.agent.get_tool_metadata(tool_name)
             if metadata:
@@ -375,7 +375,7 @@ class ToolDiscovery:
                     "parameters": metadata.get("parameters", {}),
                     "examples": metadata.get("examples", [])
                 })
-        
+
         return tool_list
 ```
 
@@ -501,7 +501,7 @@ class LazyToolLoader:
     def __init__(self, agent: EnhancedAgent):
         self.agent = agent
         self._loaded_tools = set()
-    
+
     async def load_tool_on_demand(self, tool_name: str):
         """Load tool only when needed"""
         if tool_name not in self._loaded_tools:
@@ -522,7 +522,7 @@ class ToolMetadataCache:
         self.max_size = max_size
         self.ttl = ttl
         self._lock = asyncio.Lock()
-    
+
     async def get_tool_metadata(self, tool_name: str) -> Optional[Dict[str, Any]]:
         """Get cached tool metadata"""
         async with self._lock:
@@ -535,7 +535,7 @@ class ToolMetadataCache:
                     del self.cache[tool_name]
                     del self.timestamps[tool_name]
             return None
-    
+
     async def cache_tool_metadata(self, tool_name: str, metadata: Dict[str, Any]):
         """Cache tool metadata"""
         async with self._lock:
@@ -547,7 +547,7 @@ class ToolMetadataCache:
                 )
                 del self.cache[oldest_tool]
                 del self.timestamps[oldest_tool]
-            
+
             self.cache[tool_name] = metadata
             self.timestamps[tool_name] = datetime.now()
 ```

@@ -29,7 +29,7 @@ Examples focused on tool integration, MCP (Model Context Protocol), and tool man
 1. **Start the MCP server with run_resources()**:
    ```python
    from agenthub.core.tools import run_resources
-   
+
    # This starts the MCP server in the background
    run_resources()
    ```

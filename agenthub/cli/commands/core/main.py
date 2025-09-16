@@ -2,11 +2,11 @@
 
 import click
 
-from .list import core_list
-from .info import core_info
 from .exec import core_exec
-from .validate import core_validate
+from .info import core_info
+from .list import core_list
 from .remove import core_remove
+from .validate import core_validate
 
 
 @click.group()

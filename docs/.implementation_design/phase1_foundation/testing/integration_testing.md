@@ -1,12 +1,12 @@
 # Phase 1: Integration Testing Plan
 
-**Document Type**: Integration Testing Plan  
-**Phase**: 1 - Foundation  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Comprehensive integration testing for Phase 1 modules  
+**Document Type**: Integration Testing Plan
+**Phase**: 1 - Foundation
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Comprehensive integration testing for Phase 1 modules
 
 ## 🎯 **Integration Testing Overview**
 
@@ -302,13 +302,13 @@ def integration_test_env():
         # Create test Agent Hub structure
         agenthub_dir = Path(tmp_dir) / ".agenthub"
         agenthub_dir.mkdir()
-        
+
         # Create subdirectories
         (agenthub_dir / "agents").mkdir()
         (agenthub_dir / "cache").mkdir()
         (agenthub_dir / "config").mkdir()
         (agenthub_dir / "logs").mkdir()
-        
+
         yield {
             "base_path": agenthub_dir,
             "agents_path": agenthub_dir / "agents",
@@ -327,7 +327,7 @@ def clean_integration_env(integration_test_env):
         elif item.is_dir():
             import shutil
             shutil.rmtree(item)
-    
+
     yield integration_test_env
 ```
 
@@ -345,10 +345,10 @@ class TestRuntimeStorageIntegration:
         # Set up test environment
         storage = LocalStorageManager(base_path=clean_integration_env["base_path"])
         runtime = AgentRuntime()
-        
+
         # Create test agent
         agent_path = storage.create_agent_directory("test-dev", "test-agent")
-        
+
         # Create test agent files
         manifest_file = agent_path / "agent.yaml"
         manifest_file.write_text("""
@@ -363,7 +363,7 @@ interface:
           type: string
           required: true
         """)
-        
+
         agent_script = agent_path / "agent.py"
         agent_script.write_text("""
 import json
@@ -376,25 +376,25 @@ if __name__ == "__main__":
     data = json.loads(sys.argv[1])
     method = data["method"]
     params = data["parameters"]
-    
+
     if method == "test_method":
         result = test_method(params["prompt"])
         print(json.dumps({"result": result}))
         """)
-        
+
         requirements_file = agent_path / "requirements.txt"
         requirements_file.write_text("requests>=2.31.0")
-        
+
         # Test execution through Runtime
         result = runtime.execute_agent(
             agent_path=str(agent_path),
             method="test_method",
             parameters={"prompt": "Hello World"}
         )
-        
+
         assert "result" in result
         assert "Processed: Hello World" in result["result"]
-        
+
         # Verify Storage still has agent
         agents = storage.list_agents()
         assert len(agents) == 1
@@ -415,10 +415,10 @@ class TestCoreStorageIntegration:
         # Set up test environment
         storage = LocalStorageManager(base_path=clean_integration_env["base_path"])
         loader = AgentLoader()
-        
+
         # Create test agent
         agent_path = storage.create_agent_directory("test-dev", "test-agent")
-        
+
         # Create test agent files
         manifest_file = agent_path / "agent.yaml"
         manifest_file.write_text("""
@@ -434,20 +434,20 @@ interface:
           type: string
           required: true
         """)
-        
+
         agent_script = agent_path / "agent.py"
         agent_script.write_text("""
 def test_method(prompt):
     return f"Processed: {prompt}"
         """)
-        
+
         # Load agent through Core
         agent = loader.load_agent(str(agent_path))
-        
+
         assert agent is not None
         assert agent.name == "test-agent"
         assert "test_method" in agent.available_methods
-        
+
         # Verify Storage still has agent
         agents = storage.list_agents()
         assert len(agents) == 1
@@ -468,10 +468,10 @@ class TestCLIStorageIntegration:
         """Test complete CLI agent management flow through Storage."""
         runner = CliRunner()
         storage = LocalStorageManager(base_path=clean_integration_env["base_path"])
-        
+
         # Create test agent
         agent_path = storage.create_agent_directory("test-dev", "test-agent")
-        
+
         # Create test agent files
         manifest_file = agent_path / "agent.yaml"
         manifest_file.write_text("""
@@ -479,22 +479,22 @@ name: test-agent
 version: 1.0.0
 description: A test agent
         """)
-        
+
         # Test list command
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "test-dev/test-agent" in result.output
-        
+
         # Test info command
         result = runner.invoke(cli, ['info', 'test-dev/test-agent'])
         assert result.exit_code == 0
         assert "test-agent" in result.output
         assert "1.0.0" in result.output
-        
+
         # Test remove command
         result = runner.invoke(cli, ['remove', 'test-dev/test-agent'])
         assert result.exit_code == 0
-        
+
         # Verify agent was removed
         agents = storage.list_agents()
         assert len(agents) == 0

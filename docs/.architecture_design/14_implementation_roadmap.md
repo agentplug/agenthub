@@ -1,12 +1,12 @@
 # Agent Hub Implementation Roadmap
 
-**Document Type**: Implementation Plan  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L5 - Planning Level  
-**Audience**: Development Team, Project Managers, Stakeholders  
+**Document Type**: Implementation Plan
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L5 - Planning Level
+**Audience**: Development Team, Project Managers, Stakeholders
 
 ## 🎯 **Implementation Overview**
 
@@ -22,19 +22,19 @@ gantt
     Core Runtime           :p1, 2025-06-28, 10d
     Process Manager        :p1-1, 2025-06-28, 5d
     Environment Manager    :p1-2, 2025-07-01, 5d
-    
+
     section Phase 2: CLI Interface
     Basic CLI Commands     :p2, 2025-07-08, 7d
     Install/Remove         :p2-1, 2025-07-08, 3d
     List/Info Commands     :p2-2, 2025-07-10, 2d
     Error Handling         :p2-3, 2025-07-12, 2d
-    
+
     section Phase 3: Registry
     GitHub Integration     :p3, 2025-07-15, 7d
     Registry Client        :p3-1, 2025-07-15, 3d
     Search & Discovery     :p3-2, 2025-07-17, 2d
     Caching System         :p3-3, 2025-07-19, 2d
-    
+
     section Phase 4: SDK & Polish
     Python SDK             :p4, 2025-07-22, 7d
     Agent Loading          :p4-1, 2025-07-22, 3d
@@ -157,7 +157,7 @@ class GitHubRegistryClient:
     def get_registry(self) -> dict:
         """Fetch registry.json from GitHub."""
         # Implementation: GitHub API integration with caching
-    
+
     def search_agents(self, query: str, category: str = None) -> list:
         """Search agents in registry."""
         # Implementation: Client-side search with filtering

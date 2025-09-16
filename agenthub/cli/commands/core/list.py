@@ -9,6 +9,7 @@ from rich.table import Table
 
 from agenthub.core.agents.loader import AgentLoader
 from agenthub.storage.local_storage import LocalStorage
+
 from ...utils.display_helpers import truncate_text
 
 console = Console()
@@ -61,7 +62,9 @@ def list_agents():
 
         rprint("\n💡 [dim]Use 'agenthub info <agent>' for details[/dim]")
         rprint("🚀 [dim]Use 'agenthub exec <agent> <method> <params>' to run[/dim]")
-        rprint("📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]")
+        rprint(
+            "📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]"
+        )
 
     except Exception as e:
         rprint(f"❌ [red]Error listing agents: {e}[/red]")

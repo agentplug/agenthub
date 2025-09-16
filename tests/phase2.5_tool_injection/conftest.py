@@ -1,8 +1,10 @@
 """Pytest configuration for Phase 2.5 tool injection tests."""
 
-import pytest
 import asyncio
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
+
+import pytest
+
 from agenthub.core.tools.registry import ToolRegistry
 
 
@@ -35,8 +37,8 @@ def mock_agent_info():
             "description": "Test agent",
             "version": "1.0.0",
             "entry_point": "agent.py",
-            "methods": ["run", "analyze", "process"]
-        }
+            "methods": ["run", "analyze", "process"],
+        },
     }
 
 
@@ -44,19 +46,19 @@ def mock_agent_info():
 def sample_tools(tool_registry):
     """Register sample tools for testing."""
     from agenthub.core.tools.decorator import tool
-    
+
     @tool(name="sample_tool1", description="Sample tool 1")
     def sample_tool1(param: str) -> str:
         return f"result: {param}"
-    
+
     @tool(name="sample_tool2", description="Sample tool 2")
     def sample_tool2(param: int) -> int:
         return param * 2
-    
+
     @tool(name="sample_tool3", description="Sample tool 3")
     def sample_tool3(param1: str, param2: int = 10) -> dict:
         return {"param1": param1, "param2": param2}
-    
+
     return ["sample_tool1", "sample_tool2", "sample_tool3"]
 
 
@@ -68,7 +70,9 @@ def mock_mcp_client():
     mock_client.connect = MagicMock(return_value=asyncio.coroutine(lambda: None)())
     mock_client.disconnect = MagicMock(return_value=asyncio.coroutine(lambda: None)())
     mock_client.list_tools = MagicMock(return_value=asyncio.coroutine(lambda: [])())
-    mock_client.call_tool = MagicMock(return_value=asyncio.coroutine(lambda: "result")())
+    mock_client.call_tool = MagicMock(
+        return_value=asyncio.coroutine(lambda: "result")()
+    )
     return mock_client
 
 
@@ -84,8 +88,8 @@ def mock_agent_loader():
             "description": "Test agent",
             "version": "1.0.0",
             "entry_point": "agent.py",
-            "methods": ["run", "analyze", "process"]
-        }
+            "methods": ["run", "analyze", "process"],
+        },
     }
     return mock_loader
 
@@ -99,8 +103,12 @@ def mock_agent_wrapper():
     mock_wrapper.execute_tool = MagicMock(return_value="result")
     mock_wrapper.get_available_tools = MagicMock(return_value=[])
     mock_wrapper.get_tool_metadata = MagicMock(return_value=None)
-    mock_wrapper.get_tool_context_json = MagicMock(return_value='{"available_tools": []}')
-    mock_wrapper.generate_agent_call_json = MagicMock(return_value='{"method": "run", "parameters": {}}')
+    mock_wrapper.get_tool_context_json = MagicMock(
+        return_value='{"available_tools": []}'
+    )
+    mock_wrapper.generate_agent_call_json = MagicMock(
+        return_value='{"method": "run", "parameters": {}}'
+    )
     return mock_wrapper
 
 
@@ -117,15 +125,15 @@ def performance_thresholds():
     """Provide performance thresholds for tests."""
     return {
         "tool_registration_time": 5.0,  # seconds
-        "tool_execution_time": 1.0,     # seconds
+        "tool_execution_time": 1.0,  # seconds
         "metadata_retrieval_time": 0.5,  # seconds
         "concurrent_registration_time": 2.0,  # seconds
-        "concurrent_execution_time": 2.0,     # seconds
-        "memory_increase_mb": 50,       # MB
-        "lookup_time": 1.0,             # seconds
-        "assignment_time": 1.0,         # seconds
+        "concurrent_execution_time": 2.0,  # seconds
+        "memory_increase_mb": 50,  # MB
+        "lookup_time": 1.0,  # seconds
+        "assignment_time": 1.0,  # seconds
         "context_generation_time": 2.0,  # seconds
-        "cleanup_time": 0.5,            # seconds
+        "cleanup_time": 0.5,  # seconds
     }
 
 
@@ -135,19 +143,35 @@ def test_data():
     return {
         "simple_tools": [
             {"name": "add", "description": "Add two numbers", "params": ["a", "b"]},
-            {"name": "multiply", "description": "Multiply two numbers", "params": ["a", "b"]},
+            {
+                "name": "multiply",
+                "description": "Multiply two numbers",
+                "params": ["a", "b"],
+            },
             {"name": "greet", "description": "Generate greeting", "params": ["name"]},
         ],
         "complex_tools": [
-            {"name": "data_analyzer", "description": "Analyze data", "params": ["data", "analysis_type"]},
-            {"name": "file_processor", "description": "Process files", "params": ["file_path", "operation"]},
-            {"name": "web_search", "description": "Search the web", "params": ["query", "max_results"]},
+            {
+                "name": "data_analyzer",
+                "description": "Analyze data",
+                "params": ["data", "analysis_type"],
+            },
+            {
+                "name": "file_processor",
+                "description": "Process files",
+                "params": ["file_path", "operation"],
+            },
+            {
+                "name": "web_search",
+                "description": "Search the web",
+                "params": ["query", "max_results"],
+            },
         ],
         "agent_configs": [
             {"name": "analysis_agent", "tools": ["data_analyzer", "file_processor"]},
             {"name": "math_agent", "tools": ["add", "multiply"]},
             {"name": "greeting_agent", "tools": ["greet"]},
-        ]
+        ],
     }
 
 

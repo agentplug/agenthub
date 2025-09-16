@@ -1,12 +1,12 @@
 # Agent Hub MVP Quick Start Guide
 
-**Document Type**: MVP Quick Start Guide  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L0 - MVP Overview Level  
-**Audience**: All Users, Quick Reference  
+**Document Type**: MVP Quick Start Guide
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L0 - MVP Overview Level
+**Audience**: All Users, Quick Reference
 
 ## 🚀 **Agent Hub MVP in 60 Seconds**
 
@@ -86,25 +86,25 @@ graph TB
         CLI[CLI Commands]
         SDK[Python SDK]
     end
-    
+
     subgraph "Core System"
         RUNTIME[Agent Runtime]
         REGISTRY[GitHub Registry]
         STORAGE[Local Storage]
     end
-    
+
     subgraph "External"
         GITHUB[GitHub API]
         UV[UV Package Manager]
     end
-    
+
     CLI --> RUNTIME
     CLI --> REGISTRY
     CLI --> STORAGE
-    
+
     SDK --> RUNTIME
     SDK --> STORAGE
-    
+
     RUNTIME --> UV
     REGISTRY --> GITHUB
 ```
@@ -260,7 +260,7 @@ def enhanced_metrics(data):
     return {'enhanced_mean': sum(data)/len(data), 'variance': 0.5}
 
 # Load agent with custom tools (can override agent's built-in tools)
-agent = amg.load('openai/analysis-agent', 
+agent = amg.load('openai/analysis-agent',
     custom_tools={
         'domain_specific_analysis': domain_specific_analysis,
         'calculate_metrics': enhanced_metrics  # Overrides agent's built-in metrics tool
@@ -357,7 +357,7 @@ pip install -r requirements-dev.txt
 
 **Agent Hub MVP**: Transforming AI agent integration from weeks to minutes through one-line simplicity.
 
-**Status**: Ready for implementation  
-**Timeline**: 6 weeks to MVP completion  
-**Goal**: Validate core integration experience  
-**Success**: One-line agent loading working reliably 
+**Status**: Ready for implementation
+**Timeline**: 6 weeks to MVP completion
+**Goal**: Validate core integration experience
+**Success**: One-line agent loading working reliably

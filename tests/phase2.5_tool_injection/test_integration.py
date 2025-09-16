@@ -1,11 +1,11 @@
 """Integration tests for Phase 2.5 tool injection functionality."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-import asyncio
-import json
-from unittest.mock import patch, MagicMock, AsyncMock
-from agenthub.core.tools.registry import ToolRegistry
+
 from agenthub.core.tools.decorator import tool
+from agenthub.core.tools.registry import ToolRegistry
 from agenthub.sdk.load_agent import load_agent
 
 
@@ -20,6 +20,7 @@ class TestToolInjectionIntegration:
 
     def test_complete_tool_injection_workflow(self):
         """Test the complete tool injection workflow from registration to execution."""
+
         # Step 1: Register tools using @tool decorator
         @tool(name="calculator", description="Basic calculator operations")
         def calculator(operation: str, a: float, b: float) -> float:
@@ -65,26 +66,26 @@ class TestToolInjectionIntegration:
         assert text_metadata.description == "Process text data"
 
         # Step 4: Assign tools to agent
-        self.registry.assign_tools_to_agent("test_agent", ["calculator", "text_processor"])
+        self.registry.assign_tools_to_agent(
+            "test_agent", ["calculator", "text_processor"]
+        )
         agent_tools = self.registry.get_agent_tools("test_agent")
         assert set(agent_tools) == {"calculator", "text_processor"}
 
         # Step 5: Execute tools
-        calc_result = self.registry.execute_tool("calculator", {
-            "operation": "add",
-            "a": 5,
-            "b": 3
-        })
+        calc_result = self.registry.execute_tool(
+            "calculator", {"operation": "add", "a": 5, "b": 3}
+        )
         assert calc_result == 8
 
-        text_result = self.registry.execute_tool("text_processor", {
-            "text": "Hello World",
-            "operation": "uppercase"
-        })
+        text_result = self.registry.execute_tool(
+            "text_processor", {"text": "Hello World", "operation": "uppercase"}
+        )
         assert text_result == "HELLO WORLD"
 
     def test_tool_context_generation(self):
         """Test tool context generation for agents."""
+
         # Register tools
         @tool(name="data_analyzer", description="Analyze data patterns")
         def data_analyzer(data: list, analysis_type: str = "basic") -> dict:
@@ -92,7 +93,7 @@ class TestToolInjectionIntegration:
             return {
                 "type": analysis_type,
                 "count": len(data),
-                "insights": f"Analyzed {len(data)} items"
+                "insights": f"Analyzed {len(data)} items",
             }
 
         @tool(name="file_processor", description="Process files")
@@ -101,7 +102,9 @@ class TestToolInjectionIntegration:
             return f"Processed {file_path} with {operation}"
 
         # Assign tools to agent
-        self.registry.assign_tools_to_agent("analysis_agent", ["data_analyzer", "file_processor"])
+        self.registry.assign_tools_to_agent(
+            "analysis_agent", ["data_analyzer", "file_processor"]
+        )
 
         # Get tool context
         agent_tools = self.registry.get_agent_tools("analysis_agent")
@@ -111,7 +114,7 @@ class TestToolInjectionIntegration:
             "tool_usage_examples": {},
             "tool_parameters": {},
             "tool_return_types": {},
-            "tool_namespaces": {}
+            "tool_namespaces": {},
         }
 
         # Populate tool context
@@ -126,13 +129,17 @@ class TestToolInjectionIntegration:
         # Verify tool context
         assert "data_analyzer" in tool_context["available_tools"]
         assert "file_processor" in tool_context["available_tools"]
-        assert "Analyze data patterns" in tool_context["tool_descriptions"]["data_analyzer"]
+        assert (
+            "Analyze data patterns"
+            in tool_context["tool_descriptions"]["data_analyzer"]
+        )
         assert "Process files" in tool_context["tool_descriptions"]["file_processor"]
 
-    @patch('agentmanager.sdk.load_agent.AgentLoader')
-    @patch('agentmanager.sdk.load_agent.AgentWrapper')
+    @patch("agenthub.sdk.load_agent.AgentLoader")
+    @patch("agenthub.sdk.load_agent.AgentWrapper")
     def test_agent_loading_with_tools(self, mock_wrapper_class, mock_loader_class):
         """Test loading an agent with tool assignments."""
+
         # Register tools
         @tool(name="web_search", description="Search the web")
         def web_search(query: str, max_results: int = 10) -> list:
@@ -154,8 +161,8 @@ class TestToolInjectionIntegration:
                 "description": "Research agent",
                 "version": "1.0.0",
                 "entry_point": "agent.py",
-                "methods": ["research", "analyze", "summarize"]
-            }
+                "methods": ["research", "analyze", "summarize"],
+            },
         }
         mock_loader_class.return_value = mock_loader_instance
 
@@ -164,9 +171,16 @@ class TestToolInjectionIntegration:
 
         # Mock tool registry
         mock_tool_registry = MagicMock()
-        mock_tool_registry.get_available_tools.return_value = ["web_search", "data_processor", "other_tool"]
+        mock_tool_registry.get_available_tools.return_value = [
+            "web_search",
+            "data_processor",
+            "other_tool",
+        ]
 
-        with patch('agentmanager.sdk.load_agent.get_tool_registry', return_value=mock_tool_registry):
+        with patch(
+            "agenthub.sdk.load_agent.get_tool_registry",
+            return_value=mock_tool_registry,
+        ):
             # Load agent with tools
             agent = load_agent("research_agent", tools=["web_search", "data_processor"])
 
@@ -174,9 +188,11 @@ class TestToolInjectionIntegration:
             mock_loader_instance.load_agent.assert_called_once_with("research_agent")
             mock_wrapper_class.assert_called_once_with(
                 mock_loader_instance.load_agent.return_value,
-                tool_registry=mock_tool_registry
+                tool_registry=mock_tool_registry,
             )
-            mock_wrapper_instance.assign_tools.assert_called_once_with(["web_search", "data_processor"])
+            mock_wrapper_instance.assign_tools.assert_called_once_with(
+                ["web_search", "data_processor"]
+            )
 
     def test_concurrent_tool_registration(self):
         """Test concurrent tool registration and execution."""
@@ -188,13 +204,19 @@ class TestToolInjectionIntegration:
 
         def register_and_execute_tool(tool_id: int):
             try:
-                @tool(name=f"concurrent_tool_{tool_id}", description=f"Concurrent tool {tool_id}")
+
+                @tool(
+                    name=f"concurrent_tool_{tool_id}",
+                    description=f"Concurrent tool {tool_id}",
+                )
                 def concurrent_tool(value: int) -> int:
                     time.sleep(0.01)  # Simulate work
                     return value * 2
 
                 # Execute the tool
-                result = self.registry.execute_tool(f"concurrent_tool_{tool_id}", {"value": tool_id})
+                result = self.registry.execute_tool(
+                    f"concurrent_tool_{tool_id}", {"value": tool_id}
+                )
                 results.append((tool_id, result))
             except Exception as e:
                 errors.append((tool_id, e))
@@ -225,17 +247,19 @@ class TestToolInjectionIntegration:
 
     def test_tool_metadata_completeness(self):
         """Test that tool metadata is complete and accurate."""
-        @tool(name="metadata_test_tool", description="Tool for testing metadata completeness")
+
+        @tool(
+            name="metadata_test_tool",
+            description="Tool for testing metadata completeness",
+        )
         def metadata_test_tool(
-            required_param: str,
-            optional_param: int = 42,
-            keyword_only: str = "default"
+            required_param: str, optional_param: int = 42, keyword_only: str = "default"
         ) -> dict:
             """Tool with various parameter types for metadata testing."""
             return {
                 "required": required_param,
                 "optional": optional_param,
-                "keyword": keyword_only
+                "keyword": keyword_only,
             }
 
         # Get metadata
@@ -279,12 +303,14 @@ class TestToolInjectionIntegration:
 
     def test_error_handling_throughout_workflow(self):
         """Test error handling throughout the tool injection workflow."""
+
         # Test 1: Duplicate tool registration
         @tool(name="duplicate_tool", description="First tool")
         def first_tool():
             return "first"
 
         with pytest.raises(Exception):  # Should raise ToolNameConflictError
+
             @tool(name="duplicate_tool", description="Second tool")
             def second_tool():
                 return "second"
@@ -308,6 +334,7 @@ class TestToolInjectionIntegration:
 
     def test_tool_registry_statistics(self):
         """Test tool registry statistics functionality."""
+
         # Register some tools
         @tool(name="stat_tool1", description="Statistics tool 1")
         def stat_tool1():
@@ -332,6 +359,7 @@ class TestToolInjectionIntegration:
 
     def test_tool_registry_cleanup(self):
         """Test tool registry cleanup functionality."""
+
         # Register tools and assign to agents
         @tool(name="cleanup_tool", description="Tool for cleanup testing")
         def cleanup_tool():

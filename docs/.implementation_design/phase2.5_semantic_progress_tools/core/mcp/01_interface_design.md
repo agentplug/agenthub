@@ -1,9 +1,9 @@
 # Core/MCP Interface Design - Phase 2.5
 
-**Document Type**: Interface Design  
-**Module**: core/mcp  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Interface Design
+**Module**: core/mcp
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 
@@ -22,7 +22,7 @@ tool_manager = AgentToolManager()
 
 # Assign tools to agent
 assigned_tools = tool_manager.assign_tools_to_agent(
-    agent_id: str, 
+    agent_id: str,
     tool_names: List[str]
 ) -> List[str]
 
@@ -31,7 +31,7 @@ agent_tools = tool_manager.get_agent_tools(agent_id: str) -> List[str]
 
 # Execute tool
 result = await tool_manager.execute_tool(
-    tool_name: str, 
+    tool_name: str,
     arguments: Dict[str, Any]
 ) -> Any
 
@@ -200,7 +200,7 @@ async def execute_tools_concurrently(
             request["arguments"]
         )
         tasks.append(task)
-    
+
     results = await asyncio.gather(*tasks)
     return results
 ```
@@ -214,13 +214,13 @@ class ToolExecutionQueue:
     def __init__(self):
         self.queue = Queue()
         self.running = False
-    
+
     async def execute_tool(self, tool_name: str, arguments: Dict[str, Any]):
         """Execute tool with queuing for side effects"""
         await self.queue.put((tool_name, arguments))
         if not self.running:
             await self._process_queue()
-    
+
     async def _process_queue(self):
         """Process tool execution queue"""
         self.running = True
@@ -289,7 +289,7 @@ class ToolExecutionContext:
 class ContextManager:
     def __init__(self):
         self.execution_contexts: Dict[str, ToolExecutionContext] = {}
-    
+
     def create_context(self, agent_id: str, tool_name: str, arguments: Dict[str, Any]) -> str:
         """Create execution context"""
         execution_id = f"{agent_id}_{tool_name}_{int(time.time())}"
@@ -303,7 +303,7 @@ class ContextManager:
         )
         self.execution_contexts[execution_id] = context
         return execution_id
-    
+
     def update_context(self, execution_id: str, status: str, result: Any = None, error: str = None):
         """Update execution context"""
         if execution_id in self.execution_contexts:

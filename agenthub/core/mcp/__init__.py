@@ -13,9 +13,8 @@ from .tool_injector import ToolInjector, get_tool_injector
 __all__ = [
     # Main classes
     "AgentToolManager",
-    "MCPClient", 
+    "MCPClient",
     "ToolInjector",
-    
     # Global instances
     "get_tool_manager",
     "get_mcp_client",

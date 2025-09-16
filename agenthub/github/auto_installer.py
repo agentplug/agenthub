@@ -8,18 +8,18 @@ agent installation workflow including cloning, validation, and environment setup
 import logging
 import time
 from dataclasses import dataclass
-from typing import List, Optional
 
 # Check if environment module is available
 try:
     from ..environment.environment_setup import EnvironmentSetup
+
     ENVIRONMENT_AVAILABLE = True
 except ImportError:
     ENVIRONMENT_AVAILABLE = False
 
-from .url_parser import URLParser
-from .repository_cloner import RepositoryCloner, CloneResult
+from .repository_cloner import CloneResult, RepositoryCloner
 from .repository_validator import RepositoryValidator, ValidationResult
+from .url_parser import URLParser
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +27,19 @@ logger = logging.getLogger(__name__)
 @dataclass
 class InstallationResult:
     """Result of agent installation operation."""
+
     success: bool
     agent_name: str
     local_path: str
     github_url: str
-    clone_result: Optional[CloneResult] = None
-    validation_result: Optional[ValidationResult] = None
-    environment_result: Optional[object] = None  # EnvironmentSetupResult
-    dependency_result: Optional[object] = None  # DependencyInstallResult
-    installation_time_seconds: Optional[float] = None
-    error_message: Optional[str] = None
-    warnings: List[str] = None
-    next_steps: List[str] = None
+    clone_result: CloneResult | None = None
+    validation_result: ValidationResult | None = None
+    environment_result: object | None = None  # EnvironmentSetupResult
+    dependency_result: object | None = None  # DependencyInstallResult
+    installation_time_seconds: float | None = None
+    error_message: str | None = None
+    warnings: list[str] = None
+    next_steps: list[str] = None
 
     def __post_init__(self):
         """Initialize lists if they are None."""
@@ -50,6 +51,7 @@ class InstallationResult:
 
 class InstallationError(Exception):
     """Exception raised when agent installation fails."""
+
     pass
 
 
@@ -61,8 +63,9 @@ class AutoInstaller:
     agent, including URL parsing, cloning, validation, and environment setup.
     """
 
-    def __init__(self, base_storage_path: Optional[str] = None,
-                 setup_environment: bool = True):
+    def __init__(
+        self, base_storage_path: str | None = None, setup_environment: bool = True
+    ):
         """
         Initialize the AutoInstaller.
 
@@ -110,9 +113,10 @@ class AutoInstaller:
             github_url = self.url_parser.build_github_url(agent_name)
             if not github_url:
                 return self._create_failure_result(
-                    agent_name, start_time,
+                    agent_name,
+                    start_time,
                     f"Invalid agent name format: {agent_name}. "
-                    f"Expected: developer/agent-name"
+                    f"Expected: developer/agent-name",
                 )
 
             # Step 2: Clone the repository
@@ -120,9 +124,10 @@ class AutoInstaller:
             clone_result = self.repository_cloner.clone_agent(agent_name)
             if not clone_result.success:
                 return self._create_failure_result(
-                    agent_name, start_time,
+                    agent_name,
+                    start_time,
                     f"Repository cloning failed: {clone_result.error_message}",
-                    clone_result=clone_result
+                    clone_result=clone_result,
                 )
 
             # Step 3: Validate the repository
@@ -135,10 +140,11 @@ class AutoInstaller:
                 if validation_result.validation_errors:
                     error_msg += f": {'; '.join(validation_result.validation_errors)}"
                 return self._create_failure_result(
-                    agent_name, start_time,
+                    agent_name,
+                    start_time,
                     error_msg,
                     clone_result=clone_result,
-                    validation_result=validation_result
+                    validation_result=validation_result,
                 )
 
             # Step 4: Set up environment (if enabled)
@@ -159,8 +165,7 @@ class AutoInstaller:
             if environment_result and environment_result.success:
                 logger.debug("Step 5: Installing dependencies")
                 dependency_result = self.environment_setup.install_dependencies(
-                    clone_result.local_path,
-                    environment_result.venv_path
+                    clone_result.local_path, environment_result.venv_path
                 )
                 if not dependency_result.success:
                     logger.warning(
@@ -170,9 +175,15 @@ class AutoInstaller:
 
             # Step 6: Determine success and collect results
             installation_time = time.time() - start_time
-            success = (clone_result.success and validation_result.is_valid and
-                      (not self.setup_environment or not environment_result or
-                       environment_result.success))
+            success = (
+                clone_result.success
+                and validation_result.is_valid
+                and (
+                    not self.setup_environment
+                    or not environment_result
+                    or environment_result.success
+                )
+            )
 
             # Step 7: Create result object
             result = InstallationResult(
@@ -186,13 +197,19 @@ class AutoInstaller:
                 dependency_result=dependency_result,
                 installation_time_seconds=installation_time,
                 warnings=self._collect_warnings(
-                    clone_result, validation_result,
-                    environment_result, dependency_result
+                    clone_result,
+                    validation_result,
+                    environment_result,
+                    dependency_result,
                 ),
                 next_steps=self._get_next_steps(
-                    success, agent_name, clone_result, validation_result,
-                    environment_result, dependency_result
-                )
+                    success,
+                    agent_name,
+                    clone_result,
+                    validation_result,
+                    environment_result,
+                    dependency_result,
+                ),
             )
 
             if success:
@@ -214,10 +231,14 @@ class AutoInstaller:
             logger.error(error_msg, exc_info=True)
             return self._create_failure_result(agent_name, start_time, error_msg)
 
-    def _create_failure_result(self, agent_name: str, start_time: float,
-                              error_message: str,
-                              clone_result: Optional[CloneResult] = None,
-                              validation_result: Optional[ValidationResult] = None) -> InstallationResult:
+    def _create_failure_result(
+        self,
+        agent_name: str,
+        start_time: float,
+        error_message: str,
+        clone_result: CloneResult | None = None,
+        validation_result: ValidationResult | None = None,
+    ) -> InstallationResult:
         """Create a failure result object."""
         return InstallationResult(
             success=False,
@@ -231,14 +252,17 @@ class AutoInstaller:
             warnings=[],
             next_steps=[
                 "Check the error message above",
-                "Verify agent name format and availability"
-            ]
+                "Verify agent name format and availability",
+            ],
         )
 
-    def _collect_warnings(self, clone_result: CloneResult,
-                         validation_result: ValidationResult,
-                         environment_result: Optional[object],
-                         dependency_result: Optional[object]) -> List[str]:
+    def _collect_warnings(
+        self,
+        clone_result: CloneResult,
+        validation_result: ValidationResult,
+        environment_result: object | None,
+        dependency_result: object | None,
+    ) -> list[str]:
         """Collect warnings from all installation steps."""
         warnings = []
 
@@ -247,54 +271,74 @@ class AutoInstaller:
         #     warnings.extend(clone_result.warnings)
         if validation_result.warnings:
             warnings.extend(validation_result.warnings)
-        if (environment_result and hasattr(environment_result, 'warnings') and
-                environment_result.warnings):
+        if (
+            environment_result
+            and hasattr(environment_result, "warnings")
+            and environment_result.warnings
+        ):
             warnings.extend(environment_result.warnings)
-        if (dependency_result and hasattr(dependency_result, 'warnings') and
-                dependency_result.warnings):
+        if (
+            dependency_result
+            and hasattr(dependency_result, "warnings")
+            and dependency_result.warnings
+        ):
             warnings.extend(dependency_result.warnings)
 
         return warnings
 
-    def _get_next_steps(self, success: bool, agent_name: str,
-                        clone_result: CloneResult,
-                        validation_result: ValidationResult,
-                        environment_result: Optional[object],
-                        dependency_result: Optional[object]) -> List[str]:
+    def _get_next_steps(
+        self,
+        success: bool,
+        agent_name: str,
+        clone_result: CloneResult,
+        validation_result: ValidationResult,
+        environment_result: object | None,
+        dependency_result: object | None,
+    ) -> list[str]:
         """Get next steps guidance based on installation results."""
         if success:
             return self._get_next_steps_for_success(
-                agent_name, clone_result, validation_result,
-                environment_result, dependency_result
+                agent_name,
+                clone_result,
+                validation_result,
+                environment_result,
+                dependency_result,
             )
         else:
             return self._get_next_steps_for_failure(
                 agent_name, clone_result, validation_result, environment_result
             )
 
-    def _get_next_steps_for_success(self, agent_name: str,
-                                   clone_result: CloneResult,
-                                   validation_result: ValidationResult,
-                                   environment_result: Optional[object] = None,
-                                   dependency_result: Optional[object] = None) -> List[str]:
+    def _get_next_steps_for_success(
+        self,
+        agent_name: str,
+        clone_result: CloneResult,
+        validation_result: ValidationResult,
+        environment_result: object | None = None,
+        dependency_result: object | None = None,
+    ) -> list[str]:
         """Get next steps for successful installation."""
         next_steps = [
             f"✅ Agent '{agent_name}' installed successfully!",
             f"📁 Local path: {clone_result.local_path}",
-            f"🔗 GitHub URL: {clone_result.github_url}"
+            f"🔗 GitHub URL: {clone_result.github_url}",
         ]
 
         if environment_result and environment_result.success:
-            next_steps.extend([
-                "🌍 Virtual environment created successfully",
-                f"📦 Environment path: {environment_result.venv_path}"
-            ])
+            next_steps.extend(
+                [
+                    "🌍 Virtual environment created successfully",
+                    f"📦 Environment path: {environment_result.venv_path}",
+                ]
+            )
 
             if dependency_result and dependency_result.success:
-                next_steps.extend([
-                    "📚 Dependencies installed successfully",
-                    f"📦 {len(dependency_result.installed_packages)} packages installed"
-                ])
+                next_steps.extend(
+                    [
+                        "📚 Dependencies installed successfully",
+                        f"📦 {len(dependency_result.installed_packages)} packages installed",
+                    ]
+                )
             else:
                 next_steps.append("⚠️ Dependencies may need manual installation")
 
@@ -306,57 +350,76 @@ class AutoInstaller:
                 next_steps.append(f"💡 Activation command: {activation_cmd}")
 
         else:
-            next_steps.extend([
-                "✅ Agent repository cloned and validated successfully",
-                "🔧 Next: Set up UV environment and install dependencies manually"
-            ])
+            next_steps.extend(
+                [
+                    "✅ Agent repository cloned and validated successfully",
+                    "🔧 Next: Set up UV environment and install dependencies manually",
+                ]
+            )
 
-        next_steps.extend([
-            "🚀 Next: Activate the environment and test the agent",
-            "📖 Check the agent's README.md for usage instructions"
-        ])
+        next_steps.extend(
+            [
+                "🚀 Next: Activate the environment and test the agent",
+                "📖 Check the agent's README.md for usage instructions",
+            ]
+        )
 
         return next_steps
 
-    def _get_next_steps_for_failure(self, agent_name: str,
-                                   clone_result: Optional[CloneResult],
-                                   validation_result: Optional[ValidationResult],
-                                   environment_result: Optional[object]) -> List[str]:
+    def _get_next_steps_for_failure(
+        self,
+        agent_name: str,
+        clone_result: CloneResult | None,
+        validation_result: ValidationResult | None,
+        environment_result: object | None,
+    ) -> list[str]:
         """Get next steps for failed installation."""
         agent_name = agent_name or "Unknown"
         next_steps = [
             f"❌ Installation of agent '{agent_name}' failed",
-            "🔍 Review the error messages above for specific issues"
+            "🔍 Review the error messages above for specific issues",
         ]
 
         if clone_result and not clone_result.success:
-            next_steps.extend([
-                "📥 Cloning failed - check:",
-                "   • Agent name format (developer/agent-name)",
-                "   • Repository accessibility",
-                "   • Network connectivity"
-            ])
+            next_steps.extend(
+                [
+                    "📥 Cloning failed - check:",
+                    "   • Agent name format (developer/agent-name)",
+                    "   • Repository accessibility",
+                    "   • Network connectivity",
+                ]
+            )
 
         elif validation_result and not validation_result.is_valid:
-            next_steps.extend([
-                "❌ Repository validation failed - check:",
-                "   • Required files (agent.py, agent.yaml, requirements.txt, README.md)",
-                "   • File formats and content"
-            ])
+            next_steps.extend(
+                [
+                    "❌ Repository validation failed - check:",
+                    "   • Required files (agent.py, agent.yaml, requirements.txt, README.md)",
+                    "   • File formats and content",
+                ]
+            )
 
-        if environment_result and hasattr(environment_result, 'success') and not environment_result.success:
-            next_steps.extend([
-                "🌍 Environment setup failed - check:",
-                "   • UV installation and availability",
-                "   • pyproject.toml file presence",
-                "   • System permissions"
-            ])
+        if (
+            environment_result
+            and hasattr(environment_result, "success")
+            and not environment_result.success
+        ):
+            next_steps.extend(
+                [
+                    "🌍 Environment setup failed - check:",
+                    "   • UV installation and availability",
+                    "   • pyproject.toml file presence",
+                    "   • System permissions",
+                ]
+            )
 
-        next_steps.extend([
-            "🔧 Try running the installation again",
-            "📖 Check the agent's repository for requirements",
-            "💡 Consider running without environment setup: setup_environment=False"
-        ])
+        next_steps.extend(
+            [
+                "🔧 Try running the installation again",
+                "📖 Check the agent's repository for requirements",
+                "💡 Consider running without environment setup: setup_environment=False",
+            ]
+        )
 
         return next_steps
 
@@ -369,19 +432,31 @@ Agent: {result.agent_name}
 Location: {result.local_path}
 GitHub URL: {result.github_url}
 Time: {result.installation_time_seconds:.2f}s"""
-            
+
             if result.validation_result and result.validation_result.repository_info:
-                total_files = result.validation_result.repository_info.get("total_files", "N/A")
+                total_files = result.validation_result.repository_info.get(
+                    "total_files", "N/A"
+                )
                 summary += f"\nTotal Files: {total_files}"
-                
-            if result.environment_result and hasattr(result.environment_result, 'success') and result.environment_result.success:
-                venv_path = getattr(result.environment_result, 'venv_path', 'N/A')
+
+            if (
+                result.environment_result
+                and hasattr(result.environment_result, "success")
+                and result.environment_result.success
+            ):
+                venv_path = getattr(result.environment_result, "venv_path", "N/A")
                 summary += f"\nEnvironment: {venv_path}"
-                
-            if result.dependency_result and hasattr(result.dependency_result, 'success') and result.dependency_result.success:
-                packages = len(getattr(result.dependency_result, 'installed_packages', []))
+
+            if (
+                result.dependency_result
+                and hasattr(result.dependency_result, "success")
+                and result.dependency_result.success
+            ):
+                packages = len(
+                    getattr(result.dependency_result, "installed_packages", [])
+                )
                 summary += f"\nDependencies: {packages} packages installed"
-                
+
             return summary
         else:
             agent_name = result.agent_name or "Unknown"
@@ -406,6 +481,10 @@ Time: {install_time:.2f}s"""
         """Alias for backward compatibility with tests."""
         return self._get_next_steps_for_failure("", None, validation_result, None)
 
-    def _collect_all_warnings(self, validation_result, environment_result, dependency_result):
+    def _collect_all_warnings(
+        self, validation_result, environment_result, dependency_result
+    ):
         """Alias for backward compatibility with tests."""
-        return self._collect_warnings(None, validation_result, environment_result, dependency_result)
+        return self._collect_warnings(
+            None, validation_result, environment_result, dependency_result
+        )

@@ -6,10 +6,10 @@ import re
 
 class MCPHTTPLogFilter(logging.Filter):
     """Filter to suppress MCP client HTTP logs."""
-    
+
     def __init__(self, name: str = ""):
         """Initialize MCP HTTP log filter.
-        
+
         Args:
             name: Filter name
         """
@@ -25,23 +25,23 @@ class MCPHTTPLogFilter(logging.Filter):
             r"INFO:.*POST http://localhost:8000/messages/",
             r"INFO:.*_client\.py.*HTTP/1\.1",
         ]
-    
+
     def filter(self, record: logging.LogRecord) -> bool:
         """Filter log record.
-        
+
         Args:
             record: Log record to filter
-            
+
         Returns:
             True if record should be kept, False if suppressed
         """
         message = record.getMessage()
-        
+
         # Suppress MCP HTTP logs
         for pattern in self.suppress_patterns:
             if re.search(pattern, message, re.IGNORECASE):
                 return False
-        
+
         # Keep everything else
         return True
 
@@ -50,11 +50,18 @@ def suppress_mcp_http_logs():
     """Suppress MCP client HTTP logs globally."""
     # Aggressively suppress all MCP and HTTP related loggers
     mcp_loggers = [
-        'mcp', 'mcp.client', 'mcp.client.session', 'mcp.client.stdio',
-        'mcp.client.session.client', 'mcp.client.stdio.stdio_client',
-        'urllib3', 'httpx', 'httpcore', 'requests'
+        "mcp",
+        "mcp.client",
+        "mcp.client.session",
+        "mcp.client.stdio",
+        "mcp.client.session.client",
+        "mcp.client.stdio.stdio_client",
+        "urllib3",
+        "httpx",
+        "httpcore",
+        "requests",
     ]
-    
+
     for logger_name in mcp_loggers:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.CRITICAL)

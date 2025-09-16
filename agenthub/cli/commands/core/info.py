@@ -130,7 +130,7 @@ def info_agent(agent_name: str):
                     f"  [dim]agenthub exec {agent_name} {first_method} "
                     f'"your input"[/dim]'
                 )
-            
+
             rprint(f"  [dim]agenthub agent status {agent_name}[/dim]")
 
     except Exception as e:

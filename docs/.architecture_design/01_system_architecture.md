@@ -1,12 +1,12 @@
 # Agent Hub System Architecture
 
-**Document Type**: System Architecture  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L1 - System Level  
-**Audience**: Business Stakeholders, Technical Architects, Product Team  
+**Document Type**: System Architecture
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L1 - System Level
+**Audience**: Business Stakeholders, Technical Architects, Product Team
 
 ## 🎯 **Executive Summary**
 
@@ -14,7 +14,7 @@ Agent Hub is a CLI-based platform that transforms AI agent discovery and integra
 
 ### **Business Value**
 - **For Developers**: Eliminate 60-80% of agent integration overhead
-- **For Users**: Reduce integration time from weeks to minutes  
+- **For Users**: Reduce integration time from weeks to minutes
 - **For Ecosystem**: Enable standardized agent sharing and composition
 
 ### **Technical Approach**
@@ -31,13 +31,13 @@ C4Context
 
     Person(developer, "Agent Developer", "Creates and publishes AI agents")
     Person(user, "Agent User", "Discovers and uses AI agents")
-    
+
     System(agenthub, "Agent Hub CLI", "Command-line interface for agent management with local execution")
-    
+
     System_Ext(github_registry, "GitHub Registry", "Simple JSON-based agent registry hosted on GitHub")
     System_Ext(github_storage, "GitHub Storage", "Agent source code and packages")
     System_Ext(uv_packages, "UV Package Index", "Python package dependencies")
-    
+
     Rel(developer, agenthub, "Publishes agents", "CLI commands + PR")
     Rel(user, agenthub, "Installs and uses agents", "CLI commands & Python imports")
     Rel(agenthub, github_registry, "Downloads registry.json", "HTTPS")
@@ -99,19 +99,19 @@ graph TB
         CLI[Agent Hub CLI]
         SDK[Agent Hub SDK]
     end
-    
+
     subgraph "Local System"
         RUNTIME[Agent Runtime]
         STORE[Agent Store]
         CACHE[Local Cache]
     end
-    
+
     subgraph "External Services"
         GITHUB[GitHub Registry]
         STORAGE[GitHub Storage]
         UV[UV Package Index]
     end
-    
+
     USER --> CLI
     USER --> SDK
     CLI --> RUNTIME
@@ -159,7 +159,7 @@ sequenceDiagram
     participant GitHub
     participant Runtime
     participant UV
-    
+
     User->>CLI: agenthub install meta/coding-agent
     CLI->>GitHub: Get agent metadata
     GitHub->>CLI: Agent info + download URL
@@ -179,12 +179,12 @@ sequenceDiagram
     participant SDK
     participant Runtime
     participant Agent
-    
+
     User->>SDK: agent = amg.load("meta/coding-agent")
     SDK->>Runtime: Load agent manifest
     Runtime->>SDK: Agent interface
     SDK->>User: Agent proxy object
-    
+
     User->>SDK: agent.generate_code("neural network")
     SDK->>Runtime: Execute method in subprocess
     Runtime->>Agent: Run in isolated environment

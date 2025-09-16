@@ -322,20 +322,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Install AgentHub
         run: pip install agenthub
-        
+
       - name: Install required agents
         run: |
           agenthub install company/production-agent --setup-environment
           agenthub install company/monitoring-agent --setup-environment
-          
+
       - name: Validate agents
         run: |
           agenthub status company/production-agent
           agenthub status company/monitoring-agent
-          
+
       - name: Backup current agents
         run: |
           agenthub backup company/production-agent --backup-path /tmp/backups

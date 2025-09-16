@@ -24,7 +24,7 @@ def run_tests(test_type="all", verbose=False, coverage=False, parallel=False):
     
     # Add coverage
     if coverage:
-        cmd.extend(["--cov=agentmanager", "--cov-report=html", "--cov-report=term"])
+        cmd.extend(["--cov=agenthub", "--cov-report=html", "--cov-report=term"])
     
     # Add parallel execution
     if parallel:

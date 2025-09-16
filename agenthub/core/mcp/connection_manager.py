@@ -2,63 +2,66 @@
 
 import asyncio
 import logging
-from typing import Dict, Optional, List
+from contextlib import asynccontextmanager
+
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
-from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 
 
 class MCPConnectionPool:
     """Connection pool for MCP clients to reduce connection overhead."""
-    
+
     def __init__(self, max_connections: int = 5, max_idle_time: int = 300):
         """Initialize connection pool.
-        
+
         Args:
             max_connections: Maximum number of concurrent connections
             max_idle_time: Maximum idle time before closing connection (seconds)
         """
         self.max_connections = max_connections
         self.max_idle_time = max_idle_time
-        self._connections: List[ClientSession] = []
+        self._connections: list[ClientSession] = []
         self._available_connections: asyncio.Queue = asyncio.Queue()
-        self._connection_times: Dict[ClientSession, float] = {}
+        self._connection_times: dict[ClientSession, float] = {}
         self._lock = asyncio.Lock()
-        self._cleanup_task: Optional[asyncio.Task] = None
-    
+        self._cleanup_task: asyncio.Task | None = None
+
     async def _create_connection(self) -> ClientSession:
         """Create a new MCP connection."""
         server_params = StdioServerParameters(
             command="python",
-            args=["-c", "from agenthub.core.tools import get_mcp_server; import asyncio; asyncio.run(get_mcp_server().run_stdio())"]
+            args=[
+                "-c",
+                "from agenthub.core.tools import get_mcp_server; import asyncio; asyncio.run(get_mcp_server().run_stdio())",
+            ],
         )
-        
+
         stdio_transport = stdio_client(server_params)
         client = await stdio_transport.__aenter__()
         logger.debug("Created new MCP connection")
         return client
-    
+
     async def _cleanup_idle_connections(self):
         """Clean up idle connections."""
         while True:
             try:
                 await asyncio.sleep(60)  # Check every minute
                 current_time = asyncio.get_event_loop().time()
-                
+
                 async with self._lock:
                     connections_to_close = []
                     for conn, created_time in self._connection_times.items():
                         if current_time - created_time > self.max_idle_time:
                             connections_to_close.append(conn)
-                    
+
                     for conn in connections_to_close:
                         await self._close_connection(conn)
-                        
+
             except Exception as e:
                 logger.error(f"Error in connection cleanup: {e}")
-    
+
     async def _close_connection(self, connection: ClientSession):
         """Close a specific connection."""
         try:
@@ -70,7 +73,7 @@ class MCPConnectionPool:
             logger.debug("Closed MCP connection")
         except Exception as e:
             logger.error(f"Error closing connection: {e}")
-    
+
     @asynccontextmanager
     async def get_connection(self):
         """Get a connection from the pool (context manager)."""
@@ -85,13 +88,15 @@ class MCPConnectionPool:
                     if len(self._connections) < self.max_connections:
                         connection = await self._create_connection()
                         self._connections.append(connection)
-                        self._connection_times[connection] = asyncio.get_event_loop().time()
+                        self._connection_times[connection] = (
+                            asyncio.get_event_loop().time()
+                        )
                     else:
                         # Wait for available connection
                         connection = await self._available_connections.get()
-            
+
             yield connection
-            
+
         finally:
             # Return connection to pool
             if connection:
@@ -100,7 +105,7 @@ class MCPConnectionPool:
                 except asyncio.QueueFull:
                     # Pool is full, close the connection
                     await self._close_connection(connection)
-    
+
     async def close_all(self):
         """Close all connections in the pool."""
         async with self._lock:
@@ -108,11 +113,11 @@ class MCPConnectionPool:
                 await self._close_connection(connection)
             self._connections.clear()
             self._connection_times.clear()
-        
+
         # Cancel cleanup task
         if self._cleanup_task and not self._cleanup_task.done():
             self._cleanup_task.cancel()
-    
+
     def start_cleanup_task(self):
         """Start the cleanup task."""
         if not self._cleanup_task or self._cleanup_task.done():
@@ -120,7 +125,7 @@ class MCPConnectionPool:
 
 
 # Global connection pool
-_connection_pool: Optional[MCPConnectionPool] = None
+_connection_pool: MCPConnectionPool | None = None
 
 
 def get_connection_pool() -> MCPConnectionPool:

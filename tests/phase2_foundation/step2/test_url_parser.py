@@ -204,16 +204,15 @@ class TestIntegration:
 
     def test_module_exports(self):
         """Test that the github module properly exports URLParser."""
-        import agenthub.github
 
         # URLParser should be in __all__
-        assert "URLParser" in agentmanager.github.__all__
+        assert "URLParser" in agenthub.github.__all__
 
         # Should be accessible as attribute
-        assert hasattr(agentmanager.github, "URLParser")
+        assert hasattr(agenthub.github, "URLParser")
 
         # Should be the correct class
-        parser = agentmanager.github.URLParser()
+        parser = agenthub.github.URLParser()
         assert parser.is_valid_agent_name("user/agent")
 
 

@@ -1,12 +1,12 @@
 # Agent Hub MVP Registry Design
 
-**Document Type**: MVP Registry Design  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L3 - MVP Module Level  
-**Audience**: Technical Architects, Developers  
+**Document Type**: MVP Registry Design
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L3 - MVP Module Level
+**Audience**: Technical Architects, Developers
 
 ## 🎯 **MVP Registry Overview**
 
@@ -33,27 +33,27 @@ graph TB
         REGISTRY_JSON[registry.json]
         AGENT_REPOS[Agent Repositories]
     end
-    
+
     subgraph "Agent Hub MVP"
         CLI[CLI Commands]
         REGISTRY_CLIENT[Registry Client]
         CACHE[Local Cache]
         STORAGE[Local Storage]
     end
-    
+
     subgraph "User Environment"
         USER[User/Developer]
         SDK[Python SDK]
     end
-    
+
     GITHUB --> REGISTRY_JSON
     REGISTRY_JSON --> REGISTRY_CLIENT
     REGISTRY_CLIENT --> CACHE
     REGISTRY_CLIENT --> STORAGE
-    
+
     CLI --> REGISTRY_CLIENT
     SDK --> STORAGE
-    
+
     USER --> CLI
     USER --> SDK
 ```
@@ -230,48 +230,48 @@ class GitHubRegistryClient:
     def __init__(self, github_token: Optional[str] = None):
         self.session = requests.Session()
         self.github_token = github_token
-        
+
         # Set up headers
         headers = {
             'User-Agent': 'Agent-Hub/1.0.0',
             'Accept': 'application/vnd.github.v3+json'
         }
-        
+
         if github_token:
             headers['Authorization'] = f'token {github_token}'
             self.rate_limit = 5000  # Authenticated rate limit
         else:
             self.rate_limit = 60    # Unauthenticated rate limit
-        
+
         self.session.headers.update(headers)
-    
+
     def get_registry(self) -> Dict:
         """Fetch registry from GitHub."""
         url = "https://api.github.com/repos/agentplug/agent-registry/contents/registry.json"
-        
+
         try:
             response = self.session.get(url)
             response.raise_for_status()
-            
+
             # Decode GitHub API response
             content_data = response.json()
             content = base64.b64decode(content_data["content"]).decode('utf-8')
-            
+
             return json.loads(content)
-            
+
         except requests.exceptions.RequestException as e:
             logging.error(f"Failed to fetch registry: {e}")
             raise RegistryFetchError(f"Failed to fetch registry: {e}")
-        
+
         except (json.JSONDecodeError, KeyError) as e:
             logging.error(f"Failed to parse registry: {e}")
             raise RegistryParseError(f"Failed to parse registry: {e}")
-    
+
     def get_agent_metadata(self, agent_path: str) -> Optional[Dict]:
         """Get specific agent metadata from registry."""
         registry = self.get_registry()
         return registry.get('agents', {}).get(agent_path)
-    
+
     def check_rate_limit(self) -> Dict:
         """Check current GitHub API rate limit status."""
         try:
@@ -298,26 +298,26 @@ class RegistryCache:
         self.ttl = ttl
         self.cache_file = cache_dir / "registry.json"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def get_cached_registry(self) -> Optional[Dict]:
         """Get cached registry if not expired."""
         if not self.cache_file.exists():
             return None
-        
+
         try:
             # Simple TTL check using file modification time
             if time.time() - self.cache_file.stat().st_mtime > self.ttl:
                 return None  # Cache expired
-            
+
             # Load cached registry
             with open(self.cache_file, 'r') as f:
                 return json.load(f)
-                
+
         except (json.JSONDecodeError, IOError):
             return None
-        
+
         return None
-    
+
     def update_cache(self, registry_data: Dict):
         """Update cache with fresh registry data."""
         try:
@@ -325,7 +325,7 @@ class RegistryCache:
                 json.dump(registry_data, f, indent=2)
         except IOError as e:
             logging.error(f"Failed to update cache: {e}")
-    
+
     def clear_cache(self):
         """Clear cached registry data."""
         try:
@@ -461,4 +461,4 @@ class RegistryCache:
 3. **Simple Caching**: Local file-based caching for offline operation
 4. **Graceful Degradation**: Fallback to cached data when GitHub unavailable
 
-The MVP registry provides **sufficient functionality for MVP validation** while maintaining architectural simplicity and zero operational overhead. Post-MVP enhancements will address scalability and advanced discovery features. 
+The MVP registry provides **sufficient functionality for MVP validation** while maintaining architectural simplicity and zero operational overhead. Post-MVP enhancements will address scalability and advanced discovery features.

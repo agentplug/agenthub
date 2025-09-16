@@ -1,13 +1,17 @@
 """CLI commands for agent listing, information, and status."""
 
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich import print as rprint
 
 from agenthub.github.repository_cloner import RepositoryCloner
-from .agent_utils import display_simple_agent_list, display_detailed_agent_list, show_agent_status
+
+from .agent_utils import (
+    display_detailed_agent_list,
+    display_simple_agent_list,
+    show_agent_status,
+)
 
 
 @click.group()
@@ -25,10 +29,12 @@ def agent_list():
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def list_agents(detailed: bool, base_path: Optional[str]):
+def list_agents(detailed: bool, base_path: str | None):
     """List all installed agents."""
     try:
-        cloner = RepositoryCloner(base_storage_path=Path(base_path) if base_path else None)
+        cloner = RepositoryCloner(
+            base_storage_path=Path(base_path) if base_path else None
+        )
         agents = cloner.list_cloned_agents()
 
         if not agents:
@@ -46,17 +52,17 @@ def list_agents(detailed: bool, base_path: Optional[str]):
 
 @agent_list.command("status")
 @click.argument("agent_name", required=False)
-def status(agent_name: Optional[str]):
+def status(agent_name: str | None):
     """Show detailed status of agents or a specific agent."""
     try:
         cloner = RepositoryCloner()
-        
+
         if agent_name:
             # Single agent status
             if not cloner.is_agent_cloned(agent_name):
                 rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
                 return
-            
+
             show_agent_status(agent_name, cloner.get_agent_path(agent_name))
         else:
             # All agents status
@@ -64,13 +70,13 @@ def status(agent_name: Optional[str]):
             if not agents:
                 rprint("📦 [yellow]No agents installed[/yellow]")
                 return
-            
+
             rprint(f"📊 [bold]Agent Status Report ({len(agents)} agents)[/bold]")
-            
+
             for agent_name, path in agents.items():
                 rprint(f"\n{'='*50}")
                 show_agent_status(agent_name, path)
-                
+
     except Exception as e:
         rprint(f"❌ [red]Status error: {e}[/red]")
 
@@ -82,12 +88,12 @@ def status(agent_name: Optional[str]):
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def info_agent(agent_name: str, base_path: Optional[str]):
+def info_agent(agent_name: str, base_path: str | None):
     """Show detailed information about an installed agent."""
     try:
         from agenthub.core.agents.loader import AgentLoader
         from agenthub.storage.local_storage import LocalStorage
-        
+
         # Parse agent name
         if "/" not in agent_name:
             rprint("❌ [red]Agent name must be in format 'namespace/name'[/red]")
@@ -134,6 +140,7 @@ def info_agent(agent_name: str, base_path: Optional[str]):
             rprint(f"\n🎯 [bold]Available Methods ({len(methods)}):[/bold]")
 
             from rich.table import Table
+
             method_table = Table()
             method_table.add_column("Method", style="cyan", no_wrap=True)
             method_table.add_column("Description", style="green")
@@ -148,6 +155,7 @@ def info_agent(agent_name: str, base_path: Optional[str]):
                 method_table.add_row(method, description)
 
             from rich.console import Console
+
             console = Console()
             console.print(method_table)
 
@@ -160,27 +168,32 @@ def info_agent(agent_name: str, base_path: Optional[str]):
 
         # Show environment info
         from agenthub.environment.environment_setup import EnvironmentSetup
-        agent_path = agent_info.get('path')
+
+        agent_path = agent_info.get("path")
         if agent_path:
             venv_path = Path(agent_path) / ".venv"
             if venv_path.exists():
                 try:
                     env_setup = EnvironmentSetup()
-                    env_info = env_setup._collect_environment_info(agent_path, venv_path)
-                    
-                    rprint(f"\n🌍 [bold]Environment:[/bold]")
-                    rprint(f"   Status: {'Active' if env_info.get('venv_exists') else 'Broken'}")
+                    env_info = env_setup._collect_environment_info(
+                        agent_path, venv_path
+                    )
+
+                    rprint("\n🌍 [bold]Environment:[/bold]")
+                    rprint(
+                        f"   Status: {'Active' if env_info.get('venv_exists') else 'Broken'}"
+                    )
                     rprint(f"   Python: {env_info.get('python_executable', 'Unknown')}")
                     rprint(f"   UV Version: {env_info.get('uv_version', 'Unknown')}")
-                    
+
                     # Check installed packages
                     packages = env_setup._get_installed_packages(str(venv_path))
                     rprint(f"   Packages: {len(packages)} installed")
-                    
+
                 except Exception as e:
                     rprint(f"❌ Environment info: {e}")
             else:
-                rprint(f"\n🌍 [bold]Environment:[/bold] Not created")
+                rprint("\n🌍 [bold]Environment:[/bold] Not created")
 
     except Exception as e:
         rprint(f"❌ [red]Error getting agent info: {e}[/red]")

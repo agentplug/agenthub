@@ -1,7 +1,6 @@
 """CLI command for removing agents (legacy)."""
 
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich import print as rprint
@@ -23,14 +22,14 @@ def core_remove():
     help="Custom base storage path for agents",
 )
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def remove_agent(agent_name: str, base_path: Optional[str], force: bool):
+def remove_agent(agent_name: str, base_path: str | None, force: bool):
     """Remove an installed agent.
-    
+
     This is a legacy command. Use 'agenthub agent remove <agent>' instead.
     """
     rprint("⚠️  [yellow]This command is deprecated.[/yellow]")
     rprint("💡 [cyan]Use instead: agenthub agent remove <agent>[/cyan]")
-    
+
     cloner = RepositoryCloner(base_storage_path=Path(base_path) if base_path else None)
 
     if not cloner.is_agent_cloned(agent_name):
@@ -38,7 +37,7 @@ def remove_agent(agent_name: str, base_path: Optional[str], force: bool):
         return
 
     agent_path = cloner.get_agent_path(agent_name)
-    
+
     if not force:
         if not click.confirm(f"Remove agent '{agent_name}' from {agent_path}?"):
             return

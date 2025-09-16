@@ -1,12 +1,12 @@
 # Agent Hub MVP Data Architecture
 
-**Document Type**: MVP Data Architecture  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L2 - MVP Data Level  
-**Audience**: Technical Architects, Developers, Data Engineers  
+**Document Type**: MVP Data Architecture
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L2 - MVP Data Level
+**Audience**: Technical Architects, Developers, Data Engineers
 
 ## 🎯 **MVP Data Architecture Overview**
 
@@ -28,13 +28,13 @@ graph TB
         USER[User Input]
         AGENT[Agent Execution]
     end
-    
+
     subgraph "Data Processing"
         VALIDATOR[Data Validator]
         TRANSFORMER[Data Transformer]
         CACHE[Cache Manager]
     end
-    
+
     subgraph "Data Storage"
         AGENTS[Agent Files]
         METADATA[Metadata Files]
@@ -42,30 +42,30 @@ graph TB
         CONFIG[Configuration]
         LOGS[Log Files]
     end
-    
+
     subgraph "Data Access"
         CLI[CLI Interface]
         SDK[Python SDK]
         RUNTIME[Agent Runtime]
     end
-    
+
     GITHUB --> VALIDATOR
     USER --> VALIDATOR
     AGENT --> VALIDATOR
-    
+
     VALIDATOR --> TRANSFORMER
     TRANSFORMER --> CACHE
-    
+
     CACHE --> AGENTS
     CACHE --> METADATA
     CACHE --> CACHE_FILES
     CACHE --> CONFIG
     CACHE --> LOGS
-    
+
     AGENTS --> CLI
     AGENTS --> SDK
     AGENTS --> RUNTIME
-    
+
     METADATA --> CLI
     METADATA --> SDK
     METADATA --> RUNTIME
@@ -403,12 +403,12 @@ sequenceDiagram
     participant Storage
     participant Validator
     participant Cache
-    
+
     User->>CLI: install meta/coding-agent
     CLI->>Registry: get_agent_metadata()
     Registry->>Cache: check_cache()
     Cache->>Registry: cached_data
-    
+
     alt Cache Valid
         Registry->>CLI: cached_metadata
     else Cache Expired
@@ -419,12 +419,12 @@ sequenceDiagram
         Registry->>Cache: update_cache()
         Registry->>CLI: fresh_metadata
     end
-    
+
     CLI->>Storage: download_agent()
     Storage->>Storage: extract_package()
     Storage->>Validator: validate_package()
     Validator->>Storage: validation_result
-    
+
     alt Validation Success
         Storage->>Storage: create_metadata()
         Storage->>CLI: installation_complete
@@ -444,24 +444,24 @@ sequenceDiagram
     participant Storage
     participant Runtime
     participant Agent
-    
+
     User->>SDK: agent.generate_code("hello")
     SDK->>Storage: get_agent_manifest()
     Storage->>SDK: manifest_data
-    
+
     SDK->>Runtime: execute_method(method, params)
     Runtime->>Storage: get_agent_script()
     Storage->>Runtime: script_data
-    
+
     Runtime->>Agent: run_subprocess(script, params)
     Agent->>Runtime: execution_result
-    
+
     Runtime->>Runtime: parse_result()
     Runtime->>SDK: parsed_result
-    
+
     SDK->>Storage: log_execution()
     Storage->>SDK: logged
-    
+
     SDK->>User: final_result
 ```
 
@@ -474,14 +474,14 @@ sequenceDiagram
     participant GitHub
     participant Validator
     participant Cache
-    
+
     CLI->>Registry: refresh_registry()
     Registry->>GitHub: GET registry.json
     GitHub->>Registry: registry_data
-    
+
     Registry->>Validator: validate_registry()
     Validator->>Registry: validation_result
-    
+
     alt Validation Success
         Registry->>Cache: update_cache()
         Cache->>Registry: cache_updated
@@ -498,23 +498,23 @@ sequenceDiagram
     participant Validator
     participant Storage
     participant Runtime
-    
+
     User->>SDK: load("agent", custom_tools={...})
     SDK->>ToolSupport: discover_agent_tools(agent_path)
-    
+
     ToolSupport->>Storage: get_agent_manifest(agent_path)
     Storage->>ToolSupport: agent_manifest
-    
+
     alt Custom Tools Provided
         SDK->>ToolSupport: inject_custom_tools(agent_path, custom_tools)
         ToolSupport->>ToolSupport: validate_custom_tools()
         ToolSupport->>Storage: store_custom_tool_metadata()
         Storage->>ToolSupport: custom_tools_registered
     end
-    
+
     ToolSupport->>Validator: validate_agent_tools(agent_path, all_tools)
     Validator->>Validator: validate_tool_access_and_safety()
-    
+
     alt Validation Failed
         Validator->>ToolSupport: validation_errors
         ToolSupport->>SDK: tool_validation_failed
@@ -524,12 +524,12 @@ sequenceDiagram
         ToolSupport->>Storage: register_agent_tools(agent_path, all_tools)
         Storage->>ToolSupport: tools_registered
     end
-    
+
     ToolSupport->>SDK: agent_tools_ready
     SDK->>User: agent_with_builtin_and_custom_tools
-    
+
     Note over User,SDK: Agent built-in tools + user custom tools ready for use
-    
+
     User->>SDK: agent.execute_method("analyze", data)
     SDK->>Runtime: execute_agent(method, params)
     Runtime->>Agent: run_with_tool_access()
@@ -568,17 +568,17 @@ class AgentManifest(BaseModel):
     description: str = Field(..., min_length=10, max_length=1000)
     author: str = Field(..., min_length=1, max_length=100)
     license: str = Field(..., min_length=1, max_length=50)
-    
+
     interface: Dict[str, MethodDefinition] = Field(..., description="Agent interface")
     dependencies: Optional[Dict[str, Any]] = Field(None, description="Dependencies")
     tags: Optional[List[str]] = Field(default_factory=list, max_items=20)
-    
+
     @validator('name')
     def validate_name(cls, v):
         if not v.replace('-', '').replace('_', '').isalnum():
             raise ValueError('Name must contain only alphanumeric characters, hyphens, and underscores')
         return v
-    
+
     @validator('version')
     def validate_version(cls, v):
         parts = v.split('.')
@@ -607,12 +607,12 @@ class ParameterValidator:
             'array': self._validate_array,
             'object': self._validate_object
         }
-    
-    def validate_parameters(self, method_params: Dict[str, Any], 
+
+    def validate_parameters(self, method_params: Dict[str, Any],
                           provided_params: Dict[str, Any]) -> Dict[str, Any]:
         """Validate method parameters against provided values."""
         validated_params = {}
-        
+
         for param_name, param_def in method_params.items():
             if param_name not in provided_params:
                 if param_def.get('required', False):
@@ -620,49 +620,49 @@ class ParameterValidator:
                 if 'default' in param_def:
                     validated_params[param_name] = param_def['default']
                 continue
-            
+
             param_value = provided_params[param_name]
             param_type = param_def.get('type', 'string')
-            
+
             if param_type in self.type_validators:
                 validated_params[param_name] = self.type_validators[param_type](
                     param_value, param_def
                 )
             else:
                 validated_params[param_name] = param_value
-        
+
         return validated_params
-    
+
     def _validate_string(self, value: Any, param_def: Dict[str, Any]) -> str:
         if not isinstance(value, str):
             raise ValueError(f"Parameter must be a string, got {type(value)}")
-        
+
         min_length = param_def.get('min_length')
         max_length = param_def.get('max_length')
-        
+
         if min_length and len(value) < min_length:
             raise ValueError(f"String too short, minimum {min_length} characters")
-        
+
         if max_length and len(value) > max_length:
             raise ValueError(f"String too long, maximum {max_length} characters")
-        
+
         return value
-    
+
     def _validate_integer(self, value: Any, param_def: Dict[str, Any]) -> int:
         try:
             int_value = int(value)
         except (ValueError, TypeError):
             raise ValueError(f"Parameter must be an integer, got {type(value)}")
-        
+
         min_value = param_def.get('min_value')
         max_value = param_def.get('max_value')
-        
+
         if min_value is not None and int_value < min_value:
             raise ValueError(f"Value too small, minimum {min_value}")
-        
+
         if max_value is not None and int_value > max_value:
             raise ValueError(f"Value too large, maximum {max_value}")
-        
+
         return int_value
 ```
 
@@ -683,38 +683,38 @@ class ChecksumValidator:
             'sha256': hashlib.sha256,
             'sha512': hashlib.sha512
         }
-    
+
     def calculate_checksum(self, file_path: Path, algorithm: str = 'sha256') -> str:
         """Calculate checksum for a file."""
         if algorithm not in self.hash_algorithms:
             raise ValueError(f"Unsupported hash algorithm: {algorithm}")
-        
+
         hash_obj = self.hash_algorithms[algorithm]()
-        
+
         with open(file_path, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_obj.update(chunk)
-        
+
         return hash_obj.hexdigest()
-    
-    def verify_checksum(self, file_path: Path, expected_checksum: str, 
+
+    def verify_checksum(self, file_path: Path, expected_checksum: str,
                         algorithm: str = 'sha256') -> bool:
         """Verify file checksum against expected value."""
         actual_checksum = self.calculate_checksum(file_path, algorithm)
         return actual_checksum == expected_checksum
-    
+
     def validate_package(self, package_path: Path, manifest: Dict[str, Any]) -> bool:
         """Validate package integrity using manifest checksum."""
         if 'checksum' not in manifest:
             return True  # No checksum provided, skip validation
-        
+
         checksum_info = manifest['checksum']
         if ':' in checksum_info:
             algorithm, expected_checksum = checksum_info.split(':', 1)
         else:
             algorithm = 'sha256'
             expected_checksum = checksum_info
-        
+
         return self.verify_checksum(package_path, expected_checksum, algorithm)
 ```
 
@@ -737,42 +737,42 @@ class CacheManager:
         self.cache_dir = cache_dir
         self.max_size_bytes = self._parse_size(max_size)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize cache metadata
         self.metadata_file = cache_dir / "cache_metadata.json"
         self.metadata = self._load_metadata()
-    
+
     def get(self, key: str, ttl: int = 3600) -> Optional[Any]:
         """Get cached value if not expired."""
         cache_file = self.cache_dir / f"{key}.json"
-        
+
         if not cache_file.exists():
             return None
-        
+
         try:
             with open(cache_file, 'r') as f:
                 data = json.load(f)
-            
+
             # Check TTL
             if time.time() - data['cached_at'] > ttl:
                 self._remove_cache_file(key)
                 return None
-            
+
             # Update access time
             data['last_accessed'] = time.time()
             with open(cache_file, 'w') as f:
                 json.dump(data, f)
-            
+
             return data['value']
-            
+
         except (json.JSONDecodeError, KeyError):
             self._remove_cache_file(key)
             return None
-    
+
     def set(self, key: str, value: Any, ttl: int = 3600):
         """Cache a value with timestamp."""
         cache_file = self.cache_dir / f"{key}.json"
-        
+
         data = {
             'value': value,
             'cached_at': time.time(),
@@ -780,14 +780,14 @@ class CacheManager:
             'last_accessed': time.time(),
             'size_bytes': len(json.dumps(value))
         }
-        
+
         # Check cache size before adding
         if self._would_exceed_limit(data['size_bytes']):
             self._cleanup_cache()
-        
+
         with open(cache_file, 'w') as f:
             json.dump(data, f)
-        
+
         # Update metadata
         self.metadata['entries'][key] = {
             'size_bytes': data['size_bytes'],
@@ -795,29 +795,29 @@ class CacheManager:
             'expires_at': data['expires_at']
         }
         self._save_metadata()
-    
+
     def cleanup(self, force: bool = False):
         """Clean up expired and old cache entries."""
         current_time = time.time()
         removed_count = 0
-        
+
         for key, entry in list(self.metadata['entries'].items()):
             cache_file = self.cache_dir / f"{key}.json"
-            
+
             # Remove expired entries
             if current_time > entry['expires_at']:
                 self._remove_cache_file(key)
                 removed_count += 1
                 continue
-            
+
             # Remove old entries if force cleanup
             if force and current_time - entry['cached_at'] > 86400:  # 24 hours
                 self._remove_cache_file(key)
                 removed_count += 1
-        
+
         if removed_count > 0:
             logging.info(f"Cleaned up {removed_count} cache entries")
-    
+
     def _parse_size(self, size_str: str) -> int:
         """Parse size string to bytes."""
         size_str = size_str.upper()
@@ -829,12 +829,12 @@ class CacheManager:
             return int(float(size_str[:-2]) * 1024 * 1024 * 1024)
         else:
             return int(size_str)
-    
+
     def _would_exceed_limit(self, additional_bytes: int) -> bool:
         """Check if adding data would exceed cache limit."""
         current_size = sum(entry['size_bytes'] for entry in self.metadata['entries'].values())
         return (current_size + additional_bytes) > self.max_size_bytes
-    
+
     def _cleanup_cache(self):
         """Remove oldest cache entries to make space."""
         # Sort by last accessed time, remove oldest
@@ -842,7 +842,7 @@ class CacheManager:
             self.metadata['entries'].items(),
             key=lambda x: x[1]['last_accessed']
         )
-        
+
         for key, _ in sorted_entries:
             if not self._would_exceed_limit(0):
                 break
@@ -863,13 +863,13 @@ from typing import Union, BinaryIO
 class CompressionManager:
     def __init__(self):
         self.supported_formats = ['.tar.gz', '.tar.bz2', '.zip', '.tar']
-    
-    def compress_directory(self, source_dir: Path, output_path: Path, 
+
+    def compress_directory(self, source_dir: Path, output_path: Path,
                           format: str = '.tar.gz') -> Path:
         """Compress a directory into an archive."""
         if format not in self.supported_formats:
             raise ValueError(f"Unsupported format: {format}")
-        
+
         if format == '.tar.gz':
             return self._create_targz(source_dir, output_path)
         elif format == '.tar.bz2':
@@ -878,11 +878,11 @@ class CompressionManager:
             return self._create_zip(source_dir, output_path)
         elif format == '.tar':
             return self._create_tar(source_dir, output_path)
-    
+
     def extract_archive(self, archive_path: Path, extract_to: Path) -> Path:
         """Extract an archive to a directory."""
         suffix = archive_path.suffix
-        
+
         if suffix == '.gz' and archive_path.suffixes[-2] == '.tar':
             return self._extract_targz(archive_path, extract_to)
         elif suffix == '.bz2' and archive_path.suffixes[-2] == '.tar':
@@ -893,13 +893,13 @@ class CompressionManager:
             return self._extract_tar(archive_path, extract_to)
         else:
             raise ValueError(f"Unsupported archive format: {suffix}")
-    
+
     def _create_targz(self, source_dir: Path, output_path: Path) -> Path:
         """Create a tar.gz archive."""
         with tarfile.open(output_path, 'w:gz') as tar:
             tar.add(source_dir, arcname=source_dir.name)
         return output_path
-    
+
     def _extract_targz(self, archive_path: Path, extract_to: Path) -> Path:
         """Extract a tar.gz archive."""
         with tarfile.open(archive_path, 'r:gz') as tar:
@@ -924,15 +924,15 @@ class UsageCollector:
     def __init__(self, analytics_dir: Path):
         self.analytics_dir = analytics_dir
         self.analytics_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.usage_file = analytics_dir / "usage.json"
         self.usage_data = self._load_usage_data()
-    
-    def record_agent_usage(self, agent_path: str, method: str, 
+
+    def record_agent_usage(self, agent_path: str, method: str,
                           execution_time: float, success: bool):
         """Record agent method usage."""
         timestamp = datetime.now().isoformat()
-        
+
         if agent_path not in self.usage_data:
             self.usage_data[agent_path] = {
                 'total_usage': 0,
@@ -940,11 +940,11 @@ class UsageCollector:
                 'first_used': timestamp,
                 'last_used': timestamp
             }
-        
+
         agent_data = self.usage_data[agent_path]
         agent_data['total_usage'] += 1
         agent_data['last_used'] = timestamp
-        
+
         if method not in agent_data['methods']:
             agent_data['methods'][method] = {
                 'total_calls': 0,
@@ -953,22 +953,22 @@ class UsageCollector:
                 'total_execution_time': 0.0,
                 'average_execution_time': 0.0
             }
-        
+
         method_data = agent_data['methods'][method]
         method_data['total_calls'] += 1
-        
+
         if success:
             method_data['successful_calls'] += 1
         else:
             method_data['failed_calls'] += 1
-        
+
         method_data['total_execution_time'] += execution_time
         method_data['average_execution_time'] = (
             method_data['total_execution_time'] / method_data['total_calls']
         )
-        
+
         self._save_usage_data()
-    
+
     def get_usage_statistics(self) -> Dict[str, Any]:
         """Get comprehensive usage statistics."""
         stats = {
@@ -978,7 +978,7 @@ class UsageCollector:
             'recent_usage': [],
             'method_statistics': {}
         }
-        
+
         # Most used agents
         sorted_agents = sorted(
             self.usage_data.items(),
@@ -986,7 +986,7 @@ class UsageCollector:
             reverse=True
         )
         stats['most_used_agents'] = sorted_agents[:10]
-        
+
         # Recent usage
         current_time = datetime.now()
         for agent_path, agent_data in self.usage_data.items():
@@ -997,7 +997,7 @@ class UsageCollector:
                     'last_used': agent_data['last_used'],
                     'usage_count': agent_data['total_usage']
                 })
-        
+
         # Method statistics
         for agent_data in self.usage_data.values():
             for method, method_data in agent_data['methods'].items():
@@ -1006,15 +1006,15 @@ class UsageCollector:
                         'total_calls': 0,
                         'success_rate': 0.0
                     }
-                
+
                 stats['method_statistics'][method]['total_calls'] += method_data['total_calls']
-                
+
                 if method_data['total_calls'] > 0:
                     success_rate = method_data['successful_calls'] / method_data['total_calls']
                     stats['method_statistics'][method]['success_rate'] = success_rate
-        
+
         return stats
-    
+
     def _load_usage_data(self) -> Dict[str, Any]:
         """Load usage data from file."""
         if self.usage_file.exists():
@@ -1024,7 +1024,7 @@ class UsageCollector:
             except (json.JSONDecodeError, IOError):
                 return {}
         return {}
-    
+
     def _save_usage_data(self):
         """Save usage data to file."""
         try:
@@ -1057,4 +1057,4 @@ class UsageCollector:
 - **Caching**: Intelligent caching with TTL and size limits
 - **Security**: Process isolation and file access control
 
-This data architecture provides a **solid, performant foundation** for the Agent Hub MVP while maintaining simplicity and reliability for local execution. 
+This data architecture provides a **solid, performant foundation** for the Agent Hub MVP while maintaining simplicity and reliability for local execution.

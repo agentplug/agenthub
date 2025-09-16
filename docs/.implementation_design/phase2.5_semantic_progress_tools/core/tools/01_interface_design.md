@@ -1,9 +1,9 @@
 # Core/Tools Interface Design - Phase 2.5
 
-**Document Type**: Interface Design  
-**Module**: core/tools  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Interface Design
+**Module**: core/tools
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 

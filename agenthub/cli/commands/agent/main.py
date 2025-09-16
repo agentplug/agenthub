@@ -6,11 +6,11 @@ organized into focused submodules for better maintainability.
 
 import click
 
+from .agent_advanced import agent_advanced
+from .agent_backup import agent_backup
 from .agent_install import agent_install
 from .agent_list import agent_list
 from .agent_manage import agent_manage
-from .agent_backup import agent_backup
-from .agent_advanced import agent_advanced
 
 
 @click.group()

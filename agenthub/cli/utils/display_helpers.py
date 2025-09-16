@@ -24,9 +24,7 @@ def format_agent_result(agent_result, execution_time: float = 0):
     elif isinstance(agent_result, str):
         if len(agent_result) > 500:
             rprint("\n📄 [bold]Generated Content:[/bold]")
-            rprint(
-                "════════════════════════════════════════════════════════════════"
-            )
+            rprint("════════════════════════════════════════════════════════════════")
             rprint(agent_result[:500] + "...")
             rprint(
                 f"[dim](truncated, full result has {len(agent_result)} "
@@ -42,5 +40,5 @@ def format_agent_result(agent_result, execution_time: float = 0):
 def truncate_text(text: str, max_length: int = 50) -> str:
     """Truncate text to specified length with ellipsis."""
     if len(text) > max_length:
-        return text[:max_length - 3] + "..."
+        return text[: max_length - 3] + "..."
     return text

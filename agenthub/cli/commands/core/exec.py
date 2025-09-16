@@ -7,11 +7,15 @@ import click
 from rich import print as rprint
 from rich.prompt import Prompt
 
+from agenthub.core.agents.loader import AgentLoader
 from agenthub.runtime.agent_runtime import AgentRuntime
 from agenthub.storage.local_storage import LocalStorage
-from agenthub.core.agents.loader import AgentLoader
-from ...utils.parameter_helpers import interactive_parameter_input, smart_parameter_mapping
+
 from ...utils.display_helpers import format_agent_result
+from ...utils.parameter_helpers import (
+    interactive_parameter_input,
+    smart_parameter_mapping,
+)
 
 
 @click.group()
@@ -49,7 +53,7 @@ def exec_agent(
         # Handle interactive mode - no JSON complexity!
         if interactive:
             rprint(f"🎯 [cyan]Interactive mode for {agent_name} → {method_name}[/cyan]")
-            
+
             # Load agent info for dynamic parameter handling
             storage = LocalStorage()
             loader = AgentLoader(storage=storage)
@@ -77,11 +81,15 @@ def exec_agent(
                     loader = AgentLoader(storage=storage)
                     try:
                         agent_info = loader.load_agent(namespace, name)
-                        params = smart_parameter_mapping(agent_info, method_name, parameters)
+                        params = smart_parameter_mapping(
+                            agent_info, method_name, parameters
+                        )
                         rprint(f'📋 [dim]Auto-mapped: "{parameters}" → {params}[/dim]')
                     except Exception as e:
                         rprint(f"❌ [red]Failed to load agent info: {e}[/red]")
-                        rprint("💡 [yellow]Falling back to basic parameter mapping[/yellow]")
+                        rprint(
+                            "💡 [yellow]Falling back to basic parameter mapping[/yellow]"
+                        )
                         params = {"data": parameters}
             except json.JSONDecodeError as e:
                 rprint(f"❌ [red]JSON parsing failed: {e}[/red]")
@@ -112,7 +120,9 @@ def exec_agent(
                 f"   [cyan]Interactive:[/cyan] agenthub exec {agent_name} "
                 f"{method_name} --interactive"
             )
-            rprint("\n📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]")
+            rprint(
+                "\n📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]"
+            )
             sys.exit(1)
 
         # Initialize system

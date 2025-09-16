@@ -3,11 +3,11 @@
 import click
 
 from .commands.agent import agent
-from .commands.core.list import core_list
-from .commands.core.info import core_info
 from .commands.core.exec import core_exec
-from .commands.core.validate import core_validate
+from .commands.core.info import core_info
+from .commands.core.list import core_list
 from .commands.core.remove import core_remove
+from .commands.core.validate import core_validate
 
 
 @click.group()

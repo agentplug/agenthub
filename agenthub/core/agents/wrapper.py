@@ -1,11 +1,8 @@
 """Agent wrapper for unified agent interface with tool capabilities."""
 
-import logging
 import json
-import subprocess
-import sys
-from pathlib import Path
-from typing import List, Optional, Dict, Any, Callable
+import logging
+from typing import Any
 
 from .validator import InterfaceValidator
 
@@ -21,7 +18,14 @@ class AgentExecutionError(Exception):
 class AgentWrapper:
     """Unified wrapper for agent operations."""
 
-    def __init__(self, agent_info: dict, tool_registry=None, agent_id: str = None, assigned_tools: List[str] = None, runtime=None):
+    def __init__(
+        self,
+        agent_info: dict,
+        tool_registry=None,
+        agent_id: str = None,
+        assigned_tools: list[str] = None,
+        runtime=None,
+    ):
         """
         Initialize the agent wrapper with tool capabilities.
 
@@ -34,7 +38,10 @@ class AgentWrapper:
         """
         self.agent_info = agent_info
         self.tool_registry = tool_registry
-        self.agent_id = agent_id or f"{agent_info.get('namespace', 'unknown')}/{agent_info.get('name', 'unknown')}"
+        self.agent_id = (
+            agent_id
+            or f"{agent_info.get('namespace', 'unknown')}/{agent_info.get('name', 'unknown')}"
+        )
         self.assigned_tools = assigned_tools or []
         self.runtime = runtime
         self.interface_validator = InterfaceValidator()
@@ -116,7 +123,7 @@ class AgentWrapper:
             tool_context = None
             if self.assigned_tools and self.tool_registry:
                 tool_context = self.get_tool_context_json()
-            
+
             result = self.runtime.execute_agent(
                 self.namespace, self.agent_name, method_name, parameters, tool_context
             )
@@ -346,36 +353,39 @@ class AgentWrapper:
             "has_runtime": self.runtime is not None,
             "assigned_tools": self.assigned_tools,
         }
-    
+
     def execute_tool(self, tool_name: str, *args, **kwargs) -> Any:
         """
         Execute a tool with access control.
-        
+
         Args:
             tool_name: Name of the tool to execute
             *args: Positional arguments for the tool
             **kwargs: Keyword arguments for the tool
-            
+
         Returns:
             Tool execution result
-            
+
         Raises:
             PermissionError: If agent doesn't have access to the tool
             ValueError: If tool doesn't exist
         """
         if not self.tool_registry:
             raise ValueError("No tool registry available")
-        
+
         # Check if agent has access to this tool
         from ..tools import can_agent_access_tool, get_tool_function
+
         if not can_agent_access_tool(self.agent_id, tool_name):
-            raise PermissionError(f"Agent '{self.agent_id}' does not have access to tool '{tool_name}'")
-        
+            raise PermissionError(
+                f"Agent '{self.agent_id}' does not have access to tool '{tool_name}'"
+            )
+
         # Get tool function
         tool_func = get_tool_function(tool_name)
         if not tool_func:
             raise ValueError(f"Tool '{tool_name}' not found")
-        
+
         # Execute tool
         try:
             result = tool_func(*args, **kwargs)
@@ -384,28 +394,29 @@ class AgentWrapper:
         except Exception as e:
             print(f"❌ Agent '{self.agent_id}' error executing tool '{tool_name}': {e}")
             raise
-    
+
     def can_access_tool(self, tool_name: str) -> bool:
         """Check if agent can access a specific tool."""
         if not self.tool_registry:
             return False
-        
+
         from ..tools import can_agent_access_tool
+
         return can_agent_access_tool(self.agent_id, tool_name)
-    
-    def get_available_tools(self) -> List[str]:
+
+    def get_available_tools(self) -> list[str]:
         """Get list of tools available to this agent."""
         return self.assigned_tools
-    
+
     def has_tool(self, tool_name: str) -> bool:
         """Check if agent has access to a specific tool."""
         return self.can_access_tool(tool_name)
-    
-    def search_tools(self, query: str) -> List[str]:
+
+    def search_tools(self, query: str) -> list[str]:
         """Search tools by name or description."""
         if not query:
             return self.assigned_tools
-        
+
         matching_tools = []
         for tool_name in self.assigned_tools:
             if query.lower() in tool_name.lower():
@@ -414,44 +425,52 @@ class AgentWrapper:
                 # Check tool description
                 try:
                     metadata = self.get_tool_metadata(tool_name)
-                    if metadata and query.lower() in metadata.get('description', '').lower():
+                    if (
+                        metadata
+                        and query.lower() in metadata.get("description", "").lower()
+                    ):
                         matching_tools.append(tool_name)
                 except:
                     pass
-        
+
         return matching_tools
-    
+
     def get_tool_help(self, tool_name: str) -> str:
         """Get help information for a tool."""
         if not self.has_tool(tool_name):
             return f"Tool '{tool_name}' not available to this agent"
-        
+
         try:
             metadata = self.get_tool_metadata(tool_name)
             if not metadata:
                 return f"Tool '{tool_name}' - No metadata available"
-            
+
             help_text = f"Tool: {tool_name}\n"
-            help_text += f"Description: {metadata.get('description', 'No description')}\n"
-            
-            parameters = metadata.get('parameters', {})
+            help_text += (
+                f"Description: {metadata.get('description', 'No description')}\n"
+            )
+
+            parameters = metadata.get("parameters", {})
             if parameters:
                 help_text += "Parameters:\n"
                 for param_name, param_info in parameters.items():
-                    param_type = param_info.get('type', 'unknown')
-                    required = param_info.get('required', False)
-                    help_text += f"  {param_name} ({param_type}){'*' if required else ''}\n"
-            
+                    param_type = param_info.get("type", "unknown")
+                    required = param_info.get("required", False)
+                    help_text += (
+                        f"  {param_name} ({param_type}){'*' if required else ''}\n"
+                    )
+
             return help_text
         except Exception as e:
             return f"Tool '{tool_name}' - Error getting help: {e}"
-    
-    def get_tool_metadata(self, tool_name: str) -> Optional[Dict[str, Any]]:
+
+    def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
         """Get metadata for a tool (only if agent has access)."""
         if not self.can_access_tool(tool_name) or not self.tool_registry:
             return None
-        
+
         from ..tools import get_tool_metadata
+
         metadata = get_tool_metadata(tool_name)
         if metadata:
             return {
@@ -459,61 +478,67 @@ class AgentWrapper:
                 "description": metadata.description,
                 "namespace": metadata.namespace,
                 "parameters": metadata.parameters,
-                "examples": metadata.examples
+                "examples": metadata.examples,
             }
         return None
-    
-    def get_assigned_tools(self) -> List[str]:
+
+    def get_assigned_tools(self) -> list[str]:
         """Get list of tools assigned to this agent."""
         return self.assigned_tools.copy()
-    
+
     def get_tool_instructions(self) -> str:
         """
         Generate tool usage instructions for the agent.
-        
+
         Returns:
             Formatted string with tool usage instructions
         """
         if not self.assigned_tools or not self.tool_registry:
             return ""
-        
+
         instructions = []
         instructions.append("🔧 AVAILABLE TOOLS:")
-        instructions.append("You have access to the following tools. Use them when appropriate:")
+        instructions.append(
+            "You have access to the following tools. Use them when appropriate:"
+        )
         instructions.append("")
-        
+
         for tool_name in self.assigned_tools:
             metadata = self.get_tool_metadata(tool_name)
             if metadata:
                 instructions.append(f"• {tool_name}: {metadata['description']}")
-                
+
                 # Add usage examples from metadata
-                if metadata.get('examples'):
-                    for example in metadata['examples']:
+                if metadata.get("examples"):
+                    for example in metadata["examples"]:
                         # Convert from function call format to execute_tool format
-                        if '(' in example:
+                        if "(" in example:
                             # Extract parameters from example like "add('param1', 'param2')"
-                            func_name = example.split('(')[0]
-                            params_part = example.split('(', 1)[1].rsplit(')', 1)[0]
+                            func_name = example.split("(")[0]
+                            params_part = example.split("(", 1)[1].rsplit(")", 1)[0]
                             if params_part.strip():
-                                instructions.append(f"  Usage: execute_tool('{func_name}', {params_part})")
+                                instructions.append(
+                                    f"  Usage: execute_tool('{func_name}', {params_part})"
+                                )
                             else:
-                                instructions.append(f"  Usage: execute_tool('{func_name}')")
+                                instructions.append(
+                                    f"  Usage: execute_tool('{func_name}')"
+                                )
                         else:
                             instructions.append(f"  Usage: execute_tool('{tool_name}')")
                         break  # Only show first example
-                
+
                 instructions.append("")
-        
+
         instructions.append("💡 TOOL USAGE GUIDELINES:")
         instructions.append("- Use tools when they can help solve the user's request")
         instructions.append("- Call execute_tool(tool_name, *args) to use a tool")
         instructions.append("- Tools return results that you can use in your response")
         instructions.append("- If a tool fails, explain the error to the user")
         instructions.append("")
-        
+
         return "\n".join(instructions)
-    
+
     def inject_tool_context(self) -> None:
         """
         Inject tool context into the agent's environment.
@@ -521,86 +546,85 @@ class AgentWrapper:
         """
         if not self.assigned_tools or not self.tool_registry:
             return
-        
+
         # Add tool execution method to agent's context
-        if hasattr(self, 'execute_tool'):
+        if hasattr(self, "execute_tool"):
             # Make execute_tool available in the agent's namespace
-            if hasattr(self, 'agent_info') and 'manifest' in self.agent_info:
+            if hasattr(self, "agent_info") and "manifest" in self.agent_info:
                 # This would be where we inject the tool context
                 # For now, we'll just store the instructions
                 self._tool_instructions = self.get_tool_instructions()
                 print(f"🔧 Injected tool context for agent '{self.agent_id}'")
                 print(f"📋 Available tools: {self.assigned_tools}")
-    
-    def get_tool_context(self) -> Dict[str, Any]:
+
+    def get_tool_context(self) -> dict[str, Any]:
         """
         Get tool context information for the agent.
-        
+
         Returns:
             Dictionary with tool context information
         """
         if not self.assigned_tools or not self.tool_registry:
             return {}
-        
+
         return {
             "assigned_tools": self.assigned_tools,
             "tool_instructions": self.get_tool_instructions(),
             "execute_tool_method": self.execute_tool,
             "can_access_tool_method": self.can_access_tool,
-            "get_tool_metadata_method": self.get_tool_metadata
+            "get_tool_metadata_method": self.get_tool_metadata,
         }
-    
-    def get_tool_context_json(self) -> Dict[str, Any]:
+
+    def get_tool_context_json(self) -> dict[str, Any]:
         """
         Get tool context in JSON format compatible with agent execution.
-        
+
         Returns:
             Dictionary with tool context in the format expected by agents
         """
         if not self.assigned_tools or not self.tool_registry:
             return {}
-        
+
         # Get tool descriptions and usage examples
         tool_descriptions = {}
         tool_usage_examples = {}
-        
+
         for tool_name in self.assigned_tools:
             metadata = self.get_tool_metadata(tool_name)
             if metadata:
-                tool_descriptions[tool_name] = metadata['description']
-                
+                tool_descriptions[tool_name] = metadata["description"]
+
                 # Use dynamically generated examples from ToolMetadata
-                if metadata.get('examples'):
-                    tool_usage_examples[tool_name] = metadata['examples']
+                if metadata.get("examples"):
+                    tool_usage_examples[tool_name] = metadata["examples"]
                 else:
                     # Fallback to basic example if no examples available
                     tool_usage_examples[tool_name] = [f"{tool_name}()"]
-        
+
         return {
             "available_tools": self.assigned_tools,
             "tool_descriptions": tool_descriptions,
-            "tool_usage_examples": tool_usage_examples
+            "tool_usage_examples": tool_usage_examples,
         }
-    
-    def generate_agent_call_json(self, method: str, parameters: Dict[str, Any]) -> str:
+
+    def generate_agent_call_json(self, method: str, parameters: dict[str, Any]) -> str:
         """
         Generate a complete agent call JSON with tool context.
-        
+
         Args:
             method: Agent method to call
             parameters: Parameters for the method
-            
+
         Returns:
             JSON string ready for agent execution
         """
-        import json
-        
+
         tool_context = self.get_tool_context_json()
-        
+
         call_data = {
             "method": method,
             "parameters": parameters,
-            "tool_context": tool_context
+            "tool_context": tool_context,
         }
-        
+
         return json.dumps(call_data, indent=2)

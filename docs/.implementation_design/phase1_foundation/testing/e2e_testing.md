@@ -1,12 +1,12 @@
 # Phase 1: End-to-End Testing Plan
 
-**Document Type**: End-to-End Testing Plan  
-**Phase**: 1 - Foundation  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Comprehensive end-to-end testing for Phase 1 user workflows  
+**Document Type**: End-to-End Testing Plan
+**Phase**: 1 - Foundation
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Comprehensive end-to-end testing for Phase 1 user workflows
 
 ## 🎯 **End-to-End Testing Overview**
 
@@ -151,21 +151,21 @@ def e2e_test_env():
         # Create test Agent Hub structure
         agenthub_dir = Path(tmp_dir) / ".agenthub"
         agenthub_dir.mkdir()
-        
+
         # Create subdirectories
         (agenthub_dir / "agents").mkdir()
         (agenthub_dir / "cache").mkdir()
         (agenthub_dir / "config").mkdir()
         (agenthub_dir / "logs").mkdir()
-        
+
         # Create test agent sources
         test_agents_dir = Path(tmp_dir) / "test-agents"
         test_agents_dir.mkdir()
-        
+
         # Create coding-agent source
         coding_agent_dir = test_agents_dir / "coding-agent"
         coding_agent_dir.mkdir()
-        
+
         # Create coding-agent manifest
         manifest_file = coding_agent_dir / "agent.yaml"
         manifest_file.write_text("""
@@ -185,7 +185,7 @@ interface:
         type: string
         description: Generated Python code
         """)
-        
+
         # Create coding-agent script
         agent_script = coding_agent_dir / "agent.py"
         agent_script.write_text("""
@@ -198,42 +198,42 @@ from pathlib import Path
 class CodingAgent:
     def __init__(self):
         self._load_environment()
-    
+
     def _load_environment(self):
         env_file = Path(__file__).parent / ".env"
         if env_file.exists():
             from dotenv import load_dotenv
             load_dotenv(env_file)
-        
+
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not found in environment")
-    
+
     def generate_code(self, prompt: str) -> str:
         try:
             import aisuite as ai
-            
+
             client = ai.Client()
             messages = [
                 {
-                    "role": "system", 
+                    "role": "system",
                     "content": "You are a Python code generator. Generate only valid, working Python code. Do not include explanations, comments, or markdown formatting. Return only the Python code."
                 },
                 {
-                    "role": "user", 
+                    "role": "user",
                     "content": prompt
                 }
             ]
-            
+
             response = client.chat.completions.create(
                 model="openai:gpt-4o",
                 messages=messages,
                 temperature=0.1,
                 max_tokens=1000
             )
-            
+
             return response.choices[0].message.content.strip()
-            
+
         except ImportError:
             return f"# Error: aisuite not installed\n# Please install: pip install 'aisuite[openai]'"
         except Exception as e:
@@ -244,36 +244,36 @@ def main():
         error_response = {"error": "Invalid arguments. Expected: python agent.py '{\"method\": \"method_name\", \"parameters\": {...}}'"}
         print(json.dumps(error_response))
         sys.exit(1)
-    
+
     try:
         input_data = json.loads(sys.argv[1])
         method = input_data.get("method")
         parameters = input_data.get("parameters", {})
-        
+
         if not method:
             error_response = {"error": "Missing 'method' parameter"}
             print(json.dumps(error_response))
             sys.exit(1)
-        
+
         agent = CodingAgent()
-        
+
         if method == "generate_code":
             prompt = parameters.get("prompt", "")
             if not prompt:
                 error_response = {"error": "Missing 'prompt' parameter for generate_code method"}
                 print(json.dumps(error_response))
                 sys.exit(1)
-            
+
             result = agent.generate_code(prompt)
             response = {"result": result}
-            
+
         else:
             error_response = {"error": f"Unknown method: {method}"}
             print(json.dumps(error_response))
             sys.exit(1)
-        
+
         print(json.dumps(response))
-        
+
     except json.JSONDecodeError as e:
         error_response = {"error": f"Invalid JSON input: {str(e)}"}
         print(json.dumps(error_response))
@@ -286,15 +286,15 @@ def main():
 if __name__ == "__main__":
     main()
         """)
-        
+
         # Create coding-agent requirements
         requirements_file = coding_agent_dir / "requirements.txt"
         requirements_file.write_text("aisuite[openai]>=0.1.0\npython-dotenv>=1.0.0")
-        
+
         # Create analysis-agent source
         analysis_agent_dir = test_agents_dir / "analysis-agent"
         analysis_agent_dir.mkdir()
-        
+
         # Create analysis-agent manifest
         manifest_file = analysis_agent_dir / "agent.yaml"
         manifest_file.write_text("""
@@ -319,7 +319,7 @@ interface:
         type: string
         description: Analysis results and insights
         """)
-        
+
         # Create analysis-agent script
         agent_script = analysis_agent_dir / "agent.py"
         agent_script.write_text("""
@@ -332,42 +332,42 @@ from pathlib import Path
 class AnalysisAgent:
     def __init__(self):
         self._load_environment()
-    
+
     def _load_environment(self):
         env_file = Path(__file__).parent / ".env"
         if env_file.exists():
             from dotenv import load_dotenv
             load_dotenv(env_file)
-        
+
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not found in environment")
-    
+
     def analyze_data(self, data: str, analysis_type: str = "general") -> str:
         try:
             import aisuite as ai
-            
+
             client = ai.Client()
             messages = [
                 {
-                    "role": "system", 
+                    "role": "system",
                     "content": f"You are a data analysis expert. Analyze the provided data and provide insights. Focus on {analysis_type} analysis."
                 },
                 {
-                    "role": "user", 
+                    "role": "user",
                     "content": f"Please analyze this data: {data}"
                 }
             ]
-            
+
             response = client.chat.completions.create(
                 model="openai:gpt-4o",
                 messages=messages,
                 temperature=0.3,
                 max_tokens=1000
             )
-            
+
             return response.choices[0].message.content.strip()
-            
+
         except ImportError:
             return f"Error: aisuite not installed\nPlease install: pip install 'aisuite[openai]'"
         except Exception as e:
@@ -378,38 +378,38 @@ def main():
         error_response = {"error": "Invalid arguments. Expected: python agent.py '{\"method\": \"method_name\", \"parameters\": {...}}'"}
         print(json.dumps(error_response))
         sys.exit(1)
-    
+
     try:
         input_data = json.loads(sys.argv[1])
         method = input_data.get("method")
         parameters = input_data.get("parameters", {})
-        
+
         if not method:
             error_response = {"error": "Missing 'method' parameter"}
             print(json.dumps(error_response))
             sys.exit(1)
-        
+
         agent = AnalysisAgent()
-        
+
         if method == "analyze_data":
             data = parameters.get("data", "")
             analysis_type = parameters.get("analysis_type", "general")
-            
+
             if not data:
                 error_response = {"error": "Missing 'data' parameter for analyze_data method"}
                 print(json.dumps(error_response))
                 sys.exit(1)
-            
+
             result = agent.analyze_data(data, analysis_type)
             response = {"result": result}
-            
+
         else:
             error_response = {"error": f"Unknown method: {method}"}
             print(json.dumps(error_response))
             sys.exit(1)
-        
+
         print(json.dumps(response))
-        
+
     except json.JSONDecodeError as e:
         error_response = {"error": f"Invalid JSON input: {str(e)}"}
         print(json.dumps(error_response))
@@ -422,11 +422,11 @@ def main():
 if __name__ == "__main__":
     main()
         """)
-        
+
         # Create analysis-agent requirements
         requirements_file = analysis_agent_dir / "requirements.txt"
         requirements_file.write_text("aisuite[openai]>=0.1.0\npython-dotenv>=1.0.0")
-        
+
         yield {
             "base_path": agenthub_dir,
             "agents_path": agenthub_dir / "agents",
@@ -445,7 +445,7 @@ def clean_e2e_env(e2e_test_env):
             item.unlink()
         elif item.is_dir():
             shutil.rmtree(item)
-    
+
     yield e2e_test_env
 ```
 
@@ -460,17 +460,17 @@ class TestAgentDiscoveryE2E:
     def test_agent_discovery_workflow(self, clean_e2e_env):
         """Test complete agent discovery workflow."""
         runner = CliRunner()
-        
+
         # Test 1: List agents when none exist
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "No agents found" in result.output
-        
+
         # Test 2: Try to get info for non-existent agent
         result = runner.invoke(cli, ['info', 'non-existent/agent'])
         assert result.exit_code == 1
         assert "Agent not found" in result.output
-        
+
         # Test 3: Install an agent first
         coding_agent_source = clean_e2e_env["test_agents_path"] / "coding-agent"
         result = runner.invoke(cli, [
@@ -478,13 +478,13 @@ class TestAgentDiscoveryE2E:
         ])
         assert result.exit_code == 0
         assert "successfully" in result.output.lower()
-        
+
         # Test 4: List agents after installation
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "agentplug/coding-agent" in result.output
         assert "coding-agent" in result.output
-        
+
         # Test 5: Get detailed agent information
         result = runner.invoke(cli, ['info', 'agentplug/coding-agent'])
         assert result.exit_code == 0
@@ -492,14 +492,14 @@ class TestAgentDiscoveryE2E:
         assert "1.0.0" in result.output
         assert "generate_code" in result.output
         assert "A coding assistant agent" in result.output
-        
+
         # Test 6: Install another agent
         analysis_agent_source = clean_e2e_env["test_agents_path"] / "analysis-agent"
         result = runner.invoke(cli, [
             'install', 'agentplug/analysis-agent', str(analysis_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Test 7: List multiple agents
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
@@ -520,7 +520,7 @@ class TestAgentInstallationE2E:
     def test_agent_installation_workflow(self, clean_e2e_env):
         """Test complete agent installation workflow."""
         runner = CliRunner()
-        
+
         # Test 1: Install agent from valid source
         coding_agent_source = clean_e2e_env["test_agents_path"] / "coding-agent"
         result = runner.invoke(cli, [
@@ -528,7 +528,7 @@ class TestAgentInstallationE2E:
         ])
         assert result.exit_code == 0
         assert "successfully" in result.output.lower()
-        
+
         # Test 2: Verify agent directory structure
         agent_path = clean_e2e_env["agents_path"] / "agentplug" / "coding-agent"
         assert agent_path.exists()
@@ -536,49 +536,49 @@ class TestAgentInstallationE2E:
         assert (agent_path / "agent.py").exists()
         assert (agent_path / "requirements.txt").exists()
         assert (agent_path / "venv").exists()
-        
+
         # Test 3: Verify agent appears in list
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "agentplug/coding-agent" in result.output
-        
+
         # Test 4: Try to install same agent again (should handle gracefully)
         result = runner.invoke(cli, [
             'install', 'agentplug/coding-agent', str(coding_agent_source)
         ])
         # Should either succeed (overwrite) or fail gracefully
         assert result.exit_code in [0, 1]
-        
+
         # Test 5: Install agent with invalid source path
         result = runner.invoke(cli, [
             'install', 'agentplug/invalid-agent', '/non/existent/path'
         ])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
-        
+
         # Test 6: Install agent with invalid agent format
         result = runner.invoke(cli, [
             'install', 'invalid-format', str(coding_agent_source)
         ])
         assert result.exit_code == 1
         assert "format" in result.output.lower()
-    
+
     def test_agent_installation_with_dependencies(self, clean_e2e_env):
         """Test agent installation with dependency handling."""
         runner = CliRunner()
-        
+
         # Install agent that requires dependencies
         coding_agent_source = clean_e2e_env["test_agents_path"] / "coding-agent"
         result = runner.invoke(cli, [
             'install', 'agentplug/coding-agent', str(coding_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Verify virtual environment was created
         agent_path = clean_e2e_env["agents_path"] / "agentplug" / "coding-agent"
         venv_path = agent_path / "venv"
         assert venv_path.exists()
-        
+
         # Verify Python executable exists
         if Path.exists(venv_path / "bin" / "python"):
             python_path = venv_path / "bin" / "python"
@@ -586,7 +586,7 @@ class TestAgentInstallationE2E:
             python_path = venv_path / "Scripts" / "python.exe"
         else:
             pytest.fail("Python executable not found in virtual environment")
-        
+
         assert python_path.exists()
 ```
 
@@ -601,14 +601,14 @@ class TestAgentTestingE2E:
     def test_agent_testing_workflow(self, clean_e2e_env):
         """Test complete agent testing workflow."""
         runner = CliRunner()
-        
+
         # Install agent first
         coding_agent_source = clean_e2e_env["test_agents_path"] / "coding-agent"
         result = runner.invoke(cli, [
             'install', 'agentplug/coding-agent', str(coding_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Test 1: Test agent method with valid parameters
         result = runner.invoke(cli, [
             'test', 'agentplug/coding-agent', 'generate_code',
@@ -621,21 +621,21 @@ class TestAgentTestingE2E:
             "error" in result.output.lower(),
             "api key" in result.output.lower()
         ])
-        
+
         # Test 2: Test agent method with missing required parameter
         result = runner.invoke(cli, [
             'test', 'agentplug/coding-agent', 'generate_code'
         ])
         assert result.exit_code == 1
         assert "parameter" in result.output.lower()
-        
+
         # Test 3: Test non-existent method
         result = runner.invoke(cli, [
             'test', 'agentplug/coding-agent', 'non_existent_method'
         ])
         assert result.exit_code == 1
         assert "method" in result.output.lower()
-        
+
         # Test 4: Test with invalid JSON parameters
         result = runner.invoke(cli, [
             'test', 'agentplug/coding-agent', 'generate_code',
@@ -643,7 +643,7 @@ class TestAgentTestingE2E:
         ])
         assert result.exit_code == 1
         assert "json" in result.output.lower()
-        
+
         # Test 5: Test with non-existent agent
         result = runner.invoke(cli, [
             'test', 'non-existent/agent', 'generate_code',
@@ -651,18 +651,18 @@ class TestAgentTestingE2E:
         ])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
-    
+
     def test_analysis_agent_testing(self, clean_e2e_env):
         """Test analysis agent functionality."""
         runner = CliRunner()
-        
+
         # Install analysis agent
         analysis_agent_source = clean_e2e_env["test_agents_path"] / "analysis-agent"
         result = runner.invoke(cli, [
             'install', 'agentplug/analysis-agent', str(analysis_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Test analysis agent method
         result = runner.invoke(cli, [
             'test', 'agentplug/analysis-agent', 'analyze_data',
@@ -688,77 +688,77 @@ class TestAgentManagementE2E:
     def test_agent_management_workflow(self, clean_e2e_env):
         """Test complete agent management workflow."""
         runner = CliRunner()
-        
+
         # Install multiple agents
         coding_agent_source = clean_e2e_env["test_agents_path"] / "coding-agent"
         analysis_agent_source = clean_e2e_env["test_agents_path"] / "analysis-agent"
-        
+
         result = runner.invoke(cli, [
             'install', 'agentplug/coding-agent', str(coding_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         result = runner.invoke(cli, [
             'install', 'agentplug/analysis-agent', str(analysis_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Test 1: List all agents
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "agentplug/coding-agent" in result.output
         assert "agentplug/analysis-agent" in result.output
-        
+
         # Test 2: Get info for both agents
         result = runner.invoke(cli, ['info', 'agentplug/coding-agent'])
         assert result.exit_code == 0
         assert "coding-agent" in result.output
-        
+
         result = runner.invoke(cli, ['info', 'agentplug/analysis-agent'])
         assert result.exit_code == 0
         assert "analysis-agent" in result.output
-        
+
         # Test 3: Remove one agent
         result = runner.invoke(cli, ['remove', 'agentplug/coding-agent'])
         assert result.exit_code == 0
-        
+
         # Test 4: Verify agent was removed
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "agentplug/coding-agent" not in result.output
         assert "agentplug/analysis-agent" in result.output
-        
+
         # Test 5: Try to get info for removed agent
         result = runner.invoke(cli, ['info', 'agentplug/coding-agent'])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
-        
+
         # Test 6: Remove remaining agent
         result = runner.invoke(cli, ['remove', 'agentplug/analysis-agent'])
         assert result.exit_code == 0
-        
+
         # Test 7: Verify no agents remain
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "No agents found" in result.output
-    
+
     def test_agent_update_workflow(self, clean_e2e_env):
         """Test agent update workflow."""
         runner = CliRunner()
-        
+
         # Install agent
         coding_agent_source = clean_e2e_env["test_agents_path"] / "coding-agent"
         result = runner.invoke(cli, [
             'install', 'agentplug/coding-agent', str(coding_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Test updating agent (reinstall with same source)
         result = runner.invoke(cli, [
             'install', 'agentplug/coding-agent', str(coding_agent_source)
         ])
         assert result.exit_code == 0
-        
+
         # Verify agent still exists and is functional
         result = runner.invoke(cli, ['info', 'agentplug/coding-agent'])
         assert result.exit_code == 0

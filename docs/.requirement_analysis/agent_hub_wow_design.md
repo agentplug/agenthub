@@ -1,13 +1,13 @@
 # Agent Hub WOW Factor Design
 
-**Document Type**: Solution Design  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Draft  
-**Stakeholders**: Agent Developers, End Users, System Integrators, Platform Providers  
-**Customer Segments Affected**: AI Agent Developers, Software Developers, Enterprise Teams, Individual Users  
-**Iteration Count**: 1  
+**Document Type**: Solution Design
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Draft
+**Stakeholders**: Agent Developers, End Users, System Integrators, Platform Providers
+**Customer Segments Affected**: AI Agent Developers, Software Developers, Enterprise Teams, Individual Users
+**Iteration Count**: 1
 
 ## WOW Factor Framework
 
