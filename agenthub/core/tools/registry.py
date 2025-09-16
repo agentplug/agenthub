@@ -51,12 +51,11 @@ class ToolRegistry:
         if not callable(func):
             raise ToolValidationError("Tool must be callable")
 
-        # Check if function has parameters (not just empty function)
+        # Validate function signature (allow functions with or without parameters)
         import inspect
 
-        sig = inspect.signature(func)
-        if len(sig.parameters) == 0:
-            raise ToolValidationError("Tool function must have at least one parameter")
+        inspect.signature(func)  # Validate function signature
+        # Allow functions with any number of parameters (including 0)
 
         # Register with internal registry
         self.registered_tools[name] = func
@@ -100,7 +99,7 @@ class ToolRegistry:
 
             # Check if we're already in an event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an event loop, create a task instead
                 import concurrent.futures
 
@@ -194,6 +193,50 @@ class ToolRegistry:
             del self.tool_metadata[name]
             return True
         return False
+
+    def remove_tool(self, name: str) -> bool:
+        """Remove a tool from the registry (alias for unregister_tool)."""
+        return self.unregister_tool(name)
+
+    def execute_tool(self, name: str, parameters: dict) -> any:
+        """Execute a tool with given parameters."""
+        if name not in self.registered_tools:
+            raise ToolNotFoundError(f"Tool '{name}' not found")
+
+        tool_func = self.registered_tools[name]
+        return tool_func(**parameters)
+
+    def register_tool_with_metadata(self, metadata: ToolMetadata) -> None:
+        """Register a tool with custom metadata."""
+        if metadata.name in self.registered_tools:
+            raise ToolNameConflictError(f"Tool '{metadata.name}' is already registered")
+
+        self.registered_tools[metadata.name] = metadata.function
+        self.tool_metadata[metadata.name] = metadata
+
+    def clear_agent_tools(self, agent_id: str) -> None:
+        """Clear all tools assigned to an agent."""
+        if agent_id in self.agent_tool_access:
+            del self.agent_tool_access[agent_id]
+
+    def cleanup(self) -> None:
+        """Clean up the registry (for testing purposes)."""
+        self.registered_tools.clear()
+        self.tool_metadata.clear()
+        self.agent_tool_access.clear()
+
+    def get_statistics(self) -> dict:
+        """Get registry statistics."""
+        tools_per_agent = {
+            agent_id: len(tools) for agent_id, tools in self.agent_tool_access.items()
+        }
+        return {
+            "total_tools": len(self.registered_tools),
+            "total_agents": len(self.agent_tool_access),
+            "tool_names": list(self.registered_tools.keys()),
+            "agent_ids": list(self.agent_tool_access.keys()),
+            "tools_per_agent": tools_per_agent,
+        }
 
     def assign_tools_to_agent(self, agent_id: str, tool_names: list[str]) -> None:
         """Assign specific tools to an agent."""
