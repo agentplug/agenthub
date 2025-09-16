@@ -1,4 +1,4 @@
-"""Custom log filters for AgentManager."""
+"""Custom log filters for AgentHub."""
 
 import logging
 import re

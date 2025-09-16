@@ -1,4 +1,4 @@
-"""Custom log formatters for AgentManager."""
+"""Custom log formatters for AgentHub."""
 
 import json
 import logging
@@ -63,21 +63,25 @@ class ColorfulFormatter(logging.Formatter):
                         if tool_count > 0:
                             message = message.replace(
                                 "Successfully loaded agent",
-                                f"{self.COLORS['GREEN']}✅ Successfully loaded agent{self.COLORS['RESET']}",
+                                f"{self.COLORS['GREEN']}✅ Successfully loaded agent"
+                                f"{self.COLORS['RESET']}",
                             )
                             message = message.replace(
                                 f"with {tool_count} tools",
-                                f"{self.COLORS['CYAN']}with {tool_count} tools{self.COLORS['RESET']}",
+                                f"{self.COLORS['CYAN']}with {tool_count} tools"
+                                f"{self.COLORS['RESET']}",
                             )
                     except (ValueError, IndexError):
                         message = message.replace(
                             "Successfully loaded agent",
-                            f"{self.COLORS['GREEN']}✅ Successfully loaded agent{self.COLORS['RESET']}",
+                            f"{self.COLORS['GREEN']}✅ Successfully loaded agent"
+                            f"{self.COLORS['RESET']}",
                         )
                 else:
                     message = message.replace(
                         "Successfully loaded agent",
-                        f"{self.COLORS['GREEN']}✅ Successfully loaded agent{self.COLORS['RESET']}",
+                        f"{self.COLORS['GREEN']}✅ Successfully loaded agent"
+                        f"{self.COLORS['RESET']}",
                     )
 
             # Tool execution

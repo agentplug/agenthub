@@ -1,6 +1,7 @@
-"""AgentManager SDK - Simple facade for agent loading and tool injection.
+"""AgentHub SDK - Simple facade for agent loading and tool injection.
 
-This module provides a clean, user-friendly API that delegates to the enhanced core classes.
+This module provides a clean, user-friendly API that delegates to the
+enhanced core classes.
 """
 
 from ..core.tools import get_available_tools, run_resources, tool

@@ -6,7 +6,7 @@ from agenthub.storage.local_storage import LocalStorage
 __all__ = [
     "LocalStorage",
     # TODO: Add other classes as they are implemented
-    # "AgentManager",
+    # "AgentHub",
     # "MetadataManager",
     # "FileManager",
 ]

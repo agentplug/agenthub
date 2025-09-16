@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgentManager Tool Server - Framework-level Background Execution Example
+AgentHub Tool Server - Framework-level Background Execution Example
 
 This example demonstrates how to use the framework-level run_resources() method
 for clean background server execution.
@@ -102,7 +102,8 @@ DDGS search operators
 
 Query example	Result
 cats dogs	Results about cats or dogs
-"cats and dogs"	Results for exact term "cats and dogs". If no results are found, related results are shown.
+"cats and dogs"	Results for exact term "cats and dogs". If no results are
+		found, related results are shown.
 cats -dogs	Fewer dogs in results
 cats +dogs	More dogs in results
 dogs site:example.com	Pages about dogs from example.com
@@ -145,13 +146,13 @@ def web_search(query: str) -> list:
         from concurrent.futures import ThreadPoolExecutor
 
         import aiohttp
-        import requests
         from bs4 import BeautifulSoup
         from ddgs import DDGS
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
-            "Required packages 'ddgs', 'requests', 'beautifulsoup4', and 'aiohttp' are not installed."
-        )
+            "Required packages 'ddgs', 'beautifulsoup4', and 'aiohttp' "
+            "are not installed."
+        ) from e
 
     ddg = DDGS()
     search_results = list(ddg.text(query, max_results=5))
@@ -189,14 +190,17 @@ def web_search(query: str) -> list:
                     tasks.append(task)
                 else:
                     # Handle results without URLs
-                    async def no_url_result():
-                        return {
-                            "title": title,
-                            "url": "",
-                            "snippet": "No URL available",
-                        }
+                    def create_no_url_result(result_title):
+                        async def no_url_result():
+                            return {
+                                "title": result_title,
+                                "url": "",
+                                "snippet": "No URL available",
+                            }
 
-                    tasks.append(no_url_result())
+                        return no_url_result
+
+                    tasks.append(create_no_url_result(title)())
 
             # Execute all requests concurrently
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -239,16 +243,16 @@ def web_search(query: str) -> list:
 def compare_numbers(a: float, b: float) -> str:
     """Compare two numbers and return the larger one."""
     print(f"[TOOL] Comparing {a} and {b}")
-    if type(a) != float:
+    if not isinstance(a, float):
         a = float(a)
-    if type(b) != float:
+    if not isinstance(b, float):
         b = float(b)
 
     return f"The larger number is {float(max(a, b))}"
 
 
 if __name__ == "__main__":
-    print("🚀 AgentManager Tool Server - Framework Background Execution")
+    print("🚀 AgentHub Tool Server - Framework Background Execution")
     print("=" * 60)
 
     # Show available tools

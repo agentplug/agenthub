@@ -1,4 +1,4 @@
-"""Centralized logging configuration for AgentManager."""
+"""Centralized logging configuration for AgentHub."""
 
 from .config import LoggingManager, get_logger, set_quiet_mode, setup_logging
 from .filters import AgentLogFilter, HTTPLogFilter
