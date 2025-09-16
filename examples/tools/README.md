@@ -97,14 +97,14 @@ if __name__ == "__main__":
 """
 Example of using tools with agents after starting run_resources()
 """
-import agenthub as amg
+import agenthub as ah
 
 # Start the tool server (run this in a separate terminal or process)
 # from agenthub.core.tools import run_resources
 # run_resources()
 
 # Load agent with tools
-agent = amg.load_agent('agentplug/analysis-agent', tools=['add', 'multiply'])
+agent = ah.load_agent('agentplug/analysis-agent', tools=['add', 'multiply'])
 
 # Use the agent
 result = agent.analyze_text("Calculate 5 + 3 and then multiply by 2")

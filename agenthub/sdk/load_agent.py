@@ -1,6 +1,5 @@
 """Enhanced load_agent function with tool injection support."""
 
-
 from ..core.agents import AgentLoader
 from ..core.tools import get_tool_registry
 

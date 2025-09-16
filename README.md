@@ -33,8 +33,8 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub is t
 ### With AgentHub
 ```python
 # One line, 30 seconds
-import agenthub as amg
-coding_agent = amg.load_agent("agentplug/coding-agent")
+import agenthub as ah
+coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
 
@@ -52,7 +52,7 @@ code = coding_agent.generate_code("neural network class")
 
 | 🏪 **Marketplace** | 🔌 **One-Line Integration** | 🛠️ **Dev Tools** | 🏢 **Enterprise** |
 |:------------------:|:--------------------------:|:----------------:|:-----------------:|
-| Intelligent search | `amg.load_agent("name")` | Agent Studio | Governance |
+| Intelligent search | `ah.load_agent("name")` | Agent Studio | Governance |
 | Quality ratings | Auto-installation | Testing suite | Compliance |
 | Version management | Environment isolation | Analytics | Scalability |
 | Monetization | Dependency resolution | Collaboration | Monitoring |
@@ -63,18 +63,18 @@ code = coding_agent.generate_code("neural network class")
 
 ```python
 # 🚀 Instantly use any agent from GitHub
-import agenthub as amg
+import agenthub as ah
 
 # Scientific paper analysis
-paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
+paper_analyzer = ah.load_agent("agentplug/scientific-paper-analyzer")
 summary = paper_analyzer.analyze_paper("research.pdf")
 
 # Code generation with custom tools
-coding_agent = amg.load_agent("agentplug/coding-agent", tools=["web_search", "code_review"])
+coding_agent = ah.load_agent("agentplug/coding-agent", tools=["web_search", "code_review"])
 code = coding_agent.generate_code("React component for data table")
 
 # Data processing with tool injection
-data_agent = amg.load_agent("openai/data_analyzer", tools=["data_visualizer", "statistical_analyzer"])
+data_agent = ah.load_agent("openai/data_analyzer", tools=["data_visualizer", "statistical_analyzer"])
 insights = data_agent.analyze("sales_data.csv")
 
 # All agents auto-install in isolated environments - zero conflicts!
@@ -113,10 +113,10 @@ if __name__ == "__main__":
 
 ```python
 # 🤖 Use tools with agents (run in separate process/terminal)
-import agenthub as amg
+import agenthub as ah
 
 # Load agent with custom tools
-agent = amg.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
+agent = ah.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
 
 # Agent's AI decides when and how to use tools
 result = agent.analyze("What are the latest AI trends?")
@@ -216,10 +216,10 @@ agenthub --version
 ### 🎯 Your First Agent (30 seconds)
 
 ```python
-import agenthub as amg
+import agenthub as ah
 
 # 🪄 One line to rule them all
-paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
+paper_analyzer = ah.load_agent("agentplug/scientific-paper-analyzer")
 
 # 📄 Analyze your first paper
 result = paper_analyzer.analyze_paper("research_paper.pdf")
@@ -294,10 +294,10 @@ if __name__ == "__main__":
 
 ```python
 # Use the tools with agents (run in separate terminal/process)
-import agenthub as amg
+import agenthub as ah
 
 # Load agent with your custom tools
-agent = amg.load_agent("agentplug/analysis-agent", tools=["calculator", "text_processor"])
+agent = ah.load_agent("agentplug/analysis-agent", tools=["calculator", "text_processor"])
 
 # Agent can now use your custom tools
 result = agent.analyze("Calculate 15 * 3 and convert 'hello world' to uppercase")
@@ -323,7 +323,7 @@ agenthub exec ./my-coding-agent generate_code "hello world"
 git push origin main
 
 # Share with the world!
-# Users can now: amg.load_agent("your-username/my-coding-agent")
+# Users can now: ah.load_agent("your-username/my-coding-agent")
 ```
 
 ## 📚 Documentation Hub
@@ -446,7 +446,7 @@ Contributors are featured in:
 - ✅ **Tool Registry**: Global tool management with FastMCP integration
 - ✅ **Tool Decorator**: `@tool` decorator for custom tool registration
 - ✅ **MCP Integration**: Model Context Protocol for tool execution
-- ✅ **Agent Tool Assignment**: `amg.load_agent(tools=[...])` functionality
+- ✅ **Agent Tool Assignment**: `ah.load_agent(tools=[...])` functionality
 - ✅ **Tool Context Injection**: Automatic tool metadata injection into agents
 - ✅ **Comprehensive Testing**: 8/8 unit tests passing with full coverage
 

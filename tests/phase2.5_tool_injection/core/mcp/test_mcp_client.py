@@ -163,9 +163,7 @@ class TestMCPClient:
         """Test MCP client as context manager."""
         with (
             patch("agenthub.core.mcp.mcp_client.sse_client") as mock_sse_client,
-            patch(
-                "agenthub.core.mcp.mcp_client.ClientSession"
-            ) as mock_session_class,
+            patch("agenthub.core.mcp.mcp_client.ClientSession") as mock_session_class,
         ):
 
             # Mock the connection

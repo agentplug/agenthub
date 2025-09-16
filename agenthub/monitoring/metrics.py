@@ -124,9 +124,7 @@ class MetricsCollector:
                 "latest": values[-1] if values else None,
             }
 
-    def get_tool_usage_stats(
-        self, duration: timedelta | None = None
-    ) -> dict[str, Any]:
+    def get_tool_usage_stats(self, duration: timedelta | None = None) -> dict[str, Any]:
         """Get tool usage statistics.
 
         Args:

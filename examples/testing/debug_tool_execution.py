@@ -8,7 +8,7 @@ This demo shows the actual tool execution process with detailed logging.
 import asyncio
 import json
 
-import agenthub as amg
+import agenthub as ah
 from agenthub.core.tools import get_available_tools, tool
 
 
@@ -78,7 +78,7 @@ async def main():
 
     # Load agent with tools
     print("\n🤖 Loading agent with tools...")
-    agent = amg.load_agent(
+    agent = ah.load_agent(
         agent_name="agentplug/analysis-agent", tools=["web_search", "data_analyzer"]
     )
 

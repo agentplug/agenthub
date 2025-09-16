@@ -1,4 +1,4 @@
-import agenthub as amg
+import agenthub as ah
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
 
     # Load analysis agent
     try:
-        analysis_agent = amg.load_agent("agentplug/analysis-agent")
+        analysis_agent = ah.load_agent("agentplug/analysis-agent")
     except Exception as e:
         print(f"❌ Analysis agent not found: {e}")
         print("💡 Please set up seed agents first.")

@@ -1,4 +1,4 @@
-import agenthub as amg
+import agenthub as ah
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
 
     # Load coding agent
     try:
-        coding_agent = amg.load_agent("agentplug/coding-agent")
+        coding_agent = ah.load_agent("agentplug/coding-agent")
     except Exception as e:
         print(f"❌ Coding agent not found: {e}")
         print("💡 Please set up seed agents first.")

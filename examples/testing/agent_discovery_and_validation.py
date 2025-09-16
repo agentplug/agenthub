@@ -1,4 +1,4 @@
-import agenthub as amg
+import agenthub as ah
 
 
 def print_separator(title):
@@ -31,7 +31,7 @@ def main():
 
     for agent_id in agent_list:
         try:
-            agent = amg.load_agent(agent_id)
+            agent = ah.load_agent(agent_id)
             agents.append(
                 {
                     "id": agent_id,

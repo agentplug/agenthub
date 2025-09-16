@@ -7,7 +7,7 @@ The framework will automatically explore tool information and inject
 it into agents via the command format.
 """
 
-import agenthub as amg
+import agenthub as ah
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
 
     try:
         # Discover tools from MCP server
-        available_tools = amg.get_available_tools()
+        available_tools = ah.get_available_tools()
         print(f"📋 Available tools (from MCP server): {len(available_tools)}")
         for tool_name in available_tools:
             print(f"   - {tool_name}")
@@ -33,7 +33,7 @@ def main():
         print("\n📊 Tool Descriptions (from MCP server):")
         for tool_name in available_tools:
             try:
-                metadata = amg.get_tool_metadata(tool_name)
+                metadata = ah.get_tool_metadata(tool_name)
                 if metadata:
                     description = getattr(
                         metadata, "description", "No description available"
@@ -72,7 +72,7 @@ def main():
     # Agent 1: Analysis Agent with specific tools
     print("🔍 Declaring Analysis Agent...")
     try:
-        analysis_agent = amg.load_agent(
+        analysis_agent = ah.load_agent(
             "agentplug/analysis-agent", tools=["add", "multiply", "process_text"]
         )
         print(f"   ✅ Analysis Agent: {analysis_agent.name}")
@@ -85,7 +85,7 @@ def main():
     # Agent 2: Coding Agent with different tools
     print("\n💻 Declaring Coding Agent...")
     try:
-        coding_agent = amg.load_agent(
+        coding_agent = ah.load_agent(
             "agentplug/coding-agent", tools=["add", "subtract", "greet"]
         )
         print(f"   ✅ Coding Agent: {coding_agent.name}")
@@ -98,7 +98,7 @@ def main():
     # Agent 3: Math Agent with math tools only
     print("\n🧮 Declaring Math Agent...")
     try:
-        math_agent = amg.load_agent(
+        math_agent = ah.load_agent(
             "agentplug/analysis-agent",  # Reusing analysis agent for demo
             tools=["add", "subtract", "multiply", "divide"],
         )
@@ -112,7 +112,7 @@ def main():
     # Agent 4: Text Agent with text processing tools
     print("\n📝 Declaring Text Agent...")
     try:
-        text_agent = amg.load_agent(
+        text_agent = ah.load_agent(
             "agentplug/coding-agent",  # Reusing coding agent for demo
             tools=["greet", "process_text", "get_weather"],
         )

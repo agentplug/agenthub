@@ -1,6 +1,6 @@
 import time
 
-import agenthub as amg
+import agenthub as ah
 
 
 class AgentOrchestrator:
@@ -21,7 +21,7 @@ class AgentOrchestrator:
 
         for agent_id in agent_list:
             try:
-                agent = amg.load_agent(agent_id)
+                agent = ah.load_agent(agent_id)
                 self.agents[agent_id] = agent
 
                 # Map capabilities
