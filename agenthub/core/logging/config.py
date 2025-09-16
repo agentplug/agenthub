@@ -1,4 +1,4 @@
-"""Centralized logging configuration for AgentManager."""
+"""Centralized logging configuration for AgentHub."""
 
 import logging
 import os
@@ -29,7 +29,7 @@ class LoggingSettings:
 
 
 class LoggingManager:
-    """Centralized logging manager for AgentManager."""
+    """Centralized logging manager for AgentHub."""
 
     def __init__(self, settings: LoggingSettings | None = None):
         """Initialize logging manager.
@@ -49,37 +49,33 @@ class LoggingManager:
                 level=getattr(config, "log_level", "INFO"),
                 format="structured",
                 enable_file_logging=os.getenv(
-                    "AGENTMANAGER_ENABLE_FILE_LOGGING", "false"
+                    "AGENTHUB_ENABLE_FILE_LOGGING", "false"
                 ).lower()
                 == "true",
-                log_file=os.getenv("AGENTMANAGER_LOG_FILE"),
+                log_file=os.getenv("AGENTHUB_LOG_FILE"),
                 quiet_mode=getattr(config, "quiet_mode", False),
                 suppress_http=getattr(config, "suppress_http_logs", True),
-                suppress_urllib3=os.getenv(
-                    "AGENTMANAGER_SUPPRESS_URLLIB3", "true"
-                ).lower()
+                suppress_urllib3=os.getenv("AGENTHUB_SUPPRESS_URLLIB3", "true").lower()
                 == "true",
-                enable_colors=os.getenv("AGENTMANAGER_ENABLE_COLORS", "true").lower()
+                enable_colors=os.getenv("AGENTHUB_ENABLE_COLORS", "true").lower()
                 == "true",
             )
         except Exception:
             # Fallback to environment variables
             return LoggingSettings(
-                level=os.getenv("AGENTMANAGER_LOG_LEVEL", "INFO"),
+                level=os.getenv("AGENTHUB_LOG_LEVEL", "INFO"),
                 format="structured",
                 enable_file_logging=os.getenv(
-                    "AGENTMANAGER_ENABLE_FILE_LOGGING", "false"
+                    "AGENTHUB_ENABLE_FILE_LOGGING", "false"
                 ).lower()
                 == "true",
-                log_file=os.getenv("AGENTMANAGER_LOG_FILE"),
-                quiet_mode=os.getenv("AGENTMANAGER_QUIET", "false").lower() == "true",
-                suppress_http=os.getenv("AGENTMANAGER_SUPPRESS_HTTP", "true").lower()
+                log_file=os.getenv("AGENTHUB_LOG_FILE"),
+                quiet_mode=os.getenv("AGENTHUB_QUIET", "false").lower() == "true",
+                suppress_http=os.getenv("AGENTHUB_SUPPRESS_HTTP", "true").lower()
                 == "true",
-                suppress_urllib3=os.getenv(
-                    "AGENTMANAGER_SUPPRESS_URLLIB3", "true"
-                ).lower()
+                suppress_urllib3=os.getenv("AGENTHUB_SUPPRESS_URLLIB3", "true").lower()
                 == "true",
-                enable_colors=os.getenv("AGENTMANAGER_ENABLE_COLORS", "true").lower()
+                enable_colors=os.getenv("AGENTHUB_ENABLE_COLORS", "true").lower()
                 == "true",
             )
 
@@ -211,7 +207,7 @@ class LoggingManager:
             logging.getLogger("mcp.client.stdio").setLevel(logging.WARNING)
 
     def get_logger(self, name: str) -> logging.Logger:
-        """Get a logger instance with AgentManager configuration.
+        """Get a logger instance with AgentHub configuration.
 
         Args:
             name: Logger name (will be prefixed with 'agenthub.')
@@ -276,7 +272,7 @@ def setup_logging(settings: LoggingSettings | None = None) -> None:
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Get a logger instance with AgentManager configuration.
+    """Get a logger instance with AgentHub configuration.
 
     Args:
         name: Logger name
