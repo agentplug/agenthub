@@ -52,7 +52,8 @@ class TestProcessManager:
 
     def test_execute_agent_missing_venv(self, mock_agent_directory: Path):
         """Test execute_agent handles missing virtual environment."""
-        pm = ProcessManager()
+        # Use subprocess execution to test virtual environment requirement
+        pm = ProcessManager(use_dynamic_execution=False)
 
         # Mock agent directory has agent.py but no .venv
         result = pm.execute_agent(
@@ -143,7 +144,8 @@ class TestProcessManager:
         result = pm.execute_agent(str(mock_agent_directory), "invalid_method", {})
 
         assert "error" in result
-        # Check that some error occurred (the specific message may vary due to environment issues)
+        # Check that some error occurred (the specific message may vary due to
+        # environment issues)
         assert len(result["error"]) > 0
 
     def test_validate_agent_structure_valid(self, mock_agent_directory: Path):
