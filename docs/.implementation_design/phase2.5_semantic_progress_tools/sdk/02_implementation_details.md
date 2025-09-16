@@ -37,9 +37,9 @@ SDK Integration
 ### **1. Enhanced load_agent() Function**
 
 ```python
-# agentmanager/sdk/load_agent.py
-from agentmanager.runtime import get_tool_injector, get_context_manager
-from agentmanager.core.tools import get_available_tools
+# agenthub/sdk/load_agent.py
+from agenthub.runtime import get_tool_injector, get_context_manager
+from agenthub.core.tools import get_available_tools
 from typing import List, Optional, Dict, Any, Union
 import asyncio
 from dataclasses import dataclass
@@ -94,7 +94,7 @@ class EnhancedAgent:
             raise ToolAccessDeniedError(f"Agent does not have access to tool {tool_name}")
         
         # Execute tool via MCP
-        from agentmanager.runtime import execute_tool_for_agent
+        from agenthub.runtime import execute_tool_for_agent
         return await execute_tool_for_agent(self, tool_name, arguments)
 
 def load_agent(base_agent: str, tools: Optional[List[str]] = None, **kwargs) -> EnhancedAgent:
@@ -182,9 +182,9 @@ def _validate_tool_assignment(tool_names: List[str]) -> List[str]:
 ### **2. Tool Assignment Functions**
 
 ```python
-# agentmanager/sdk/tool_assignment.py
-from agentmanager.runtime import get_tool_injector, get_context_manager
-from agentmanager.core.tools import get_available_tools
+# agenthub/sdk/tool_assignment.py
+from agenthub.runtime import get_tool_injector, get_context_manager
+from agenthub.core.tools import get_available_tools
 from typing import List, Dict, Any, Optional
 from .exceptions import ToolAssignmentError, ToolAccessDeniedError
 
@@ -270,8 +270,8 @@ def remove_tools_from_agent(agent: EnhancedAgent, tool_names: List[str]) -> List
 ### **3. Tool Execution Functions**
 
 ```python
-# agentmanager/sdk/tool_execution.py
-from agentmanager.runtime import execute_tool_for_agent
+# agenthub/sdk/tool_execution.py
+from agenthub.runtime import execute_tool_for_agent
 from typing import Dict, Any, Optional
 import asyncio
 from .exceptions import ToolExecutionError, ToolAccessDeniedError
@@ -283,7 +283,7 @@ async def execute_tool_for_agent(agent: EnhancedAgent, tool_name: str, arguments
     
     try:
         # Execute tool via MCP
-        from agentmanager.runtime import execute_tool_for_agent as runtime_execute_tool
+        from agenthub.runtime import execute_tool_for_agent as runtime_execute_tool
         return await runtime_execute_tool(agent.agent_id, tool_name, arguments)
     except Exception as e:
         raise ToolExecutionError(f"Tool execution failed: {str(e)}")
@@ -311,7 +311,7 @@ def execute_tool_sync(agent: EnhancedAgent, tool_name: str, arguments: Dict[str,
 ### **4. Tool Discovery Functions**
 
 ```python
-# agentmanager/sdk/tool_discovery.py
+# agenthub/sdk/tool_discovery.py
 from typing import List, Optional, Dict, Any
 from .exceptions import ToolNotFoundError
 
@@ -382,7 +382,7 @@ class ToolDiscovery:
 ### **5. Error Handling**
 
 ```python
-# agentmanager/sdk/exceptions.py
+# agenthub/sdk/exceptions.py
 class SDKError(Exception):
     """Base exception for SDK-related errors"""
     pass
@@ -415,7 +415,7 @@ class ToolDiscoveryError(SDKError):
 ### **6. SDK Module Integration**
 
 ```python
-# agentmanager/sdk/__init__.py
+# agenthub/sdk/__init__.py
 from .load_agent import load_agent, EnhancedAgent
 from .tool_assignment import assign_tools_to_agent, get_agent_tools, remove_tools_from_agent
 from .tool_execution import execute_tool_for_agent, execute_tool_for_agent_with_retry, execute_tool_sync

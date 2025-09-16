@@ -60,7 +60,7 @@ graph TD
 ### **Registry Client**
 
 ```python
-# agentmanager/registry/client.py
+# agenthub/registry/client.py
 import requests
 import json
 import base64
@@ -348,7 +348,7 @@ class RegistryClient:
 ### **Search Engine**
 
 ```python
-# agentmanager/registry/search.py
+# agenthub/registry/search.py
 import re
 from typing import Dict, List, Optional, Any, Set
 from ..utils import Logger
@@ -568,7 +568,7 @@ class SearchEngine:
 ### **Cache Manager**
 
 ```python
-# agentmanager/registry/cache.py
+# agenthub/registry/cache.py
 import json
 import time
 import shutil
@@ -774,7 +774,7 @@ class CacheManager:
 # tests/registry/test_client.py
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.registry import RegistryClient
+from agenthub.registry import RegistryClient
 
 class TestRegistryClient:
     def test_get_registry_success(self, mock_requests):
@@ -806,7 +806,7 @@ class TestRegistryClient:
 ```python
 # tests/registry/test_integration.py
 import pytest
-from agentmanager.registry import RegistryClient
+from agenthub.registry import RegistryClient
 
 class TestRegistryIntegration:
     def test_full_discovery_flow(self, live_registry):

@@ -14,7 +14,7 @@ Define the public interfaces for enhanced `load_agent()` with tool assignment, t
 ### **1. Enhanced load_agent() Interface**
 
 ```python
-import agentmanager as amg
+import agenthub as amg
 from typing import List, Optional, Dict, Any
 
 # Load agent with tools
@@ -38,7 +38,7 @@ agent = amg.load_agent(base_agent: str, **kwargs) -> Agent
 ### **2. Tool Assignment Interface**
 
 ```python
-from agentmanager.sdk import assign_tools_to_agent, get_agent_tools
+from agenthub.sdk import assign_tools_to_agent, get_agent_tools
 
 # Assign tools to existing agent
 assigned_tools = assign_tools_to_agent(
@@ -56,7 +56,7 @@ has_tool = agent.has_tool(tool_name: str) -> bool
 ### **3. Tool Execution Interface**
 
 ```python
-from agentmanager.sdk import execute_tool_for_agent
+from agenthub.sdk import execute_tool_for_agent
 
 # Execute tool for agent
 result = await execute_tool_for_agent(
@@ -78,7 +78,7 @@ result = await execute_tool_for_agent_with_retry(
 
 ### **1. Define Custom Tools**
 ```python
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 # Define custom tools
 @tool(name="data_analyzer", description="Analyze data")
@@ -92,7 +92,7 @@ def my_file_processor(file_path: str) -> dict:
 
 ### **2. Load Agent with Tools**
 ```python
-import agentmanager as amg
+import agenthub as amg
 
 # Load agent with tools
 agent = amg.load_agent(
@@ -156,7 +156,7 @@ class EnhancedAgent:
             raise ToolAccessDeniedError(f"Agent does not have access to tool {tool_name}")
         
         # Execute tool via MCP
-        from agentmanager.runtime import execute_tool_for_agent
+        from agenthub.runtime import execute_tool_for_agent
         return await execute_tool_for_agent(self, tool_name, arguments)
 ```
 
@@ -229,7 +229,7 @@ def execute_tool_with_validation(agent: EnhancedAgent, tool_name: str, arguments
 ```python
 def validate_tool_assignment(tool_names: List[str]) -> List[str]:
     """Validate tool assignment and return valid tools"""
-    from agentmanager.core.tools import get_available_tools
+    from agenthub.core.tools import get_available_tools
     
     available_tools = get_available_tools()
     valid_tools = [name for name in tool_names if name in available_tools]

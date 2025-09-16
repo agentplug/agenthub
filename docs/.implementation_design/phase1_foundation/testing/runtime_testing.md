@@ -164,7 +164,7 @@ The Runtime Module is the **core execution engine** that manages agent subproces
 # tests/phase1_foundation/runtime/test_process_manager.py
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.runtime.process_manager import ProcessManager
+from agenthub.runtime.process_manager import ProcessManager
 
 class TestProcessManager:
     def test_execute_agent_success(self, tmp_path):
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 # tests/phase1_foundation/runtime/test_environment_manager.py
 import pytest
 from pathlib import Path
-from agentmanager.runtime.environment_manager import EnvironmentManager
+from agenthub.runtime.environment_manager import EnvironmentManager
 
 class TestEnvironmentManager:
     def test_create_environment(self, tmp_path):
@@ -255,7 +255,7 @@ class TestEnvironmentManager:
 ```python
 # tests/phase1_foundation/runtime/test_agent_runtime.py
 import pytest
-from agentmanager.runtime.agent_runtime import AgentRuntime
+from agenthub.runtime.agent_runtime import AgentRuntime
 
 class TestAgentRuntime:
     def test_execute_agent_workflow(self, tmp_path):

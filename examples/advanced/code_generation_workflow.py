@@ -1,4 +1,4 @@
-import agentmanager as amg
+import agenthub as amg
 
 
 def main():

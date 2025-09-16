@@ -8,7 +8,7 @@ import pytest
 import asyncio
 import requests
 from unittest.mock import patch, MagicMock
-from agentmanager.core.tools import (
+from agenthub.core.tools import (
     tool, get_available_tools, get_mcp_server, get_tool_metadata,
     ToolRegistry, ToolValidationError, ToolNameConflictError
 )
@@ -331,7 +331,7 @@ class TestModuleExports:
     
     def test_module_exports(self):
         """Test that all expected functions are exported."""
-        from agentmanager.core.tools import (
+        from agenthub.core.tools import (
             ToolRegistry, tool, get_available_tools, get_mcp_server,
             ToolError, ToolRegistrationError, ToolNameConflictError,
             ToolValidationError, ToolExecutionError, ToolAccessDeniedError,

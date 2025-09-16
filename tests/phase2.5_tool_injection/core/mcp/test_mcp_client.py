@@ -3,7 +3,7 @@
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock, AsyncMock
-from agentmanager.core.mcp.mcp_client import MCPClient
+from agenthub.core.mcp.mcp_client import MCPClient
 
 
 class TestMCPClient:

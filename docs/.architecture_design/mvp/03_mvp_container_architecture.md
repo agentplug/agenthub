@@ -72,7 +72,7 @@ Primary user interface for agent management operations.
 
 #### **Interfaces**
 ```python
-# agentmanager/cli/main.py
+# agenthub/cli/main.py
 @click.group()
 def cli():
     """Agent Hub - One-line AI agent integration."""
@@ -118,8 +118,8 @@ Python library for one-line agent integration.
 
 #### **Interfaces**
 ```python
-# agentmanager/sdk/__init__.py
-import agentmanager as amg
+# agenthub/sdk/__init__.py
+import agenthub as amg
 
 # One-line agent loading
 agent = amg.load("meta/coding-agent")
@@ -151,14 +151,14 @@ Execute agents in isolated environments with dependency management.
 
 #### **Interfaces**
 ```python
-# agentmanager/runtime/process_manager.py
+# agenthub/runtime/process_manager.py
 class ProcessManager:
     def execute_agent(self, agent_path: str, method: str, parameters: dict) -> dict:
         """Execute agent method in isolated subprocess."""
         # Implementation
         pass
 
-# agentmanager/runtime/environment_manager.py
+# agenthub/runtime/environment_manager.py
 class EnvironmentManager:
     def create_environment(self, agent_path: str) -> str:
         """Create isolated virtual environment."""
@@ -192,7 +192,7 @@ Fetch agent metadata from GitHub-based registry.
 
 #### **Interfaces**
 ```python
-# agentmanager/registry/github_client.py
+# agenthub/registry/github_client.py
 class GitHubRegistryClient:
     def get_registry(self) -> dict:
         """Fetch registry from GitHub."""
@@ -233,7 +233,7 @@ Provides local infrastructure for agents to discover their built-in tools AND al
 
 #### **Interfaces**
 ```python
-# agentmanager/core/agent_tool_support.py
+# agenthub/core/agent_tool_support.py
 class AgentToolSupport:
     def __init__(self):
         """Initialize agent tool support infrastructure."""
@@ -299,7 +299,7 @@ Validate that agents can safely access the tools they declare in their manifests
 
 #### **Interfaces**
 ```python
-# agentmanager/validation/tool_validator.py
+# agenthub/validation/tool_validator.py
 class ToolValidator:
     def __init__(self, security_level: str = "medium"):
         self.security_level = security_level
@@ -409,7 +409,7 @@ Manage local agent installations, metadata, and tool indexes.
 
 #### **Interfaces**
 ```python
-# agentmanager/storage/local_storage.py
+# agenthub/storage/local_storage.py
 class LocalStorage:
     def install_agent(self, agent_path: str, agent_data: bytes) -> str:
         """Install agent to local storage."""

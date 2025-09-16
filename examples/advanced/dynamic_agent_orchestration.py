@@ -1,6 +1,6 @@
 import time
 
-import agentmanager as amg
+import agenthub as amg
 
 
 class AgentOrchestrator:

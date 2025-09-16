@@ -184,7 +184,7 @@ The Core Module is the **central coordination hub** that handles agent loading, 
 # tests/phase1_foundation/core/test_agent_loader.py
 import pytest
 from pathlib import Path
-from agentmanager.core.agent_loader import AgentLoader
+from agenthub.core.agent_loader import AgentLoader
 
 class TestAgentLoader:
     def test_load_valid_agent(self, tmp_path):
@@ -276,7 +276,7 @@ interface:
 ```python
 # tests/phase1_foundation/core/test_manifest_parser.py
 import pytest
-from agentmanager.core.manifest_parser import ManifestParser
+from agenthub.core.manifest_parser import ManifestParser
 
 class TestManifestParser:
     def test_parse_valid_manifest(self):
@@ -375,7 +375,7 @@ interface:
 # tests/phase1_foundation/core/test_interface_validator.py
 import pytest
 from pathlib import Path
-from agentmanager.core.interface_validator import InterfaceValidator
+from agenthub.core.interface_validator import InterfaceValidator
 
 class TestInterfaceValidator:
     def test_validate_method_existence(self, tmp_path):
@@ -480,7 +480,7 @@ def test_method(prompt, max_length=100):
 # tests/phase1_foundation/core/test_agent_wrapper.py
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.core.agent_wrapper import AgentWrapper
+from agenthub.core.agent_wrapper import AgentWrapper
 
 class TestAgentWrapper:
     def test_method_discovery(self):

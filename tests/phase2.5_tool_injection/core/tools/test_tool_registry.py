@@ -5,9 +5,9 @@ import asyncio
 import threading
 import time
 from unittest.mock import patch, MagicMock, AsyncMock
-from agentmanager.core.tools.registry import ToolRegistry
-from agentmanager.core.tools.metadata import ToolMetadata
-from agentmanager.core.tools.exceptions import ToolNotFoundError, ToolNameConflictError
+from agenthub.core.tools.registry import ToolRegistry
+from agenthub.core.tools.metadata import ToolMetadata
+from agenthub.core.tools.exceptions import ToolNotFoundError, ToolNameConflictError
 
 
 class TestToolRegistry:

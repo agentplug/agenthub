@@ -10,11 +10,11 @@ import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from agentmanager.github.auto_installer import AutoInstaller, InstallationResult
-from agentmanager.github.url_parser import URLParser
-from agentmanager.github.repository_cloner import RepositoryCloner, CloneResult
-from agentmanager.github.repository_validator import RepositoryValidator, ValidationResult
-from agentmanager.environment.environment_setup import EnvironmentSetup, EnvironmentSetupResult, DependencyInstallResult
+from agenthub.github.auto_installer import AutoInstaller, InstallationResult
+from agenthub.github.url_parser import URLParser
+from agenthub.github.repository_cloner import RepositoryCloner, CloneResult
+from agenthub.github.repository_validator import RepositoryValidator, ValidationResult
+from agenthub.environment.environment_setup import EnvironmentSetup, EnvironmentSetupResult, DependencyInstallResult
 
 
 class TestCompleteInstallationWorkflow:
@@ -457,9 +457,9 @@ class TestWorkflowIntegrationWithRealComponents:
         assert real_installer.repository_validator is not None
         
         # Verify component types
-        from agentmanager.github.url_parser import URLParser
-        from agentmanager.github.repository_cloner import RepositoryCloner
-        from agentmanager.github.repository_validator import RepositoryValidator
+        from agenthub.github.url_parser import URLParser
+        from agenthub.github.repository_cloner import RepositoryCloner
+        from agenthub.github.repository_validator import RepositoryValidator
         
         assert isinstance(real_installer.url_parser, URLParser)
         assert isinstance(real_installer.repository_cloner, RepositoryCloner)

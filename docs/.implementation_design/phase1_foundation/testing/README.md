@@ -108,7 +108,7 @@ pytest tests/phase1_foundation/core/ -v
 pytest tests/phase1_foundation/cli/ -v
 
 # Run with coverage
-pytest tests/phase1_foundation/ --cov=agentmanager --cov-report=html
+pytest tests/phase1_foundation/ --cov=agenthub --cov-report=html
 
 # Run integration tests
 pytest tests/phase1_foundation/integration/ -v

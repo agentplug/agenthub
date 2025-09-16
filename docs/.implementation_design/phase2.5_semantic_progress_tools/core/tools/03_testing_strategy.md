@@ -25,7 +25,7 @@ Comprehensive testing strategy for tool registry, decorator, metadata management
 ```python
 # tests/core/tools/test_registry.py
 import pytest
-from agentmanager.core.tools import ToolRegistry, ToolMetadata
+from agenthub.core.tools import ToolRegistry, ToolMetadata
 
 class TestToolRegistry:
     def test_singleton_pattern(self):
@@ -82,7 +82,7 @@ class TestToolRegistry:
 ```python
 # tests/core/tools/test_decorator.py
 import pytest
-from agentmanager.core.tools import tool, get_available_tools
+from agenthub.core.tools import tool, get_available_tools
 
 class TestToolDecorator:
     def test_tool_decorator_basic(self):
@@ -108,7 +108,7 @@ class TestToolDecorator:
         def metadata_function(data: str) -> dict:
             return {"result": data}
         
-        from agentmanager.core.tools import get_tool_metadata
+        from agenthub.core.tools import get_tool_metadata
         metadata = get_tool_metadata("metadata_tool")
         
         assert metadata.name == "metadata_tool"
@@ -122,8 +122,8 @@ class TestToolDecorator:
 ```python
 # tests/core/tools/test_validator.py
 import pytest
-from agentmanager.core.tools.validator import ToolValidator
-from agentmanager.core.tools.exceptions import ToolValidationError, ToolNameConflictError
+from agenthub.core.tools.validator import ToolValidator
+from agenthub.core.tools.exceptions import ToolValidationError, ToolNameConflictError
 
 class TestToolValidator:
     def test_validate_tool_name(self):
@@ -170,7 +170,7 @@ class TestToolValidator:
 import pytest
 import asyncio
 from fastmcp import Client
-from agentmanager.core.tools import tool, get_mcp_server
+from agenthub.core.tools import tool, get_mcp_server
 
 class TestFastMCPIntegration:
     @pytest.mark.asyncio
@@ -224,7 +224,7 @@ class TestFastMCPIntegration:
 ```python
 # tests/core/tools/test_metadata.py
 import pytest
-from agentmanager.core.tools import tool, get_tool_metadata
+from agenthub.core.tools import tool, get_tool_metadata
 
 class TestToolMetadata:
     def test_tool_metadata_creation(self):
@@ -264,7 +264,7 @@ class TestToolMetadata:
 import pytest
 import threading
 import time
-from agentmanager.core.tools import tool, get_available_tools
+from agenthub.core.tools import tool, get_available_tools
 
 class TestConcurrency:
     def test_concurrent_tool_registration(self):
@@ -327,8 +327,8 @@ class TestConcurrency:
 ```python
 # tests/core/tools/test_errors.py
 import pytest
-from agentmanager.core.tools import tool
-from agentmanager.core.tools.exceptions import (
+from agenthub.core.tools import tool
+from agenthub.core.tools.exceptions import (
     ToolRegistrationError,
     ToolNameConflictError,
     ToolValidationError,
@@ -371,7 +371,7 @@ class TestErrorHandling:
 # tests/core/tools/test_performance.py
 import pytest
 import time
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 class TestPerformance:
     def test_tool_registration_performance(self):
@@ -431,7 +431,7 @@ pytest tests/core/tools/test_fastmcp_integration.py
 pytest tests/core/tools/test_concurrency.py
 
 # Run with coverage
-pytest tests/core/tools/ --cov=agentmanager.core.tools --cov-report=html
+pytest tests/core/tools/ --cov=agenthub.core.tools --cov-report=html
 ```
 
 ### **Continuous Integration**

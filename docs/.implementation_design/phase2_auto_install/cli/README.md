@@ -46,7 +46,7 @@ The **CLI Enhancement Module** extends the existing CLI interface to support age
 ## 📁 **File Structure**
 
 ```
-agentmanager/cli/
+agenthub/cli/
 ├── __init__.py
 ├── main.py                        # Enhanced with installation support
 ├── commands/                      # Enhanced commands

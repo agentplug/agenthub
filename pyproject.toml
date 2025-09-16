@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agentmanager"
+name = "agenthub"
 version = "0.1.0"
-description = "Agent Hub - Phase 1 Foundation"
+description = "AgentHub - The App Store for AI Agents"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "William", email = "william@agenthub.dev" }]
@@ -80,10 +80,10 @@ rag = [
     "faiss-cpu>=1.11.0",
 ]
 code = ["docker>=7.0.0"]
-full = ["agentmanager[dev,rag,code]"]
+full = ["agenthub[dev,rag,code]"]
 
 [project.scripts]
-agenthub = "agentmanager.cli.main:main"
+agenthub = "agenthub.cli.main:main"
 
 [tool.black]
 line-length = 88
@@ -166,7 +166,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["agentmanager"]
+source = ["agenthub"]
 omit = ["*/tests/*", "*/test_*", "*/__pycache__/*"]
 
 [tool.coverage.report]

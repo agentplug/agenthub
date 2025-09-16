@@ -6,7 +6,7 @@ Demonstrates the improved error handling in AgentWrapper that shows
 available methods when users call non-existent methods.
 """
 
-import agentmanager as amg
+import agenthub as amg
 
 
 def demonstrate_error_handling():

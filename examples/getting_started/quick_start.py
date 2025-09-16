@@ -9,10 +9,10 @@ executable examples. Run this file to see AgentHub in action.
 import tempfile
 import shutil
 from pathlib import Path
-from agentmanager import load_agent
-from agentmanager.github.auto_installer import AutoInstaller
-from agentmanager.environment.environment_manager import AdvancedEnvironmentManager
-from agentmanager.github.repository_cloner import RepositoryCloner
+from agenthub import load_agent
+from agenthub.github.auto_installer import AutoInstaller
+from agenthub.environment.environment_manager import AdvancedEnvironmentManager
+from agenthub.github.repository_cloner import RepositoryCloner
 
 def demonstrate_basic_installation():
     """Demonstrate basic agent installation and usage."""

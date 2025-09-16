@@ -36,9 +36,9 @@ Tool Execution Queue
 ### **1. AgentToolManager Class**
 
 ```python
-# agentmanager/core/mcp/manager.py
+# agenthub/core/mcp/manager.py
 from fastmcp import FastMCP, Client
-from agentmanager.core.tools import get_mcp_server, get_available_tools
+from agenthub.core.tools import get_mcp_server, get_available_tools
 from typing import Dict, List, Any, Optional
 import asyncio
 import threading
@@ -166,7 +166,7 @@ class AgentToolManager:
 ### **2. Tool Execution Queue**
 
 ```python
-# agentmanager/core/mcp/queue.py
+# agenthub/core/mcp/queue.py
 import asyncio
 from asyncio import Queue
 from typing import Dict, Any, List, Optional
@@ -247,7 +247,7 @@ class ToolExecutionQueue:
         """Execute queued tool"""
         try:
             # Import here to avoid circular imports
-            from agentmanager.core.mcp import AgentToolManager
+            from agenthub.core.mcp import AgentToolManager
             
             tool_manager = AgentToolManager()
             
@@ -290,10 +290,10 @@ class ToolExecutionQueue:
 ### **3. MCP Server Integration**
 
 ```python
-# agentmanager/core/mcp/__init__.py
+# agenthub/core/mcp/__init__.py
 from .manager import AgentToolManager, ToolExecutionContext
 from .queue import ToolExecutionQueue
-from agentmanager.core.tools import get_mcp_server, get_available_tools, get_tool_metadata
+from agenthub.core.tools import get_mcp_server, get_available_tools, get_tool_metadata
 from typing import List, Optional, Dict, Any
 
 # Global instances
@@ -340,7 +340,7 @@ def get_agent_tools(agent_id: str) -> List[str]:
 ### **4. Error Handling**
 
 ```python
-# agentmanager/core/mcp/exceptions.py
+# agenthub/core/mcp/exceptions.py
 class MCPError(Exception):
     """Base exception for MCP-related errors"""
     pass

@@ -196,7 +196,7 @@ The CLI Module is the **user interface layer** that provides command-line tools 
 # tests/phase1_foundation/cli/test_main.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestMainCLI:
     def test_cli_help(self):
@@ -235,7 +235,7 @@ class TestMainCLI:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestListCommand:
     def test_list_agents_success(self):
@@ -243,7 +243,7 @@ class TestListCommand:
         runner = CliRunner()
         
         # Mock storage manager
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.return_value = [
                 {
                     "developer": "test-dev",
@@ -271,7 +271,7 @@ class TestListCommand:
         """Test agent listing with no agents."""
         runner = CliRunner()
         
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.return_value = []
             
             result = runner.invoke(cli, ['list'])
@@ -283,7 +283,7 @@ class TestListCommand:
         """Test filtered agent listing."""
         runner = CliRunner()
         
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.return_value = [
                 {
                     "developer": "test-dev",
@@ -301,7 +301,7 @@ class TestListCommand:
         """Test agent listing with error."""
         runner = CliRunner()
         
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.side_effect = Exception("Storage error")
             
             result = runner.invoke(cli, ['list'])
@@ -317,7 +317,7 @@ class TestListCommand:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestInfoCommand:
     def test_info_agent_success(self):
@@ -325,8 +325,8 @@ class TestInfoCommand:
         runner = CliRunner()
         
         # Mock storage and core managers
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
-            with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
+            with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
                 
                 mock_storage.return_value.get_agent_path.return_value = "/path/to/agent"
                 
@@ -357,7 +357,7 @@ class TestInfoCommand:
         """Test agent info with non-existent agent."""
         runner = CliRunner()
         
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.get_agent_path.return_value = None
             
             result = runner.invoke(cli, ['info', 'non-existent/agent'])
@@ -382,7 +382,7 @@ class TestInfoCommand:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestTestCommand:
     def test_test_agent_success(self):
@@ -390,8 +390,8 @@ class TestTestCommand:
         runner = CliRunner()
         
         # Mock dependencies
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
-            with patch('agentmanager.runtime.agent_runtime.AgentRuntime') as mock_runtime:
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
+            with patch('agenthub.runtime.agent_runtime.AgentRuntime') as mock_runtime:
                 
                 mock_agent = Mock()
                 mock_agent.name = "test-agent"
@@ -422,7 +422,7 @@ class TestTestCommand:
         """Test agent testing with non-existent method."""
         runner = CliRunner()
         
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
             mock_agent = Mock()
             mock_agent.name = "test-agent"
             mock_agent.available_methods = {}
@@ -440,7 +440,7 @@ class TestTestCommand:
         """Test agent testing with invalid parameters."""
         runner = CliRunner()
         
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
             mock_agent = Mock()
             mock_agent.name = "test-agent"
             mock_agent.available_methods = {
@@ -466,8 +466,8 @@ class TestTestCommand:
         """Test agent testing with execution error."""
         runner = CliRunner()
         
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
-            with patch('agentmanager.runtime.agent_runtime.AgentRuntime') as mock_runtime:
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
+            with patch('agenthub.runtime.agent_runtime.AgentRuntime') as mock_runtime:
                 
                 mock_agent = Mock()
                 mock_agent.name = "test-agent"
@@ -495,14 +495,14 @@ class TestTestCommand:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestInstallCommand:
     def test_install_agent_success(self):
         """Test successful agent installation."""
         runner = CliRunner()
         
-        with patch('agentmanager.storage.agent_manager.AgentManager') as mock_manager:
+        with patch('agenthub.storage.agent_manager.AgentManager') as mock_manager:
             mock_manager.return_value.install_agent.return_value = {
                 "success": True,
                 "message": "Agent installed successfully"
@@ -540,7 +540,7 @@ class TestInstallCommand:
         """Test agent installation with installation error."""
         runner = CliRunner()
         
-        with patch('agentmanager.storage.agent_manager.AgentManager') as mock_manager:
+        with patch('agenthub.storage.agent_manager.AgentManager') as mock_manager:
             mock_manager.return_value.install_agent.return_value = {
                 "success": False,
                 "error": "Installation failed"

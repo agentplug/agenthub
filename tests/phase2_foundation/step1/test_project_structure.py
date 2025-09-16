@@ -49,12 +49,12 @@ class TestModuleImports:
     def test_new_modules_importable(self):
         """Test that new modules can be imported without errors."""
         # Test GitHub module import
-        import agentmanager.github
+        import agenthub.github
 
         assert hasattr(agentmanager.github, "__version__")
 
         # Test Environment module import
-        import agentmanager.environment
+        import agenthub.environment
 
         assert hasattr(agentmanager.environment, "__version__")
 
@@ -79,14 +79,14 @@ class TestBackwardCompatibility:
 
     def test_main_api_available(self):
         """Test that main load_agent API is still available."""
-        from agentmanager import load_agent
+        from agenthub import load_agent
 
         assert callable(load_agent), "load_agent should be callable"
 
     def test_agent_loader_instantiation(self):
         """Test that AgentLoader can still be instantiated."""
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
 
         storage = LocalStorage()
         loader = AgentLoader(storage)
@@ -95,7 +95,7 @@ class TestBackwardCompatibility:
 
     def test_local_storage_functionality(self):
         """Test basic LocalStorage functionality."""
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub.storage.local_storage import LocalStorage
 
         storage = LocalStorage()
 
@@ -115,10 +115,10 @@ class TestIntegration:
     def test_module_isolation(self):
         """Test that new modules don't interfere with existing ones."""
         # Import both old and new modules
-        import agentmanager.environment
-        import agentmanager.github
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
+        import agenthub.environment
+        import agenthub.github
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
 
         # Create instances of existing components
         storage = LocalStorage()

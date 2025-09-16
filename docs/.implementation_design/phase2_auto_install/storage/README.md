@@ -45,7 +45,7 @@ The **Storage Enhancement Module** extends the existing storage system to track 
 ## 📁 **File Structure**
 
 ```
-agentmanager/storage/
+agenthub/storage/
 ├── __init__.py
 ├── local_storage.py               # Enhanced local storage operations
 ├── installation_tracker.py        # Installation tracking

@@ -1,4 +1,4 @@
-import agentmanager as amg
+import agenthub as amg
 
 paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
 print("Analyzing paper...")

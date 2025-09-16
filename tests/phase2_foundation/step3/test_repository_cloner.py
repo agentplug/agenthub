@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from agentmanager.github.repository_cloner import (
+from agenthub.github.repository_cloner import (
     RepositoryCloner, CloneResult, CloneError, 
     RepositoryNotFoundError, GitNotAvailableError
 )
@@ -319,8 +319,8 @@ class TestIntegration:
     
     def test_import_from_module(self):
         """Test that RepositoryCloner can be imported from the github module."""
-        from agentmanager.github import RepositoryCloner as ModuleRepositoryCloner
-        from agentmanager.github.repository_cloner import RepositoryCloner as DirectRepositoryCloner
+        from agenthub.github import RepositoryCloner as ModuleRepositoryCloner
+        from agenthub.github.repository_cloner import RepositoryCloner as DirectRepositoryCloner
         
         # Both imports should work and be the same class
         assert ModuleRepositoryCloner is DirectRepositoryCloner
@@ -334,7 +334,7 @@ class TestIntegration:
     
     def test_module_exports(self):
         """Test that the github module properly exports RepositoryCloner."""
-        import agentmanager.github
+        import agenthub.github
         
         # RepositoryCloner should be in __all__
         assert "RepositoryCloner" in agentmanager.github.__all__
@@ -373,10 +373,10 @@ class TestBackwardCompatibility:
     def test_existing_imports_still_work(self):
         """Test that existing module imports still work."""
         # These should still work after adding RepositoryCloner
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
-        from agentmanager import load_agent
-        from agentmanager.github import URLParser
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
+        from agenthub import load_agent
+        from agenthub.github import URLParser
         
         # Should be able to instantiate existing components
         storage = LocalStorage()
@@ -391,12 +391,12 @@ class TestBackwardCompatibility:
     def test_no_side_effects(self):
         """Test that importing RepositoryCloner has no side effects."""
         # Import RepositoryCloner
-        from agentmanager.github.repository_cloner import RepositoryCloner
+        from agenthub.github.repository_cloner import RepositoryCloner
         
         # Existing functionality should still work
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
-        from agentmanager.github import URLParser
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
+        from agenthub.github import URLParser
         
         storage = LocalStorage()
         loader = AgentLoader(storage)

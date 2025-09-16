@@ -3,7 +3,7 @@
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
-from agentmanager.core.tools.registry import ToolRegistry
+from agenthub.core.tools.registry import ToolRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -43,7 +43,7 @@ def mock_agent_info():
 @pytest.fixture
 def sample_tools(tool_registry):
     """Register sample tools for testing."""
-    from agentmanager.core.tools.decorator import tool
+    from agenthub.core.tools.decorator import tool
     
     @tool(name="sample_tool1", description="Sample tool 1")
     def sample_tool1(param: str) -> str:

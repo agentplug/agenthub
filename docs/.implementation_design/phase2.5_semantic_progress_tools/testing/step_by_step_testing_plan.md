@@ -27,7 +27,7 @@ This document outlines the specific testing requirements for each implementation
 # test_step1_tool_registration.py
 import asyncio
 import requests
-from agentmanager.core.tools import tool, get_available_tools, get_mcp_server
+from agenthub.core.tools import tool, get_available_tools, get_mcp_server
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 5) -> dict:
@@ -110,7 +110,7 @@ asyncio.run(test_mcp_execution())
 # test_step1_mcp_integration.py
 import asyncio
 import requests
-from agentmanager.core.tools import get_mcp_server, tool
+from agenthub.core.tools import get_mcp_server, tool
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 5) -> dict:
@@ -199,8 +199,8 @@ async def test_mcp_integration():
 ✅ **Tool Assignment Test**:
 ```python
 # test_step2_tool_assignment.py
-from agentmanager.core.mcp import get_tool_manager
-from agentmanager.core.tools import tool
+from agenthub.core.mcp import get_tool_manager
+from agenthub.core.tools import tool
 
 @tool(name="assignment_test_tool", description="Assignment test")
 def assignment_tool(data: str) -> dict:
@@ -224,7 +224,7 @@ async def test_tool_assignment():
 ```python
 # test_step2_mcp_execution.py
 import asyncio
-from agentmanager.core.mcp import get_tool_manager
+from agenthub.core.mcp import get_tool_manager
 
 async def test_mcp_execution():
     manager = get_tool_manager()
@@ -266,8 +266,8 @@ async def test_mcp_execution():
 ✅ **Tool Context Injection Test**:
 ```python
 # test_step3_tool_injection.py
-from agentmanager.runtime import get_tool_injector
-from agentmanager.core.tools import tool
+from agenthub.runtime import get_tool_injector
+from agenthub.core.tools import tool
 
 @tool(name="injection_test_tool", description="Injection test")
 def injection_tool(data: str) -> dict:
@@ -294,7 +294,7 @@ def test_tool_injection():
 ✅ **Agent Tool Assignment Test**:
 ```python
 # test_step3_agent_assignment.py
-from agentmanager.runtime import get_tool_injector
+from agenthub.runtime import get_tool_injector
 
 def test_agent_tool_assignment():
     injector = get_tool_injector()
@@ -330,8 +330,8 @@ def test_agent_tool_assignment():
 ```python
 # test_step4_agent_tool_discovery.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
+import agenthub as amg
+from agenthub.core.tools import tool
 
 @tool(name="discovery_test_tool", description="Discovery test")
 def discovery_tool(data: str) -> dict:
@@ -357,7 +357,7 @@ async def test_agent_tool_discovery():
 ```python
 # test_step4_agent_tool_execution.py
 import asyncio
-import agentmanager as amg
+import agenthub as amg
 
 async def test_agent_tool_execution():
     agent = amg.load_agent(
@@ -395,8 +395,8 @@ async def test_agent_tool_execution():
 ```python
 # test_step5_complete_api.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
+import agenthub as amg
+from agenthub.core.tools import tool
 
 @tool(name="user_custom_tool", description="User custom tool")
 def user_custom_tool(data: str) -> dict:
@@ -425,7 +425,7 @@ async def test_complete_user_api():
 ```python
 # test_step5_end_to_end.py
 import asyncio
-import agentmanager as amg
+import agenthub as amg
 
 async def test_end_to_end_workflow():
     # Test complete workflow: register tools -> load agent -> use tools
@@ -465,9 +465,9 @@ async def test_end_to_end_workflow():
 ```python
 # test_step6_error_handling.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
-from agentmanager.core.tools.exceptions import ToolNameConflictError, ToolAccessDeniedError
+import agenthub as amg
+from agenthub.core.tools import tool
+from agenthub.core.tools.exceptions import ToolNameConflictError, ToolAccessDeniedError
 
 # Test 1: Duplicate tool registration error
 try:
@@ -514,7 +514,7 @@ async def test_access_denied():
 # test_step7_concurrency.py
 import asyncio
 import time
-import agentmanager as amg
+import agenthub as amg
 
 async def test_concurrent_tool_execution():
     agent = amg.load_agent("test_agent", tools=["discovery_test_tool"])
@@ -550,8 +550,8 @@ async def test_concurrent_tool_execution():
 ```python
 # final_integration_test.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
+import agenthub as amg
+from agenthub.core.tools import tool
 
 # User defines custom tools
 @tool(name="market_analysis", description="Analyze market trends")

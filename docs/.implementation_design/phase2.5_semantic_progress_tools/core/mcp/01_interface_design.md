@@ -14,7 +14,7 @@ Define the public interfaces for MCP server management, tool routing, context tr
 ### **1. AgentToolManager Interface**
 
 ```python
-from agentmanager.core.mcp import AgentToolManager
+from agenthub.core.mcp import AgentToolManager
 from typing import Dict, List, Any, Optional
 
 # Create tool manager
@@ -42,7 +42,7 @@ await tool_manager.close()
 ### **2. MCP Server Interface**
 
 ```python
-from agentmanager.core.mcp import get_mcp_server, get_available_tools
+from agenthub.core.mcp import get_mcp_server, get_available_tools
 
 # Get MCP server instance
 mcp_server = get_mcp_server()
@@ -57,7 +57,7 @@ tool_metadata = get_tool_metadata(tool_name: str) -> Optional[Dict[str, Any]]
 ### **3. Tool Execution Interface**
 
 ```python
-from agentmanager.core.mcp import ToolExecutor
+from agenthub.core.mcp import ToolExecutor
 from typing import Dict, Any, Optional
 
 # Create tool executor

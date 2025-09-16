@@ -6,8 +6,8 @@ This example demonstrates how to use the framework-level run_resources() method
 for clean background server execution.
 """
 
-from agentmanager.core.tools import tool, run_resources, get_available_tools
-from agentmanager.config import get_config
+from agenthub.core.tools import tool, run_resources, get_available_tools
+from agenthub.config import get_config
 
 @tool(name="add", description="Add two numbers together")
 def add(a: int, b: int) -> int:

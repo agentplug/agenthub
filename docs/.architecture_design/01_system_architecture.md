@@ -10,7 +10,7 @@
 
 ## 🎯 **Executive Summary**
 
-Agent Hub is a CLI-based platform that transforms AI agent discovery and integration from a complex, weeks-long process into a simple, one-line experience. The system enables developers to use agents like Python packages: `import agentmanager as amg; agent = amg.load("meta/coding-agent")`.
+Agent Hub is a CLI-based platform that transforms AI agent discovery and integration from a complex, weeks-long process into a simple, one-line experience. The system enables developers to use agents like Python packages: `import agenthub as amg; agent = amg.load("meta/coding-agent")`.
 
 ### **Business Value**
 - **For Developers**: Eliminate 60-80% of agent integration overhead
@@ -290,7 +290,7 @@ sequenceDiagram
 - **UV Package Index**: Python package dependencies
 
 ### **Deployment Architecture**
-- **Distribution**: PyPI package (`pip install agentmanager`)
+- **Distribution**: PyPI package (`pip install agenthub`)
 - **Local Installation**: `~/.agenthub/` directory structure
 - **Configuration**: YAML-based configuration files
 - **Logging**: Structured logging for debugging and analytics

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from agentmanager.github.repository_validator import (
+from agenthub.github.repository_validator import (
     RepositoryValidator,
     ValidationResult,
     FileValidationResult
@@ -421,7 +421,7 @@ class TestRepositoryValidatorIntegration:
         
         # Create required files with realistic content
         (repo_path / "agent.py").write_text("""
-from agentmanager import Agent
+from agenthub import Agent
 
 class TestAgent(Agent):
     def run(self, input_data):

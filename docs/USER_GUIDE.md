@@ -34,7 +34,7 @@ agenthub --version
 agenthub install agentplug/scientific-paper-analyzer
 
 # Or programmatically
-python -c "from agentmanager import load_agent; agent = load_agent('agentplug/scientific-paper-analyzer')"
+python -c "from agenthub import load_agent; agent = load_agent('agentplug/scientific-paper-analyzer')"
 ```
 
 ## 🔧 Programmatic API
@@ -42,7 +42,7 @@ python -c "from agentmanager import load_agent; agent = load_agent('agentplug/sc
 ### Basic Usage
 
 ```python
-from agentmanager import load_agent
+from agenthub import load_agent
 
 # Auto-install and load an agent
 agent = load_agent("agentplug/scientific-paper-analyzer")
@@ -55,7 +55,7 @@ print(result)
 ### Advanced Installation
 
 ```python
-from agentmanager.github.auto_installer import AutoInstaller
+from agenthub.github.auto_installer import AutoInstaller
 
 # Create installer with environment setup
 installer = AutoInstaller(setup_environment=True)
@@ -75,7 +75,7 @@ else:
 ### Environment Management
 
 ```python
-from agentmanager.environment.environment_manager import AdvancedEnvironmentManager
+from agenthub.environment.environment_manager import AdvancedEnvironmentManager
 
 manager = AdvancedEnvironmentManager()
 
@@ -100,8 +100,8 @@ print(f"Saved {opt_result.space_saved_mb} MB")
 ### Repository Management
 
 ```python
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.repository_validator import RepositoryValidator
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_validator import RepositoryValidator
 
 # List installed agents
 cloner = RepositoryCloner()
@@ -284,7 +284,7 @@ done
 ```python
 # Development environment setup
 import os
-from agentmanager.environment.environment_manager import AdvancedEnvironmentManager
+from agenthub.environment.environment_manager import AdvancedEnvironmentManager
 
 manager = AdvancedEnvironmentManager()
 
@@ -437,7 +437,7 @@ agenthub python-versions
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-from agentmanager import load_agent
+from agenthub import load_agent
 agent = load_agent("developer/agent-name")
 ```
 
@@ -493,7 +493,7 @@ agenthub install agentplug/scientific-paper-analyzer
 
 # Use programmatically
 python -c "
-from agentmanager import load_agent
+from agenthub import load_agent
 agent = load_agent('agentplug/scientific-paper-analyzer')
 result = agent.analyze_paper(pdf_path='research.pdf')
 print(result['summary'])

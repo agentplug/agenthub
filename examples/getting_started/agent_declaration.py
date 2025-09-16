@@ -7,7 +7,7 @@ The framework will automatically explore tool information and inject
 it into agents via the command format.
 """
 
-import agentmanager as amg
+import agenthub as amg
 
 def main():
     print("🤖 Agent Declaration - User-Defined Agent Configuration")

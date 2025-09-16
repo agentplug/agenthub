@@ -3,9 +3,9 @@
 import pytest
 import json
 from unittest.mock import patch, MagicMock
-from agentmanager.core.agents.wrapper import AgentWrapper
-from agentmanager.core.tools.registry import ToolRegistry
-from agentmanager.core.tools.metadata import ToolMetadata
+from agenthub.core.agents.wrapper import AgentWrapper
+from agenthub.core.tools.registry import ToolRegistry
+from agenthub.core.tools.metadata import ToolMetadata
 
 
 class TestAgentWrapper:

@@ -187,7 +187,7 @@ pytest tests/phase2.5_tool_injection/core/tools/test_tool_decorator.py::TestTool
 
 ### **Show Test Coverage**
 ```bash
-pytest tests/phase2.5_tool_injection/ --cov=agentmanager --cov-report=html
+pytest tests/phase2.5_tool_injection/ --cov=agenthub --cov-report=html
 ```
 
 ## 📝 Writing New Tests

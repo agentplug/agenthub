@@ -2,9 +2,9 @@
 
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from agentmanager.core.tools.registry import ToolRegistry
-from agentmanager.core.tools.decorator import tool
-from agentmanager.core.tools.exceptions import ToolNameConflictError, ToolValidationError
+from agenthub.core.tools.registry import ToolRegistry
+from agenthub.core.tools.decorator import tool
+from agenthub.core.tools.exceptions import ToolNameConflictError, ToolValidationError
 
 
 class TestSimpleToolInjection:
@@ -17,7 +17,7 @@ class TestSimpleToolInjection:
         self.registry = ToolRegistry()
         
         # Import the global registry for decorator tests
-        from agentmanager.core.tools.registry import _registry
+        from agenthub.core.tools.registry import _registry
         self.global_registry = _registry
 
     @patch('mcp.client.sse.sse_client')
@@ -177,7 +177,7 @@ class TestSimpleToolInjection:
 
     def test_tool_metadata_creation(self):
         """Test tool metadata creation."""
-        from agentmanager.core.tools.metadata import ToolMetadata
+        from agenthub.core.tools.metadata import ToolMetadata
         
         def test_tool(param: str) -> str:
             return f"test: {param}"
@@ -199,7 +199,7 @@ class TestSimpleToolInjection:
 
     def test_tool_metadata_with_none_function(self):
         """Test tool metadata with None function (for MCP tools)."""
-        from agentmanager.core.tools.metadata import ToolMetadata
+        from agenthub.core.tools.metadata import ToolMetadata
         
         metadata = ToolMetadata(
             name="mcp_tool",

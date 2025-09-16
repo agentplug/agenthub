@@ -4,9 +4,9 @@ import pytest
 import asyncio
 import json
 from unittest.mock import patch, MagicMock, AsyncMock
-from agentmanager.core.tools.registry import ToolRegistry
-from agentmanager.core.tools.decorator import tool
-from agentmanager.sdk.load_agent import load_agent
+from agenthub.core.tools.registry import ToolRegistry
+from agenthub.core.tools.decorator import tool
+from agenthub.sdk.load_agent import load_agent
 
 
 class TestToolInjectionIntegration:

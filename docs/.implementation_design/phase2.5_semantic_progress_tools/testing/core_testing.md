@@ -25,8 +25,8 @@ Comprehensive testing strategy for core modules (tools and MCP) in Phase 2.5.
 ```python
 # tests/core/tools/test_registry.py
 import pytest
-from agentmanager.core.tools import ToolRegistry, ToolMetadata
-from agentmanager.core.tools.exceptions import ToolNameConflictError, ToolValidationError
+from agenthub.core.tools import ToolRegistry, ToolMetadata
+from agenthub.core.tools.exceptions import ToolNameConflictError, ToolValidationError
 
 class TestToolRegistry:
     def test_singleton_pattern(self):
@@ -83,7 +83,7 @@ class TestToolRegistry:
 ```python
 # tests/core/tools/test_decorator.py
 import pytest
-from agentmanager.core.tools import tool, get_available_tools
+from agenthub.core.tools import tool, get_available_tools
 
 class TestToolDecorator:
     def test_tool_decorator_basic(self):
@@ -109,7 +109,7 @@ class TestToolDecorator:
         def metadata_function(data: str) -> dict:
             return {"result": data}
         
-        from agentmanager.core.tools import get_tool_metadata
+        from agenthub.core.tools import get_tool_metadata
         metadata = get_tool_metadata("metadata_tool")
         
         assert metadata.name == "metadata_tool"
@@ -123,8 +123,8 @@ class TestToolDecorator:
 ```python
 # tests/core/tools/test_validator.py
 import pytest
-from agentmanager.core.tools.validator import ToolValidator
-from agentmanager.core.tools.exceptions import ToolValidationError, ToolNameConflictError
+from agenthub.core.tools.validator import ToolValidator
+from agenthub.core.tools.exceptions import ToolValidationError, ToolNameConflictError
 
 class TestToolValidator:
     def test_validate_tool_name(self):
@@ -170,8 +170,8 @@ class TestToolValidator:
 # tests/core/mcp/test_manager.py
 import pytest
 import asyncio
-from agentmanager.core.mcp import AgentToolManager, ToolExecutionContext
-from agentmanager.core.mcp.exceptions import ToolAccessDeniedError, ToolExecutionError
+from agenthub.core.mcp import AgentToolManager, ToolExecutionContext
+from agenthub.core.mcp.exceptions import ToolAccessDeniedError, ToolExecutionError
 
 class TestAgentToolManager:
     def test_tool_assignment(self):
@@ -238,8 +238,8 @@ class TestAgentToolManager:
 # tests/core/mcp/test_queue.py
 import pytest
 import asyncio
-from agentmanager.core.mcp import ToolExecutionQueue, QueuedToolExecution
-from agentmanager.core.mcp.exceptions import ToolTimeoutError, ToolExecutionError
+from agenthub.core.mcp import ToolExecutionQueue, QueuedToolExecution
+from agenthub.core.mcp.exceptions import ToolTimeoutError, ToolExecutionError
 
 class TestToolExecutionQueue:
     @pytest.mark.asyncio
@@ -288,7 +288,7 @@ class TestToolExecutionQueue:
 import pytest
 import threading
 import time
-from agentmanager.core.tools import tool, get_available_tools
+from agenthub.core.tools import tool, get_available_tools
 
 class TestConcurrency:
     def test_concurrent_tool_registration(self):
@@ -352,7 +352,7 @@ class TestConcurrency:
 # tests/core/tools/test_performance.py
 import pytest
 import time
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 class TestPerformance:
     def test_tool_registration_performance(self):
@@ -398,8 +398,8 @@ class TestPerformance:
 ```python
 # tests/core/tools/test_errors.py
 import pytest
-from agentmanager.core.tools import tool
-from agentmanager.core.tools.exceptions import (
+from agenthub.core.tools import tool
+from agenthub.core.tools.exceptions import (
     ToolRegistrationError,
     ToolNameConflictError,
     ToolValidationError,
@@ -454,7 +454,7 @@ pytest tests/core/tools/
 pytest tests/core/mcp/
 
 # Run with coverage
-pytest tests/core/ --cov=agentmanager.core --cov-report=html
+pytest tests/core/ --cov=agenthub.core --cov-report=html
 ```
 
 ### **Continuous Integration**

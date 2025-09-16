@@ -82,7 +82,7 @@ This directory contains **implementation-level design documents** organized by d
 - **cli/**: Enhanced CLI with registry integration
 
 **Deliverables**:
-- ✅ `import agentmanager as amg` works
+- ✅ `import agenthub as amg` works
 - ✅ `amg.load("agentplug/agent-name")` works
 - ✅ `agent.method_name()` executes correctly
 - ✅ Foundation for Phase 4

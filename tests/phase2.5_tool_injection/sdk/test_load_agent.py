@@ -2,8 +2,8 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-from agentmanager.sdk.load_agent import load_agent
-from agentmanager.core.tools.exceptions import ToolNotFoundError
+from agenthub.sdk.load_agent import load_agent
+from agenthub.core.tools.exceptions import ToolNotFoundError
 
 
 class TestLoadAgent:

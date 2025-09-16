@@ -34,7 +34,7 @@ FastMCP
 ### **1. ToolRegistry Class**
 
 ```python
-# agentmanager/core/tools/registry.py
+# agenthub/core/tools/registry.py
 from fastmcp import FastMCP
 from typing import Dict, List, Callable, Any, Optional
 import threading
@@ -149,7 +149,7 @@ class ToolRegistry:
 ### **2. Tool Decorator**
 
 ```python
-# agentmanager/core/tools/__init__.py
+# agenthub/core/tools/__init__.py
 from .registry import ToolRegistry, ToolMetadata
 from typing import List, Optional
 
@@ -178,7 +178,7 @@ def get_mcp_server():
 ### **3. Tool Validation**
 
 ```python
-# agentmanager/core/tools/validator.py
+# agenthub/core/tools/validator.py
 import inspect
 from typing import Callable, Any
 from .exceptions import ToolValidationError, ToolNameConflictError
@@ -217,7 +217,7 @@ class ToolValidator:
 ### **4. Error Handling**
 
 ```python
-# agentmanager/core/tools/exceptions.py
+# agenthub/core/tools/exceptions.py
 class ToolError(Exception):
     """Base exception for tool-related errors"""
     pass

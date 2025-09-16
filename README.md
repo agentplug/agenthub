@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Beta-green.svg)]()
-[![PyPI](https://img.shields.io/badge/PyPI-agentmanager-blue.svg)](https://pypi.org/project/agentmanager/)
+[![PyPI](https://img.shields.io/badge/PyPI-agenthub-blue.svg)](https://pypi.org/project/agenthub/)
 
 [📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
 
@@ -33,7 +33,7 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub is t
 ### With AgentHub
 ```python
 # One line, 30 seconds
-import agentmanager as amg
+import agenthub as amg
 coding_agent = amg.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
@@ -63,7 +63,7 @@ code = coding_agent.generate_code("neural network class")
 
 ```python
 # 🚀 Instantly use any agent from GitHub
-import agentmanager as amg
+import agenthub as amg
 
 # Scientific paper analysis
 paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
@@ -88,7 +88,7 @@ insights = data_agent.analyze("sales_data.csv")
 
 ```python
 # 🔧 Define custom tools with @tool decorator
-from agentmanager.core.tools import tool, run_resources
+from agenthub.core.tools import tool, run_resources
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 10) -> list:
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
 ```python
 # 🤖 Use tools with agents (run in separate process/terminal)
-import agentmanager as amg
+import agenthub as amg
 
 # Load agent with custom tools
 agent = amg.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
@@ -207,7 +207,7 @@ AgentHub uses a **three-layer architecture** designed for security, scalability,
 
 ```bash
 # Install AgentHub in 30 seconds
-pip install agentmanager
+pip install agenthub
 
 # Verify installation
 agenthub --version
@@ -216,7 +216,7 @@ agenthub --version
 ### 🎯 Your First Agent (30 seconds)
 
 ```python
-import agentmanager as amg
+import agenthub as amg
 
 # 🪄 One line to rule them all
 paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
@@ -263,7 +263,7 @@ Create and run your first tool server:
 """
 Complete tool server example using run_resources()
 """
-from agentmanager.core.tools import tool, run_resources
+from agenthub.core.tools import tool, run_resources
 
 @tool(name="calculator", description="Perform basic math operations")
 def calculator(operation: str, a: float, b: float) -> float:
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 
 ```python
 # Use the tools with agents (run in separate terminal/process)
-import agentmanager as amg
+import agenthub as amg
 
 # Load agent with your custom tools
 agent = amg.load_agent("agentplug/analysis-agent", tools=["calculator", "text_processor"])
@@ -362,8 +362,8 @@ agenthub agent migrate user/agent  # Migrate to different Python version
 
 **Python SDK:**
 ```python
-from agentmanager import load_agent, list_agents, remove_agent
-from agentmanager.core.tools import tool, run_resources
+from agenthub import load_agent, list_agents, remove_agent
+from agenthub.core.tools import tool, run_resources
 
 # Core functions
 agent = load_agent("user/agent")      # Install if needed
@@ -508,7 +508,7 @@ pytest tests/ -v
 pytest tests/phase2.5_tool_injection/test_simple.py -v
 
 # Run with coverage
-pytest tests/ --cov=agentmanager --cov-report=html
+pytest tests/ --cov=agenthub --cov-report=html
 ```
 
 ### 🎯 Key Performance Indicators

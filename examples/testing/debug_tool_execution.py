@@ -7,8 +7,8 @@ This demo shows the actual tool execution process with detailed logging.
 
 import asyncio
 import json
-import agentmanager as amg
-from agentmanager.core.tools import tool, get_available_tools
+import agenthub as amg
+from agenthub.core.tools import tool, get_available_tools
 
 # Define tools with detailed logging
 @tool(name="web_search", description="Search the web for real-time information")

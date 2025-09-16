@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agentmanager.runtime.process_manager import ProcessManager
+from agenthub.runtime.process_manager import ProcessManager
 
 
 class TestProcessManager:

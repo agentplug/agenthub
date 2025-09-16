@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from agentmanager.storage.local_storage import LocalStorage
+from agenthub.storage.local_storage import LocalStorage
 
 
 class TestLocalStorage:

@@ -8,7 +8,7 @@ All examples are production-ready and validated.
 """
 
 
-import agentmanager as amg
+import agenthub as amg
 
 # Configure logging to suppress HTTP logs
 amg.set_quiet_mode(True)

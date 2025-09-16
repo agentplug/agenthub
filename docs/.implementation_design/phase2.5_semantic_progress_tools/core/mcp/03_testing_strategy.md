@@ -26,8 +26,8 @@ Comprehensive testing strategy for MCP server management, tool routing, context 
 # tests/core/mcp/test_manager.py
 import pytest
 import asyncio
-from agentmanager.core.mcp import AgentToolManager, ToolExecutionContext
-from agentmanager.core.mcp.exceptions import ToolAccessDeniedError, ToolExecutionError
+from agenthub.core.mcp import AgentToolManager, ToolExecutionContext
+from agenthub.core.mcp.exceptions import ToolAccessDeniedError, ToolExecutionError
 
 class TestAgentToolManager:
     def test_tool_assignment(self):
@@ -157,8 +157,8 @@ class TestAgentToolManager:
 # tests/core/mcp/test_queue.py
 import pytest
 import asyncio
-from agentmanager.core.mcp import ToolExecutionQueue, QueuedToolExecution
-from agentmanager.core.mcp.exceptions import ToolTimeoutError, ToolExecutionError
+from agenthub.core.mcp import ToolExecutionQueue, QueuedToolExecution
+from agenthub.core.mcp.exceptions import ToolTimeoutError, ToolExecutionError
 
 class TestToolExecutionQueue:
     @pytest.mark.asyncio
@@ -269,8 +269,8 @@ class TestToolExecutionQueue:
 import pytest
 import asyncio
 from fastmcp import FastMCP, Client
-from agentmanager.core.tools import tool, get_mcp_server
-from agentmanager.core.mcp import get_tool_manager
+from agenthub.core.tools import tool, get_mcp_server
+from agenthub.core.mcp import get_tool_manager
 
 class TestFastMCPIntegration:
     @pytest.mark.asyncio
@@ -358,8 +358,8 @@ class TestFastMCPIntegration:
 # tests/core/mcp/test_routing.py
 import pytest
 import asyncio
-from agentmanager.core.mcp import get_tool_manager
-from agentmanager.core.tools import tool
+from agenthub.core.mcp import get_tool_manager
+from agenthub.core.tools import tool
 
 class TestToolRouting:
     @pytest.mark.asyncio
@@ -424,8 +424,8 @@ class TestToolRouting:
 import pytest
 import asyncio
 import threading
-from agentmanager.core.mcp import get_tool_manager
-from agentmanager.core.tools import tool
+from agenthub.core.mcp import get_tool_manager
+from agenthub.core.tools import tool
 
 class TestConcurrency:
     @pytest.mark.asyncio
@@ -480,7 +480,7 @@ class TestConcurrency:
     @pytest.mark.asyncio
     async def test_concurrent_tool_execution_with_queue(self):
         """Test concurrent tool execution with queue"""
-        from agentmanager.core.mcp import get_execution_queue
+        from agenthub.core.mcp import get_execution_queue
         
         # Define test tool
         @tool(name="queued_tool", description="Queued execution test")
@@ -515,13 +515,13 @@ class TestConcurrency:
 # tests/core/mcp/test_errors.py
 import pytest
 import asyncio
-from agentmanager.core.mcp import get_tool_manager
-from agentmanager.core.mcp.exceptions import (
+from agenthub.core.mcp import get_tool_manager
+from agenthub.core.mcp.exceptions import (
     ToolExecutionError,
     ToolAccessDeniedError,
     ToolTimeoutError
 )
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 class TestErrorHandling:
     @pytest.mark.asyncio
@@ -561,7 +561,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_tool_timeout_error(self):
         """Test tool timeout error"""
-        from agentmanager.core.mcp import get_execution_queue
+        from agenthub.core.mcp import get_execution_queue
         
         # Define slow tool
         @tool(name="slow_tool", description="Slow tool")
@@ -594,8 +594,8 @@ class TestErrorHandling:
 import pytest
 import asyncio
 import time
-from agentmanager.core.mcp import get_tool_manager
-from agentmanager.core.tools import tool
+from agenthub.core.mcp import get_tool_manager
+from agenthub.core.tools import tool
 
 class TestPerformance:
     @pytest.mark.asyncio
@@ -683,7 +683,7 @@ pytest tests/core/mcp/test_fastmcp_integration.py
 pytest tests/core/mcp/test_concurrency.py
 
 # Run with coverage
-pytest tests/core/mcp/ --cov=agentmanager.core.mcp --cov-report=html
+pytest tests/core/mcp/ --cov=agenthub.core.mcp --cov-report=html
 ```
 
 ### **Continuous Integration**

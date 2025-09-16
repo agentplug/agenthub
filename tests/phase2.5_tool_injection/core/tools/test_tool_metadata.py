@@ -1,7 +1,7 @@
 """Unit tests for tool metadata functionality."""
 
 import pytest
-from agentmanager.core.tools.metadata import ToolMetadata
+from agenthub.core.tools.metadata import ToolMetadata
 
 
 class TestToolMetadata:

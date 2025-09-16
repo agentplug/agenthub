@@ -3,9 +3,9 @@
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
-from agentmanager.core.tools.decorator import tool
-from agentmanager.core.tools.registry import ToolRegistry
-from agentmanager.core.tools.exceptions import ToolNameConflictError, ToolValidationError
+from agenthub.core.tools.decorator import tool
+from agenthub.core.tools.registry import ToolRegistry
+from agenthub.core.tools.exceptions import ToolNameConflictError, ToolValidationError
 
 
 class TestToolDecorator:

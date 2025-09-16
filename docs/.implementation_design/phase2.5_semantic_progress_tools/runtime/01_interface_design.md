@@ -14,7 +14,7 @@ Define the public interfaces for tool injection into agent context, MCP client i
 ### **1. ToolInjector Interface**
 
 ```python
-from agentmanager.runtime import ToolInjector
+from agenthub.runtime import ToolInjector
 from typing import Dict, List, Any, Optional
 
 # Create tool injector
@@ -40,7 +40,7 @@ tool_examples = tool_injector.get_tool_examples(
 ### **2. AgentContextManager Interface**
 
 ```python
-from agentmanager.runtime import AgentContextManager
+from agenthub.runtime import AgentContextManager
 from typing import Dict, List, Any, Optional
 
 # Create context manager
@@ -69,7 +69,7 @@ context_manager.cleanup_agent_context(agent_id: str) -> bool
 ### **3. MCPClientManager Interface**
 
 ```python
-from agentmanager.runtime import MCPClientManager
+from agenthub.runtime import MCPClientManager
 from typing import Dict, Any, Optional
 
 # Create MCP client manager

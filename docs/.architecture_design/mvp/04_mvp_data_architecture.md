@@ -547,7 +547,7 @@ sequenceDiagram
 
 #### **Agent Manifest Validation**
 ```python
-# agentmanager/validation/manifest_validator.py
+# agenthub/validation/manifest_validator.py
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
 
@@ -593,7 +593,7 @@ class AgentManifest(BaseModel):
 
 #### **Parameter Validation**
 ```python
-# agentmanager/validation/parameter_validator.py
+# agenthub/validation/parameter_validator.py
 from typing import Any, Dict, List
 import json
 
@@ -670,7 +670,7 @@ class ParameterValidator:
 
 #### **Checksum Validation**
 ```python
-# agentmanager/security/checksum_validator.py
+# agenthub/security/checksum_validator.py
 import hashlib
 from pathlib import Path
 from typing import Optional
@@ -724,7 +724,7 @@ class ChecksumValidator:
 
 #### **Cache Manager Implementation**
 ```python
-# agentmanager/cache/cache_manager.py
+# agenthub/cache/cache_manager.py
 import json
 import time
 import shutil
@@ -853,7 +853,7 @@ class CacheManager:
 
 #### **Package Compression**
 ```python
-# agentmanager/storage/compression.py
+# agenthub/storage/compression.py
 import gzip
 import tarfile
 import zipfile
@@ -913,7 +913,7 @@ class CompressionManager:
 
 #### **Analytics Collector**
 ```python
-# agentmanager/analytics/usage_collector.py
+# agenthub/analytics/usage_collector.py
 import json
 import time
 from pathlib import Path

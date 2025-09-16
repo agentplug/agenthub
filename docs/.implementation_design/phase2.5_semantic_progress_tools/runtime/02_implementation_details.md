@@ -36,9 +36,9 @@ MCPClientManager
 ### **1. ToolInjector Class**
 
 ```python
-# agentmanager/runtime/tool_injector.py
-from agentmanager.core.tools import get_tool_metadata, get_available_tools
-from agentmanager.core.mcp import get_tool_manager
+# agenthub/runtime/tool_injector.py
+from agenthub.core.tools import get_tool_metadata, get_available_tools
+from agenthub.core.mcp import get_tool_manager
 from typing import Dict, List, Any, Optional
 import asyncio
 from dataclasses import dataclass
@@ -165,7 +165,7 @@ class ToolInjector:
 ### **2. AgentContextManager Class**
 
 ```python
-# agentmanager/runtime/context_manager.py
+# agenthub/runtime/context_manager.py
 from typing import Dict, List, Any, Optional
 import threading
 from dataclasses import dataclass
@@ -292,10 +292,10 @@ class AgentContextManager:
 ### **3. MCPClientManager Class**
 
 ```python
-# agentmanager/runtime/mcp_client_manager.py
+# agenthub/runtime/mcp_client_manager.py
 from fastmcp import Client
-from agentmanager.core.tools import get_mcp_server
-from agentmanager.core.mcp import get_tool_manager
+from agenthub.core.tools import get_mcp_server
+from agenthub.core.mcp import get_tool_manager
 from typing import Dict, Any, Optional
 import asyncio
 import threading
@@ -425,7 +425,7 @@ class MCPClientManager:
 ### **4. Runtime Module Integration**
 
 ```python
-# agentmanager/runtime/__init__.py
+# agenthub/runtime/__init__.py
 from .tool_injector import ToolInjector
 from .context_manager import AgentContextManager
 from .mcp_client_manager import MCPClientManager

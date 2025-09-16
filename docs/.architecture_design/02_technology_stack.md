@@ -238,7 +238,7 @@ class RegistryClient:
 ```python
 # tests/test_agent_runtime.py
 import pytest
-from agentmanager.runtime import ProcessManager
+from agenthub.runtime import ProcessManager
 
 class TestProcessManager:
     @pytest.fixture

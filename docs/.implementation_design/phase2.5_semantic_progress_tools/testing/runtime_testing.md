@@ -25,9 +25,9 @@ Comprehensive testing strategy for runtime module (tool injection, agent context
 ```python
 # tests/runtime/test_tool_injector.py
 import pytest
-from agentmanager.runtime import ToolInjector
-from agentmanager.core.tools import tool
-from agentmanager.runtime.exceptions import ToolInjectionError
+from agenthub.runtime import ToolInjector
+from agenthub.core.tools import tool
+from agenthub.runtime.exceptions import ToolInjectionError
 
 class TestToolInjector:
     def test_tool_injection_basic(self):
@@ -119,8 +119,8 @@ class TestToolInjector:
 ```python
 # tests/runtime/test_context_manager.py
 import pytest
-from agentmanager.runtime import AgentContextManager
-from agentmanager.runtime.exceptions import AgentContextError
+from agenthub.runtime import AgentContextManager
+from agenthub.runtime.exceptions import AgentContextError
 
 class TestAgentContextManager:
     def test_create_agent_context(self):
@@ -247,9 +247,9 @@ class TestAgentContextManager:
 # tests/runtime/test_mcp_client_manager.py
 import pytest
 import asyncio
-from agentmanager.runtime import MCPClientManager
-from agentmanager.core.tools import tool
-from agentmanager.runtime.exceptions import MCPClientError
+from agenthub.runtime import MCPClientManager
+from agenthub.core.tools import tool
+from agenthub.runtime.exceptions import MCPClientError
 
 class TestMCPClientManager:
     @pytest.mark.asyncio
@@ -344,8 +344,8 @@ class TestMCPClientManager:
 # tests/runtime/test_tool_injection_integration.py
 import pytest
 import asyncio
-from agentmanager.runtime import get_tool_injector, get_context_manager, get_client_manager
-from agentmanager.core.tools import tool
+from agenthub.runtime import get_tool_injector, get_context_manager, get_client_manager
+from agenthub.core.tools import tool
 
 class TestToolInjectionIntegration:
     @pytest.mark.asyncio
@@ -405,8 +405,8 @@ class TestToolInjectionIntegration:
 ```python
 # tests/runtime/test_context_management_integration.py
 import pytest
-from agentmanager.runtime import get_tool_injector, get_context_manager
-from agentmanager.core.tools import tool
+from agenthub.runtime import get_tool_injector, get_context_manager
+from agenthub.core.tools import tool
 
 class TestContextManagementIntegration:
     def test_context_lifecycle_management(self):
@@ -472,8 +472,8 @@ class TestContextManagementIntegration:
 # tests/runtime/test_performance.py
 import pytest
 import time
-from agentmanager.runtime import get_tool_injector, get_context_manager
-from agentmanager.core.tools import tool
+from agenthub.runtime import get_tool_injector, get_context_manager
+from agenthub.core.tools import tool
 
 class TestPerformance:
     def test_tool_injection_performance(self):
@@ -578,8 +578,8 @@ class TestPerformance:
 ```python
 # tests/runtime/test_errors.py
 import pytest
-from agentmanager.runtime import ToolInjector, AgentContextManager, MCPClientManager
-from agentmanager.runtime.exceptions import (
+from agenthub.runtime import ToolInjector, AgentContextManager, MCPClientManager
+from agenthub.runtime.exceptions import (
     ToolInjectionError,
     AgentContextError,
     MCPClientError
@@ -650,7 +650,7 @@ pytest tests/runtime/test_context_manager.py
 pytest tests/runtime/test_mcp_client_manager.py
 
 # Run with coverage
-pytest tests/runtime/ --cov=agentmanager.runtime --cov-report=html
+pytest tests/runtime/ --cov=agenthub.runtime --cov-report=html
 ```
 
 ### **Continuous Integration**

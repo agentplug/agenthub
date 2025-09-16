@@ -10,14 +10,14 @@ import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from agentmanager.github.auto_installer import (
+from agenthub.github.auto_installer import (
     AutoInstaller, 
     InstallationResult, 
     InstallationError
 )
-from agentmanager.github.url_parser import URLParser
-from agentmanager.github.repository_cloner import RepositoryCloner, CloneResult
-from agentmanager.github.repository_validator import RepositoryValidator, ValidationResult
+from agenthub.github.url_parser import URLParser
+from agenthub.github.repository_cloner import RepositoryCloner, CloneResult
+from agenthub.github.repository_validator import RepositoryValidator, ValidationResult
 
 
 class TestAutoInstaller:

@@ -60,7 +60,7 @@ class ProcessManager:
 
 #### **Usage Example**
 ```python
-from agentmanager.runtime.process_manager import ProcessManager
+from agenthub.runtime.process_manager import ProcessManager
 
 # Create process manager
 pm = ProcessManager()
@@ -147,7 +147,7 @@ class EnvironmentManager:
 
 #### **Usage Example**
 ```python
-from agentmanager.runtime.environment_manager import EnvironmentManager
+from agenthub.runtime.environment_manager import EnvironmentManager
 
 # Create environment manager
 em = EnvironmentManager()
@@ -241,7 +241,7 @@ class AgentRuntime:
 
 #### **Usage Example**
 ```python
-from agentmanager.runtime.agent_runtime import AgentRuntime
+from agenthub.runtime.agent_runtime import AgentRuntime
 
 # Create agent runtime
 ar = AgentRuntime()

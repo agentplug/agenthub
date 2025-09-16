@@ -14,7 +14,7 @@
 As AI agent developers and users, we struggle with the fragmented and complex process of sharing, discovering, and integrating AI agents into existing systems, which causes significant development overhead, reduced adoption rates, and prevents the AI agent ecosystem from reaching its full potential.
 
 ### Solution Vision
-Create a CLI-based Agent Hub MVP that enables one-line agent integration (`import agentmanager as amg; agent = amg.load("meta/coding-agent")`) with process-based isolation for dependency management and local execution for fast development iteration.
+Create a CLI-based Agent Hub MVP that enables one-line agent integration (`import agenthub as amg; agent = amg.load("meta/coding-agent")`) with process-based isolation for dependency management and local execution for fast development iteration.
 
 ### Business Value Justification
 - **For Developers**: Eliminate distribution infrastructure overhead, reach broader audience
@@ -216,7 +216,7 @@ agenthub recommend                     # Get agent recommendations
 
 ### Python SDK Interface
 ```python
-import agentmanager as amg
+import agenthub as amg
 
 # Load and use agents
 agent = amg.load("meta/coding-agent")

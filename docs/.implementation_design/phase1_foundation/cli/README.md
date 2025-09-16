@@ -250,7 +250,7 @@ if __name__ == '__main__':
 def list_all_agents():
     """List all installed agents."""
     try:
-        from agentmanager.storage import LocalStorageManager
+        from agenthub.storage import LocalStorageManager
         
         storage = LocalStorageManager()
         agents = storage.list_agents()
@@ -281,7 +281,7 @@ def list_all_agents():
 def show_agent_details(agent_name):
     """Show detailed information about a specific agent."""
     try:
-        from agentmanager.core import AgentLoader
+        from agenthub.core import AgentLoader
         
         loader = AgentLoader()
         agent_info = loader.load_agent(agent_name)
@@ -330,7 +330,7 @@ def handle_error(error, context=""):
 def test_agent_method(agent_name, method, params):
     """Test agent method execution."""
     try:
-        from agentmanager.runtime import AgentRuntime
+        from agenthub.runtime import AgentRuntime
         
         runtime = AgentRuntime()
         

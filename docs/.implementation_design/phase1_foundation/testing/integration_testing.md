@@ -336,8 +336,8 @@ def clean_integration_env(integration_test_env):
 # tests/phase1_foundation/integration/test_runtime_storage.py
 import pytest
 from pathlib import Path
-from agentmanager.runtime.agent_runtime import AgentRuntime
-from agentmanager.storage.local_storage import LocalStorageManager
+from agenthub.runtime.agent_runtime import AgentRuntime
+from agenthub.storage.local_storage import LocalStorageManager
 
 class TestRuntimeStorageIntegration:
     def test_agent_execution_flow(self, clean_integration_env):
@@ -406,8 +406,8 @@ if __name__ == "__main__":
 ```python
 # tests/phase1_foundation/integration/test_core_storage.py
 import pytest
-from agentmanager.core.agent_loader import AgentLoader
-from agentmanager.storage.local_storage import LocalStorageManager
+from agenthub.core.agent_loader import AgentLoader
+from agenthub.storage.local_storage import LocalStorageManager
 
 class TestCoreStorageIntegration:
     def test_agent_loading_flow(self, clean_integration_env):
@@ -460,8 +460,8 @@ def test_method(prompt):
 # tests/phase1_foundation/integration/test_cli_storage.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
-from agentmanager.storage.local_storage import LocalStorageManager
+from agenthub.cli.main import cli
+from agenthub.storage.local_storage import LocalStorageManager
 
 class TestCLIStorageIntegration:
     def test_cli_agent_management_flow(self, clean_integration_env):

@@ -4,8 +4,8 @@ import pytest
 import time
 import threading
 import asyncio
-from agentmanager.core.tools.registry import ToolRegistry
-from agentmanager.core.tools.decorator import tool
+from agenthub.core.tools.registry import ToolRegistry
+from agenthub.core.tools.decorator import tool
 
 
 class TestToolInjectionPerformance:

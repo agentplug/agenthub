@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from agentmanager.environment.environment_manager import (
+from agenthub.environment.environment_manager import (
     AdvancedEnvironmentManager, 
     MigrationResult, 
     CloneResult, 
@@ -75,7 +75,7 @@ dependencies = ["requests", "pandas"]
         with patch.object(manager, '_get_current_python_version') as mock_version:
             mock_version.side_effect = ["3.9.0", "3.10"]  # First call returns original, second returns new
             with patch.object(manager.env_setup, 'setup_environment') as mock_setup:
-                from agentmanager.environment.environment_setup import EnvironmentSetupResult
+                from agenthub.environment.environment_setup import EnvironmentSetupResult
                 mock_setup.return_value = EnvironmentSetupResult(
                     success=True,
                     agent_path=str(agent_path),
@@ -248,7 +248,7 @@ dependencies = ["requests", "pandas"]
         with patch.object(manager, '_get_current_python_version') as mock_version:
             mock_version.side_effect = ["3.9.0", "3.10"]  # First call returns original, second returns new
             with patch.object(manager.env_setup, 'setup_environment') as mock_setup:
-                from agentmanager.environment.environment_setup import EnvironmentSetupResult
+                from agenthub.environment.environment_setup import EnvironmentSetupResult
                 mock_setup.return_value = EnvironmentSetupResult(
                     success=True,
                     agent_path=str(agent_path),
@@ -363,7 +363,7 @@ numpy>=1.21.0
         with patch.object(manager, '_get_current_python_version') as mock_version:
             mock_version.side_effect = ["3.9.7", "3.10.0"]  # First call returns original, second returns new
             with patch.object(manager.env_setup, 'setup_environment') as mock_setup:
-                from agentmanager.environment.environment_setup import EnvironmentSetupResult
+                from agenthub.environment.environment_setup import EnvironmentSetupResult
                 mock_setup.return_value = EnvironmentSetupResult(
                     success=True,
                     agent_path=str(agent_path),
@@ -439,7 +439,7 @@ numpy>=1.21.0
         with patch.object(manager, '_get_current_python_version') as mock_version:
             mock_version.side_effect = ["3.8.10", "3.10.0"]  # First call returns original, second returns new
             with patch.object(manager.env_setup, 'setup_environment') as mock_setup:
-                from agentmanager.environment.environment_setup import EnvironmentSetupResult
+                from agenthub.environment.environment_setup import EnvironmentSetupResult
                 mock_setup.return_value = EnvironmentSetupResult(
                     success=True,
                     agent_path=str(agent_path),

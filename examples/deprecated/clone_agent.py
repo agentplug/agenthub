@@ -1,4 +1,4 @@
-from agentmanager.github import RepositoryValidator, URLParser, RepositoryCloner
+from agenthub.github import RepositoryValidator, URLParser, RepositoryCloner
 
 # Complete GitHub module functionality
 parser = URLParser()

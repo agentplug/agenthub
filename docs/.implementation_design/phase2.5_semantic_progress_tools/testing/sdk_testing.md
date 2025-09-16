@@ -25,9 +25,9 @@ Comprehensive testing strategy for SDK module (enhanced load_agent, tool assignm
 ```python
 # tests/sdk/test_load_agent.py
 import pytest
-from agentmanager.sdk import load_agent, EnhancedAgent
-from agentmanager.core.tools import tool
-from agentmanager.sdk.exceptions import AgentLoadingError, ToolAssignmentError
+from agenthub.sdk import load_agent, EnhancedAgent
+from agenthub.core.tools import tool
+from agenthub.sdk.exceptions import AgentLoadingError, ToolAssignmentError
 
 class TestLoadAgent:
     def test_load_agent_without_tools(self):
@@ -138,9 +138,9 @@ class TestLoadAgent:
 ```python
 # tests/sdk/test_enhanced_agent.py
 import pytest
-from agentmanager.sdk import load_agent, EnhancedAgent
-from agentmanager.core.tools import tool
-from agentmanager.sdk.exceptions import ToolAccessDeniedError
+from agenthub.sdk import load_agent, EnhancedAgent
+from agenthub.core.tools import tool
+from agenthub.sdk.exceptions import ToolAccessDeniedError
 
 class TestEnhancedAgent:
     def test_enhanced_agent_creation(self):
@@ -247,9 +247,9 @@ class TestEnhancedAgent:
 ```python
 # tests/sdk/test_tool_assignment.py
 import pytest
-from agentmanager.sdk import load_agent, assign_tools_to_agent, get_agent_tools, remove_tools_from_agent
-from agentmanager.core.tools import tool
-from agentmanager.sdk.exceptions import ToolAssignmentError
+from agenthub.sdk import load_agent, assign_tools_to_agent, get_agent_tools, remove_tools_from_agent
+from agenthub.core.tools import tool
+from agenthub.sdk.exceptions import ToolAssignmentError
 
 class TestToolAssignment:
     def test_assign_tools_to_agent(self):
@@ -361,9 +361,9 @@ class TestToolAssignment:
 # tests/sdk/test_tool_execution.py
 import pytest
 import asyncio
-from agentmanager.sdk import load_agent, execute_tool_for_agent, execute_tool_for_agent_with_retry
-from agentmanager.core.tools import tool
-from agentmanager.sdk.exceptions import ToolExecutionError, ToolAccessDeniedError
+from agenthub.sdk import load_agent, execute_tool_for_agent, execute_tool_for_agent_with_retry
+from agenthub.core.tools import tool
+from agenthub.sdk.exceptions import ToolExecutionError, ToolAccessDeniedError
 
 class TestToolExecution:
     @pytest.mark.asyncio
@@ -453,8 +453,8 @@ class TestToolExecution:
 ```python
 # tests/sdk/test_tool_discovery.py
 import pytest
-from agentmanager.sdk import load_agent, ToolDiscovery
-from agentmanager.core.tools import tool
+from agenthub.sdk import load_agent, ToolDiscovery
+from agenthub.core.tools import tool
 
 class TestToolDiscovery:
     def test_tool_discovery_creation(self):
@@ -588,8 +588,8 @@ class TestToolDiscovery:
 # tests/sdk/test_sdk_integration.py
 import pytest
 import asyncio
-from agentmanager.sdk import load_agent, assign_tools_to_agent, execute_tool_for_agent
-from agentmanager.core.tools import tool
+from agenthub.sdk import load_agent, assign_tools_to_agent, execute_tool_for_agent
+from agenthub.core.tools import tool
 
 class TestSDKIntegration:
     @pytest.mark.asyncio
@@ -677,8 +677,8 @@ class TestSDKIntegration:
 # tests/sdk/test_performance.py
 import pytest
 import time
-from agentmanager.sdk import load_agent, assign_tools_to_agent
-from agentmanager.core.tools import tool
+from agenthub.sdk import load_agent, assign_tools_to_agent
+from agenthub.core.tools import tool
 
 class TestPerformance:
     def test_load_agent_performance(self):
@@ -765,8 +765,8 @@ class TestPerformance:
 ```python
 # tests/sdk/test_errors.py
 import pytest
-from agentmanager.sdk import load_agent, assign_tools_to_agent, execute_tool_for_agent
-from agentmanager.sdk.exceptions import (
+from agenthub.sdk import load_agent, assign_tools_to_agent, execute_tool_for_agent
+from agenthub.sdk.exceptions import (
     AgentLoadingError,
     ToolAssignmentError,
     ToolAccessDeniedError,
@@ -834,7 +834,7 @@ pytest tests/sdk/test_enhanced_agent.py
 pytest tests/sdk/test_tool_assignment.py
 
 # Run with coverage
-pytest tests/sdk/ --cov=agentmanager.sdk --cov-report=html
+pytest tests/sdk/ --cov=agenthub.sdk --cov-report=html
 ```
 
 ### **Continuous Integration**

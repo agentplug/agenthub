@@ -69,7 +69,7 @@ graph TD
 The SDK provides infrastructure for agents to access their built-in tools and for users to inject custom tools:
 
 ```python
-# agentmanager/tools/tool_support.py
+# agenthub/tools/tool_support.py
 class ToolSupport:
     """Provides infrastructure for agent tool access and custom tool injection."""
     
@@ -112,7 +112,7 @@ class ToolSupport:
 ### **Public API Interface**
 
 ```python
-# agentmanager/__init__.py
+# agenthub/__init__.py
 """Agent Hub SDK - One-line agent integration."""
 
 __version__ = "1.0.0"
@@ -135,7 +135,7 @@ def load(agent_path: str, custom_tools: Optional[Dict[str, Callable]] = None) ->
         AgentWrapper: Configured agent ready for use
         
     Example:
-        >>> import agentmanager as amg
+        >>> import agenthub as amg
         >>> agent = amg.load("meta/coding-agent")
         >>> code = agent.generate_code("neural network class")
         
@@ -179,7 +179,7 @@ __all__ = ['load', 'install', 'list_installed', 'remove', 'AgentHubError']
 ### **Agent Manager**
 
 ```python
-# agentmanager/core/manager.py
+# agenthub/core/manager.py
 import os
 from typing import Dict, List, Optional
 from .loader import AgentLoader
@@ -264,7 +264,7 @@ class AgentManager:
 ### **Agent Loader**
 
 ```python
-# agentmanager/core/loader.py
+# agenthub/core/loader.py
 import os
 import yaml
 from pathlib import Path
@@ -349,7 +349,7 @@ class AgentLoader:
 ### **Agent Wrapper**
 
 ```python
-# agentmanager/core/wrapper.py
+# agenthub/core/wrapper.py
 import json
 import time
 from pathlib import Path
@@ -482,7 +482,7 @@ class AgentWrapper:
 ### **Manifest Parser**
 
 ```python
-# agentmanager/core/manifest.py
+# agenthub/core/manifest.py
 import yaml
 from pathlib import Path
 from typing import Dict, Any
@@ -552,7 +552,7 @@ class ManifestParser:
 ### **Process Manager Interface**
 
 ```python
-# agentmanager/runtime/process_interface.py
+# agenthub/runtime/process_interface.py
 from pathlib import Path
 from typing import Dict, Any
 from .process_manager import ProcessManager as CoreProcessManager
@@ -592,7 +592,7 @@ class ProcessManager:
 
 ```python
 # Basic agent loading and usage
-import agentmanager as amg
+import agenthub as amg
 
 # Load an agent
 coding_agent = amg.load("meta/coding-agent")
@@ -611,8 +611,8 @@ print(fixed_code["explanation"])
 
 ```python
 # Advanced usage with error handling
-import agentmanager as amg
-from agentmanager import AgentHubError
+import agenthub as amg
+from agenthub import AgentHubError
 
 try:
     # Load multiple agents
@@ -644,7 +644,7 @@ except Exception as e:
 
 ```python
 # Get agent information
-import agentmanager as amg
+import agenthub as amg
 
 # Load agent
 agent = amg.load("meta/coding-agent")
@@ -673,8 +673,8 @@ for method_name, method_def in methods.items():
 # tests/sdk/test_agent_manager.py
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.core import AgentManager
-from agentmanager.exceptions import AgentNotFoundError
+from agenthub.core import AgentManager
+from agenthub.exceptions import AgentNotFoundError
 
 class TestAgentManager:
     def test_load_installed_agent(self, mock_registry, mock_loader):
@@ -720,7 +720,7 @@ class TestAgentManager:
 import tempfile
 import os
 from pathlib import Path
-import agentmanager as amg
+import agenthub as amg
 
 class TestSDKIntegration:
     def test_full_agent_usage_flow(self, sample_agent_dir):

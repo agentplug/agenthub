@@ -454,7 +454,7 @@ def clean_e2e_env(e2e_test_env):
 # tests/phase1_foundation/e2e/test_agent_discovery.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestAgentDiscoveryE2E:
     def test_agent_discovery_workflow(self, clean_e2e_env):
@@ -514,7 +514,7 @@ class TestAgentDiscoveryE2E:
 import pytest
 from click.testing import CliRunner
 from pathlib import Path
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestAgentInstallationE2E:
     def test_agent_installation_workflow(self, clean_e2e_env):
@@ -595,7 +595,7 @@ class TestAgentInstallationE2E:
 # tests/phase1_foundation/e2e/test_agent_testing.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestAgentTestingE2E:
     def test_agent_testing_workflow(self, clean_e2e_env):
@@ -682,7 +682,7 @@ class TestAgentTestingE2E:
 # tests/phase1_foundation/e2e/test_agent_management.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestAgentManagementE2E:
     def test_agent_management_workflow(self, clean_e2e_env):

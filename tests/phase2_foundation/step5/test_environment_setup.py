@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from agentmanager.environment.environment_setup import (
+from agenthub.environment.environment_setup import (
     EnvironmentSetup,
     EnvironmentSetupResult,
     DependencyInstallResult,

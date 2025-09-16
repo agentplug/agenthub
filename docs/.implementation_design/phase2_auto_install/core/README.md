@@ -48,7 +48,7 @@ The **Core Enhancement Module** extends the existing core functionality to suppo
 ## 📁 **File Structure**
 
 ```
-agentmanager/core/
+agenthub/core/
 ├── __init__.py
 ├── agent_loader.py                # Enhanced with auto-installation
 ├── agent_wrapper.py               # Enhanced agent wrapper

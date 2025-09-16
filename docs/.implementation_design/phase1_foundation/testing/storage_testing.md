@@ -190,7 +190,7 @@ The Storage Module is the **data management foundation** that handles file syste
 # tests/phase1_foundation/storage/test_local_storage.py
 import pytest
 from pathlib import Path
-from agentmanager.storage.local_storage import LocalStorageManager
+from agenthub.storage.local_storage import LocalStorageManager
 
 class TestLocalStorage:
     def test_create_base_directory(self, tmp_path):
@@ -244,7 +244,7 @@ class TestLocalStorage:
 ```python
 # tests/phase1_foundation/storage/test_agent_manager.py
 import pytest
-from agentmanager.storage.agent_manager import AgentManager
+from agenthub.storage.agent_manager import AgentManager
 
 class TestAgentManager:
     def test_install_agent(self, tmp_path):
@@ -301,7 +301,7 @@ interface:
 ```python
 # tests/phase1_foundation/storage/test_metadata_manager.py
 import pytest
-from agentmanager.storage.metadata_manager import MetadataManager
+from agenthub.storage.metadata_manager import MetadataManager
 
 class TestMetadataManager:
     def test_parse_manifest(self, tmp_path):
