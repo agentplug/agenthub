@@ -6,8 +6,26 @@ This example demonstrates how to use the framework-level run_resources() method
 for clean background server execution.
 """
 
+import os
+
 from agenthub.config import get_config
 from agenthub.core.tools import get_available_tools, run_resources, tool
+
+
+def _load_model_name() -> str:
+    """Adaptively load model name based on available API keys."""
+    if os.getenv("OPENAI_API_KEY"):
+        return "openai:gpt-4o-mini"
+    elif os.getenv("ANTHROPIC_API_KEY"):
+        return "anthropic:claude-3.5-sonnet"
+    elif os.getenv("GOOGLE_API_KEY"):
+        return "google:gemini-2.0-flash"
+    elif os.getenv("DEEPSEEK_API_KEY"):
+        return "deepseek:deepseek-chat"
+    elif os.getenv("FIREWORKS_API_KEY"):
+        return "fireworks:accounts/fireworks/models/llama-v3p2-3b-instruct"
+    else:
+        return "openai:gpt-4o-mini"  # Default fallback
 
 
 @tool(name="add", description="Add two numbers together")
@@ -97,6 +115,8 @@ def query_rewriter(query: str) -> str:
 
     client = ai.Client()
     config = get_config()
+    model_name = _load_model_name()
+    print(f"[TOOL] Using model: {model_name}")
     prompt = f"""
 DDGS search operators
 
@@ -118,7 +138,7 @@ Just return the rewritten query, no other text.
     """
     messages = [{"role": "user", "content": prompt}]
     response = client.chat.completions.create(
-        model="openai:gpt-4o-mini",
+        model=_load_model_name(),
         messages=messages,
         temperature=config.llm_temperature,
     )
