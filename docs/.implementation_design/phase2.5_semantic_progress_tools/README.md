@@ -1,10 +1,10 @@
 # Phase 2.5: Tool Injection Implementation Design
 
-**Document Type**: Phase Implementation Design  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: In Progress  
+**Document Type**: Phase Implementation Design
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: In Progress
 **Purpose**: Implementation design for tool injection using MCP (Model Context Protocol)
 
 ## 🎯 **Phase 2.5 Overview**
@@ -21,7 +21,7 @@ Phase 2.5 introduces **tool injection** capabilities that allow users to define 
 
 ### **User Experience**
 ```python
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 # Define custom tools
 @tool(name="data_analyzer", description="Analyze data")
@@ -33,7 +33,7 @@ def my_sentiment_analyzer(data: str) -> dict:
     return {"insights": f"analyzed: {data}"}
 
 # Load agent with tools
-import agentmanager as amg
+import agenthub as amg
 agent = amg.load_agent(
     base_agent="agentplug/analyzer",
     tools=["data_analyzer", "sentiment_analysis"]

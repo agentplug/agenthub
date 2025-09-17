@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agentmanager.runtime.environment_manager import EnvironmentManager
+from agenthub.runtime.environment_manager import EnvironmentManager
 
 
 class TestEnvironmentManager:

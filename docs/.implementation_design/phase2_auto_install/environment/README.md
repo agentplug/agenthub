@@ -21,8 +21,8 @@ The **Environment Management Module** handles the creation, configuration, and m
 
 ### **Simple Usage Example**
 ```python
-from agentmanager.environment.environment_setup import EnvironmentSetup
-from agentmanager.environment.dependency_manager import DependencyManager
+from agenthub.environment.environment_setup import EnvironmentSetup
+from agenthub.environment.dependency_manager import DependencyManager
 
 # Set up environment for an agent
 env_setup = EnvironmentSetup()
@@ -115,7 +115,7 @@ graph TB
 ## 📁 **File Structure**
 
 ```
-agentmanager/environment/
+agenthub/environment/
 ├── __init__.py                    # Module initialization
 ├── environment_setup.py           # Main environment setup coordinator
 ├── virtual_environment.py         # Virtual environment creation

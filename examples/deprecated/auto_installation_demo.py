@@ -13,7 +13,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from agentmanager.github.auto_installer import AutoInstaller
+from agenthub.github.auto_installer import AutoInstaller
 
 
 def demo_basic_installation():

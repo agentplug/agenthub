@@ -6,7 +6,7 @@ Demonstrates the improved error handling in AgentWrapper that shows
 available methods when users call non-existent methods.
 """
 
-import agentmanager as amg
+import agenthub as ah
 
 
 def demonstrate_error_handling():
@@ -15,8 +15,8 @@ def demonstrate_error_handling():
     print("=" * 60)
 
     # Load agents
-    coding_agent = amg.load_agent("agentplug/coding-agent")
-    analysis_agent = amg.load_agent("agentplug/analysis-agent")
+    coding_agent = ah.load_agent("agentplug/coding-agent")
+    analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
     print("✅ Agents loaded successfully!")
     print(f"📝 coding-agent methods: {coding_agent.methods}")

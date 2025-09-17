@@ -1,12 +1,12 @@
 # Phase 1: CLI Module Testing Plan
 
-**Document Type**: CLI Module Testing Plan  
-**Phase**: 1 - Foundation  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Comprehensive testing for CLI Module functionality  
+**Document Type**: CLI Module Testing Plan
+**Phase**: 1 - Foundation
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Comprehensive testing for CLI Module functionality
 
 ## 🎯 **CLI Module Testing Overview**
 
@@ -196,14 +196,14 @@ The CLI Module is the **user interface layer** that provides command-line tools 
 # tests/phase1_foundation/cli/test_main.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestMainCLI:
     def test_cli_help(self):
         """Test CLI help display."""
         runner = CliRunner()
         result = runner.invoke(cli, ['--help'])
-        
+
         assert result.exit_code == 0
         assert "Agent Hub CLI" in result.output
         assert "list" in result.output
@@ -211,20 +211,20 @@ class TestMainCLI:
         assert "test" in result.output
         assert "install" in result.output
         assert "remove" in result.output
-    
+
     def test_cli_version(self):
         """Test CLI version display."""
         runner = CliRunner()
         result = runner.invoke(cli, ['--version'])
-        
+
         assert result.exit_code == 0
         assert "1.0.0" in result.output
-    
+
     def test_cli_no_args(self):
         """Test CLI with no arguments."""
         runner = CliRunner()
         result = runner.invoke(cli, [])
-        
+
         assert result.exit_code == 0
         assert "Agent Hub CLI" in result.output
 ```
@@ -235,15 +235,15 @@ class TestMainCLI:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestListCommand:
     def test_list_agents_success(self):
         """Test successful agent listing."""
         runner = CliRunner()
-        
+
         # Mock storage manager
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.return_value = [
                 {
                     "developer": "test-dev",
@@ -258,32 +258,32 @@ class TestListCommand:
                     "description": "Another test agent"
                 }
             ]
-            
+
             result = runner.invoke(cli, ['list'])
-            
+
             assert result.exit_code == 0
             assert "test-dev/test-agent" in result.output
             assert "another-dev/another-agent" in result.output
             assert "1.0.0" in result.output
             assert "2.0.0" in result.output
-    
+
     def test_list_agents_empty(self):
         """Test agent listing with no agents."""
         runner = CliRunner()
-        
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.return_value = []
-            
+
             result = runner.invoke(cli, ['list'])
-            
+
             assert result.exit_code == 0
             assert "No agents found" in result.output
-    
+
     def test_list_agents_filtered(self):
         """Test filtered agent listing."""
         runner = CliRunner()
-        
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.return_value = [
                 {
                     "developer": "test-dev",
@@ -291,21 +291,21 @@ class TestListCommand:
                     "version": "1.0.0"
                 }
             ]
-            
+
             result = runner.invoke(cli, ['list', '--developer', 'test-dev'])
-            
+
             assert result.exit_code == 0
             assert "test-dev/test-agent" in result.output
-    
+
     def test_list_agents_error(self):
         """Test agent listing with error."""
         runner = CliRunner()
-        
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.list_agents.side_effect = Exception("Storage error")
-            
+
             result = runner.invoke(cli, ['list'])
-            
+
             assert result.exit_code == 1
             assert "Error listing agents" in result.output
             assert "Storage error" in result.output
@@ -317,19 +317,19 @@ class TestListCommand:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestInfoCommand:
     def test_info_agent_success(self):
         """Test successful agent info display."""
         runner = CliRunner()
-        
+
         # Mock storage and core managers
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
-            with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
-                
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
+            with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
+
                 mock_storage.return_value.get_agent_path.return_value = "/path/to/agent"
-                
+
                 mock_agent = Mock()
                 mock_agent.name = "test-agent"
                 mock_agent.version = "1.0.0"
@@ -342,35 +342,35 @@ class TestInfoCommand:
                         }
                     }
                 }
-                
+
                 mock_loader.return_value.load_agent.return_value = mock_agent
-                
+
                 result = runner.invoke(cli, ['info', 'test-dev/test-agent'])
-                
+
                 assert result.exit_code == 0
                 assert "test-agent" in result.output
                 assert "1.0.0" in result.output
                 assert "A test agent" in result.output
                 assert "test_method" in result.output
-    
+
     def test_info_agent_not_found(self):
         """Test agent info with non-existent agent."""
         runner = CliRunner()
-        
-        with patch('agentmanager.storage.LocalStorageManager') as mock_storage:
+
+        with patch('agenthub.storage.LocalStorageManager') as mock_storage:
             mock_storage.return_value.get_agent_path.return_value = None
-            
+
             result = runner.invoke(cli, ['info', 'non-existent/agent'])
-            
+
             assert result.exit_code == 1
             assert "Agent not found" in result.output
-    
+
     def test_info_agent_invalid_format(self):
         """Test agent info with invalid agent format."""
         runner = CliRunner()
-        
+
         result = runner.invoke(cli, ['info', 'invalid-format'])
-        
+
         assert result.exit_code == 1
         assert "Invalid agent format" in result.output
         assert "Expected: developer/agent" in result.output
@@ -382,17 +382,17 @@ class TestInfoCommand:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestTestCommand:
     def test_test_agent_success(self):
         """Test successful agent testing."""
         runner = CliRunner()
-        
+
         # Mock dependencies
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
-            with patch('agentmanager.runtime.agent_runtime.AgentRuntime') as mock_runtime:
-                
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
+            with patch('agenthub.runtime.agent_runtime.AgentRuntime') as mock_runtime:
+
                 mock_agent = Mock()
                 mock_agent.name = "test-agent"
                 mock_agent.available_methods = {
@@ -403,44 +403,44 @@ class TestTestCommand:
                         }
                     }
                 }
-                
+
                 mock_loader.return_value.load_agent.return_value = mock_agent
                 mock_runtime.return_value.execute_agent.return_value = {
                     "result": "Test output"
                 }
-                
+
                 result = runner.invoke(cli, [
                     'test', 'test-dev/test-agent', 'test_method',
                     '--params', '{"prompt": "Hello World"}'
                 ])
-                
+
                 assert result.exit_code == 0
                 assert "Test output" in result.output
                 assert "Success" in result.output
-    
+
     def test_test_agent_method_not_found(self):
         """Test agent testing with non-existent method."""
         runner = CliRunner()
-        
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
+
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
             mock_agent = Mock()
             mock_agent.name = "test-agent"
             mock_agent.available_methods = {}
-            
+
             mock_loader.return_value.load_agent.return_value = mock_agent
-            
+
             result = runner.invoke(cli, [
                 'test', 'test-dev/test-agent', 'non_existent_method'
             ])
-            
+
             assert result.exit_code == 1
             assert "Method not found" in result.output
-    
+
     def test_test_agent_invalid_params(self):
         """Test agent testing with invalid parameters."""
         runner = CliRunner()
-        
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
+
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
             mock_agent = Mock()
             mock_agent.name = "test-agent"
             mock_agent.available_methods = {
@@ -451,24 +451,24 @@ class TestTestCommand:
                     }
                 }
             }
-            
+
             mock_loader.return_value.load_agent.return_value = mock_agent
-            
+
             result = runner.invoke(cli, [
                 'test', 'test-dev/test-agent', 'test_method',
                 '--params', 'invalid-json'
             ])
-            
+
             assert result.exit_code == 1
             assert "Invalid JSON parameters" in result.output
-    
+
     def test_test_agent_execution_error(self):
         """Test agent testing with execution error."""
         runner = CliRunner()
-        
-        with patch('agentmanager.core.agent_loader.AgentLoader') as mock_loader:
-            with patch('agentmanager.runtime.agent_runtime.AgentRuntime') as mock_runtime:
-                
+
+        with patch('agenthub.core.agent_loader.AgentLoader') as mock_loader:
+            with patch('agenthub.runtime.agent_runtime.AgentRuntime') as mock_runtime:
+
                 mock_agent = Mock()
                 mock_agent.name = "test-agent"
                 mock_agent.available_methods = {
@@ -477,14 +477,14 @@ class TestTestCommand:
                         "parameters": {}
                     }
                 }
-                
+
                 mock_loader.return_value.load_agent.return_value = mock_agent
                 mock_runtime.return_value.execute_agent.side_effect = Exception("Execution error")
-                
+
                 result = runner.invoke(cli, [
                     'test', 'test-dev/test-agent', 'test_method'
                 ])
-                
+
                 assert result.exit_code == 1
                 assert "Execution error" in result.output
 ```
@@ -495,61 +495,61 @@ class TestTestCommand:
 import pytest
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestInstallCommand:
     def test_install_agent_success(self):
         """Test successful agent installation."""
         runner = CliRunner()
-        
-        with patch('agentmanager.storage.agent_manager.AgentManager') as mock_manager:
+
+        with patch('agenthub.storage.agent_manager.AgentManager') as mock_manager:
             mock_manager.return_value.install_agent.return_value = {
                 "success": True,
                 "message": "Agent installed successfully"
             }
-            
+
             result = runner.invoke(cli, [
                 'install', 'test-dev/test-agent', '/path/to/source'
             ])
-            
+
             assert result.exit_code == 0
             assert "Agent installed successfully" in result.output
             assert "Success" in result.output
-    
+
     def test_install_agent_source_not_found(self):
         """Test agent installation with non-existent source."""
         runner = CliRunner()
-        
+
         result = runner.invoke(cli, [
             'install', 'test-dev/test-agent', '/non/existent/path'
         ])
-        
+
         assert result.exit_code == 1
         assert "Source path not found" in result.output
-    
+
     def test_install_agent_invalid_format(self):
         """Test agent installation with invalid agent format."""
         runner = CliRunner()
-        
+
         result = runner.invoke(cli, ['install', 'invalid-format', '/path/to/source'])
-        
+
         assert result.exit_code == 1
         assert "Invalid agent format" in result.output
-    
+
     def test_install_agent_installation_error(self):
         """Test agent installation with installation error."""
         runner = CliRunner()
-        
-        with patch('agentmanager.storage.agent_manager.AgentManager') as mock_manager:
+
+        with patch('agenthub.storage.agent_manager.AgentManager') as mock_manager:
             mock_manager.return_value.install_agent.return_value = {
                 "success": False,
                 "error": "Installation failed"
             }
-            
+
             result = runner.invoke(cli, [
                 'install', 'test-dev/test-agent', '/path/to/source'
             ])
-            
+
             assert result.exit_code == 1
             assert "Installation failed" in result.output
 ```

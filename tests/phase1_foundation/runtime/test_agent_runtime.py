@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agentmanager.runtime.agent_runtime import AgentRuntime
+from agenthub.runtime.agent_runtime import AgentRuntime
 
 
 class TestAgentRuntime:

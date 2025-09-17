@@ -28,8 +28,8 @@ Examples focused on tool integration, MCP (Model Context Protocol), and tool man
 
 1. **Start the MCP server with run_resources()**:
    ```python
-   from agentmanager.core.tools import run_resources
-   
+   from agenthub.core.tools import run_resources
+
    # This starts the MCP server in the background
    run_resources()
    ```
@@ -75,7 +75,7 @@ The MCP server provides these tools:
 """
 Basic example of starting a tool server using run_resources()
 """
-from agentmanager.core.tools import tool, run_resources
+from agenthub.core.tools import tool, run_resources
 
 @tool(name="hello", description="Say hello to someone")
 def hello(name: str) -> str:
@@ -97,14 +97,14 @@ if __name__ == "__main__":
 """
 Example of using tools with agents after starting run_resources()
 """
-import agentmanager as amg
+import agenthub as ah
 
 # Start the tool server (run this in a separate terminal or process)
-# from agentmanager.core.tools import run_resources
+# from agenthub.core.tools import run_resources
 # run_resources()
 
 # Load agent with tools
-agent = amg.load_agent('agentplug/analysis-agent', tools=['add', 'multiply'])
+agent = ah.load_agent('agentplug/analysis-agent', tools=['add', 'multiply'])
 
 # Use the agent
 result = agent.analyze_text("Calculate 5 + 3 and then multiply by 2")
@@ -118,7 +118,7 @@ print(result)
 """
 Example of creating custom tools and using run_resources()
 """
-from agentmanager.core.tools import tool, run_resources
+from agenthub.core.tools import tool, run_resources
 
 @tool(name="weather", description="Get weather for a location")
 def get_weather(location: str) -> dict:

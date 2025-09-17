@@ -1,12 +1,12 @@
 # Agent Hub Container Architecture
 
-**Document Type**: Container Architecture  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L2 - Container Level  
-**Audience**: Technical Architects, Developers, DevOps Team  
+**Document Type**: Container Architecture
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L2 - Container Level
+**Audience**: Technical Architects, Developers, DevOps Team
 
 ## Business Problem & Solution Mapping
 
@@ -14,7 +14,7 @@
 As AI agent developers and users, we struggle with the fragmented and complex process of sharing, discovering, and integrating AI agents into existing systems, which causes significant development overhead, reduced adoption rates, and prevents the AI agent ecosystem from reaching its full potential.
 
 ### Solution Vision
-Create a CLI-based Agent Hub MVP that enables one-line agent integration (`import agentmanager as amg; agent = amg.load("meta/coding-agent")`) with process-based isolation for dependency management and local execution for fast development iteration.
+Create a CLI-based Agent Hub MVP that enables one-line agent integration (`import agenthub as amg; agent = amg.load("meta/coding-agent")`) with process-based isolation for dependency management and local execution for fast development iteration.
 
 ### Business Value Justification
 - **For Developers**: Eliminate distribution infrastructure overhead, reach broader audience
@@ -29,13 +29,13 @@ C4Context
 
     Person(developer, "Agent Developer", "Creates and publishes AI agents")
     Person(user, "Agent User", "Discovers and uses AI agents")
-    
+
     System(agenthub, "Agent Hub CLI", "Command-line interface for agent management with local execution")
-    
+
     System_Ext(github_registry, "GitHub Registry", "Simple JSON-based agent registry hosted on GitHub")
     System_Ext(github_storage, "GitHub Storage", "Agent source code and packages")
     System_Ext(uv_packages, "UV Package Index", "Python package dependencies")
-    
+
     Rel(developer, agenthub, "Publishes agents", "CLI commands + PR")
     Rel(user, agenthub, "Installs and uses agents", "CLI commands & Python imports")
     Rel(agenthub, github_registry, "Downloads registry.json", "HTTPS")
@@ -50,19 +50,19 @@ C4Container
     title Agent Hub MVP - Container Architecture
 
     Person(user, "User", "Agent developer or consumer")
-    
+
     Container(cli, "Agent Hub CLI", "Python CLI Application", "Command-line interface for all agent operations")
     Container(sdk, "Agent Hub SDK", "Python Library", "One-line agent loading and execution interface")
     Container(runtime, "Agent Runtime", "Process Manager", "Manages isolated agent execution with subprocess calls")
     Container(registry_client, "Registry Client", "HTTP Client", "Handles communication with remote agent registry")
     Container(tool_support, "Agent Tool Support", "Tool Infrastructure", "Provides infrastructure for agents to access their tools")
     Container(tool_validator, "Tool Validator", "Security Validator", "Validates agent access to tools and ensures safety")
-    
+
     ContainerDb(local_cache, "Local Cache", "File System", "Cached agents, metadata, and dependencies")
     ContainerDb(agent_store, "Agent Store", "File System", "Installed agents with isolated virtual environments")
-    
+
     System_Ext(github_registry, "GitHub Registry", "Simple JSON registry file")
-    
+
     Rel(user, cli, "Uses", "Commands")
     Rel(user, sdk, "Imports", "Python code")
     Rel(cli, registry_client, "Manages agents", "HTTPS requests")
@@ -86,36 +86,36 @@ graph TD
         publish_cmd["Publish Command<br/>Command Handler"]
         remove_cmd["Remove Command<br/>Command Handler"]
     end
-    
+
     subgraph SDK["Agent Hub SDK"]
         agent_loader["Agent Loader<br/>Core Library"]
         agent_wrapper["Agent Wrapper<br/>Proxy Class"]
     end
-    
+
     subgraph Runtime["Agent Runtime"]
         process_manager["Process Manager<br/>Executor"]
         env_manager["Environment Manager<br/>Manager"]
         dep_resolver["Dependency Resolver<br/>Resolver"]
     end
-    
+
     subgraph Registry["Registry Client"]
         api_client["API Client<br/>HTTP Client"]
         cache_manager["Cache Manager<br/>Cache"]
         download_manager["Download Manager<br/>Downloader"]
     end
-    
+
     subgraph ToolSupport["Agent Tool Support"]
         tool_discovery["Tool Discovery<br/>Built-in Tool Finder"]
         tool_injection["Tool Injection<br/>Custom Tool Handler"]
         tool_metadata["Tool Metadata<br/>Tool Information Manager"]
     end
-    
+
     subgraph ToolValidator["Tool Validator"]
         access_validator["Access Validator<br/>Tool Access Checker"]
         safety_validator["Safety Validator<br/>Tool Safety Checker"]
         compatibility_validator["Compatibility Validator<br/>Tool Compatibility Checker"]
     end
-    
+
     install_cmd --> download_manager
     install_cmd --> env_manager
     agent_loader --> process_manager
@@ -125,34 +125,34 @@ graph TD
 ## Key Architectural Decisions
 
 ### ADR-001: Process-Based Isolation
-**Context**: Need to isolate agent dependencies to prevent conflicts  
-**Decision**: Use subprocess execution with virtual environments  
-**Rationale**: Simpler than containers, fast startup, full isolation  
-**Consequences**: +Fast development, +Simple setup, -Less security than containers  
+**Context**: Need to isolate agent dependencies to prevent conflicts
+**Decision**: Use subprocess execution with virtual environments
+**Rationale**: Simpler than containers, fast startup, full isolation
+**Consequences**: +Fast development, +Simple setup, -Less security than containers
 
 ### ADR-002: CLI-First MVP
-**Context**: Need to validate core functionality quickly  
-**Decision**: Start with CLI interface only, add GUI later  
-**Rationale**: Faster development, easier testing, targets developer audience  
-**Consequences**: +Quick to market, +Developer-friendly, -Limited to technical users  
+**Context**: Need to validate core functionality quickly
+**Decision**: Start with CLI interface only, add GUI later
+**Rationale**: Faster development, easier testing, targets developer audience
+**Consequences**: +Quick to market, +Developer-friendly, -Limited to technical users
 
 ### ADR-003: Local Execution
-**Context**: Users want fast iteration and offline capability  
-**Decision**: Execute all agents locally with option for remote execution later  
-**Rationale**: No network latency, works offline, simpler architecture  
-**Consequences**: +Fast execution, +Privacy, -Uses local resources  
+**Context**: Users want fast iteration and offline capability
+**Decision**: Execute all agents locally with option for remote execution later
+**Rationale**: No network latency, works offline, simpler architecture
+**Consequences**: +Fast execution, +Privacy, -Uses local resources
 
 ### ADR-004: GitHub-Based Registry
-**Context**: Need agent registry without server maintenance  
-**Decision**: Use GitHub repository with JSON registry file  
-**Rationale**: No server costs, git-based versioning, familiar to developers  
+**Context**: Need agent registry without server maintenance
+**Decision**: Use GitHub repository with JSON registry file
+**Rationale**: No server costs, git-based versioning, familiar to developers
 **Consequences**: +Zero maintenance, +Free hosting, +Git workflow, -Limited by GitHub API
 
 ### ADR-005: File-Based Agent Storage
-**Context**: Need to store agents and metadata locally  
-**Decision**: Use file system with structured directories  
-**Rationale**: Simple, no database dependency, easy to debug  
-**Consequences**: +Simple implementation, +Easy backup, -No complex queries  
+**Context**: Need to store agents and metadata locally
+**Decision**: Use file system with structured directories
+**Rationale**: Simple, no database dependency, easy to debug
+**Consequences**: +Simple implementation, +Easy backup, -No complex queries
 
 ## Data Model
 
@@ -169,7 +169,7 @@ erDiagram
         int download_count
         float rating
     }
-    
+
     Manifest {
         string agent_name
         string version
@@ -179,7 +179,7 @@ erDiagram
         object interface
         object metadata
     }
-    
+
     Installation {
         string agent_path
         string version
@@ -188,7 +188,7 @@ erDiagram
         datetime installed_at
         string status
     }
-    
+
     Agent ||--|| Manifest : has
     Agent ||--o{ Installation : "installed as"
 ```
@@ -216,7 +216,7 @@ agenthub recommend                     # Get agent recommendations
 
 ### Python SDK Interface
 ```python
-import agentmanager as amg
+import agenthub as amg
 
 # Load and use agents
 agent = amg.load("meta/coding-agent")
@@ -270,7 +270,7 @@ sequenceDiagram
     participant DownloadManager
     participant EnvManager
     participant DepResolver
-    
+
     User->>CLI: agenthub install meta/coding-agent
     CLI->>RegistryClient: get_agent_metadata("meta/coding-agent")
     RegistryClient->>CLI: agent_metadata
@@ -291,12 +291,12 @@ sequenceDiagram
     participant AgentWrapper
     participant ProcessManager
     participant AgentProcess
-    
+
     User->>SDK: amg.load("meta/coding-agent")
     SDK->>AgentWrapper: create_wrapper(agent_path)
     AgentWrapper->>SDK: wrapper_instance
     SDK->>User: agent_instance
-    
+
     User->>AgentWrapper: generate_code("neural network")
     AgentWrapper->>ProcessManager: execute_agent(method, params)
     ProcessManager->>AgentProcess: subprocess.run(python agent.py data)
@@ -315,23 +315,23 @@ sequenceDiagram
     participant Storage
     participant Runtime
     participant Agent
-    
+
     User->>SDK: agent = amg.load("agent", custom_tools={...})
     SDK->>ToolSupport: discover_agent_tools(agent_path)
-    
+
     ToolSupport->>Storage: get_agent_manifest(agent_path)
     Storage->>ToolSupport: agent_manifest
-    
+
     alt Custom Tools Provided
         SDK->>ToolSupport: inject_custom_tools(agent_path, custom_tools)
         ToolSupport->>ToolSupport: validate_custom_tools()
         ToolSupport->>Storage: store_custom_tool_metadata()
         Storage->>ToolSupport: custom_tools_registered
     end
-    
+
     ToolSupport->>Validator: validate_agent_tools(agent_path, all_tools)
     Validator->>Validator: validate_tool_access_and_safety()
-    
+
     alt Validation Failed
         Validator->>ToolSupport: validation_errors
         ToolSupport->>SDK: tool_validation_failed
@@ -341,12 +341,12 @@ sequenceDiagram
         ToolSupport->>Storage: register_agent_tools(agent_path, all_tools)
         Storage->>ToolSupport: tools_registered
     end
-    
+
     ToolSupport->>SDK: agent_tools_ready
     SDK->>User: agent_with_builtin_and_custom_tools
-    
+
     Note over User,SDK: Agent built-in tools + user custom tools ready for use
-    
+
     User->>SDK: agent.execute_method("analyze", data)
     SDK->>Runtime: execute_agent(method, params)
     Runtime->>Agent: run_subprocess(with tool access)
@@ -471,33 +471,33 @@ sequenceDiagram
 ## Component Justification
 
 ### Agent Runtime (Process Manager)
-**Business Problem**: Agent dependency conflicts prevent reliable execution  
-**User Outcome**: Users can run multiple agents without compatibility issues  
-**Business Value**: Enables agent ecosystem growth through reliable execution  
+**Business Problem**: Agent dependency conflicts prevent reliable execution
+**User Outcome**: Users can run multiple agents without compatibility issues
+**Business Value**: Enables agent ecosystem growth through reliable execution
 **Decision Rationale**: Process isolation provides clean separation with acceptable performance
 
 ### Agent Tool Support Container
-**Business Problem**: Agents need access to tools but Agent Hub shouldn't provide tools  
-**User Outcome**: Agents can use their built-in tools and users can inject custom tools  
-**Business Value**: Enables agent flexibility while maintaining platform simplicity  
+**Business Problem**: Agents need access to tools but Agent Hub shouldn't provide tools
+**User Outcome**: Agents can use their built-in tools and users can inject custom tools
+**Business Value**: Enables agent flexibility while maintaining platform simplicity
 **Decision Rationale**: Tool support infrastructure separates concerns and enables customization
 
 ### Tool Validator Container
-**Business Problem**: Custom tools need validation for safety and compatibility  
-**User Outcome**: Users can safely inject custom tools with automatic validation  
-**Business Value**: Reduces security risks while enabling customization  
-**Decision Rationale**: Validation ensures platform safety without limiting user capabilities  
+**Business Problem**: Custom tools need validation for safety and compatibility
+**User Outcome**: Users can safely inject custom tools with automatic validation
+**Business Value**: Reduces security risks while enabling customization
+**Decision Rationale**: Validation ensures platform safety without limiting user capabilities
 
 ### CLI Interface
-**Business Problem**: Developers need fast, scriptable agent management  
-**User Outcome**: Developers can integrate agent management into their workflows  
-**Business Value**: Reduces friction for developer adoption  
-**Decision Rationale**: CLI is fastest to develop and serves developer audience well  
+**Business Problem**: Developers need fast, scriptable agent management
+**User Outcome**: Developers can integrate agent management into their workflows
+**Business Value**: Reduces friction for developer adoption
+**Decision Rationale**: CLI is fastest to develop and serves developer audience well
 
 ### Local Execution
-**Business Problem**: Network latency and offline development needs  
-**User Outcome**: Developers can iterate quickly without network dependencies  
-**Business Value**: Better developer experience leads to higher adoption  
-**Decision Rationale**: Local execution optimizes for development speed over scalability  
+**Business Problem**: Network latency and offline development needs
+**User Outcome**: Developers can iterate quickly without network dependencies
+**Business Value**: Better developer experience leads to higher adoption
+**Decision Rationale**: Local execution optimizes for development speed over scalability
 
 This architecture provides a solid foundation for the Agent Hub MVP while maintaining simplicity and focus on the core value proposition of one-line agent integration with dependency isolation.

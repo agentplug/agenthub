@@ -14,17 +14,17 @@ Phase 1 is the **foundation phase** that builds the core runtime system capable 
 
 ### **Simple Usage Example**
 ```python
-import agentmanager
+import agenthub
 
 # Load a pre-created agent
-coding_agent = agentmanager.load_agent("agentplug/coding-agent")
+coding_agent = agenthub.load_agent("agentplug/coding-agent")
 
 # Execute agent methods directly
 result = coding_agent.generate_code("Create a hello world function")
 print(result)
 
 # Load another agent
-analysis_agent = agentmanager.load_agent("agentplug/analysis-agent")
+analysis_agent = agenthub.load_agent("agentplug/analysis-agent")
 
 # Use different agent methods
 insights = analysis_agent.analyze_data("Sample data: 1, 2, 3, 4, 5")
@@ -35,14 +35,14 @@ print(insights)
 
 ### **Phase Goal**
 Build a working system where developers can:
-1. **Load** pre-created `agentplug` agents with `agentmanager.load_agent()`
+1. **Load** pre-created `agentplug` agents with `agenthub.load_agent()`
 2. **Execute** agent methods directly on loaded agent objects
 3. **Test** agent functionality through CLI
 4. **Build** foundation for Phase 2 auto-installation
 
 ### **Success Criteria**
-- ✅ Can load `agentplug/coding-agent` with `agentmanager.load_agent()`
-- ✅ Can load `agentplug/analysis-agent` with `agentmanager.load_agent()`
+- ✅ Can load `agentplug/coding-agent` with `agenthub.load_agent()`
+- ✅ Can load `agentplug/analysis-agent` with `agenthub.load_agent()`
 - ✅ Can execute agent methods directly on loaded objects
 - ✅ Basic agent runtime working
 - ✅ Local storage system working
@@ -161,7 +161,7 @@ Runtime Module ← Core Module → Storage Module
 ### **Phase 1 Directory Tree**
 ```
 agenthub/
-├── agentmanager/                          # Main Python package
+├── agenthub/                          # Main Python package
 │   ├── __init__.py
 │   ├── runtime/                           # Runtime Module
 │   │   ├── __init__.py
@@ -307,7 +307,7 @@ agenthub/
 ### **Key Implementation Files**
 
 #### **Core Package Files**
-- **`agentmanager/__init__.py`**: Main package initialization and public API
+- **`agenthub/__init__.py`**: Main package initialization and public API
 - **`setup.py`**: Package installation and dependency management
 - **`pyproject.toml`**: Modern Python project configuration
 - **`requirements.txt`**: Production dependencies
@@ -436,7 +436,7 @@ Phase 1 cannot succeed without working seed agents to test with. These agents se
 - ✅ CLI system that provides testing interface
 
 ### **Testable Functionality**
-- ✅ Can load agents with `agentmanager.load_agent()`
+- ✅ Can load agents with `agenthub.load_agent()`
 - ✅ Can execute `agentplug/coding-agent` methods
 - ✅ Can execute `agentplug/analysis-agent` methods
 - ✅ Can list and inspect installed agents
@@ -499,14 +499,14 @@ Phase 1 cannot succeed without working seed agents to test with. These agents se
 ## 🎉 **Phase 1 Success Celebration**
 
 ### **What Success Looks Like**
-- Developers can load agentplug agents with simple `agentmanager.load_agent()` calls
+- Developers can load agentplug agents with simple `agenthub.load_agent()` calls
 - Agent methods execute directly on loaded objects
 - CLI provides intuitive testing interface
 - All modules work together seamlessly
 - Foundation is solid for Phase 2
 
 ### **Success Metrics**
-- ✅ 100% of agentplug agents load successfully with `agentmanager.load_agent()`
+- ✅ 100% of agentplug agents load successfully with `agenthub.load_agent()`
 - ✅ 100% of agent methods execute successfully on loaded objects
 - ✅ CLI commands work without errors
 - ✅ Module integration is seamless

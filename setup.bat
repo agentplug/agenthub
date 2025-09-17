@@ -31,7 +31,7 @@ echo To use Agent Hub:
 echo    .venv\Scripts\activate.bat
 echo    agenthub --help
 echo    # Or use in Python:
-echo    python -c "import agentmanager as amg; print('Agent Hub ready!')"
+echo    python -c "import agenthub as amg; print('Agent Hub ready!')"
 echo.
 echo For more examples, see the examples/ directory
 echo.

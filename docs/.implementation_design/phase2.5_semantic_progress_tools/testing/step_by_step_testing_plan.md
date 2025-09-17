@@ -1,9 +1,9 @@
 # Step-by-Step Testing Plan - Phase 2.5 Tool Injection
 
-**Document Type**: Testing Plan  
-**Module**: testing  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Testing Plan
+**Module**: testing
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 
@@ -27,7 +27,7 @@ This document outlines the specific testing requirements for each implementation
 # test_step1_tool_registration.py
 import asyncio
 import requests
-from agentmanager.core.tools import tool, get_available_tools, get_mcp_server
+from agenthub.core.tools import tool, get_available_tools, get_mcp_server
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 5) -> dict:
@@ -45,7 +45,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
             timeout=10
         )
         data = response.json()
-        
+
         results = []
         if data.get("Abstract"):
             results.append({
@@ -53,7 +53,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
                 "snippet": data.get("Abstract", ""),
                 "url": data.get("AbstractURL", "")
             })
-        
+
         # Add related topics
         for topic in data.get("RelatedTopics", [])[:max_results-1]:
             if isinstance(topic, dict) and "Text" in topic:
@@ -62,7 +62,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
                     "snippet": topic.get("Text", ""),
                     "url": topic.get("FirstURL", "")
                 })
-        
+
         return {
             "query": query,
             "results": results[:max_results],
@@ -94,7 +94,7 @@ async def test_mcp_execution():
     # Test simple tool
     result = await mcp_server.call_tool("test_tool", {"data": "test data"})
     assert result[0].text == '{"result": "test data"}'
-    
+
     # Test web search tool
     search_result = await mcp_server.call_tool("web_search", {"query": "Python programming", "max_results": 3})
     search_data = eval(search_result[0].text)  # Parse JSON string
@@ -110,7 +110,7 @@ asyncio.run(test_mcp_execution())
 # test_step1_mcp_integration.py
 import asyncio
 import requests
-from agentmanager.core.tools import get_mcp_server, tool
+from agenthub.core.tools import get_mcp_server, tool
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 5) -> dict:
@@ -127,7 +127,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
             timeout=10
         )
         data = response.json()
-        
+
         results = []
         if data.get("Abstract"):
             results.append({
@@ -135,7 +135,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
                 "snippet": data.get("Abstract", ""),
                 "url": data.get("AbstractURL", "")
             })
-        
+
         for topic in data.get("RelatedTopics", [])[:max_results-1]:
             if isinstance(topic, dict) and "Text" in topic:
                 results.append({
@@ -143,7 +143,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
                     "snippet": topic.get("Text", ""),
                     "url": topic.get("FirstURL", "")
                 })
-        
+
         return {
             "query": query,
             "results": results[:max_results],
@@ -172,7 +172,7 @@ async def test_mcp_integration():
     # Test 3: Simple tool execution works
     result = await mcp_server.call_tool("mcp_test_tool", {"message": "Hello MCP"})
     assert result[0].text == '{"message": "Hello MCP", "processed": true}'
-    
+
     # Test 4: Web search tool execution works
     search_result = await mcp_server.call_tool("web_search", {"query": "AI trends", "max_results": 2})
     search_data = eval(search_result[0].text)
@@ -199,8 +199,8 @@ async def test_mcp_integration():
 ✅ **Tool Assignment Test**:
 ```python
 # test_step2_tool_assignment.py
-from agentmanager.core.mcp import get_tool_manager
-from agentmanager.core.tools import tool
+from agenthub.core.mcp import get_tool_manager
+from agenthub.core.tools import tool
 
 @tool(name="assignment_test_tool", description="Assignment test")
 def assignment_tool(data: str) -> dict:
@@ -208,12 +208,12 @@ def assignment_tool(data: str) -> dict:
 
 async def test_tool_assignment():
     manager = get_tool_manager()
-    
+
     # Test 1: Tool assignment works
     assigned = manager.assign_tools_to_agent("agent_1", ["assignment_test_tool", "web_search"])
     assert "assignment_test_tool" in assigned
     assert "web_search" in assigned
-    
+
     # Test 2: Agent tools are tracked
     agent_tools = manager.get_agent_tools("agent_1")
     assert "assignment_test_tool" in agent_tools
@@ -224,26 +224,26 @@ async def test_tool_assignment():
 ```python
 # test_step2_mcp_execution.py
 import asyncio
-from agentmanager.core.mcp import get_tool_manager
+from agenthub.core.mcp import get_tool_manager
 
 async def test_mcp_execution():
     manager = get_tool_manager()
-    
+
     # Test 1: Tool execution via MCP client
     result = await manager.execute_tool("assignment_test_tool", {"data": "test data"})
     assert isinstance(result, str)  # JSON string from MCP
     assert "assigned" in result
-    
+
     # Test 2: Web search tool execution via MCP client
     search_result = await manager.execute_tool("web_search", {"query": "AI trends", "max_results": 2})
     assert isinstance(search_result, str)  # JSON string from MCP
     search_data = eval(search_result)  # Parse JSON
     assert "query" in search_data
     assert "results" in search_data
-    
+
     # Test 2: MCP client is created
     assert manager.client is not None
-    
+
     # Test 3: Tool execution is routed through MCP
     # (Verify it's not just calling the function directly)
 ```
@@ -266,8 +266,8 @@ async def test_mcp_execution():
 ✅ **Tool Context Injection Test**:
 ```python
 # test_step3_tool_injection.py
-from agentmanager.runtime import get_tool_injector
-from agentmanager.core.tools import tool
+from agenthub.runtime import get_tool_injector
+from agenthub.core.tools import tool
 
 @tool(name="injection_test_tool", description="Injection test")
 def injection_tool(data: str) -> dict:
@@ -275,17 +275,17 @@ def injection_tool(data: str) -> dict:
 
 def test_tool_injection():
     injector = get_tool_injector()
-    
+
     # Test 1: Tool injection creates proper metadata
     metadata = injector.inject_tools_into_agent_context("agent_1", ["injection_test_tool"])
-    
+
     assert "available_tools" in metadata
     assert "injection_test_tool" in metadata["available_tools"]
-    
+
     # Test 2: Tool descriptions are included
     assert "tool_descriptions" in metadata
     assert "injection_test_tool" in metadata["tool_descriptions"]
-    
+
     # Test 3: Usage examples are provided
     assert "tool_usage_examples" in metadata
     assert "injection_test_tool" in metadata["tool_usage_examples"]
@@ -294,18 +294,18 @@ def test_tool_injection():
 ✅ **Agent Tool Assignment Test**:
 ```python
 # test_step3_agent_assignment.py
-from agentmanager.runtime import get_tool_injector
+from agenthub.runtime import get_tool_injector
 
 def test_agent_tool_assignment():
     injector = get_tool_injector()
-    
+
     # Test 1: Agent gets tools assigned in tool manager
     injector.inject_tools_into_agent_context("agent_1", ["injection_test_tool"])
-    
+
     # Check that agent has tools in the tool manager
     agent_tools = injector.tool_manager.get_agent_tools("agent_1")
     assert "injection_test_tool" in agent_tools
-    
+
     # Test 2: Invalid tools are filtered out
     metadata = injector.inject_tools_into_agent_context("agent_2", ["nonexistent_tool"])
     assert "nonexistent_tool" not in metadata["available_tools"]
@@ -330,8 +330,8 @@ def test_agent_tool_assignment():
 ```python
 # test_step4_agent_tool_discovery.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
+import agenthub as amg
+from agenthub.core.tools import tool
 
 @tool(name="discovery_test_tool", description="Discovery test")
 def discovery_tool(data: str) -> dict:
@@ -343,11 +343,11 @@ async def test_agent_tool_discovery():
         base_agent="agentplug/analysis-agent",
         tools=["discovery_test_tool"]
     )
-    
+
     # Test 2: Agent can discover tools
     assert agent.has_tool("discovery_test_tool") == True
     assert agent.has_tool("nonexistent_tool") == False
-    
+
     # Test 3: Agent lists available tools
     available_tools = agent.get_available_tools()
     assert "discovery_test_tool" in available_tools
@@ -357,18 +357,18 @@ async def test_agent_tool_discovery():
 ```python
 # test_step4_agent_tool_execution.py
 import asyncio
-import agentmanager as amg
+import agenthub as amg
 
 async def test_agent_tool_execution():
     agent = amg.load_agent(
         base_agent="agentplug/analysis-agent",
         tools=["discovery_test_tool"]
     )
-    
+
     # Test 1: Agent can execute tools
     result = await agent.execute_tool("discovery_test_tool", {"data": "test data"})
     assert isinstance(result, str)  # JSON string from MCP
-    
+
     # Test 2: Access control works
     try:
         await agent.execute_tool("unauthorized_tool", {"data": "test"})
@@ -395,8 +395,8 @@ async def test_agent_tool_execution():
 ```python
 # test_step5_complete_api.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
+import agenthub as amg
+from agenthub.core.tools import tool
 
 @tool(name="user_custom_tool", description="User custom tool")
 def user_custom_tool(data: str) -> dict:
@@ -408,15 +408,15 @@ async def test_complete_user_api():
         base_agent="agentplug/analysis-agent",
         tools=["user_custom_tool", "discovery_test_tool"]
     )
-    
+
     # Test 2: All tools are available
     assert agent.has_tool("user_custom_tool")
     assert agent.has_tool("discovery_test_tool")
-    
+
     # Test 3: Tools can be executed
     result1 = await agent.execute_tool("user_custom_tool", {"data": "test"})
     result2 = await agent.execute_tool("discovery_test_tool", {"data": "test"})
-    
+
     assert isinstance(result1, str)
     assert isinstance(result2, str)
 ```
@@ -425,7 +425,7 @@ async def test_complete_user_api():
 ```python
 # test_step5_end_to_end.py
 import asyncio
-import agentmanager as amg
+import agenthub as amg
 
 async def test_end_to_end_workflow():
     # Test complete workflow: register tools -> load agent -> use tools
@@ -433,14 +433,14 @@ async def test_end_to_end_workflow():
         base_agent="agentplug/analysis-agent",
         tools=["discovery_test_tool"]
     )
-    
+
     # Test that the complete workflow works
     # 1. Tools are registered globally
     # 2. Agent gets assigned tools
     # 3. Agent can use tools
     # 4. Tool execution goes through MCP
     # 5. Results are returned properly
-    
+
     assert len(agent.get_available_tools()) >= 2
     result = await agent.execute_tool("discovery_test_tool", {"data": "test"})
     assert result is not None
@@ -465,20 +465,20 @@ async def test_end_to_end_workflow():
 ```python
 # test_step6_error_handling.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
-from agentmanager.core.tools.exceptions import ToolNameConflictError, ToolAccessDeniedError
+import agenthub as amg
+from agenthub.core.tools import tool
+from agenthub.core.tools.exceptions import ToolNameConflictError, ToolAccessDeniedError
 
 # Test 1: Duplicate tool registration error
 try:
     @tool(name="duplicate_tool", description="First")
     def tool1(data: str) -> dict:
         return {"result": data}
-    
+
     @tool(name="duplicate_tool", description="Second")
     def tool2(data: str) -> dict:
         return {"result": data}
-    
+
     assert False, "Should have raised ToolNameConflictError"
 except ToolNameConflictError:
     pass  # Expected
@@ -486,7 +486,7 @@ except ToolNameConflictError:
 # Test 2: Tool access denied error
 async def test_access_denied():
     agent = amg.load_agent("test_agent", tools=["discovery_test_tool"])
-    
+
     try:
         await agent.execute_tool("unauthorized_tool", {"data": "test"})
         assert False, "Should have raised access denied error"
@@ -514,26 +514,26 @@ async def test_access_denied():
 # test_step7_concurrency.py
 import asyncio
 import time
-import agentmanager as amg
+import agenthub as amg
 
 async def test_concurrent_tool_execution():
     agent = amg.load_agent("test_agent", tools=["discovery_test_tool"])
-    
+
     # Test 1: Concurrent tool execution
     start_time = time.time()
-    
+
     tasks = [
         agent.execute_tool("discovery_test_tool", {"data": f"data_{i}"})
         for i in range(5)
     ]
-    
+
     results = await asyncio.gather(*tasks)
     end_time = time.time()
-    
+
     # Test 2: All executions completed
     assert len(results) == 5
     assert all(isinstance(result, str) for result in results)
-    
+
     # Test 3: Concurrent execution is faster than sequential
     # (This is a basic test - in practice, network calls might not show much difference)
     execution_time = end_time - start_time
@@ -550,8 +550,8 @@ async def test_concurrent_tool_execution():
 ```python
 # final_integration_test.py
 import asyncio
-import agentmanager as amg
-from agentmanager.core.tools import tool
+import agenthub as amg
+from agenthub.core.tools import tool
 
 # User defines custom tools
 @tool(name="market_analysis", description="Analyze market trends")
@@ -568,13 +568,13 @@ async def test_complete_user_experience():
         base_agent="agentplug/analysis-agent",
         tools=["market_analysis", "sentiment_analyzer", "discovery_test_tool"]
     )
-    
+
     # Test 1: All tools are available
     available_tools = agent.get_available_tools()
     expected_tools = ["market_analysis", "sentiment_analyzer", "discovery_test_tool"]
     for tool_name in expected_tools:
         assert tool_name in available_tools
-    
+
     # Test 2: Tools can be executed
     results = []
     for tool_name in expected_tools:
@@ -582,10 +582,10 @@ async def test_complete_user_experience():
             result = await agent.execute_tool(tool_name, {"data": "test data"})
         else:
             result = await agent.execute_tool(tool_name, {"text": "test"})
-        
+
         results.append(result)
         assert isinstance(result, str)  # JSON string from MCP
-    
+
     # Test 3: All executions succeeded
     assert len(results) == len(expected_tools)
     assert all(result is not None for result in results)

@@ -2,7 +2,7 @@
 
 import pytest
 
-from agentmanager.github.url_parser import URLParser
+from agenthub.github.url_parser import URLParser
 
 
 class TestURLParserValidation:
@@ -183,8 +183,8 @@ class TestIntegration:
 
     def test_import_from_module(self):
         """Test that URLParser can be imported from the github module."""
-        from agentmanager.github import URLParser as ModuleURLParser
-        from agentmanager.github.url_parser import URLParser as DirectURLParser
+        from agenthub.github import URLParser as ModuleURLParser
+        from agenthub.github.url_parser import URLParser as DirectURLParser
 
         # Both imports should work and be the same class
         assert ModuleURLParser is DirectURLParser
@@ -204,16 +204,15 @@ class TestIntegration:
 
     def test_module_exports(self):
         """Test that the github module properly exports URLParser."""
-        import agentmanager.github
 
         # URLParser should be in __all__
-        assert "URLParser" in agentmanager.github.__all__
+        assert "URLParser" in agenthub.github.__all__
 
         # Should be accessible as attribute
-        assert hasattr(agentmanager.github, "URLParser")
+        assert hasattr(agenthub.github, "URLParser")
 
         # Should be the correct class
-        parser = agentmanager.github.URLParser()
+        parser = agenthub.github.URLParser()
         assert parser.is_valid_agent_name("user/agent")
 
 
@@ -223,9 +222,9 @@ class TestBackwardCompatibility:
     def test_existing_imports_still_work(self):
         """Test that existing module imports still work."""
         # These should still work after adding URLParser
-        from agentmanager import load_agent
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub import load_agent
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
 
         # Should be able to instantiate existing components
         storage = LocalStorage()
@@ -239,9 +238,9 @@ class TestBackwardCompatibility:
         """Test that importing URLParser has no side effects."""
         # Import URLParser
         # Existing functionality should still work
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.github.url_parser import URLParser
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.github.url_parser import URLParser
+        from agenthub.storage.local_storage import LocalStorage
 
         storage = LocalStorage()
         loader = AgentLoader(storage)

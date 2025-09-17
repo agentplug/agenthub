@@ -1,9 +1,9 @@
 # Runtime Interface Design - Phase 2.5
 
-**Document Type**: Interface Design  
-**Module**: runtime  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Interface Design
+**Module**: runtime
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 
@@ -14,7 +14,7 @@ Define the public interfaces for tool injection into agent context, MCP client i
 ### **1. ToolInjector Interface**
 
 ```python
-from agentmanager.runtime import ToolInjector
+from agenthub.runtime import ToolInjector
 from typing import Dict, List, Any, Optional
 
 # Create tool injector
@@ -40,7 +40,7 @@ tool_examples = tool_injector.get_tool_examples(
 ### **2. AgentContextManager Interface**
 
 ```python
-from agentmanager.runtime import AgentContextManager
+from agenthub.runtime import AgentContextManager
 from typing import Dict, List, Any, Optional
 
 # Create context manager
@@ -69,7 +69,7 @@ context_manager.cleanup_agent_context(agent_id: str) -> bool
 ### **3. MCPClientManager Interface**
 
 ```python
-from agentmanager.runtime import MCPClientManager
+from agenthub.runtime import MCPClientManager
 from typing import Dict, Any, Optional
 
 # Create MCP client manager
@@ -217,7 +217,7 @@ def validate_tool_access(agent_id: str, tool_name: str) -> bool:
     agent_context = context_manager.get_agent_context(agent_id)
     if not agent_context:
         return False
-    
+
     tool_access = agent_context.get("tool_access", {})
     return tool_access.get(tool_name, False)
 ```
@@ -232,7 +232,7 @@ async def execute_tool_with_authorization(
     """Execute tool with authorization check"""
     if not validate_tool_access(agent_id, tool_name):
         raise ToolAccessDeniedError(f"Agent {agent_id} not authorized to access tool {tool_name}")
-    
+
     return await client_manager.execute_tool(agent_id, tool_name, arguments)
 ```
 
@@ -245,7 +245,7 @@ def discover_tools_for_agent(agent_id: str) -> List[str]:
     agent_context = context_manager.get_agent_context(agent_id)
     if not agent_context:
         return []
-    
+
     tools = agent_context.get("tools", {})
     return tools.get("available_tools", [])
 ```
@@ -257,14 +257,14 @@ def discover_tool_metadata(agent_id: str, tool_name: str) -> Optional[Dict[str, 
     agent_context = context_manager.get_agent_context(agent_id)
     if not agent_context:
         return None
-    
+
     tools = agent_context.get("tools", {})
     tool_descriptions = tools.get("tool_descriptions", {})
     tool_parameters = tools.get("tool_parameters", {})
-    
+
     if tool_name not in tool_descriptions:
         return None
-    
+
     return {
         "name": tool_name,
         "description": tool_descriptions[tool_name],
@@ -280,19 +280,19 @@ def search_tools_for_agent(agent_id: str, query: str) -> List[str]:
     available_tools = discover_tools_for_agent(agent_id)
     if not query:
         return available_tools
-    
+
     # Simple text search in tool names and descriptions
     matching_tools = []
     agent_context = context_manager.get_agent_context(agent_id)
     if agent_context:
         tools = agent_context.get("tools", {})
         tool_descriptions = tools.get("tool_descriptions", {})
-        
+
         for tool_name in available_tools:
-            if (query.lower() in tool_name.lower() or 
+            if (query.lower() in tool_name.lower() or
                 query.lower() in tool_descriptions.get(tool_name, "").lower()):
                 matching_tools.append(tool_name)
-    
+
     return matching_tools
 ```
 
@@ -320,7 +320,7 @@ def persist_agent_context(agent_id: str) -> bool:
     agent_context = context_manager.get_agent_context(agent_id)
     if not agent_context:
         return False
-    
+
     # Save to persistent storage
     return storage.save_agent_context(agent_id, agent_context)
 
@@ -329,7 +329,7 @@ def load_agent_context(agent_id: str) -> bool:
     agent_context = storage.load_agent_context(agent_id)
     if not agent_context:
         return False
-    
+
     # Restore to context manager
     context_manager._contexts[agent_id] = agent_context
     return True
@@ -341,15 +341,15 @@ def cleanup_expired_contexts(max_age: int = 3600) -> int:
     """Cleanup expired agent contexts"""
     current_time = datetime.now()
     expired_agents = []
-    
+
     for agent_id, context in context_manager._contexts.items():
         created_at = context.get("created_at")
         if created_at and (current_time - created_at).total_seconds() > max_age:
             expired_agents.append(agent_id)
-    
+
     for agent_id in expired_agents:
         context_manager.cleanup_agent_context(agent_id)
-    
+
     return len(expired_agents)
 ```
 
