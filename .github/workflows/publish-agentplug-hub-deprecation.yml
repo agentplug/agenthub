@@ -1,0 +1,45 @@
+name: Publish agentplug-hub Deprecation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "DEPRECATE" to confirm publishing agentplug-hub deprecation version'
+        required: true
+        default: ''
+
+jobs:
+  publish:
+    if: github.event.inputs.confirm == 'DEPRECATE'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout deprecate-agentplug-hub branch
+      uses: actions/checkout@v4
+      with:
+        ref: deprecate-agentplug-hub
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies
+      run: |
+        uv pip install build twine
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        twine upload dist/agentplug_hub-0.1.2-*
