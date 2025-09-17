@@ -4,7 +4,7 @@ Agent Hub - Phase 1 Foundation
 A system for executing and managing agentplug agents.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __author__ = "William"
 
 # Import core modules
