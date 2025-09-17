@@ -1,12 +1,12 @@
 # Agent Hub MVP Container Architecture
 
-**Document Type**: MVP Container Architecture  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L2 - MVP Container Level  
-**Audience**: Technical Architects, Developers, DevOps Team  
+**Document Type**: MVP Container Architecture
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L2 - MVP Container Level
+**Audience**: Technical Architects, Developers, DevOps Team
 
 ## 🎯 **MVP Container Architecture Overview**
 
@@ -27,7 +27,7 @@ graph TB
         CLI[Agent Hub CLI]
         SDK[Agent Hub SDK]
     end
-    
+
     subgraph "Core Services Layer"
         RUNTIME[Agent Runtime]
         REGISTRY[Registry Client]
@@ -35,21 +35,21 @@ graph TB
         TOOLSUPPORT[Agent Tool Support]
         VALIDATOR[Tool Validator]
     end
-    
+
     subgraph "External Services"
         GITHUB[GitHub Registry]
         UV[UV Package Manager]
     end
-    
+
     CLI --> RUNTIME
     CLI --> REGISTRY
     CLI --> STORAGE
     CLI --> TOOLSUPPORT
-    
+
     SDK --> RUNTIME
     SDK --> STORAGE
     SDK --> TOOLSUPPORT
-    
+
     RUNTIME --> UV
     REGISTRY --> GITHUB
     STORAGE --> RUNTIME
@@ -72,7 +72,7 @@ Primary user interface for agent management operations.
 
 #### **Interfaces**
 ```python
-# agentmanager/cli/main.py
+# agenthub/cli/main.py
 @click.group()
 def cli():
     """Agent Hub - One-line AI agent integration."""
@@ -118,8 +118,8 @@ Python library for one-line agent integration.
 
 #### **Interfaces**
 ```python
-# agentmanager/sdk/__init__.py
-import agentmanager as amg
+# agenthub/sdk/__init__.py
+import agenthub as amg
 
 # One-line agent loading
 agent = amg.load("meta/coding-agent")
@@ -151,14 +151,14 @@ Execute agents in isolated environments with dependency management.
 
 #### **Interfaces**
 ```python
-# agentmanager/runtime/process_manager.py
+# agenthub/runtime/process_manager.py
 class ProcessManager:
     def execute_agent(self, agent_path: str, method: str, parameters: dict) -> dict:
         """Execute agent method in isolated subprocess."""
         # Implementation
         pass
 
-# agentmanager/runtime/environment_manager.py
+# agenthub/runtime/environment_manager.py
 class EnvironmentManager:
     def create_environment(self, agent_path: str) -> str:
         """Create isolated virtual environment."""
@@ -192,13 +192,13 @@ Fetch agent metadata from GitHub-based registry.
 
 #### **Interfaces**
 ```python
-# agentmanager/registry/github_client.py
+# agenthub/registry/github_client.py
 class GitHubRegistryClient:
     def get_registry(self) -> dict:
         """Fetch registry from GitHub."""
         # Implementation
         pass
-    
+
     def get_agent_metadata(self, agent_path: str) -> dict:
         """Get specific agent metadata."""
         # Implementation
@@ -233,32 +233,32 @@ Provides local infrastructure for agents to discover their built-in tools AND al
 
 #### **Interfaces**
 ```python
-# agentmanager/core/agent_tool_support.py
+# agenthub/core/agent_tool_support.py
 class AgentToolSupport:
     def __init__(self):
         """Initialize agent tool support infrastructure."""
         pass
-    
+
     def discover_agent_tools(self, agent_path: str) -> Dict[str, ToolInfo]:
         """Discover agent's built-in tools."""
         pass
-    
+
     def inject_custom_tools(self, agent_path: str, custom_tools: Dict[str, Callable]):
         """Inject user's custom tools to an agent."""
         pass
-    
+
     def override_builtin_tools(self, agent_path: str, overrides: Dict[str, Callable]):
         """Override agent's built-in tools with user tools."""
         pass
-    
+
     def get_available_tools(self, agent_path: str) -> Dict[str, ToolInfo]:
         """Get all available tools: built-in + custom + overrides."""
         pass
-    
+
     def validate_tool_access(self, agent_path: str, tool_name: str) -> bool:
         """Validate that an agent can access a specific tool."""
         pass
-    
+
     def check_tool_conflicts(self, agent_path: str, other_agents: List[str]) -> List[str]:
         """Check for potential tool conflicts between agents."""
         pass
@@ -299,62 +299,62 @@ Validate that agents can safely access the tools they declare in their manifests
 
 #### **Interfaces**
 ```python
-# agentmanager/validation/tool_validator.py
+# agenthub/validation/tool_validator.py
 class ToolValidator:
     def __init__(self, security_level: str = "medium"):
         self.security_level = security_level
         self.dangerous_patterns = self._load_dangerous_patterns()
         self.resource_monitor = ResourceMonitor()
-    
+
     def validate_agent_tools(self, agent_path: str, tool_requirements: List[str]) -> ValidationResult:
         """Validate that an agent can access its declared tools."""
         result = ValidationResult()
-        
+
         # Tool access validation
         access_result = self._validate_tool_access(agent_path, tool_requirements)
         result.merge(access_result)
-        
+
         # Tool safety validation
         safety_result = self._validate_tool_safety(tool_requirements)
         result.merge(safety_result)
-        
+
         # Tool compatibility validation
         compat_result = self._validate_tool_compatibility(agent_path, tool_requirements)
         result.merge(compat_result)
-        
+
         return result
-    
+
     def _validate_tool_access(self, agent_path: str, tool_requirements: List[str]) -> ValidationResult:
         """Validate that an agent can access its required tools."""
         result = ValidationResult()
-        
+
         # Check if tools are available in the environment
         for tool_name in tool_requirements:
             if not self._is_tool_available(tool_name):
                 result.add_error(f"Tool '{tool_name}' not available for agent '{agent_path}'")
-        
+
         return result
-    
+
     def _validate_tool_safety(self, tool_requirements: List[str]) -> ValidationResult:
         """Check if tools are safe for agent use."""
         result = ValidationResult()
-        
+
         # Check tool safety based on known safe tools
         for tool_name in tool_requirements:
             if not self._is_tool_safe(tool_name):
                 result.add_warning(f"Tool '{tool_name}' may have safety concerns")
-        
+
         return result
-    
+
     def _validate_tool_compatibility(self, agent_path: str, tool_requirements: List[str]) -> ValidationResult:
         """Validate tool compatibility with agent runtime."""
         result = ValidationResult()
-        
+
         # Check if tools are compatible with agent runtime
         for tool_name in tool_requirements:
             if not self._is_tool_compatible(tool_name):
                 result.add_warning(f"Tool '{tool_name}' may have compatibility issues")
-        
+
         return result
 
 class ValidationResult:
@@ -362,21 +362,21 @@ class ValidationResult:
         self.errors = []
         self.warnings = []
         self.info = []
-    
+
     def add_error(self, message: str):
         self.errors.append(message)
-    
+
     def add_warning(self, message: str):
         self.warnings.append(message)
-    
+
     def add_info(self, message: str):
         self.info.append(message)
-    
+
     def merge(self, other: 'ValidationResult'):
         self.errors.extend(other.errors)
         self.warnings.extend(other.warnings)
         self.info.extend(other.info)
-    
+
     def is_valid(self) -> bool:
         return len(self.errors) == 0
 ```
@@ -409,18 +409,18 @@ Manage local agent installations, metadata, and tool indexes.
 
 #### **Interfaces**
 ```python
-# agentmanager/storage/local_storage.py
+# agenthub/storage/local_storage.py
 class LocalStorage:
     def install_agent(self, agent_path: str, agent_data: bytes) -> str:
         """Install agent to local storage."""
         # Implementation
         pass
-    
+
     def get_agent_info(self, agent_path: str) -> dict:
         """Get local agent information."""
         # Implementation
         pass
-    
+
     def remove_agent(self, agent_path: str) -> bool:
         """Remove agent from local storage."""
         # Implementation
@@ -452,7 +452,7 @@ sequenceDiagram
     participant Storage
     participant Runtime
     participant UV
-    
+
     User->>CLI: agenthub install meta/coding-agent
     CLI->>Registry: get_agent_metadata("meta/coding-agent")
     Registry->>CLI: agent metadata + download URL
@@ -476,12 +476,12 @@ sequenceDiagram
     participant Runtime
     participant Storage
     participant Agent
-    
+
     User->>SDK: agent = amg.load("meta/coding-agent")
     SDK->>Storage: get_agent_info("meta/coding-agent")
     Storage->>SDK: agent metadata and manifest
     SDK->>User: agent wrapper object
-    
+
     User->>SDK: agent.generate_code("neural network")
     SDK->>Runtime: execute_agent(method, params)
     Runtime->>Agent: run_subprocess(python agent.py)
@@ -500,23 +500,23 @@ sequenceDiagram
     participant Storage
     participant Runtime
     participant Agent
-    
+
     User->>SDK: agent = amg.load("agent", custom_tools={...})
     SDK->>ToolSupport: discover_agent_tools(agent_path)
-    
+
     ToolSupport->>Storage: get_agent_manifest(agent_path)
     Storage->>ToolSupport: agent_manifest
-    
+
     alt Custom Tools Provided
         SDK->>ToolSupport: inject_custom_tools(agent_path, custom_tools)
         ToolSupport->>ToolSupport: validate_custom_tools()
         ToolSupport->>Storage: store_custom_tool_metadata()
         Storage->>ToolSupport: custom_tools_registered
     end
-    
+
     ToolSupport->>Validator: validate_agent_tools(agent_path, all_tools)
     Validator->>Validator: validate_tool_access_and_safety()
-    
+
     alt Validation Failed
         Validator->>ToolSupport: validation_errors
         ToolSupport->>SDK: tool_validation_failed
@@ -526,12 +526,12 @@ sequenceDiagram
         ToolSupport->>Storage: register_agent_tools(agent_path, all_tools)
         Storage->>ToolSupport: tools_registered
     end
-    
+
     ToolSupport->>SDK: agent_tools_ready
     SDK->>User: agent_with_builtin_and_custom_tools
-    
+
     Note over User,SDK: Agent built-in tools + user custom tools ready for use
-    
+
     User->>SDK: agent.execute_method("analyze", data)
     SDK->>Runtime: execute_agent(method, params)
     Runtime->>Agent: run_subprocess(with tool access)
@@ -548,7 +548,7 @@ sequenceDiagram
     participant Registry
     participant GitHub
     participant Storage
-    
+
     CLI->>Registry: refresh_registry()
     Registry->>GitHub: GET registry.json
     GitHub->>Registry: fresh registry data
@@ -739,13 +739,13 @@ class AgentRuntime:
     def install_agent(self, agent_path: str):
         # Install agent
         result = self._do_install(agent_path)
-        
+
         # Publish installation event
         event_bus.publish("agent.installed", {
             "agent_path": agent_path,
             "result": result
         })
-        
+
         return result
 ```
 
@@ -828,4 +828,4 @@ class AgentRuntime:
 - **Direct Communication**: Simple method calls between containers
 - **MVP Focus**: Only essential containers for core functionality
 
-This container architecture provides a **solid, maintainable foundation** for the Agent Hub MVP while enabling future enhancements through additional containers and improved communication patterns. 
+This container architecture provides a **solid, maintainable foundation** for the Agent Hub MVP while enabling future enhancements through additional containers and improved communication patterns.

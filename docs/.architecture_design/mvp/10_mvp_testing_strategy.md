@@ -1,12 +1,12 @@
 # Agent Hub MVP Testing Strategy
 
-**Document Type**: MVP Testing Strategy  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L5 - MVP Testing Level  
-**Audience**: Development Team, QA Team, DevOps Team  
+**Document Type**: MVP Testing Strategy
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L5 - MVP Testing Level
+**Audience**: Development Team, QA Team, DevOps Team
 
 ## 🎯 **MVP Testing Overview**
 
@@ -33,13 +33,13 @@ Agent Hub MVP requires **comprehensive testing** to ensure the core value propos
 graph TD
     A[End-to-End Tests<br/>10% - 15 tests] --> B[Integration Tests<br/>20% - 50 tests]
     B --> C[Unit Tests<br/>70% - 200+ tests]
-    
+
     subgraph "Test Types"
         D[Unit: Fast, isolated, focused]
         E[Integration: Component interaction]
         F[E2E: Complete user workflows]
     end
-    
+
     C --> D
     B --> E
     A --> F
@@ -83,12 +83,12 @@ testpaths = tests
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
-addopts = 
+addopts =
     --strict-markers
     --strict-config
     --verbose
     --tb=short
-    --cov=agentmanager
+    --cov=agenthub
     --cov-report=term-missing
     --cov-report=html
     --cov-report=xml
@@ -108,7 +108,7 @@ markers =
 ```python
 # tests/runtime/test_process_manager.py
 import pytest
-from agentmanager.runtime.process_manager import ProcessManager
+from agenthub.runtime.process_manager import ProcessManager
 
 class TestProcessManager:
     def test_create_subprocess(self):
@@ -116,13 +116,13 @@ class TestProcessManager:
         manager = ProcessManager()
         result = manager.execute_agent("test-agent", "test_method", {})
         assert result["status"] == "success"
-    
+
     def test_subprocess_timeout(self):
         """Test subprocess timeout handling."""
         manager = ProcessManager()
         with pytest.raises(TimeoutError):
             manager.execute_agent("slow-agent", "slow_method", {}, timeout=1)
-    
+
     def test_subprocess_error_handling(self):
         """Test subprocess error handling."""
         manager = ProcessManager()
@@ -141,43 +141,43 @@ class TestProcessManager:
 # tests/core/test_tool_infrastructure.py
 import pytest
 from pathlib import Path
-from agentmanager.core.tool_infrastructure import ToolInfrastructure
+from agenthub.core.tool_infrastructure import ToolInfrastructure
 
 class TestToolInfrastructure:
     def test_agent_tools_discovery(self):
         """Test agent's built-in tools are discovered."""
         manager = ToolInfrastructure(agent_dir=Path("/tmp/test-agent"))
         available_tools = manager.list_available_tools()
-        
+
         assert "agent_builtin" in available_tools
         assert "code_generator" in available_tools["agent_builtin"]
         assert "code_analyzer" in available_tools["agent_builtin"]
-    
+
     def test_custom_tool_override(self):
         """Test custom tools can override agent's built-in tools."""
         manager = ToolInfrastructure(agent_dir=Path("/tmp/test-agent"))
-        
+
         def custom_code_generator(prompt: str) -> str:
             """Custom code generation implementation."""
             return f"Custom code for '{prompt}'"
-        
+
         # Custom tool should override agent's built-in tool
         manager.register_custom_tool("code_generator", custom_code_generator)
         tool_function = manager.get_tool("code_generator")
-        
+
         result = tool_function("Create a function")
         assert "Custom code for 'Create a function'" in result
-    
+
     def test_tool_priority_system(self):
         """Test tool priority: custom > agent's built-in."""
         manager = ToolInfrastructure(agent_dir=Path("/tmp/test-agent"))
-        
+
         def custom_analyzer(code: str) -> dict:
             """Custom code analysis implementation."""
             return {"custom_complexity": len(code)}
-        
+
         manager.register_custom_tool("code_analyzer", custom_analyzer)
-        
+
         # Should get custom tool, not agent's built-in tool
         tool_function = manager.get_tool("code_analyzer")
         result = tool_function("def test(): pass")
@@ -195,39 +195,39 @@ class TestToolInfrastructure:
 # tests/core/test_tool_discovery.py
 import pytest
 from pathlib import Path
-from agentmanager.core.tool_discovery import ToolDiscovery
+from agenthub.core.tool_discovery import ToolDiscovery
 
 class TestToolDiscovery:
     def test_agent_manifest_parsing(self):
         """Test parsing agent manifest for tool declarations."""
         discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
         tools = discovery.discover_agent_tools()
-        
+
         assert "code_generator" in tools
         assert "code_analyzer" in tools
         assert tools["code_generator"]["description"] == "Generate code from natural language"
-    
+
     def test_tool_metadata_extraction(self):
         """Test extraction of tool metadata and usage information."""
         discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
         tool_info = discovery.get_tool_info("code_generator")
-        
+
         assert "description" in tool_info
         assert "parameters" in tool_info
         assert "return_type" in tool_info
-    
+
     def test_tool_validation(self):
         """Test tool safety and compatibility validation."""
         discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
         is_valid = discovery.validate_tool("code_generator")
-        
+
         assert is_valid == True
-    
+
     def test_tool_conflict_detection(self):
         """Test detection of tool conflicts between agents."""
         discovery = ToolDiscovery(agent_dir=Path("/tmp/test-agent"))
         conflicts = discovery.check_tool_conflicts(["agent1", "agent2"])
-        
+
         assert isinstance(conflicts, list)
 
 **Coverage Targets**:
@@ -240,48 +240,48 @@ class TestToolDiscovery:
 ```python
 # tests/validation/test_tool_validator.py
 import pytest
-from agentmanager.validation.tool_validator import ToolValidator, ValidationResult
+from agenthub.validation.tool_validator import ToolValidator, ValidationResult
 
 class TestToolValidator:
     def test_security_validation(self):
         """Test security validation for dangerous code patterns."""
         validator = ToolValidator(security_level="medium")
-        
+
         def dangerous_tool():
             eval("os.system('rm -rf /')")  # Dangerous operation
-        
+
         result = validator.validate_tool("dangerous_tool", dangerous_tool)
         assert not result.is_valid()
         assert any("dangerous operations" in error.lower() for error in result.errors)
-    
+
     def test_compatibility_validation(self):
         """Test tool compatibility validation."""
         validator = ToolValidator(security_level="medium")
-        
+
         def complex_tool(a, b, c, d, e, f, g, h, i, j, k):  # Too many parameters
             return a + b + c + d + e + f + g + h + i + j + k
-        
+
         result = validator.validate_tool("complex_tool", complex_tool)
         assert result.is_valid()  # Should pass but with warnings
         assert any("many parameters" in warning.lower() for warning in result.warnings)
-    
+
     def test_performance_validation(self):
         """Test tool performance validation."""
         validator = ToolValidator(security_level="medium")
-        
+
         def simple_tool():
             return "simple"
-        
+
         result = validator.validate_tool("simple_tool", simple_tool)
         assert result.is_valid()
         assert len(result.warnings) == 0
-    
+
     def test_security_levels(self):
         """Test different security level configurations."""
         # Test low security level
         low_validator = ToolValidator(security_level="low")
         assert low_validator.resource_limits["memory_mb"] == 100
-        
+
         # Test high security level
         high_validator = ToolValidator(security_level="high")
         assert high_validator.resource_limits["memory_mb"] == 1000
@@ -304,7 +304,7 @@ class TestToolValidator:
 # tests/cli/test_main.py
 import pytest
 from click.testing import CliRunner
-from agentmanager.cli.main import cli
+from agenthub.cli.main import cli
 
 class TestCLI:
     def test_install_command(self):
@@ -313,14 +313,14 @@ class TestCLI:
         result = runner.invoke(cli, ['install', 'meta/coding-agent'])
         assert result.exit_code == 0
         assert "Agent installed successfully" in result.output
-    
+
     def test_list_command(self):
         """Test list command."""
         runner = CliRunner()
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "Available agents" in result.output
-    
+
     def test_invalid_agent_path(self):
         """Test invalid agent path handling."""
         runner = CliRunner()
@@ -338,7 +338,7 @@ class TestCLI:
 ```python
 # tests/sdk/test_agent_wrapper.py
 import pytest
-from agentmanager.sdk.agent_wrapper import AgentWrapper
+from agenthub.sdk.agent_wrapper import AgentWrapper
 
 class TestAgentWrapper:
     def test_agent_loading(self):
@@ -346,14 +346,14 @@ class TestAgentWrapper:
         agent = AgentWrapper("meta/coding-agent")
         assert agent.name == "coding-agent"
         assert hasattr(agent, "generate_code")
-    
+
     def test_method_dispatching(self):
         """Test method dispatching."""
         agent = AgentWrapper("meta/coding-agent")
         result = agent.generate_code("neural network")
         assert isinstance(result, str)
         assert "neural network" in result.lower()
-    
+
     def test_invalid_method(self):
         """Test invalid method handling."""
         agent = AgentWrapper("meta/coding-agent")
@@ -372,32 +372,32 @@ class TestAgentWrapper:
 ```python
 # tests/integration/test_agent_workflow.py
 import pytest
-from agentmanager.cli.main import cli
-from agentmanager.sdk import load_agent
+from agenthub.cli.main import cli
+from agenthub.sdk import load_agent
 from click.testing import CliRunner
 
 class TestAgentWorkflow:
     def test_complete_agent_workflow(self):
         """Test complete agent installation and usage workflow."""
         runner = CliRunner()
-        
+
         # Install agent
         result = runner.invoke(cli, ['install', 'meta/coding-agent'])
         assert result.exit_code == 0
-        
+
         # Use agent via SDK
         agent = load_agent("meta/coding-agent")
         result = agent.generate_code("hello world")
         assert isinstance(result, str)
         assert len(result) > 0
-    
+
     def test_registry_integration(self):
         """Test registry integration with CLI."""
         runner = CliRunner()
         result = runner.invoke(cli, ['list'])
         assert result.exit_code == 0
         assert "meta/coding-agent" in result.output
-    
+
     def test_storage_integration(self):
         """Test storage integration with runtime."""
         # Test that installed agents are properly stored
@@ -427,27 +427,27 @@ class TestUserExperience:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Simulate fresh installation
             os.chdir(temp_dir)
-            
+
             # Install Agent Hub
             result = subprocess.run([
-                "pip", "install", "agentmanager"
+                "pip", "install", "agenthub"
             ], capture_output=True, text=True)
             assert result.returncode == 0
-            
+
             # Install first agent
             result = subprocess.run([
                 "agenthub", "install", "meta/coding-agent"
             ], capture_output=True, text=True)
             assert result.returncode == 0
-            
+
             # Use agent
             result = subprocess.run([
-                "python", "-c", 
-                "import agentmanager as amg; agent = amg.load('meta/coding-agent'); print(agent.generate_code('hello'))"
+                "python", "-c",
+                "import agenthub as amg; agent = amg.load('meta/coding-agent'); print(agent.generate_code('hello'))"
             ], capture_output=True, text=True)
             assert result.returncode == 0
             assert len(result.stdout.strip()) > 0
-    
+
     def test_error_recovery_workflow(self):
         """Test user error recovery experience."""
         # Test invalid agent path
@@ -468,45 +468,45 @@ class TestUserExperience:
 # tests/performance/test_performance.py
 import pytest
 import time
-from agentmanager.sdk import load_agent
+from agenthub.sdk import load_agent
 
 class TestPerformance:
     def test_agent_installation_performance(self):
         """Test agent installation meets performance requirements."""
         start_time = time.time()
-        
+
         # Install agent
         agent = load_agent("meta/coding-agent")
-        
+
         installation_time = time.time() - start_time
         assert installation_time < 10.0, f"Installation took {installation_time:.2f}s, expected < 10s"
-    
+
     def test_agent_execution_performance(self):
         """Test agent execution meets performance requirements."""
         agent = load_agent("meta/coding-agent")
-        
+
         start_time = time.time()
         result = agent.generate_code("simple function")
         execution_time = time.time() - start_time
-        
+
         assert execution_time < 1.0, f"Execution took {execution_time:.2f}s, expected < 1s"
         assert isinstance(result, str)
-    
+
     def test_memory_usage(self):
         """Test memory usage meets requirements."""
         import psutil
         import os
-        
+
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
-        
+
         # Load and use agent
         agent = load_agent("meta/coding-agent")
         result = agent.generate_code("test")
-        
+
         final_memory = process.memory_info().rss / 1024 / 1024  # MB
         memory_increase = final_memory - initial_memory
-        
+
         assert memory_increase < 100, f"Memory increase: {memory_increase:.2f}MB, expected < 100MB"
 ```
 
@@ -534,21 +534,21 @@ class TestSecurity:
         # Test that agents cannot access host file system
         # Test that agents cannot access host network
         pass
-    
+
     def test_input_validation(self):
         """Test input validation and sanitization."""
         # Test parameter validation
         # Test file path validation
         # Test manifest validation
         pass
-    
+
     def test_dependency_isolation(self):
         """Test dependency isolation in virtual environments."""
         # Test that agent dependencies don't conflict
         # Test that system Python is not affected
         # Test that different agents can use different versions
         pass
-    
+
     def test_file_access_control(self):
         """Test file access control and permissions."""
         # Test that agents can only access their directories
@@ -582,7 +582,7 @@ class TestCrossPlatform:
             # Test path handling
             # Test process management
             pass
-    
+
     @pytest.mark.platform
     def test_macos_compatibility(self):
         """Test macOS compatibility."""
@@ -591,7 +591,7 @@ class TestCrossPlatform:
             # Test path handling
             # Test process management
             pass
-    
+
     @pytest.mark.platform
     def test_linux_compatibility(self):
         """Test Linux compatibility."""
@@ -623,15 +623,15 @@ def temp_agenthub_dir():
     temp_dir = tempfile.mkdtemp()
     agenthub_dir = Path(temp_dir) / ".agenthub"
     agenthub_dir.mkdir()
-    
+
     # Create standard directory structure
     (agenthub_dir / "agents").mkdir()
     (agenthub_dir / "cache").mkdir()
     (agenthub_dir / "config").mkdir()
     (agenthub_dir / "logs").mkdir()
-    
+
     yield agenthub_dir
-    
+
     # Cleanup
     shutil.rmtree(temp_dir)
 
@@ -698,7 +698,7 @@ pytest -m integration       # Integration tests only
 pytest -m e2e              # End-to-end tests only
 
 # Run with coverage
-pytest --cov=agentmanager --cov-report=html
+pytest --cov=agenthub --cov-report=html
 
 # Run in parallel
 pytest -n auto
@@ -719,7 +719,7 @@ pytest -x
 ### **Coverage Reporting**
 ```bash
 # Generate coverage reports
-pytest --cov=agentmanager --cov-report=html --cov-report=xml --cov-report=term-missing
+pytest --cov=agenthub --cov-report=html --cov-report=xml --cov-report=term-missing
 
 # Coverage targets
 # Overall: > 90%
@@ -755,25 +755,25 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.12]
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    
+
     - name: Run tests
       run: |
-        pytest --cov=agentmanager --cov-report=xml
-    
+        pytest --cov=agenthub --cov-report=xml
+
     - name: Upload coverage
       uses: codecov/codecov-action@v3
       with:
@@ -848,4 +848,4 @@ jobs:
 - **User Experience**: Positive feedback from user testing
 - **Maintainability**: Well-tested, maintainable codebase
 
-This testing strategy ensures that the Agent Hub MVP meets all quality, performance, and user experience requirements while providing a solid foundation for future development and enhancement. 
+This testing strategy ensures that the Agent Hub MVP meets all quality, performance, and user experience requirements while providing a solid foundation for future development and enhancement.

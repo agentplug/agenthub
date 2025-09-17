@@ -187,7 +187,7 @@ pytest tests/phase2.5_tool_injection/core/tools/test_tool_decorator.py::TestTool
 
 ### **Show Test Coverage**
 ```bash
-pytest tests/phase2.5_tool_injection/ --cov=agentmanager --cov-report=html
+pytest tests/phase2.5_tool_injection/ --cov=agenthub --cov-report=html
 ```
 
 ## 📝 Writing New Tests
@@ -196,15 +196,15 @@ pytest tests/phase2.5_tool_injection/ --cov=agentmanager --cov-report=html
 ```python
 class TestNewFeature:
     """Test cases for new feature."""
-    
+
     def setup_method(self):
         """Set up test environment."""
         # Setup code here
-    
+
     def test_feature_basic_functionality(self):
         """Test basic functionality."""
         # Test code here
-    
+
     def test_feature_error_handling(self):
         """Test error handling."""
         # Test code here
@@ -225,7 +225,7 @@ def test_performance(performance_thresholds):
     start_time = time.time()
     # Do work
     end_time = time.time()
-    
+
     assert (end_time - start_time) < performance_thresholds["tool_execution_time"]
 ```
 

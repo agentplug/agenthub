@@ -2,7 +2,7 @@
 
 import pytest
 
-from agentmanager.core.agents.validator import (
+from agenthub.core.agents.validator import (
     InterfaceValidationError,
     InterfaceValidator,
 )

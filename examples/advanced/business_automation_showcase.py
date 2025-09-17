@@ -1,4 +1,4 @@
-import agentmanager as amg
+import agenthub as ah
 
 
 def main():
@@ -7,8 +7,8 @@ def main():
     print("=" * 35)
 
     # Initialize system
-    storage = amg.LocalStorage()
-    runtime = amg.AgentRuntime(storage=storage)
+    storage = ah.LocalStorage()
+    runtime = ah.AgentRuntime(storage=storage)
 
     # Check agents
     if not (

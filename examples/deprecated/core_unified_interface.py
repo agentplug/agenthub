@@ -1,4 +1,4 @@
-import agentmanager as amg
+import agenthub as ah
 
 
 def main():
@@ -9,8 +9,8 @@ def main():
     print()
 
     # Load agents
-    coding_agent = amg.load_agent("agentplug/coding-agent")
-    analysis_agent = amg.load_agent("agentplug/analysis-agent")
+    coding_agent = ah.load_agent("agentplug/coding-agent")
+    analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
     print(f"📦 Loaded agents: {coding_agent.name} and {analysis_agent.name}")
     print()

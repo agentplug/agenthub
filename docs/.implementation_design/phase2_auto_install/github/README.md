@@ -21,8 +21,8 @@ The **GitHub Integration Module** enables Agent Hub to discover, clone, and vali
 
 ### **Simple Usage Example**
 ```python
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.repository_validator import RepositoryValidator
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_validator import RepositoryValidator
 
 # Clone an agent repository
 cloner = RepositoryCloner()
@@ -117,7 +117,7 @@ graph TB
 ## 📁 **File Structure**
 
 ```
-agentmanager/github/
+agenthub/github/
 ├── __init__.py                    # Module initialization
 ├── repository_cloner.py           # Repository cloning functionality
 ├── repository_validator.py        # Repository validation

@@ -337,24 +337,24 @@ agenthub cancel "agentplug/scientific-paper-analyzer"
 **Implementation**:
 ```bash
 # Create new module directories (existing: core, cli, runtime, storage)
-mkdir -p agentmanager/github
-mkdir -p agentmanager/environment
+mkdir -p agenthub/github
+mkdir -p agenthub/environment
 
 # Create basic __init__.py files
-touch agentmanager/github/__init__.py
-touch agentmanager/environment/__init__.py
+touch agenthub/github/__init__.py
+touch agenthub/environment/__init__.py
 
 # Verify existing modules still work
-python -c "from agentmanager.core.agent_loader import AgentLoader; print('✅ Existing core module works')"
+python -c "from agenthub.core.agent_loader import AgentLoader; print('✅ Existing core module works')"
 ```
 
 **End-to-End Test**:
 ```bash
 # Test basic import of new modules
-python -c "import agentmanager.github; import agentmanager.environment; print('✅ New modules import successfully')"
+python -c "import agenthub.github; import agenthub.environment; print('✅ New modules import successfully')"
 
 # Test existing functionality still works
-python -c "from agentmanager import load_agent; print('✅ Existing API still works')"
+python -c "from agenthub import load_agent; print('✅ Existing API still works')"
 ```
 
 **Success Criteria**: ✅ Can import new modules without breaking existing functionality
@@ -366,7 +366,7 @@ python -c "from agentmanager import load_agent; print('✅ Existing API still wo
 
 **Implementation**:
 ```python
-# agentmanager/github/url_parser.py
+# agenthub/github/url_parser.py
 class URLParser:
     def is_valid_agent_name(self, agent_name: str) -> bool:
         # Basic validation: developer/agent-name format
@@ -396,7 +396,7 @@ print("✅ URL Parser works correctly")
 
 **Implementation**:
 ```python
-# agentmanager/github/repository_cloner.py
+# agenthub/github/repository_cloner.py
 class RepositoryCloner:
     def clone_agent(self, agent_name: str) -> str:
         # Basic git clone implementation
@@ -407,7 +407,7 @@ class RepositoryCloner:
 ```bash
 # Test with a real, simple repository
 python -c "
-from agentmanager.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_cloner import RepositoryCloner
 cloner = RepositoryCloner()
 path = cloner.clone_agent('test-user/simple-test-agent')
 print(f'✅ Cloned to: {path}')
@@ -423,7 +423,7 @@ print(f'✅ Cloned to: {path}')
 
 **Implementation**:
 ```python
-# agentmanager/github/repository_validator.py
+# agenthub/github/repository_validator.py
 class RepositoryValidator:
     def validate_repository(self, local_path: str) -> bool:
         # Check for required files: agent.yaml, agent.py, requirements.txt, README.md
@@ -447,7 +447,7 @@ print(f"✅ Repository validation: {'PASS' if is_valid else 'FAIL'}")
 
 **Implementation**:
 ```python
-# agentmanager/core/auto_installer.py (NEW FILE)
+# agenthub/core/auto_installer.py (NEW FILE)
 class AutoInstaller:
     def __init__(self, storage=None):
         self.storage = storage or LocalStorage()
@@ -478,7 +478,7 @@ class AutoInstaller:
 ```bash
 # Test complete basic flow
 python -c "
-from agentmanager.core.auto_installer import AutoInstaller
+from agenthub.core.auto_installer import AutoInstaller
 installer = AutoInstaller()
 success = installer.install_agent('test-user/simple-test-agent')
 print(f'✅ Auto-installation: {\"SUCCESS\" if success else \"FAILED\"}')
@@ -486,7 +486,7 @@ print(f'✅ Auto-installation: {\"SUCCESS\" if success else \"FAILED\"}')
 
 # Test existing functionality still works
 python -c "
-from agentmanager import load_agent
+from agenthub import load_agent
 try:
     # This should still work for existing agents
     agent = load_agent('agentplug/coding-agent')
@@ -507,7 +507,7 @@ except Exception as e:
 
 **Implementation**:
 ```python
-# agentmanager/environment/virtual_environment.py
+# agenthub/environment/virtual_environment.py
 class VirtualEnvironmentCreator:
     def create_environment(self, target_path: str) -> str:
         # Basic venv creation
@@ -531,7 +531,7 @@ print(f"✅ Environment created: {env_path}")
 
 **Implementation**:
 ```python
-# agentmanager/environment/dependency_manager.py
+# agenthub/environment/dependency_manager.py
 class DependencyManager:
     def install_dependencies(self, env_path: str, requirements_path: str) -> bool:
         # Basic pip install from requirements.txt
@@ -555,7 +555,7 @@ print(f"✅ Dependencies installed: {'SUCCESS' if success else 'FAILED'}")
 
 **Implementation**:
 ```python
-# agentmanager/environment/environment_setup.py
+# agenthub/environment/environment_setup.py
 class EnvironmentSetup:
     def setup_environment(self, agent_path: str, requirements_path: str) -> bool:
         # Coordinate: create env → install deps → validate
@@ -579,7 +579,7 @@ print(f"✅ Environment setup: {'SUCCESS' if success else 'FAILED'}")
 
 **Implementation**:
 ```python
-# agentmanager/storage/installation_tracker.py (NEW FILE)
+# agenthub/storage/installation_tracker.py (NEW FILE)
 class InstallationTracker:
     def __init__(self, storage=None):
         self.storage = storage or LocalStorage()
@@ -621,8 +621,8 @@ class LocalStorage(LocalStorage):  # Inherit from existing
 **End-to-End Test**:
 ```python
 # Test installation tracking
-from agentmanager.storage.installation_tracker import InstallationTracker
-from agentmanager.storage.local_storage import LocalStorage
+from agenthub.storage.installation_tracker import InstallationTracker
+from agenthub.storage.local_storage import LocalStorage
 
 storage = LocalStorage()
 tracker = InstallationTracker(storage)
@@ -645,7 +645,7 @@ print(f"✅ Existing storage discovery: {len(agents)} agents found")
 
 **Implementation**:
 ```python
-# agentmanager/core/auto_installer.py (enhanced)
+# agenthub/core/auto_installer.py (enhanced)
 class AutoInstaller:
     def install_agent(self, agent_name: str) -> InstallationResult:
         # Complete flow: clone → validate → setup env → track
@@ -669,9 +669,9 @@ print(f"✅ Enhanced auto-installation: {result.success}")
 
 **Implementation**:
 ```python
-# agentmanager/cli/commands/install.py (NEW FILE)
+# agenthub/cli/commands/install.py (NEW FILE)
 import click
-from agentmanager.core.auto_installer import AutoInstaller
+from agenthub.core.auto_installer import AutoInstaller
 
 @click.command()
 @click.argument('agent_name')
@@ -691,20 +691,20 @@ def install(agent_name):
         sys.exit(1)
 
 # Update existing main.py to include new command
-# In agentmanager/cli/main.py, add:
-# from agentmanager.cli.commands.install import install
+# In agenthub/cli/main.py, add:
+# from agenthub.cli.commands.install import install
 # cli.add_command(install)
 ```
 
 **End-to-End Test**:
 ```bash
 # Test CLI command
-python -m agentmanager.cli.main install test-user/test-agent
+python -m agenthub.cli.main install test-user/test-agent
 # Should show installation progress and result
 
 # Test existing CLI commands still work
-python -m agentmanager.cli.main list
-python -m agentmanager.cli.main --help
+python -m agenthub.cli.main list
+python -m agenthub.cli.main --help
 ```
 
 **Success Criteria**: ✅ Can install agents via CLI command without breaking existing CLI functionality
@@ -722,9 +722,9 @@ python -m agentmanager.cli.main --help
 pytest tests/phase2_foundation/ -v
 
 # Test with real repositories
-python -m agentmanager.cli.main install test-user/real-test-agent
-python -m agentmanager.cli.main list
-python -m agentmanager.cli.main info test-user/real-test-agent
+python -m agenthub.cli.main install test-user/real-test-agent
+python -m agenthub.cli.main list
+python -m agenthub.cli.main info test-user/real-test-agent
 ```
 
 **Success Criteria**: ✅ All tests pass, can install and manage real agents
@@ -812,7 +812,7 @@ tests/
 ## 🔄 **Backward Compatibility & Integration**
 
 ### **Existing Phase 1 Components to Preserve**
-- **`agentmanager.load_agent()`**: Main API function must continue working
+- **`agenthub.load_agent()`**: Main API function must continue working
 - **`AgentLoader`**: Core agent loading functionality
 - **`AgentWrapper`**: Agent execution wrapper
 - **`LocalStorage`**: Storage management and agent discovery
@@ -835,7 +835,7 @@ tests/
 
 ### **Current Phase 1 Structure**
 ```
-agentmanager/
+agenthub/
 ├── __init__.py                    # Main API: load_agent()
 ├── core/                          # Core functionality
 │   ├── __init__.py
@@ -860,7 +860,7 @@ agentmanager/
 
 ### **Phase 2 Extensions**
 ```
-agentmanager/
+agenthub/
 ├── core/
 │   └── auto_installer.py          # NEW: Auto-installation coordination
 ├── github/                         # NEW: GitHub integration

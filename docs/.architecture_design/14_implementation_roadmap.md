@@ -1,12 +1,12 @@
 # Agent Hub Implementation Roadmap
 
-**Document Type**: Implementation Plan  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L5 - Planning Level  
-**Audience**: Development Team, Project Managers, Stakeholders  
+**Document Type**: Implementation Plan
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L5 - Planning Level
+**Audience**: Development Team, Project Managers, Stakeholders
 
 ## 🎯 **Implementation Overview**
 
@@ -22,19 +22,19 @@ gantt
     Core Runtime           :p1, 2025-06-28, 10d
     Process Manager        :p1-1, 2025-06-28, 5d
     Environment Manager    :p1-2, 2025-07-01, 5d
-    
+
     section Phase 2: CLI Interface
     Basic CLI Commands     :p2, 2025-07-08, 7d
     Install/Remove         :p2-1, 2025-07-08, 3d
     List/Info Commands     :p2-2, 2025-07-10, 2d
     Error Handling         :p2-3, 2025-07-12, 2d
-    
+
     section Phase 3: Registry
     GitHub Integration     :p3, 2025-07-15, 7d
     Registry Client        :p3-1, 2025-07-15, 3d
     Search & Discovery     :p3-2, 2025-07-17, 2d
     Caching System         :p3-3, 2025-07-19, 2d
-    
+
     section Phase 4: SDK & Polish
     Python SDK             :p4, 2025-07-22, 7d
     Agent Loading          :p4-1, 2025-07-22, 3d
@@ -51,7 +51,7 @@ Build the fundamental runtime system that enables agent execution with process-b
 
 #### **Process Manager**
 ```python
-# agentmanager/runtime/process_manager.py
+# agenthub/runtime/process_manager.py
 class ProcessManager:
     def execute_agent(self, agent_path: str, method: str, parameters: dict) -> dict:
         """Execute agent in isolated subprocess."""
@@ -60,7 +60,7 @@ class ProcessManager:
 
 #### **Environment Manager**
 ```python
-# agentmanager/runtime/environment_manager.py
+# agenthub/runtime/environment_manager.py
 class EnvironmentManager:
     def create_environment(self, agent_path: str) -> str:
         """Create isolated virtual environment using UV."""
@@ -69,7 +69,7 @@ class EnvironmentManager:
 
 #### **Agent Runtime**
 ```python
-# agentmanager/runtime/agent_runtime.py
+# agenthub/runtime/agent_runtime.py
 class AgentRuntime:
     def load_agent_manifest(self, agent_path: str) -> dict:
         """Load and validate agent manifest."""
@@ -111,7 +111,7 @@ agenthub search <query>           # Search for agents (local cache)
 
 #### **Error Handling System**
 ```python
-# agentmanager/cli/utils/error_handler.py
+# agenthub/cli/utils/error_handler.py
 class ErrorHandler:
     def handle_error(self, error: Exception, verbose: bool = False):
         """Display user-friendly error messages with solutions."""
@@ -120,7 +120,7 @@ class ErrorHandler:
 
 #### **Output Formatting**
 ```python
-# agentmanager/cli/utils/output_formatter.py
+# agenthub/cli/utils/output_formatter.py
 class OutputFormatter:
     def print_agent_list(self, agents: list, show_details: bool = False):
         """Format and display agent lists."""
@@ -152,12 +152,12 @@ Integrate with GitHub-based registry for agent discovery and installation.
 
 #### **GitHub Registry Client**
 ```python
-# agentmanager/registry/github_client.py
+# agenthub/registry/github_client.py
 class GitHubRegistryClient:
     def get_registry(self) -> dict:
         """Fetch registry.json from GitHub."""
         # Implementation: GitHub API integration with caching
-    
+
     def search_agents(self, query: str, category: str = None) -> list:
         """Search agents in registry."""
         # Implementation: Client-side search with filtering
@@ -173,7 +173,7 @@ agenthub info <agent-path>              # Show detailed info from registry
 
 #### **Caching System**
 ```python
-# agentmanager/cache/cache_manager.py
+# agenthub/cache/cache_manager.py
 class CacheManager:
     def get_cached_registry(self) -> dict:
         """Get cached registry with TTL validation."""
@@ -205,8 +205,8 @@ Complete the one-line integration experience with Python SDK and final polish.
 
 #### **Python SDK**
 ```python
-# agentmanager/__init__.py
-import agentmanager as amg
+# agenthub/__init__.py
+import agenthub as amg
 
 # Core functionality
 agent = amg.load("meta/coding-agent")
@@ -215,7 +215,7 @@ code = agent.generate_code("neural network class")
 
 #### **Agent Wrapper System**
 ```python
-# agentmanager/core/wrapper.py
+# agenthub/core/wrapper.py
 class AgentWrapper:
     def __getattr__(self, method_name: str):
         """Dynamic method creation from agent manifest."""
@@ -309,7 +309,7 @@ tests/
 ### **Distribution**
 ```bash
 # PyPI package distribution
-pip install agentmanager
+pip install agenthub
 
 # GitHub repository
 git clone https://github.com/agentplug/agenthub.git

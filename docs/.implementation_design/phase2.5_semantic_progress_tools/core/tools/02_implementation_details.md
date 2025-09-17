@@ -1,9 +1,9 @@
 # Core/Tools Implementation Details - Phase 2.5
 
-**Document Type**: Implementation Details  
-**Module**: core/tools  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Implementation Details
+**Module**: core/tools
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 
@@ -34,7 +34,7 @@ FastMCP
 ### **1. ToolRegistry Class**
 
 ```python
-# agentmanager/core/tools/registry.py
+# agenthub/core/tools/registry.py
 from fastmcp import FastMCP
 from typing import Dict, List, Callable, Any, Optional
 import threading
@@ -53,7 +53,7 @@ class ToolMetadata:
 class ToolRegistry:
     _instance = None
     _lock = threading.Lock()
-    
+
     def __new__(cls):
         if cls._instance is None:
             with cls._lock:
@@ -61,57 +61,57 @@ class ToolRegistry:
                     cls._instance = super().__new__(cls)
                     cls._instance._initialized = False
         return cls._instance
-    
+
     def __init__(self):
         if not self._initialized:
             self.mcp_server = FastMCP("AgentHub Tools")
             self.registered_tools: Dict[str, ToolMetadata] = {}
             self._initialized = True
-    
+
     def register_tool(self, name: str, func: Callable, description: str = "") -> Callable:
         """Register a tool with FastMCP automatically"""
         # Validate tool
         self._validate_tool(name, func)
-        
+
         # Create tool metadata
         metadata = self._create_tool_metadata(name, func, description)
-        
+
         # Register with FastMCP
         self._register_with_fastmcp(name, func, description)
-        
+
         # Store in registry
         self.registered_tools[name] = metadata
-        
+
         return func
-    
+
     def _validate_tool(self, name: str, func: Callable):
         """Validate tool before registration"""
         # Check name uniqueness
         if name in self.registered_tools:
             raise ToolNameConflictError(f"Tool '{name}' already exists")
-        
+
         # Check function signature
         if not callable(func):
             raise ToolValidationError(f"Tool '{name}' is not callable")
-        
+
         # Check parameter types (basic validation)
         sig = inspect.signature(func)
         for param_name, param in sig.parameters.items():
             if param.annotation == inspect.Parameter.empty:
                 # Warn about missing type hints
                 pass
-    
+
     def _create_tool_metadata(self, name: str, func: Callable, description: str) -> ToolMetadata:
         """Create tool metadata"""
         sig = inspect.signature(func)
         parameters = {}
-        
+
         for param_name, param in sig.parameters.items():
             parameters[param_name] = {
                 "type": param.annotation if param.annotation != inspect.Parameter.empty else Any,
                 "required": param.default == inspect.Parameter.empty
             }
-        
+
         return ToolMetadata(
             name=name,
             description=description,
@@ -120,27 +120,27 @@ class ToolRegistry:
             return_type=sig.return_annotation if sig.return_annotation != inspect.Parameter.empty else Any,
             namespace="custom"
         )
-    
+
     def _register_with_fastmcp(self, name: str, func: Callable, description: str):
         """Register tool with FastMCP"""
         @self.mcp_server.tool()
         def tool_wrapper(**kwargs):
             return func(**kwargs)
-        
+
         # Set tool metadata
         tool_wrapper.__name__ = name
         tool_wrapper.__doc__ = description
-        
+
         return tool_wrapper
-    
+
     def get_available_tools(self) -> List[str]:
         """Get list of available tool names"""
         return list(self.registered_tools.keys())
-    
+
     def get_tool_metadata(self, name: str) -> Optional[ToolMetadata]:
         """Get tool metadata by name"""
         return self.registered_tools.get(name)
-    
+
     def get_mcp_server(self) -> FastMCP:
         """Get the FastMCP server instance"""
         return self.mcp_server
@@ -149,7 +149,7 @@ class ToolRegistry:
 ### **2. Tool Decorator**
 
 ```python
-# agentmanager/core/tools/__init__.py
+# agenthub/core/tools/__init__.py
 from .registry import ToolRegistry, ToolMetadata
 from typing import List, Optional
 
@@ -178,7 +178,7 @@ def get_mcp_server():
 ### **3. Tool Validation**
 
 ```python
-# agentmanager/core/tools/validator.py
+# agenthub/core/tools/validator.py
 import inspect
 from typing import Callable, Any
 from .exceptions import ToolValidationError, ToolNameConflictError
@@ -189,35 +189,35 @@ class ToolValidator:
         """Validate tool name"""
         if not name or not isinstance(name, str):
             raise ToolValidationError("Tool name must be a non-empty string")
-        
+
         if name in existing_tools:
             raise ToolNameConflictError(f"Tool '{name}' already exists")
-        
+
         # Check for reserved names
         reserved_names = ["list_tools", "call_tool", "get_metadata"]
         if name in reserved_names:
             raise ToolValidationError(f"Tool name '{name}' is reserved")
-        
+
         return True
-    
+
     @staticmethod
     def validate_tool_function(func: Callable) -> bool:
         """Validate tool function"""
         if not callable(func):
             raise ToolValidationError("Tool must be callable")
-        
+
         # Check if function has proper signature
         sig = inspect.signature(func)
         if len(sig.parameters) == 0:
             raise ToolValidationError("Tool function must accept at least one parameter")
-        
+
         return True
 ```
 
 ### **4. Error Handling**
 
 ```python
-# agentmanager/core/tools/exceptions.py
+# agenthub/core/tools/exceptions.py
 class ToolError(Exception):
     """Base exception for tool-related errors"""
     pass
@@ -308,13 +308,13 @@ class ToolExecutionQueue:
     def __init__(self):
         self.queue = Queue()
         self.running = False
-    
+
     async def execute_tool(self, tool_name: str, arguments: dict):
         """Execute tool with queuing for side effects"""
         await self.queue.put((tool_name, arguments))
         if not self.running:
             await self._process_queue()
-    
+
     async def _process_queue(self):
         """Process tool execution queue"""
         self.running = True

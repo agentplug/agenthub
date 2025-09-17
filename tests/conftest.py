@@ -60,13 +60,14 @@ def mock_agent_directory(temp_dir: Path, sample_agent_manifest: dict) -> Path:
     with open(agent_dir / "agent.yaml", "w") as f:
         yaml.dump(sample_agent_manifest, f)
 
-    # Create simple agent.py
+    # Create simple agent.py with a class
     agent_py_content = """#!/usr/bin/env python3
 import json
 import sys
 
-def test_method(input: str) -> str:
-    return f"Test output: {input}"
+class TestAgent:
+    def test_method(self, input: str) -> str:
+        return f"Test output: {input}"
 
 def main():
     if len(sys.argv) != 2:
@@ -78,8 +79,9 @@ def main():
         method = input_data.get("method")
         parameters = input_data.get("parameters", {})
 
+        agent = TestAgent()
         if method == "test_method":
-            result = test_method(parameters.get("input", ""))
+            result = agent.test_method(parameters.get("input", ""))
             print(json.dumps({"result": result}))
         else:
             print(json.dumps({"error": f"Unknown method: {method}"}))

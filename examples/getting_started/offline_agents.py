@@ -1,10 +1,10 @@
-import agentmanager as amg
+import agenthub as ah
 
 
 def main():
     # Load agents
-    coding_agent = amg.load_agent("agentplug/coding-agent")
-    analysis_agent = amg.load_agent("agentplug/analysis-agent")
+    coding_agent = ah.load_agent("agentplug/coding-agent")
+    analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
     # Generate code using the correct method
     code = coding_agent.generate_code(

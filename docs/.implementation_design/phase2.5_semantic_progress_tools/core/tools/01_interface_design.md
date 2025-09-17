@@ -1,9 +1,9 @@
 # Core/Tools Interface Design - Phase 2.5
 
-**Document Type**: Interface Design  
-**Module**: core/tools  
-**Phase**: 2.5  
-**Status**: Draft  
+**Document Type**: Interface Design
+**Module**: core/tools
+**Phase**: 2.5
+**Status**: Draft
 
 ## 🎯 **Purpose**
 
@@ -14,7 +14,7 @@ Define the public interfaces for tool registration, management, and FastMCP inte
 ### **1. Tool Decorator Interface**
 
 ```python
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 @tool(name: str, description: str = "")
 def tool_function(*args, **kwargs) -> Any:
@@ -31,7 +31,7 @@ def tool_function(*args, **kwargs) -> Any:
 ### **2. Tool Registry Interface**
 
 ```python
-from agentmanager.core.tools import get_available_tools, get_mcp_server
+from agenthub.core.tools import get_available_tools, get_mcp_server
 
 # Get list of available tools
 tools: List[str] = get_available_tools()
