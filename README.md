@@ -131,14 +131,27 @@ agenthub info agentplug/scientific-paper-analyzer
 # Install new agent
 agenthub agent install agentplug/scientific-paper-analyzer
 
-# Execute agent method
+# Execute agent method (multiple ways)
 agenthub exec agentplug/scientific-paper-analyzer analyze_paper "research.pdf"
+agenthub exec agentplug/scientific-paper-analyzer analyze_paper '{"file": "research.pdf"}'
+agenthub exec agentplug/scientific-paper-analyzer analyze_paper --interactive
 
 # Check agent status
 agenthub agent status agentplug/scientific-paper-analyzer
 
 # Remove an agent
 agenthub agent remove agentplug/scientific-paper-analyzer
+
+# Advanced agent management
+agenthub agent backup agentplug/scientific-paper-analyzer
+agenthub agent restore agentplug/scientific-paper-analyzer
+agenthub agent repair agentplug/scientific-paper-analyzer
+agenthub agent migrate agentplug/scientific-paper-analyzer
+agenthub agent optimize agentplug/scientific-paper-analyzer
+agenthub agent analyze-deps agentplug/scientific-paper-analyzer
+
+# System validation
+agenthub validate
 ```
 
 ## 🛠️ Creating Your Own Agent
@@ -280,32 +293,6 @@ git checkout -b feature/your-feature
 - **🔧 Code**: Fix bugs, add features
 - **🎨 Design**: UI/UX improvements
 - **📊 Testing**: Help improve test coverage
-
-## 📊 Roadmap
-
-### ✅ Phase 1: Foundation (Live!)
-- ✅ Core SDK with one-line agent loading
-- ✅ GitHub integration and auto-installation
-- ✅ Environment isolation with UV
-- ✅ CLI tools and validation engine
-
-### ✅ Phase 2.5: Tool Injection (Live!)
-- ✅ Tool registry with FastMCP integration
-- ✅ `@tool` decorator for custom tools
-- ✅ Agent tool assignment functionality
-- ✅ Comprehensive testing suite
-
-### 🚧 Phase 2: Developer Experience (In Progress)
-- 🚧 Agent Studio visual development environment
-- 🚧 Testing framework and validation suite
-- 🚧 Marketplace UI for agent discovery
-- 🚧 Analytics dashboard
-
-### 📋 Phase 3: Ecosystem Growth (Planning)
-- 📋 Multi-agent workflows
-- 📋 AI-powered agent recommendations
-- 📋 Mobile app for agent management
-- 📋 Revenue sharing platform
 
 ## 📞 Support & Community
 
