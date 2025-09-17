@@ -5,12 +5,15 @@ This module provides utilities for connecting to MCP servers and executing tools
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from agenthub.core.tools import get_tool_registry
+
+logger = logging.getLogger(__name__)
 
 
 class MCPClient:
@@ -35,7 +38,9 @@ class MCPClient:
                     command="python",
                     args=[
                         "-c",
-                        "from agenthub.core.tools import get_mcp_server; import asyncio; asyncio.run(get_mcp_server().run_stdio())",
+                        "from agenthub.core.tools import get_mcp_server; "
+                        "import asyncio; "
+                        "asyncio.run(get_mcp_server().run_stdio())",
                     ],
                 )
 

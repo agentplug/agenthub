@@ -8,281 +8,188 @@ import pytest
 from agenthub.core.mcp.mcp_client import MCPClient
 
 
-@pytest.mark.skip(reason="Test outdated - MCPClient signature changed, needs full rewrite")
 class TestMCPClient:
     """Test cases for MCP client functionality."""
 
     def setup_method(self):
         """Set up test environment before each test."""
-        self.client = MCPClient("http://localhost:8000/sse")
+        self.client = MCPClient()
 
     def test_client_initialization(self):
         """Test MCP client initialization."""
-        assert self.client.url == "http://localhost:8000/sse"
-        assert self.client.session is None
-        assert self.client.is_connected is False
+        assert self.client.tool_registry is not None
+        assert self.client.client is None
+        assert self.client._lock is not None
 
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_connect_success(self, mock_session_class, mock_sse_client):
+    @patch("agenthub.core.mcp.mcp_client.stdio_client")
+    @patch("agenthub.core.mcp.mcp_client.StdioServerParameters")
+    def test_connect_success(self, mock_params_class, mock_stdio_client):
         """Test successful connection to MCP server."""
-        # Mock the connection
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
+        # Mock the stdio client and server parameters
+        mock_params = MagicMock()
+        mock_params_class.return_value = mock_params
 
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
+        mock_transport = AsyncMock()
+        mock_client_session = AsyncMock()
+        mock_transport.__aenter__.return_value = mock_client_session
+        mock_stdio_client.return_value = mock_transport
 
-        async def test_connect():
-            await self.client.connect()
-            assert self.client.is_connected is True
-            assert self.client.session is not None
+        # Test connection
+        async def run_test():
+            result = await self.client.connect()
+            assert result == mock_client_session
+            assert self.client.client == mock_client_session
 
-        asyncio.run(test_connect())
+        asyncio.run(run_test())
 
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    def test_connect_failure(self, mock_sse_client):
+    @patch("agenthub.core.mcp.mcp_client.stdio_client")
+    @patch("agenthub.core.mcp.mcp_client.StdioServerParameters")
+    def test_connect_failure(self, mock_params_class, mock_stdio_client):
         """Test connection failure handling."""
         # Mock connection failure
-        mock_sse_client.side_effect = Exception("Connection failed")
+        mock_params = MagicMock()
+        mock_params_class.return_value = mock_params
 
-        async def test_connect_failure():
+        mock_transport = AsyncMock()
+        mock_transport.__aenter__.side_effect = Exception("Connection failed")
+        mock_stdio_client.return_value = mock_transport
+
+        # Test connection failure
+        async def run_test():
             with pytest.raises(Exception, match="Connection failed"):
                 await self.client.connect()
-            assert self.client.is_connected is False
 
-        asyncio.run(test_connect_failure())
+        asyncio.run(run_test())
 
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_disconnect(self, mock_session_class, mock_sse_client):
-        """Test disconnection from MCP server."""
-        # Mock the connection
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
+    def test_disconnect(self):
+        """Test disconnecting from MCP server."""
+        # Mock client session
+        mock_client = AsyncMock()
+        self.client.client = mock_client
 
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
+        # Test disconnect
+        async def run_test():
+            await self.client.close()
+            mock_client.close.assert_called_once()
+            assert self.client.client is None
 
-        async def test_disconnect():
-            await self.client.connect()
-            assert self.client.is_connected is True
+        asyncio.run(run_test())
 
-            await self.client.disconnect()
-            assert self.client.is_connected is False
-            assert self.client.session is None
-
-        asyncio.run(test_disconnect())
-
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_list_tools(self, mock_session_class, mock_sse_client):
+    def test_list_tools(self):
         """Test listing available tools."""
-        # Mock the connection and tools response
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
+        # Mock tool registry
+        mock_tools = ["tool1", "tool2", "tool3"]
+        self.client.tool_registry.get_available_tools = MagicMock(
+            return_value=mock_tools
+        )
 
-        mock_tool1 = MagicMock()
-        mock_tool1.name = "tool1"
-        mock_tool1.description = "Tool 1 description"
+        # Test list tools
+        async def run_test():
+            result = await self.client.list_tools()
+            assert result == mock_tools
+            self.client.tool_registry.get_available_tools.assert_called_once()
 
-        mock_tool2 = MagicMock()
-        mock_tool2.name = "tool2"
-        mock_tool2.description = "Tool 2 description"
+        asyncio.run(run_test())
 
-        mock_tools = MagicMock()
-        mock_tools.tools = [mock_tool1, mock_tool2]
-
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session.list_tools = AsyncMock(return_value=mock_tools)
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-
-        async def test_list_tools():
-            await self.client.connect()
-            tools = await self.client.list_tools()
-
-            assert len(tools) == 2
-            assert tools[0].name == "tool1"
-            assert tools[0].description == "Tool 1 description"
-            assert tools[1].name == "tool2"
-            assert tools[1].description == "Tool 2 description"
-
-        asyncio.run(test_list_tools())
-
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_call_tool(self, mock_session_class, mock_sse_client):
-        """Test calling a tool via MCP."""
-        # Mock the connection and tool call response
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
-
+    @patch("agenthub.core.mcp.connection_manager.get_connection_pool")
+    def test_execute_tool_success(self, mock_get_pool):
+        """Test successful tool execution."""
+        # Mock connection pool and client
+        mock_pool = MagicMock()
+        mock_connection = AsyncMock()
+        mock_client = AsyncMock()
         mock_result = MagicMock()
-        mock_result.content = [{"text": "Tool execution result"}]
+        mock_result.text = '{"result": "success"}'
+        mock_client.call_tool.return_value = [mock_result]
 
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session.call_tool = AsyncMock(return_value=mock_result)
-        mock_session_class.return_value.__aenter__.return_value = mock_session
+        mock_connection.__aenter__.return_value = mock_client
+        mock_pool.get_connection.return_value = mock_connection
+        mock_get_pool.return_value = mock_pool
 
-        async def test_call_tool():
-            await self.client.connect()
-            result = await self.client.call_tool("test_tool", {"param": "value"})
-
-            assert result == "Tool execution result"
-            mock_session.call_tool.assert_called_once_with(
+        # Test tool execution
+        async def run_test():
+            result = await self.client.execute_tool("test_tool", {"param": "value"})
+            assert result == '{"result": "success"}'
+            mock_client.call_tool.assert_called_once_with(
                 "test_tool", {"param": "value"}
             )
 
-        asyncio.run(test_call_tool())
+        asyncio.run(run_test())
 
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_call_tool_failure(self, mock_session_class, mock_sse_client):
-        """Test tool call failure handling."""
-        # Mock the connection and tool call failure
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
+    @patch("agenthub.core.mcp.connection_manager.get_connection_pool")
+    def test_execute_tool_failure(self, mock_get_pool):
+        """Test tool execution failure."""
+        # Mock connection pool to raise exception
+        mock_pool = MagicMock()
+        mock_connection = AsyncMock()
+        mock_connection.__aenter__.side_effect = Exception("Tool execution failed")
+        mock_pool.get_connection.return_value = mock_connection
+        mock_get_pool.return_value = mock_pool
 
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session.call_tool = AsyncMock(side_effect=Exception("Tool call failed"))
-        mock_session_class.return_value.__aenter__.return_value = mock_session
+        # Test tool execution failure
+        async def run_test():
+            result = await self.client.execute_tool("test_tool", {"param": "value"})
+            assert "error" in result
+            assert "Tool execution failed" in result
 
-        async def test_call_tool_failure():
-            await self.client.connect()
-
-            with pytest.raises(Exception, match="Tool call failed"):
-                await self.client.call_tool("test_tool", {"param": "value"})
-
-        asyncio.run(test_call_tool_failure())
-
-    def test_context_manager(self):
-        """Test MCP client as context manager."""
-        with (
-            patch("agenthub.core.mcp.mcp_client.sse_client") as mock_sse_client,
-            patch("agenthub.core.mcp.mcp_client.ClientSession") as mock_session_class,
-        ):
-
-            # Mock the connection
-            mock_streams = (MagicMock(), MagicMock())
-            mock_sse_client.return_value.__aenter__.return_value = mock_streams
-
-            mock_session = AsyncMock()
-            mock_session.initialize = AsyncMock()
-            mock_session_class.return_value.__aenter__.return_value = mock_session
-
-            async def test_context_manager():
-                async with self.client as client:
-                    assert client.is_connected is True
-                    assert client.session is not None
-
-                # After context exit, should be disconnected
-                assert self.client.is_connected is False
-
-            asyncio.run(test_context_manager())
-
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_get_tool_info(self, mock_session_class, mock_sse_client):
-        """Test getting tool information."""
-        # Mock the connection and tool info response
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
-
-        mock_tool = MagicMock()
-        mock_tool.name = "test_tool"
-        mock_tool.description = "Test tool description"
-
-        mock_tools = MagicMock()
-        mock_tools.tools = [mock_tool]
-
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session.list_tools = AsyncMock(return_value=mock_tools)
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-
-        async def test_get_tool_info():
-            await self.client.connect()
-            tool_info = await self.client.get_tool_info("test_tool")
-
-            assert tool_info is not None
-            assert tool_info["name"] == "test_tool"
-            assert tool_info["description"] == "Test tool description"
-
-        asyncio.run(test_get_tool_info())
-
-    @patch("agenthub.core.mcp.mcp_client.sse_client")
-    @patch("agenthub.core.mcp.mcp_client.ClientSession")
-    def test_get_tool_info_not_found(self, mock_session_class, mock_sse_client):
-        """Test getting tool information for non-existent tool."""
-        # Mock the connection and empty tools response
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
-
-        mock_tools = MagicMock()
-        mock_tools.tools = []
-
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session.list_tools = AsyncMock(return_value=mock_tools)
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-
-        async def test_get_tool_info_not_found():
-            await self.client.connect()
-            tool_info = await self.client.get_tool_info("nonexistent_tool")
-
-            assert tool_info is None
-
-        asyncio.run(test_get_tool_info_not_found())
-
-    def test_connection_timeout(self):
-        """Test connection timeout handling."""
-        with patch("agenthub.core.mcp.mcp_client.sse_client") as mock_sse_client:
-            # Mock timeout
-            mock_sse_client.side_effect = TimeoutError("Connection timeout")
-
-            async def test_timeout():
-                with pytest.raises(asyncio.TimeoutError):
-                    await self.client.connect(timeout=1.0)
-
-            asyncio.run(test_timeout())
-
-    def test_retry_mechanism(self):
-        """Test connection retry mechanism."""
-        with patch("agenthub.core.mcp.mcp_client.sse_client") as mock_sse_client:
-            # Mock first attempt failure, second success
-            mock_sse_client.side_effect = [
-                Exception("First attempt failed"),
-                MagicMock(),
-            ]
-
-            async def test_retry():
-                # This would need to be implemented in the actual client
-                # For now, just test that the client handles exceptions
-                with pytest.raises(Exception, match="First attempt failed"):
-                    await self.client.connect()
-
-            asyncio.run(test_retry())
-
-    def test_client_cleanup(self):
-        """Test client cleanup functionality."""
-        # Mock a connected state
-        self.client.session = MagicMock()
-        self.client.is_connected = True
-
-        # Cleanup should reset the state
-        self.client.cleanup()
-
-        assert self.client.session is None
-        assert self.client.is_connected is False
+        asyncio.run(run_test())
 
     def test_client_repr(self):
         """Test client string representation."""
         repr_str = repr(self.client)
         assert "MCPClient" in repr_str
-        assert "http://localhost:8000/sse" in repr_str
-        assert "connected=False" in repr_str
+
+    def test_client_cleanup(self):
+        """Test client cleanup."""
+        # Mock client session
+        mock_client = AsyncMock()
+        self.client.client = mock_client
+
+        # Test cleanup
+        async def run_test():
+            await self.client.close()
+            mock_client.close.assert_called_once()
+            assert self.client.client is None
+
+        asyncio.run(run_test())
+
+    def test_connection_lock(self):
+        """Test that connection uses proper locking."""
+        # This test verifies that the _lock attribute exists and is an asyncio.Lock
+        assert isinstance(self.client._lock, asyncio.Lock)
+
+    @patch("agenthub.core.mcp.mcp_client.stdio_client")
+    @patch("agenthub.core.mcp.mcp_client.StdioServerParameters")
+    def test_multiple_connect_calls(self, mock_params_class, mock_stdio_client):
+        """Test that multiple connect calls reuse the same connection."""
+        # Mock the stdio client and server parameters
+        mock_params = MagicMock()
+        mock_params_class.return_value = mock_params
+
+        mock_transport = AsyncMock()
+        mock_client_session = AsyncMock()
+        mock_transport.__aenter__.return_value = mock_client_session
+        mock_stdio_client.return_value = mock_transport
+
+        # Test multiple connections
+        async def run_test():
+            # First connection
+            result1 = await self.client.connect()
+            assert result1 == mock_client_session
+
+            # Second connection should reuse the same client
+            result2 = await self.client.connect()
+            assert result2 == mock_client_session
+            assert result1 is result2
+
+            # Should only create one connection
+            assert mock_stdio_client.call_count == 1
+
+        asyncio.run(run_test())
+
+    def test_tool_registry_integration(self):
+        """Test that MCP client properly integrates with tool registry."""
+        assert self.client.tool_registry is not None
+        # Verify that list_tools uses the tool registry
+        available_tools = self.client.tool_registry.get_available_tools()
+        assert isinstance(available_tools, list)
