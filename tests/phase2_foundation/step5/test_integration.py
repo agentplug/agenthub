@@ -545,7 +545,7 @@ class TestCompleteInstallationWorkflow:
                     in result.next_steps
                 )
 
-                # Verify repository-specific guidance (these may not be present in actual implementation)
+                # Verify repository-specific guidance (may not be present in actual implementation)
                 # Remove these assertions as they may not be in the actual next_steps
 
 

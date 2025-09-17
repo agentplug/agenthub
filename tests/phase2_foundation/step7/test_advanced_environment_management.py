@@ -386,7 +386,6 @@ numpy>=1.21.0
         manager = AdvancedEnvironmentManager(base_storage_path=Path(temp_storage_path))
 
         # Test full workflow
-        current_version = "3.9.7"
         target_version = "3.10.0"
 
         with patch.object(manager, "_get_current_python_version") as mock_version:

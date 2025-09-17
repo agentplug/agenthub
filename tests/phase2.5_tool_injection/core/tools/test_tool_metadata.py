@@ -99,9 +99,9 @@ class TestToolMetadata:
         )
 
         # Check type annotations
-        assert metadata.parameters["param1"]["type"] == str
-        assert metadata.parameters["param2"]["type"] == int
-        assert metadata.parameters["param3"]["type"] == bool
+        assert metadata.parameters["param1"]["type"] is str
+        assert metadata.parameters["param2"]["type"] is int
+        assert metadata.parameters["param3"]["type"] is bool
 
     def test_return_type_extraction(self):
         """Test return type extraction from function signature."""

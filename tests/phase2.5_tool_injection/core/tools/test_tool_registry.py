@@ -18,14 +18,16 @@ class TestToolRegistry:
         # Reset the registry for each test
         ToolRegistry._instance = None
         self.registry = ToolRegistry()
-        
+
         # Patch the global registry to use our test instance
-        self.registry_patcher = patch('agenthub.core.tools.registry._registry', self.registry)
+        self.registry_patcher = patch(
+            "agenthub.core.tools.registry._registry", self.registry
+        )
         self.registry_patcher.start()
 
     def teardown_method(self):
         """Clean up after each test."""
-        if hasattr(self, 'registry_patcher'):
+        if hasattr(self, "registry_patcher"):
             self.registry_patcher.stop()
 
     def test_singleton_pattern(self):
