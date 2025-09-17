@@ -9,13 +9,26 @@ description = "AgentHub - The App Store for AI Agents"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "William", email = "william@agenthub.dev" }]
+maintainers = [{ name = "William", email = "william@agenthub.dev" }]
+keywords = [
+    "ai", "agents", "artificial-intelligence", "machine-learning",
+    "automation", "tools", "mcp", "model-context-protocol", "llm",
+    "agent-framework", "agent-marketplace", "agent-management"
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Systems Administration",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.11"
 dependencies = [
@@ -58,6 +71,13 @@ dependencies = [
     # Async & concurrency
     "asyncio-throttle>=1.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/agenthub/agenthub"
+Documentation = "https://docs.agenthub.dev"
+Repository = "https://github.com/agenthub/agenthub"
+Issues = "https://github.com/agenthub/agenthub/issues"
+Changelog = "https://github.com/agenthub/agenthub/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

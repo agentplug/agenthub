@@ -78,14 +78,14 @@ class TestToolRegistry:
         with pytest.raises(ToolValidationError, match="Tool must be callable"):
             registry.register_tool("test", "not_callable", "Test")
 
-        # Test function with no parameters
+        # Test function with no parameters (should work now)
         def no_params() -> dict:
             return {}
 
-        with pytest.raises(
-            ToolValidationError, match="Tool function must have at least one parameter"
-        ):
-            registry.register_tool("no_params", no_params, "Test")
+        # This should now succeed since we allow functions with no parameters
+        result = registry.register_tool("no_params", no_params, "Test")
+        assert result == no_params
+        assert "no_params" in registry.get_available_tools()
 
     def test_register_tool_name_conflict(self):
         """Test tool name conflict error."""
@@ -227,7 +227,7 @@ class TestMCPIntegration:
         """Test MCP tool not found error."""
         mcp_server = get_mcp_server()
 
-        with pytest.raises(Exception):  # FastMCP raises ToolError
+        with pytest.raises((Exception, RuntimeError)):  # FastMCP raises ToolError
             await mcp_server.call_tool("non_existent_tool", {"data": "test"})
 
 
@@ -335,7 +335,7 @@ class TestWebSearchTool:
         assert result_data["query"] == "test query"
         assert "results" in result_data
         assert "total_found" in result_data
-        # Note: Results might be empty due to mock setup, but structure should be correct
+        # Note: Results might be empty due to mock setup, but structure is correct
         assert isinstance(result_data["results"], list)
 
 

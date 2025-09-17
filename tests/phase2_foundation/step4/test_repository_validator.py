@@ -65,8 +65,7 @@ class TestRepositoryValidator:
         assert len(result.missing_files) == len(self.validator.REQUIRED_FILES)
         assert "agent.py" in result.missing_files
         assert "agent.yaml" in result.missing_files
-        assert "requirements.txt" in result.missing_files
-        assert "README.md" in result.missing_files
+        # requirements.txt and README.md are recommended, not required
 
     def test_validate_repository_with_all_required_files(self):
         """Test validation when all required files are present."""

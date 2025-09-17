@@ -2,6 +2,7 @@
 
 import pytest
 
+import agenthub
 from agenthub.github.url_parser import URLParser
 
 

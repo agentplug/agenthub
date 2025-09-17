@@ -1,0 +1,50 @@
+# Include documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+
+# Include configuration files
+include pyproject.toml
+include setup.py
+include setup.sh
+include setup.bat
+include setup.ps1
+
+# Include examples and documentation
+recursive-include examples *.py *.md *.yaml *.yml *.json
+recursive-include docs *.md *.rst *.txt
+
+# Include test files
+recursive-include tests *.py *.yaml *.yml *.json
+
+# Include sample data
+recursive-include sample_docs *.pdf *.py
+
+# Include MCP sample
+recursive-include mcp-sample *.py
+
+# Exclude unnecessary files
+exclude *.pyc
+exclude *.pyo
+exclude *.pyd
+exclude __pycache__
+exclude .git*
+exclude .DS_Store
+exclude .coverage
+exclude .pytest_cache
+exclude .mypy_cache
+exclude .ruff_cache
+exclude build/
+exclude dist/
+exclude *.egg-info/
+
+# Exclude development files
+exclude .pre-commit-config.yaml
+exclude .github/
+exclude .vscode/
+exclude .idea/
+
+# Exclude test artifacts
+exclude .pytest_cache/
+exclude htmlcov/
+exclude .coverage.*

@@ -21,6 +21,7 @@ def example_1_basic_agent():
     print(f"📄 Input: {question}")
     agent = ah.load_agent("agentplug/analysis-agent")
     result = agent.analyze_text(question)
+    print(result)
     # ================================================
     status = result.get("result", {}).get("status", "completed")
     analysis = result.get("result", {}).get("summary", "No analysis")

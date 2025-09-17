@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+import agenthub
+
 
 class TestProjectStructure:
     """Test that the project structure is correctly established."""

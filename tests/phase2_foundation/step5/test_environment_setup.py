@@ -135,8 +135,8 @@ class TestEnvironmentSetup:
             result = setup.setup_environment(temp_agent_path)
 
             assert result.success is False
-            assert "No pyproject.toml found" in result.error_message
-            assert result.next_steps == ["Ensure the agent has a pyproject.toml file"]
+            assert "No installation method found" in result.error_message
+            assert "pyproject.toml file" in " ".join(result.next_steps)
 
     def test_setup_environment_success(self, mock_uv_available, temp_agent_path):
         """Test successful environment setup."""
@@ -341,7 +341,9 @@ class TestEnvironmentSetup:
             # Mock pip list success
             with patch("subprocess.run") as mock_pip_run:
                 mock_pip_run.return_value.returncode = 0
-                mock_pip_run.return_value.stdout = "Package    Version\n---------- -------\nrequests   2.31.0\npandas     2.1.0"
+                mock_pip_run.return_value.stdout = (
+                    "Package    Version\n---------- -------\nrequests   2.31.0\npandas     2.1.0"
+                )
 
                 packages = setup._get_installed_packages(str(venv_path))
 

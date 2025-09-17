@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+import agenthub
 from agenthub.github.repository_cloner import (
     CloneError,
     CloneResult,

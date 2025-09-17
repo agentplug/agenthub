@@ -4,10 +4,13 @@
 
 **The "App Store for AI Agents"** - Discover, install, and use AI agents with one-line simplicity
 
-[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Beta-green.svg)]()
-[![PyPI](https://img.shields.io/badge/PyPI-agenthub-blue.svg)](https://pypi.org/project/agenthub/)
+[![PyPI version](https://badge.fury.io/py/agenthub.svg)](https://badge.fury.io/py/agenthub)
+[![PyPI downloads](https://pepy.tech/badge/agenthub)](https://pepy.tech/project/agenthub)
+[![Tests](https://github.com/agenthub/agenthub/workflows/Test/badge.svg)](https://github.com/agenthub/agenthub/actions)
+[![Codecov](https://codecov.io/gh/agenthub/agenthub/branch/main/graph/badge.svg)](https://codecov.io/gh/agenthub/agenthub)
 
 [📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
 
@@ -211,6 +214,11 @@ pip install agenthub
 
 # Verify installation
 agenthub --version
+
+# Install with optional dependencies
+pip install "agenthub[dev,rag,code]"  # All features
+pip install "agenthub[rag]"           # RAG features only
+pip install "agenthub[code]"          # Code analysis features only
 ```
 
 ### 🎯 Your First Agent (30 seconds)
