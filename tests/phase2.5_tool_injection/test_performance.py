@@ -18,22 +18,18 @@ class TestToolInjectionPerformance:
         self.registry = ToolRegistry()
 
         # Patch the global registry to use our test instance
-        self.registry_patcher = patch(
-            "agenthub.core.tools.registry._registry", self.registry
-        )
+        self.registry_patcher = patch('agenthub.core.tools.registry._registry', self.registry)
         self.registry_patcher.start()
 
         # Also patch the decorator's registry reference
-        self.decorator_patcher = patch(
-            "agenthub.core.tools.decorator._registry", self.registry
-        )
+        self.decorator_patcher = patch('agenthub.core.tools.decorator._registry', self.registry)
         self.decorator_patcher.start()
 
     def teardown_method(self):
         """Clean up after each test."""
-        if hasattr(self, "registry_patcher"):
+        if hasattr(self, 'registry_patcher'):
             self.registry_patcher.stop()
-        if hasattr(self, "decorator_patcher"):
+        if hasattr(self, 'decorator_patcher'):
             self.decorator_patcher.stop()
 
     def test_tool_registration_performance(self):
@@ -366,9 +362,7 @@ class TestToolInjectionPerformance:
 
         # Verify cleanup (except built-in tools from MCP discovery)
         available_tools = self.registry.get_available_tools()
-        cleanup_tools = [
-            tool for tool in available_tools if tool.startswith("cleanup_tool_")
-        ]
+        cleanup_tools = [tool for tool in available_tools if tool.startswith("cleanup_tool_")]
         assert len(cleanup_tools) == 0  # Our test tools should be gone
         assert len(self.registry.agent_tool_access) == 0
 
@@ -396,9 +390,7 @@ class TestToolInjectionPerformance:
 
             # Verify tools are registered (including built-in tools from MCP discovery)
             available_tools = self.registry.get_available_tools()
-            benchmark_tools = [
-                tool for tool in available_tools if tool.startswith("benchmark_tool_")
-            ]
+            benchmark_tools = [tool for tool in available_tools if tool.startswith("benchmark_tool_")]
             assert len(benchmark_tools) == tool_count
 
         # Print benchmark results
