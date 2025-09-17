@@ -1,11 +1,12 @@
 """Integration tests for Phase 2.5 tool injection functionality."""
 
-import unittest.mock
 from unittest.mock import MagicMock, patch
+import unittest.mock
 
 import pytest
 
 from agenthub.core.tools.decorator import tool
+from agenthub.core.tools.exceptions import ToolNameConflictError, ToolNotFoundError
 from agenthub.core.tools.registry import ToolRegistry
 from agenthub.sdk.load_agent import load_agent
 
@@ -20,22 +21,18 @@ class TestToolInjectionIntegration:
         self.registry = ToolRegistry()
 
         # Patch the global registry to use our test instance
-        self.registry_patcher = patch(
-            "agenthub.core.tools.registry._registry", self.registry
-        )
+        self.registry_patcher = patch('agenthub.core.tools.registry._registry', self.registry)
         self.registry_patcher.start()
 
         # Also patch the decorator's registry reference
-        self.decorator_patcher = patch(
-            "agenthub.core.tools.decorator._registry", self.registry
-        )
+        self.decorator_patcher = patch('agenthub.core.tools.decorator._registry', self.registry)
         self.decorator_patcher.start()
 
     def teardown_method(self):
         """Clean up after each test."""
-        if hasattr(self, "registry_patcher"):
+        if hasattr(self, 'registry_patcher'):
             self.registry_patcher.stop()
-        if hasattr(self, "decorator_patcher"):
+        if hasattr(self, 'decorator_patcher'):
             self.decorator_patcher.stop()
 
     def test_complete_tool_injection_workflow(self):
@@ -203,12 +200,10 @@ class TestToolInjectionIntegration:
             return_value=mock_tool_registry,
         ):
             # Load agent with tools
-            agent = load_agent("research_agent", tools=["web_search", "data_processor"])
+            load_agent("research_agent", tools=["web_search", "data_processor"])
 
             # Verify calls
-            mock_loader_instance.load_agent.assert_called_once_with(
-                "default", "research_agent"
-            )
+            mock_loader_instance.load_agent.assert_called_once_with("default", "research_agent")
             mock_wrapper_class.assert_called_once_with(
                 mock_loader_instance.load_agent.return_value,
                 tool_registry=unittest.mock.ANY,
@@ -305,19 +300,19 @@ class TestToolInjectionIntegration:
         # Verify parameter details
         required = metadata.parameters["required_param"]
         assert required["name"] == "required_param"
-        assert required["type"] == str
+        assert required["type"] == "str"
         assert required["required"] is True
         assert required["default"] is None
 
         optional = metadata.parameters["optional_param"]
         assert optional["name"] == "optional_param"
-        assert optional["type"] == int
+        assert optional["type"] == "int"
         assert optional["required"] is False
         assert optional["default"] == 42
 
         keyword = metadata.parameters["keyword_only"]
         assert keyword["name"] == "keyword_only"
-        assert keyword["type"] == str
+        assert keyword["type"] == "str"
         assert keyword["required"] is False
         assert keyword["default"] == "default"
 
@@ -333,7 +328,7 @@ class TestToolInjectionIntegration:
         def first_tool():
             return "first"
 
-        with pytest.raises(Exception):  # Should raise ToolNameConflictError
+        with pytest.raises(ToolNameConflictError):  # Should raise ToolNameConflictError
 
             @tool(name="duplicate_tool", description="Second tool")
             def second_tool():
@@ -349,11 +344,11 @@ class TestToolInjectionIntegration:
             self.registry.execute_tool("error_test_tool", {})
 
         # Test 3: Tool execution with non-existent tool
-        with pytest.raises(Exception):  # Should raise ToolNotFoundError
+        with pytest.raises(ToolNotFoundError):  # Should raise ToolNotFoundError
             self.registry.execute_tool("nonexistent_tool", {"param": "value"})
 
         # Test 4: Agent tool assignment with non-existent tools
-        with pytest.raises(Exception):  # Should raise ToolNotFoundError
+        with pytest.raises(ToolNotFoundError):  # Should raise ToolNotFoundError
             self.registry.assign_tools_to_agent("test_agent", ["nonexistent_tool"])
 
     def test_tool_registry_statistics(self):
