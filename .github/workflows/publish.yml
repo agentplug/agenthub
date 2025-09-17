@@ -70,9 +70,9 @@ jobs:
       run: |
         python -m build
 
-    - name: Publish to PyPI
+    - name: Publish to PyPI (Wheel Only)
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
-        twine upload dist/*
+        twine upload dist/*.whl

@@ -39,10 +39,10 @@ jobs:
         source .venv/bin/activate
         python -m build
 
-    - name: Publish to PyPI
+    - name: Publish to PyPI (Wheel Only)
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         source .venv/bin/activate
-        twine upload dist/agentplug_hub-0.1.2-*
+        twine upload dist/agentplug_hub-0.1.2-*.whl
