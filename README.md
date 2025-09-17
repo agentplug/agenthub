@@ -136,19 +136,16 @@ agenthub exec agentplug/scientific-paper-analyzer analyze_paper "research.pdf"
 agenthub exec agentplug/scientific-paper-analyzer analyze_paper '{"file": "research.pdf"}'
 agenthub exec agentplug/scientific-paper-analyzer analyze_paper --interactive
 
-# Check agent status
-agenthub agent status agentplug/scientific-paper-analyzer
-
-# Remove an agent
-agenthub agent remove agentplug/scientific-paper-analyzer
-
-# Advanced agent management
-agenthub agent backup agentplug/scientific-paper-analyzer
-agenthub agent restore agentplug/scientific-paper-analyzer
-agenthub agent repair agentplug/scientific-paper-analyzer
-agenthub agent migrate agentplug/scientific-paper-analyzer
-agenthub agent optimize agentplug/scientific-paper-analyzer
-agenthub agent analyze-deps agentplug/scientific-paper-analyzer
+# Agent management commands
+agenthub agent list                                    # List installed agents
+agenthub agent status agentplug/scientific-paper-analyzer  # Check agent status
+agenthub agent remove agentplug/scientific-paper-analyzer  # Remove an agent
+agenthub agent backup agentplug/scientific-paper-analyzer  # Create backup
+agenthub agent restore agentplug/scientific-paper-analyzer # Restore from backup
+agenthub agent repair agentplug/scientific-paper-analyzer  # Repair broken agent
+agenthub agent migrate agentplug/scientific-paper-analyzer # Migrate Python version
+agenthub agent optimize agentplug/scientific-paper-analyzer # Optimize environment
+agenthub agent analyze-deps agentplug/scientific-paper-analyzer # Analyze dependencies
 
 # System validation
 agenthub validate
