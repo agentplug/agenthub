@@ -86,7 +86,7 @@ class TestAgentWrapper:
         """Test assigning non-existent tools raises error."""
         wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
 
-        with pytest.raises(Exception):  # Should raise ToolNotFoundError
+        with pytest.raises(RuntimeError):  # Should raise RuntimeError for nonexistent tool
             wrapper.assign_tools(["nonexistent_tool"])
 
     def test_get_tool_context_json(self):
@@ -246,14 +246,14 @@ class TestAgentWrapper:
         wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
         # Don't assign any tools
 
-        with pytest.raises(Exception):  # Should raise appropriate error
+        with pytest.raises(ValueError):  # Should raise ValueError for no tool registry
             wrapper.execute_tool("test_tool", {"param": "test_value"})
 
     def test_execute_tool_nonexistent(self):
         """Test executing a non-existent tool."""
         wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
 
-        with pytest.raises(Exception):  # Should raise ToolNotFoundError
+        with pytest.raises(ValueError):  # Should raise ValueError for no tool registry
             wrapper.execute_tool("nonexistent_tool", {})
 
     def test_get_available_tools(self):
