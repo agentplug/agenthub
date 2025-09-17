@@ -1,12 +1,12 @@
 # Agent Hub MVP Technology Stack
 
-**Document Type**: MVP Technology Stack  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L1 - MVP Technology Level  
-**Audience**: Technical Architects, Developers, DevOps Team  
+**Document Type**: MVP Technology Stack
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L1 - MVP Technology Level
+**Audience**: Technical Architects, Developers, DevOps Team
 
 ## 🎯 **MVP Technology Overview**
 
@@ -24,7 +24,7 @@ Agent Hub MVP uses a **mature, proven technology stack** optimized for rapid dev
 ### **Python 3.12+**
 - **Version**: Python 3.12 or higher
 - **Rationale**: Latest stable Python with performance improvements and modern features
-- **Benefits**: 
+- **Benefits**:
   - Excellent subprocess and virtual environment support
   - Rich ecosystem for CLI and package management
   - Cross-platform compatibility
@@ -55,7 +55,7 @@ import dataclasses        # Clean data structures
 
 ### **CLI Structure Example**
 ```python
-# agentmanager/cli/main.py
+# agenthub/cli/main.py
 import click
 
 @click.group()
@@ -95,7 +95,7 @@ def list(installed):
 
 ### **UV Integration with Fallback**
 ```python
-# agentmanager/runtime/environment_manager.py
+# agenthub/runtime/environment_manager.py
 import subprocess
 import shutil
 ```
@@ -115,7 +115,7 @@ import shutil
 
 ### **Tool Infrastructure Example**
 ```python
-# agentmanager/core/tool_infrastructure.py
+# agenthub/core/tool_infrastructure.py
 import inspect
 import pickle
 from typing import Dict, Any, Callable
@@ -127,19 +127,19 @@ class ToolInfrastructure:
         self.agent_tools = {}
         self.custom_tools = {}
         self.tools_metadata = {}
-        
+
         # Discover agent's built-in tools
         self._discover_agent_tools()
-    
+
     def discover_agent_tools(self) -> Dict[str, Callable]:
         """Discover tools that the agent has implemented."""
         # Read agent's manifest.json and find tool implementations
         pass
-    
+
     def register_custom_tool(self, tool_name: str, tool_function: Callable):
         """Register a custom user tool (can override agent's built-in tools)."""
         self._register_tool(tool_name, tool_function, is_custom=True)
-    
+
     def get_tool(self, tool_name: str) -> Callable:
         """Get tool with priority: custom tools > agent's built-in tools."""
         if tool_name in self.custom_tools:
@@ -148,7 +148,7 @@ class ToolInfrastructure:
             return self.agent_tools[tool_name]
         else:
             raise ToolNotFoundError(f"Tool '{tool_name}' not found")
-    
+
     def list_available_tools(self) -> Dict[str, List[str]]:
         """List tools by category: agent's built-in, custom, all."""
         return {
@@ -156,18 +156,18 @@ class ToolInfrastructure:
             "custom": list(self.custom_tools.keys()),
             "all": list(set(self.agent_tools.keys()) | set(self.custom_tools.keys()))
         }
-    
+
     def _register_tool(self, tool_name: str, tool_function: Callable, is_custom: bool = False):
         """Internal tool registration with priority handling."""
         if tool_name in self.agent_tools and is_custom:
             # User tool overrides agent's built-in tool
             logging.info(f"Custom tool '{tool_name}' overrides agent's built-in tool")
-        
+
         if is_custom:
             self.custom_tools[tool_name] = tool_function
         else:
             self.agent_tools[tool_name] = tool_function
-        
+
         self._update_tool_metadata(tool_name, tool_function, is_custom)
 ```
 from pathlib import Path
@@ -179,14 +179,14 @@ class EnvironmentManager:
         self.fallback_to_pip = self.uv_path is None
         if self.fallback_to_pip:
             logging.warning("UV not found, falling back to pip")
-    
+
     def _find_uv(self) -> Path:
         """Find UV package manager with fallback to pip."""
         # Try to find UV in PATH
         uv_path = shutil.which("uv")
         if uv_path:
             return Path(uv_path)
-        
+
         # Try common installation paths
         common_paths = [
             Path.home() / ".cargo" / "bin" / "uv",
@@ -194,22 +194,22 @@ class EnvironmentManager:
             Path("/usr/local/bin/uv"),
             Path("/opt/homebrew/bin/uv")  # macOS Homebrew
         ]
-        
+
         for path in common_paths:
             if path.exists() and path.is_file():
                 return path
-        
+
         return None
-    
+
     def create_environment(self, agent_path: Path) -> Path:
         """Create virtual environment using UV or fallback to pip."""
         venv_path = agent_path / "venv"
-        
+
         if self.fallback_to_pip:
             return self._create_venv_with_pip(venv_path)
         else:
             return self._create_venv_with_uv(venv_path)
-    
+
     def _create_venv_with_uv(self, venv_path: Path) -> Path:
         """Create virtual environment using UV."""
         try:
@@ -221,26 +221,26 @@ class EnvironmentManager:
             logging.warning(f"UV venv creation failed: {e}, falling back to pip")
             self.fallback_to_pip = True
             return self._create_venv_with_pip(venv_path)
-    
+
     def _create_venv_with_pip(self, venv_path: Path) -> Path:
         """Create virtual environment using standard venv module."""
         import venv
         venv.create(venv_path, with_pip=True)
         return venv_path
-    
+
     def install_dependencies(self, venv_path: Path, requirements: list):
         """Install dependencies using UV or fallback to pip."""
         if self.fallback_to_pip:
             self._install_dependencies_with_pip(venv_path, requirements)
         else:
             self._install_dependencies_with_uv(venv_path, requirements)
-    
+
     def _install_dependencies_with_uv(self, venv_path: Path, requirements: list):
         """Install dependencies using UV."""
         python_path = venv_path / "bin" / "python"
         if not python_path.exists():
             python_path = venv_path / "Scripts" / "python.exe"  # Windows
-        
+
         for requirement in requirements:
             try:
                 subprocess.run([
@@ -252,13 +252,13 @@ class EnvironmentManager:
                 self.fallback_to_pip = True
                 self._install_dependencies_with_pip(venv_path, requirements)
                 break
-    
+
     def _install_dependencies_with_pip(self, venv_path: Path, requirements: list):
         """Install dependencies using pip."""
         python_path = venv_path / "bin" / "python"
         if not python_path.exists():
             python_path = venv_path / "Scripts" / "python.exe"  # Windows
-        
+
         for requirement in requirements:
             subprocess.run([
                 str(python_path), "-m", "pip", "install", requirement
@@ -279,7 +279,7 @@ class EnvironmentManager:
 
 ### **GitHub API Integration**
 ```python
-# agentmanager/registry/github_client.py
+# agenthub/registry/github_client.py
 import requests
 import json
 import base64
@@ -291,18 +291,18 @@ class GitHubRegistryClient:
             'User-Agent': 'Agent-Hub/1.0.0',
             'Accept': 'application/vnd.github.v3+json'
         })
-    
+
     def get_registry(self) -> dict:
         """Fetch registry.json from GitHub."""
         url = "https://api.github.com/repos/agentplug/agent-registry/contents/registry.json"
-        
+
         response = self.session.get(url)
         response.raise_for_status()
-        
+
         # Decode GitHub API response
         content_data = response.json()
         content = base64.b64decode(content_data["content"]).decode('utf-8')
-        
+
         return json.loads(content)
 ```
 
@@ -440,7 +440,7 @@ mypy .
 
 ### **Security Features**
 ```python
-# agentmanager/security/validator.py
+# agenthub/security/validator.py
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -450,7 +450,7 @@ class AgentManifest(BaseModel):
     description: str = Field(..., min_length=10, max_length=1000)
     author: str = Field(..., min_length=1, max_length=100)
     license: str = Field(..., min_length=1, max_length=50)
-    
+
     interface: dict = Field(..., description="Agent interface definition")
     dependencies: Optional[dict] = Field(default=None)
     tags: Optional[List[str]] = Field(default_factory=list)
@@ -473,7 +473,7 @@ def validate_manifest(manifest_data: dict) -> AgentManifest:
 
 ### **Caching Implementation**
 ```python
-# agentmanager/cache/cache_manager.py
+# agenthub/cache/cache_manager.py
 import json
 import time
 from pathlib import Path
@@ -483,29 +483,29 @@ class CacheManager:
     def __init__(self, cache_dir: Path):
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def get(self, key: str, ttl: int = 3600) -> Optional[Any]:
         """Get cached value if not expired."""
         cache_file = self.cache_dir / f"{key}.json"
-        
+
         if not cache_file.exists():
             return None
-        
+
         try:
             # Simple TTL check using file modification time
             if time.time() - cache_file.stat().st_mtime > ttl:
                 return None
-            
+
             with open(cache_file, 'r') as f:
                 return json.load(f)
-            
+
         except (json.JSONDecodeError, IOError):
             return None
-    
+
     def set(self, key: str, value: Any):
         """Cache a value."""
         cache_file = self.cache_dir / f"{key}.json"
-        
+
         try:
             with open(cache_file, 'w') as f:
                 json.dump(value, f)
@@ -522,7 +522,7 @@ class CacheManager:
 
 ### **Platform-Specific Handling**
 ```python
-# agentmanager/utils/platform.py
+# agenthub/utils/platform.py
 import platform
 import os
 from pathlib import Path
@@ -530,7 +530,7 @@ from pathlib import Path
 def get_platform_info():
     """Get platform-specific information."""
     system = platform.system().lower()
-    
+
     if system == "windows":
         return {
             'venv_python': 'Scripts\\python.exe',
@@ -635,7 +635,7 @@ class AgentRuntime:
     def __init__(self, use_containers: bool = False):
         self.use_containers = use_containers
         self.executor = DockerExecutor() if use_containers else SubprocessExecutor()
-    
+
     async def execute_agent(self, agent_path: str, method: str, params: dict):
         """Execute agent with current or future technology."""
         if self.use_containers:
@@ -671,4 +671,4 @@ class AgentRuntime:
 - **Week 5**: Validation and error handling
 - **Week 6**: Documentation and final polish
 
-This technology stack provides a **solid, performant, and maintainable foundation** for the Agent Hub MVP while optimizing for rapid development and minimal operational overhead. 
+This technology stack provides a **solid, performant, and maintainable foundation** for the Agent Hub MVP while optimizing for rapid development and minimal operational overhead.

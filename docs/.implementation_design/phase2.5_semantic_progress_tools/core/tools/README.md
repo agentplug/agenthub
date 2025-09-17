@@ -17,7 +17,7 @@ The tools module provides a clean, simple interface for users to define custom t
 ## 📋 **User Experience**
 
 ```python
-from agentmanager.core.tools import tool
+from agenthub.core.tools import tool
 
 @tool(name="data_analyzer", description="Analyze data")
 def my_data_analyzer(data: str) -> dict:

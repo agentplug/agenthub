@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from agentmanager.core.agents.loader import AgentLoader, AgentLoadError
+from agenthub.core.agents.loader import AgentLoader, AgentLoadError
 
 
 class TestAgentLoader:
@@ -162,7 +162,7 @@ class TestAgentLoader:
         (agent_dir / "agent.py").touch()
         (agent_dir / "agent.yaml").touch()
 
-        result = loader.validate_agent_structure(str(agent_dir))
+        result = loader.validate_agent_structure(str(agent_dir), require_venv=True)
         assert result is False
 
     def test_discover_agents_with_storage(self):

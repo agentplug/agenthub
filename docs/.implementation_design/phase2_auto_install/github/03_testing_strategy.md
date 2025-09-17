@@ -183,8 +183,8 @@ class TestRepositoryProvider:
 ```python
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.exceptions import RepositoryNotFoundError, CloneFailedError, InvalidAgentNameError
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.exceptions import RepositoryNotFoundError, CloneFailedError, InvalidAgentNameError
 
 class TestRepositoryCloner:
     """Test Repository Cloner functionality."""
@@ -219,7 +219,7 @@ class TestRepositoryCloner:
         for name in invalid_names:
             assert not cloner.url_parser.is_valid_agent_name(name)
 
-    @patch('agentmanager.github.git_process_manager.GitProcessManager')
+    @patch('agenthub.github.git_process_manager.GitProcessManager')
     def test_successful_clone(self, mock_git_manager):
         """Test successful repository cloning."""
         # Setup mock
@@ -236,7 +236,7 @@ class TestRepositoryCloner:
         assert result == "/tmp/test-repo"
         mock_git_manager.return_value.clone_repository.assert_called_once()
 
-    @patch('agentmanager.github.git_process_manager.GitProcessManager')
+    @patch('agenthub.github.git_process_manager.GitProcessManager')
     def test_clone_failure(self, mock_git_manager):
         """Test handling of clone failures."""
         # Setup mock
@@ -262,7 +262,7 @@ class TestRepositoryCloner:
             cloner.clone_agent("invalid-name")
 
     @patch('os.path.exists')
-    @patch('agentmanager.github.git_process_manager.GitProcessManager')
+    @patch('agenthub.github.git_process_manager.GitProcessManager')
     def test_already_cloned_repository(self, mock_git_manager, mock_exists):
         """Test that already cloned repositories are not re-cloned."""
         # Setup mocks
@@ -284,8 +284,8 @@ import pytest
 import tempfile
 import os
 from unittest.mock import Mock, patch
-from agentmanager.github.repository_validator import RepositoryValidator
-from agentmanager.github.exceptions import ValidationError
+from agenthub.github.repository_validator import RepositoryValidator
+from agenthub.github.exceptions import ValidationError
 
 class TestRepositoryValidator:
     """Test Repository Validator functionality."""
@@ -381,8 +381,8 @@ class TestRepositoryValidator:
 ```python
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.github.github_client import GitHubClient
-from agentmanager.github.exceptions import GitHubAPIError, RateLimitExceededError
+from agenthub.github.github_client import GitHubClient
+from agenthub.github.exceptions import GitHubAPIError, RateLimitExceededError
 
 class TestGitHubClient:
     """Test GitHub Client functionality."""
@@ -459,14 +459,14 @@ class TestGitHubClient:
 ```python
 import pytest
 from unittest.mock import patch
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.repository_validator import RepositoryValidator
-from agentmanager.github.github_client import GitHubClient
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_validator import RepositoryValidator
+from agenthub.github.github_client import GitHubClient
 
 class TestGitHubIntegration:
     """Test integration between GitHub module components."""
 
-    @patch('agentmanager.github.git_process_manager.GitProcessManager')
+    @patch('agenthub.github.git_process_manager.GitProcessManager')
     def test_clone_and_validate_workflow(self, mock_git_manager):
         """Test complete clone and validate workflow."""
         # Setup mocks
@@ -497,7 +497,7 @@ class TestGitHubIntegration:
             assert result.is_valid
             assert len(result.errors) == 0
 
-    @patch('agentmanager.github.github_client.GitHubClient')
+    @patch('agenthub.github.github_client.GitHubClient')
     def test_github_api_integration(self, mock_github_client):
         """Test integration with GitHub API."""
         # Setup mock
@@ -527,8 +527,8 @@ class TestGitHubIntegration:
 ```python
 import time
 import pytest
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.repository_validator import RepositoryValidator
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_validator import RepositoryValidator
 
 class TestGitHubPerformance:
     """Test performance characteristics of GitHub module."""
@@ -576,7 +576,7 @@ class TestGitHubPerformance:
 ```python
 import psutil
 import pytest
-from agentmanager.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_cloner import RepositoryCloner
 
 class TestGitHubResourceUsage:
     """Test resource usage characteristics."""
@@ -607,13 +607,13 @@ class TestGitHubResourceUsage:
 ```python
 import pytest
 from unittest.mock import patch
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.exceptions import CloneFailedError
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.exceptions import CloneFailedError
 
 class TestGitHubErrorHandling:
     """Test error handling scenarios."""
 
-    @patch('agentmanager.github.git_process_manager.GitProcessManager')
+    @patch('agenthub.github.git_process_manager.GitProcessManager')
     def test_network_timeout_handling(self, mock_git_manager):
         """Test handling of network timeouts."""
         # Setup mock to simulate timeout
@@ -626,7 +626,7 @@ class TestGitHubErrorHandling:
 
         assert "Network timeout" in str(exc_info.value)
 
-    @patch('agentmanager.github.git_process_manager.GitProcessManager')
+    @patch('agenthub.github.git_process_manager.GitProcessManager')
     def test_git_executable_not_found(self, mock_git_manager):
         """Test handling when git executable is not found."""
         # Setup mock to simulate git not found
@@ -662,7 +662,7 @@ pytest tests/phase2_foundation/github/ -k "test_validation" -v
 pytest tests/phase2_foundation/github/ -k "test_performance" -v
 
 # Run with coverage
-pytest tests/phase2_foundation/github/ --cov=agentmanager.github --cov-report=html
+pytest tests/phase2_foundation/github/ --cov=agenthub.github --cov-report=html
 
 # Run performance tests only
 pytest tests/phase2_foundation/github/test_performance.py -v

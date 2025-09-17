@@ -8,10 +8,10 @@ All examples are production-ready and validated.
 """
 
 
-import agentmanager as amg
+import agenthub as ah
 
 # Configure logging to suppress HTTP logs
-amg.set_quiet_mode(True)
+ah.set_quiet_mode(True)
 
 
 def example_1_basic_agent():
@@ -19,7 +19,7 @@ def example_1_basic_agent():
     print("📋 Example 1: Basic Agent (no tools)")
     question = "That is a great product. I love to use AgentHub."
     print(f"📄 Input: {question}")
-    agent = amg.load_agent("agentplug/analysis-agent")
+    agent = ah.load_agent("agentplug/analysis-agent")
     result = agent.analyze_text(question)
     # ================================================
     status = result.get("result", {}).get("status", "completed")
@@ -32,7 +32,7 @@ def example_1_basic_agent():
 def example_2_agent_with_single_tool():
     """Load agent with single tool"""
     print("\n📋 Example 2: Agent with Single Tool")
-    agent = amg.load_agent("agentplug/analysis-agent", tools=["multiply"])
+    agent = ah.load_agent("agentplug/analysis-agent", tools=["multiply"])
     question = "Calculate 7 times 8"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
@@ -49,7 +49,7 @@ def example_2_agent_with_single_tool():
 def example_3_agent_with_multiple_tools():
     """Load agent with multiple tools"""
     print("\n📋 Example 3: Agent with Multiple Tools")
-    agent = amg.load_agent("agentplug/analysis-agent", tools=["multiply", "add"])
+    agent = ah.load_agent("agentplug/analysis-agent", tools=["multiply", "add"])
     question = "Calculate 12 times 5, then add 8"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
@@ -66,7 +66,7 @@ def example_3_agent_with_multiple_tools():
 def example_4_math_focused_agent():
     """Load agent with all math tools"""
     print("\n📋 Example 4: Math-Focused Agent")
-    agent = amg.load_agent(
+    agent = ah.load_agent(
         "agentplug/analysis-agent", tools=["multiply", "add", "subtract", "divide"]
     )
     question = "What is 100 divided by 4, then multiply by 3?"
@@ -87,7 +87,7 @@ def example_5_compare_numbers_agent():
     """Load agent with compare numbers tool"""
 
     print("\n📋 Example 5: Compare Numbers Agent without tools")
-    agent = amg.load_agent("agentplug/analysis-agent")
+    agent = ah.load_agent("agentplug/analysis-agent")
     question = "Compare 9.8 and 9.11, which number is larger?"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
@@ -100,7 +100,7 @@ def example_5_compare_numbers_agent():
     print(f"📄 Analysis: {analysis}")
 
     print("\n📋 Example 5: Compare Numbers Agent with tools")
-    agent = amg.load_agent("agentplug/analysis-agent", tools=["compare_numbers"])
+    agent = ah.load_agent("agentplug/analysis-agent", tools=["compare_numbers"])
     question = "Compare 9.8 and 9.11, which number is larger?"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
@@ -118,7 +118,7 @@ def example_5_compare_numbers_agent():
 def example_6_web_search_agent():
     """Load agent with web search tool"""
     print("\n📋 Example 6: Web Search Agent")
-    agent = amg.load_agent(
+    agent = ah.load_agent(
         "agentplug/analysis-agent",
         tools=["web_search", "add", "subtract", "multiply", "divide"],
     )

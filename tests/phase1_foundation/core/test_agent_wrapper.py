@@ -2,7 +2,7 @@
 
 import pytest
 
-from agentmanager.core.agents.wrapper import AgentExecutionError, AgentWrapper
+from agenthub.core.agents.wrapper import AgentExecutionError, AgentWrapper
 
 
 class TestAgentWrapper:
@@ -185,7 +185,9 @@ class TestAgentWrapper:
 
         # Mock runtime that returns success
         class MockRuntime:
-            def execute_agent(self, namespace, agent_name, method, parameters):
+            def execute_agent(
+                self, namespace, agent_name, method, parameters, tool_context=None
+            ):
                 return {"result": "test_output", "execution_time": 1.0}
 
         wrapper = AgentWrapper(agent_info, runtime=MockRuntime())
@@ -210,7 +212,9 @@ class TestAgentWrapper:
 
         # Mock runtime that returns success
         class MockRuntime:
-            def execute_agent(self, namespace, agent_name, method, parameters):
+            def execute_agent(
+                self, namespace, agent_name, method, parameters, tool_context=None
+            ):
                 return {"result": f"Called {method} with {parameters}"}
 
         wrapper = AgentWrapper(agent_info, runtime=MockRuntime())

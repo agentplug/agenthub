@@ -1,12 +1,12 @@
 # Phase 1: Core Module Testing Plan
 
-**Document Type**: Core Module Testing Plan  
-**Phase**: 1 - Foundation  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Comprehensive testing for Core Module functionality  
+**Document Type**: Core Module Testing Plan
+**Phase**: 1 - Foundation
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Comprehensive testing for Core Module functionality
 
 ## 🎯 **Core Module Testing Overview**
 
@@ -184,17 +184,17 @@ The Core Module is the **central coordination hub** that handles agent loading, 
 # tests/phase1_foundation/core/test_agent_loader.py
 import pytest
 from pathlib import Path
-from agentmanager.core.agent_loader import AgentLoader
+from agenthub.core.agent_loader import AgentLoader
 
 class TestAgentLoader:
     def test_load_valid_agent(self, tmp_path):
         """Test loading a valid agent."""
         loader = AgentLoader()
-        
+
         # Create test agent
         agent_dir = tmp_path / "test-agent"
         agent_dir.mkdir()
-        
+
         # Create valid manifest
         manifest_file = agent_dir / "agent.yaml"
         manifest_file.write_text("""
@@ -213,42 +213,42 @@ interface:
         type: string
         description: Test result
         """)
-        
+
         # Create agent script
         agent_script = agent_dir / "agent.py"
         agent_script.write_text("""
 def test_method(prompt):
     return f"Processed: {prompt}"
         """)
-        
+
         # Load agent
         agent = loader.load_agent(str(agent_dir))
-        
+
         assert agent is not None
         assert agent.name == "test-agent"
         assert "test_method" in agent.available_methods
         assert agent.available_methods["test_method"]["description"] == "Test method"
-    
+
     def test_load_invalid_agent(self, tmp_path):
         """Test loading an invalid agent."""
         loader = AgentLoader()
-        
+
         # Create invalid agent (missing manifest)
         agent_dir = tmp_path / "invalid-agent"
         agent_dir.mkdir()
-        
+
         # Try to load invalid agent
         with pytest.raises(ValueError, match="Missing agent.yaml"):
             loader.load_agent(str(agent_dir))
-    
+
     def test_load_corrupted_manifest(self, tmp_path):
         """Test loading agent with corrupted manifest."""
         loader = AgentLoader()
-        
+
         # Create agent with corrupted manifest
         agent_dir = tmp_path / "corrupted-agent"
         agent_dir.mkdir()
-        
+
         manifest_file = agent_dir / "agent.yaml"
         manifest_file.write_text("""
 name: test-agent
@@ -266,7 +266,7 @@ interface:
         description: Test result
         # Missing closing brace
         """)
-        
+
         # Try to load corrupted agent
         with pytest.raises(ValueError, match="Invalid YAML"):
             loader.load_agent(str(agent_dir))
@@ -276,13 +276,13 @@ interface:
 ```python
 # tests/phase1_foundation/core/test_manifest_parser.py
 import pytest
-from agentmanager.core.manifest_parser import ManifestParser
+from agenthub.core.manifest_parser import ManifestParser
 
 class TestManifestParser:
     def test_parse_valid_manifest(self):
         """Test parsing a valid manifest."""
         parser = ManifestParser()
-        
+
         manifest_content = """
 name: test-agent
 version: 1.0.0
@@ -306,37 +306,37 @@ interface:
         description: Processed result
         example: "Processed: Hello World"
         """
-        
+
         manifest = parser.parse_manifest_from_string(manifest_content)
-        
+
         assert manifest["name"] == "test-agent"
         assert manifest["version"] == "1.0.0"
         assert manifest["description"] == "A test agent"
-        
+
         # Check method definition
         method = manifest["interface"]["methods"]["test_method"]
         assert method["description"] == "Test method"
-        
+
         # Check parameters
         prompt_param = method["parameters"]["prompt"]
         assert prompt_param["type"] == "string"
         assert prompt_param["required"] is True
-        
+
         max_length_param = method["parameters"]["max_length"]
         assert max_length_param["type"] == "integer"
         assert max_length_param["required"] is False
         assert max_length_param["default"] == 100
-        
+
         # Check returns
         returns = method["returns"]
         assert returns["type"] == "string"
         assert returns["description"] == "Processed result"
         assert returns["example"] == "Processed: Hello World"
-    
+
     def test_validate_manifest_schema(self):
         """Test manifest schema validation."""
         parser = ManifestParser()
-        
+
         # Valid manifest
         valid_manifest = {
             "name": "test-agent",
@@ -354,16 +354,16 @@ interface:
                 }
             }
         }
-        
+
         result = parser.validate_manifest(valid_manifest)
         assert result["valid"] is True
-        
+
         # Invalid manifest (missing required fields)
         invalid_manifest = {
             "name": "test-agent"
             # Missing version and interface
         }
-        
+
         result = parser.validate_manifest(invalid_manifest)
         assert result["valid"] is False
         assert "version" in result["errors"]
@@ -375,13 +375,13 @@ interface:
 # tests/phase1_foundation/core/test_interface_validator.py
 import pytest
 from pathlib import Path
-from agentmanager.core.interface_validator import InterfaceValidator
+from agenthub.core.interface_validator import InterfaceValidator
 
 class TestInterfaceValidator:
     def test_validate_method_existence(self, tmp_path):
         """Test method existence validation."""
         validator = InterfaceValidator()
-        
+
         # Create test agent script
         agent_script = tmp_path / "agent.py"
         agent_script.write_text("""
@@ -391,7 +391,7 @@ def test_method(prompt):
 def another_method():
     return "Hello World"
         """)
-        
+
         # Define interface
         interface = {
             "methods": {
@@ -407,23 +407,23 @@ def another_method():
                 }
             }
         }
-        
+
         # Validate interface
         result = validator.validate_interface(str(agent_script), interface)
         assert result["valid"] is True
         assert len(result["errors"]) == 0
-    
+
     def test_validate_missing_method(self, tmp_path):
         """Test validation of missing method."""
         validator = InterfaceValidator()
-        
+
         # Create test agent script (missing method)
         agent_script = tmp_path / "agent.py"
         agent_script.write_text("""
 def test_method(prompt):
     return f"Processed: {prompt}"
         """)
-        
+
         # Define interface with missing method
         interface = {
             "methods": {
@@ -439,24 +439,24 @@ def test_method(prompt):
                 }
             }
         }
-        
+
         # Validate interface
         result = validator.validate_interface(str(agent_script), interface)
         assert result["valid"] is False
         assert "missing_method" in result["errors"]
         assert "not found in agent.py" in result["errors"]["missing_method"]
-    
+
     def test_validate_parameter_signature(self, tmp_path):
         """Test parameter signature validation."""
         validator = InterfaceValidator()
-        
+
         # Create test agent script
         agent_script = tmp_path / "agent.py"
         agent_script.write_text("""
 def test_method(prompt, max_length=100):
     return f"Processed: {prompt}"[:max_length]
         """)
-        
+
         # Define interface with parameter mismatch
         interface = {
             "methods": {
@@ -469,7 +469,7 @@ def test_method(prompt, max_length=100):
                 }
             }
         }
-        
+
         # Validate interface
         result = validator.validate_interface(str(agent_script), interface)
         assert result["valid"] is True  # Should pass as parameters match
@@ -480,7 +480,7 @@ def test_method(prompt, max_length=100):
 # tests/phase1_foundation/core/test_agent_wrapper.py
 import pytest
 from unittest.mock import Mock, patch
-from agentmanager.core.agent_wrapper import AgentWrapper
+from agenthub.core.agent_wrapper import AgentWrapper
 
 class TestAgentWrapper:
     def test_method_discovery(self):
@@ -488,7 +488,7 @@ class TestAgentWrapper:
         # Create mock runtime
         mock_runtime = Mock()
         mock_runtime.execute_agent.return_value = {"result": "success"}
-        
+
         # Create agent wrapper
         agent = AgentWrapper(
             name="test-agent",
@@ -505,27 +505,27 @@ class TestAgentWrapper:
             },
             runtime=mock_runtime
         )
-        
+
         # Test method discovery
         assert "test_method" in agent.available_methods
         assert agent.available_methods["test_method"]["description"] == "Test method"
-        
+
         # Test method execution
         result = agent.test_method("Hello World")
         assert result["result"] == "success"
-        
+
         # Verify runtime was called
         mock_runtime.execute_agent.assert_called_once_with(
             agent_path="/path/to/agent",
             method="test_method",
             parameters={"prompt": "Hello World"}
         )
-    
+
     def test_invalid_method_call(self):
         """Test calling non-existent method."""
         # Create mock runtime
         mock_runtime = Mock()
-        
+
         # Create agent wrapper
         agent = AgentWrapper(
             name="test-agent",
@@ -533,19 +533,19 @@ class TestAgentWrapper:
             interface={"methods": {}},
             runtime=mock_runtime
         )
-        
+
         # Test calling non-existent method
         with pytest.raises(AttributeError, match="Agent 'test-agent' has no method 'invalid_method'"):
             agent.invalid_method()
-        
+
         # Verify runtime was not called
         mock_runtime.execute_agent.assert_not_called()
-    
+
     def test_parameter_validation(self):
         """Test parameter validation before execution."""
         # Create mock runtime
         mock_runtime = Mock()
-        
+
         # Create agent wrapper with required parameters
         agent = AgentWrapper(
             name="test-agent",
@@ -563,15 +563,15 @@ class TestAgentWrapper:
             },
             runtime=mock_runtime
         )
-        
+
         # Test missing required parameter
         with pytest.raises(ValueError, match="Missing required parameter 'prompt'"):
             agent.test_method()
-        
+
         # Test with required parameter
         result = agent.test_method("Hello World")
         assert result["result"] == "success"
-        
+
         # Verify runtime was called with correct parameters
         mock_runtime.execute_agent.assert_called_once_with(
             agent_path="/path/to/agent",

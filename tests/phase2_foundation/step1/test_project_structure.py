@@ -10,7 +10,7 @@ class TestProjectStructure:
 
     def test_github_module_exists(self):
         """Test that GitHub module directory and __init__.py exist."""
-        github_init = Path("agentmanager/github/__init__.py")
+        github_init = Path("agenthub/github/__init__.py")
         assert github_init.exists(), "GitHub module __init__.py should exist"
 
         # Test content
@@ -20,7 +20,7 @@ class TestProjectStructure:
 
     def test_environment_module_exists(self):
         """Test that Environment module directory and __init__.py exist."""
-        env_init = Path("agentmanager/environment/__init__.py")
+        env_init = Path("agenthub/environment/__init__.py")
         assert env_init.exists(), "Environment module __init__.py should exist"
 
         # Test content
@@ -31,10 +31,10 @@ class TestProjectStructure:
     def test_existing_modules_untouched(self):
         """Test that existing modules are still present and untouched."""
         existing_modules = [
-            "agentmanager/core/__init__.py",
-            "agentmanager/cli/__init__.py",
-            "agentmanager/runtime/__init__.py",
-            "agentmanager/storage/__init__.py",
+            "agenthub/core/__init__.py",
+            "agenthub/cli/__init__.py",
+            "agenthub/runtime/__init__.py",
+            "agenthub/storage/__init__.py",
         ]
 
         for module_path in existing_modules:
@@ -49,14 +49,12 @@ class TestModuleImports:
     def test_new_modules_importable(self):
         """Test that new modules can be imported without errors."""
         # Test GitHub module import
-        import agentmanager.github
 
-        assert hasattr(agentmanager.github, "__version__")
+        assert hasattr(agenthub.github, "__version__")
 
         # Test Environment module import
-        import agentmanager.environment
 
-        assert hasattr(agentmanager.environment, "__version__")
+        assert hasattr(agenthub.environment, "__version__")
 
     def test_existing_modules_still_work(self):
         """Test that existing modules still work after changes."""
@@ -79,14 +77,14 @@ class TestBackwardCompatibility:
 
     def test_main_api_available(self):
         """Test that main load_agent API is still available."""
-        from agentmanager import load_agent
+        from agenthub import load_agent
 
         assert callable(load_agent), "load_agent should be callable"
 
     def test_agent_loader_instantiation(self):
         """Test that AgentLoader can still be instantiated."""
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
 
         storage = LocalStorage()
         loader = AgentLoader(storage)
@@ -95,7 +93,7 @@ class TestBackwardCompatibility:
 
     def test_local_storage_functionality(self):
         """Test basic LocalStorage functionality."""
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub.storage.local_storage import LocalStorage
 
         storage = LocalStorage()
 
@@ -115,10 +113,8 @@ class TestIntegration:
     def test_module_isolation(self):
         """Test that new modules don't interfere with existing ones."""
         # Import both old and new modules
-        import agentmanager.environment
-        import agentmanager.github
-        from agentmanager.core.agents.loader import AgentLoader
-        from agentmanager.storage.local_storage import LocalStorage
+        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.storage.local_storage import LocalStorage
 
         # Create instances of existing components
         storage = LocalStorage()
@@ -128,8 +124,8 @@ class TestIntegration:
         assert loader.storage is storage
 
         # New modules should be independent
-        assert agentmanager.github.__version__ == "0.1.0"
-        assert agentmanager.environment.__version__ == "0.1.0"
+        assert agenthub.github.__version__ == "0.1.0"
+        assert agenthub.environment.__version__ == "0.1.0"
 
 
 if __name__ == "__main__":

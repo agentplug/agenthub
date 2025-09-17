@@ -252,8 +252,8 @@ class ValidationError(Exception):
 
 ```python
 # Core module calls GitHub module
-from agentmanager.github.repository_cloner import RepositoryCloner
-from agentmanager.github.repository_validator import RepositoryValidator
+from agenthub.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_validator import RepositoryValidator
 
 class AutoInstaller:
     def __init__(self):
@@ -277,7 +277,7 @@ class AutoInstaller:
 
 ```python
 # GitHub module provides repository information to storage
-from agentmanager.storage.metadata_manager import MetadataManager
+from agenthub.storage.metadata_manager import MetadataManager
 
 class RepositoryValidator:
     def __init__(self):
@@ -296,7 +296,7 @@ class RepositoryValidator:
 
 ```python
 # Environment module uses GitHub module for repository information
-from agentmanager.github.github_client import GitHubClient
+from agenthub.github.github_client import GitHubClient
 
 class EnvironmentSetup:
     def __init__(self):
@@ -364,7 +364,7 @@ class TestRepositoryProvider:
 ### **Basic Repository Cloning**
 
 ```python
-from agentmanager.github.repository_cloner import RepositoryCloner
+from agenthub.github.repository_cloner import RepositoryCloner
 
 cloner = RepositoryCloner()
 
@@ -380,7 +380,7 @@ except CloneFailedError as e:
 ### **Repository Validation**
 
 ```python
-from agentmanager.github.repository_validator import RepositoryValidator
+from agenthub.github.repository_validator import RepositoryValidator
 
 validator = RepositoryValidator()
 
@@ -402,7 +402,7 @@ except ValidationError as e:
 ### **GitHub API Integration**
 
 ```python
-from agentmanager.github.github_client import GitHubClient
+from agenthub.github.github_client import GitHubClient
 
 client = GitHubClient()
 

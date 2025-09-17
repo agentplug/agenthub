@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Beta-green.svg)]()
-[![PyPI](https://img.shields.io/badge/PyPI-agentmanager-blue.svg)](https://pypi.org/project/agentmanager/)
+[![PyPI](https://img.shields.io/badge/PyPI-agenthub-blue.svg)](https://pypi.org/project/agenthub/)
 
 [📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
 
@@ -33,8 +33,8 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub is t
 ### With AgentHub
 ```python
 # One line, 30 seconds
-import agentmanager as amg
-coding_agent = amg.load_agent("agentplug/coding-agent")
+import agenthub as ah
+coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
 
@@ -52,7 +52,7 @@ code = coding_agent.generate_code("neural network class")
 
 | 🏪 **Marketplace** | 🔌 **One-Line Integration** | 🛠️ **Dev Tools** | 🏢 **Enterprise** |
 |:------------------:|:--------------------------:|:----------------:|:-----------------:|
-| Intelligent search | `amg.load_agent("name")` | Agent Studio | Governance |
+| Intelligent search | `ah.load_agent("name")` | Agent Studio | Governance |
 | Quality ratings | Auto-installation | Testing suite | Compliance |
 | Version management | Environment isolation | Analytics | Scalability |
 | Monetization | Dependency resolution | Collaboration | Monitoring |
@@ -63,18 +63,18 @@ code = coding_agent.generate_code("neural network class")
 
 ```python
 # 🚀 Instantly use any agent from GitHub
-import agentmanager as amg
+import agenthub as ah
 
 # Scientific paper analysis
-paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
+paper_analyzer = ah.load_agent("agentplug/scientific-paper-analyzer")
 summary = paper_analyzer.analyze_paper("research.pdf")
 
 # Code generation with custom tools
-coding_agent = amg.load_agent("agentplug/coding-agent", tools=["web_search", "code_review"])
+coding_agent = ah.load_agent("agentplug/coding-agent", tools=["web_search", "code_review"])
 code = coding_agent.generate_code("React component for data table")
 
 # Data processing with tool injection
-data_agent = amg.load_agent("openai/data_analyzer", tools=["data_visualizer", "statistical_analyzer"])
+data_agent = ah.load_agent("openai/data_analyzer", tools=["data_visualizer", "statistical_analyzer"])
 insights = data_agent.analyze("sales_data.csv")
 
 # All agents auto-install in isolated environments - zero conflicts!
@@ -88,7 +88,7 @@ insights = data_agent.analyze("sales_data.csv")
 
 ```python
 # 🔧 Define custom tools with @tool decorator
-from agentmanager.core.tools import tool, run_resources
+from agenthub.core.tools import tool, run_resources
 
 @tool(name="web_search", description="Search the web for information")
 def web_search(query: str, max_results: int = 10) -> list:
@@ -113,10 +113,10 @@ if __name__ == "__main__":
 
 ```python
 # 🤖 Use tools with agents (run in separate process/terminal)
-import agentmanager as amg
+import agenthub as ah
 
 # Load agent with custom tools
-agent = amg.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
+agent = ah.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
 
 # Agent's AI decides when and how to use tools
 result = agent.analyze("What are the latest AI trends?")
@@ -207,7 +207,7 @@ AgentHub uses a **three-layer architecture** designed for security, scalability,
 
 ```bash
 # Install AgentHub in 30 seconds
-pip install agentmanager
+pip install agenthub
 
 # Verify installation
 agenthub --version
@@ -216,10 +216,10 @@ agenthub --version
 ### 🎯 Your First Agent (30 seconds)
 
 ```python
-import agentmanager as amg
+import agenthub as ah
 
 # 🪄 One line to rule them all
-paper_analyzer = amg.load_agent("agentplug/scientific-paper-analyzer")
+paper_analyzer = ah.load_agent("agentplug/scientific-paper-analyzer")
 
 # 📄 Analyze your first paper
 result = paper_analyzer.analyze_paper("research_paper.pdf")
@@ -263,7 +263,7 @@ Create and run your first tool server:
 """
 Complete tool server example using run_resources()
 """
-from agentmanager.core.tools import tool, run_resources
+from agenthub.core.tools import tool, run_resources
 
 @tool(name="calculator", description="Perform basic math operations")
 def calculator(operation: str, a: float, b: float) -> float:
@@ -294,10 +294,10 @@ if __name__ == "__main__":
 
 ```python
 # Use the tools with agents (run in separate terminal/process)
-import agentmanager as amg
+import agenthub as ah
 
 # Load agent with your custom tools
-agent = amg.load_agent("agentplug/analysis-agent", tools=["calculator", "text_processor"])
+agent = ah.load_agent("agentplug/analysis-agent", tools=["calculator", "text_processor"])
 
 # Agent can now use your custom tools
 result = agent.analyze("Calculate 15 * 3 and convert 'hello world' to uppercase")
@@ -323,7 +323,7 @@ agenthub exec ./my-coding-agent generate_code "hello world"
 git push origin main
 
 # Share with the world!
-# Users can now: amg.load_agent("your-username/my-coding-agent")
+# Users can now: ah.load_agent("your-username/my-coding-agent")
 ```
 
 ## 📚 Documentation Hub
@@ -362,8 +362,8 @@ agenthub agent migrate user/agent  # Migrate to different Python version
 
 **Python SDK:**
 ```python
-from agentmanager import load_agent, list_agents, remove_agent
-from agentmanager.core.tools import tool, run_resources
+from agenthub import load_agent, list_agents, remove_agent
+from agenthub.core.tools import tool, run_resources
 
 # Core functions
 agent = load_agent("user/agent")      # Install if needed
@@ -446,7 +446,7 @@ Contributors are featured in:
 - ✅ **Tool Registry**: Global tool management with FastMCP integration
 - ✅ **Tool Decorator**: `@tool` decorator for custom tool registration
 - ✅ **MCP Integration**: Model Context Protocol for tool execution
-- ✅ **Agent Tool Assignment**: `amg.load_agent(tools=[...])` functionality
+- ✅ **Agent Tool Assignment**: `ah.load_agent(tools=[...])` functionality
 - ✅ **Tool Context Injection**: Automatic tool metadata injection into agents
 - ✅ **Comprehensive Testing**: 8/8 unit tests passing with full coverage
 
@@ -508,7 +508,7 @@ pytest tests/ -v
 pytest tests/phase2.5_tool_injection/test_simple.py -v
 
 # Run with coverage
-pytest tests/ --cov=agentmanager --cov-report=html
+pytest tests/ --cov=agenthub --cov-report=html
 ```
 
 ### 🎯 Key Performance Indicators
@@ -539,7 +539,7 @@ pytest tests/ --cov=agentmanager --cov-report=html
 
 **Core Commands**: Direct commands for basic operations:
 - `agenthub list` - List agents
-- `agenthub info user/agent` - Show agent details  
+- `agenthub info user/agent` - Show agent details
 - `agenthub exec user/agent method` - Execute agent methods
 - `agenthub validate` - System health check
 

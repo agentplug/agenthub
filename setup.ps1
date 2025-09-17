@@ -35,7 +35,7 @@ Write-Host "To use Agent Hub:" -ForegroundColor Yellow
 Write-Host "   .venv\Scripts\Activate.ps1" -ForegroundColor White
 Write-Host "   agenthub --help" -ForegroundColor White
 Write-Host "   # Or use in Python:" -ForegroundColor Gray
-Write-Host "   python -c \"import agentmanager as amg; print('Agent Hub ready!')\"" -ForegroundColor White
+Write-Host "   python -c \"import agenthub as amg; print('Agent Hub ready!')\"" -ForegroundColor White
 Write-Host ""
 Write-Host "For more examples, see the examples/ directory" -ForegroundColor Cyan
 Write-Host ""

@@ -1,12 +1,12 @@
 # Phase 1: CLI Module
 
-**Document Type**: CLI Module Overview  
-**Phase**: 1 - Foundation  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Basic command-line interface for testing and managing agentplug agents  
+**Document Type**: CLI Module Overview
+**Phase**: 1 - Foundation
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Basic command-line interface for testing and managing agentplug agents
 
 ## 🎯 **CLI Module Overview**
 
@@ -34,28 +34,28 @@ graph TB
         OUTPUT[Output Formatter]
         ERROR[Error Handler]
     end
-    
+
     subgraph "Dependencies"
         CORE[Core Module]
         RUNTIME[Runtime Module]
         STORAGE[Storage Module]
     end
-    
+
     subgraph "User Interface"
         TERMINAL[Terminal/Shell]
         USER[User Input]
     end
-    
+
     USER --> MAIN
     MAIN --> COMMANDS
-    
+
     COMMANDS --> CORE
     COMMANDS --> RUNTIME
     COMMANDS --> STORAGE
-    
+
     COMMANDS --> OUTPUT
     COMMANDS --> ERROR
-    
+
     OUTPUT --> TERMINAL
     ERROR --> TERMINAL
 ```
@@ -250,21 +250,21 @@ if __name__ == '__main__':
 def list_all_agents():
     """List all installed agents."""
     try:
-        from agentmanager.storage import LocalStorageManager
-        
+        from agenthub.storage import LocalStorageManager
+
         storage = LocalStorageManager()
         agents = storage.list_agents()
-        
+
         if not agents:
             console.print("No agents installed.", style="yellow")
             return
-        
+
         table = Table(title="Installed Agents")
         table.add_column("Developer", style="cyan")
         table.add_column("Agent", style="magenta")
         table.add_column("Version", style="green")
         table.add_column("Status", style="blue")
-        
+
         for agent in agents:
             table.add_row(
                 agent["developer"],
@@ -272,35 +272,35 @@ def list_all_agents():
                 agent["version"],
                 agent["status"]
             )
-        
+
         console.print(table)
-        
+
     except Exception as e:
         console.print(f"Error listing agents: {e}", style="red")
 
 def show_agent_details(agent_name):
     """Show detailed information about a specific agent."""
     try:
-        from agentmanager.core import AgentLoader
-        
+        from agenthub.core import AgentLoader
+
         loader = AgentLoader()
         agent_info = loader.load_agent(agent_name)
-        
+
         if not agent_info:
             console.print(f"Agent '{agent_name}' not found.", style="red")
             return
-        
+
         console.print(f"\n[bold cyan]Agent:[/bold cyan] {agent_info['name']}")
         console.print(f"[bold cyan]Version:[/bold cyan] {agent_info['version']}")
         console.print(f"[bold cyan]Description:[/bold cyan] {agent_info['description']}")
         console.print(f"[bold cyan]Author:[/bold cyan] {agent_info['author']}")
-        
+
         # Show interface methods
         if 'interface' in agent_info and 'methods' in agent_info['interface']:
             console.print(f"\n[bold cyan]Available Methods:[/bold cyan]")
             for method_name, method_def in agent_info['interface']['methods'].items():
                 console.print(f"  [green]{method_name}[/green]: {method_def['description']}")
-        
+
     except Exception as e:
         console.print(f"Error loading agent: {e}", style="red")
 ```
@@ -313,14 +313,14 @@ def handle_error(error, context=""):
         console.print(f"[bold red]Error in {context}:[/bold red] {error}")
     else:
         console.print(f"[bold red]Error:[/bold red] {error}")
-    
+
     # Provide helpful suggestions
     if "not found" in str(error).lower():
         console.print("\n[yellow]Suggestions:[/yellow]")
         console.print("  • Use 'agenthub list' to see available agents")
         console.print("  • Check agent name spelling")
         console.print("  • Ensure agent is properly installed")
-    
+
     elif "permission" in str(error).lower():
         console.print("\n[yellow]Suggestions:[/yellow]")
         console.print("  • Check file permissions")
@@ -330,19 +330,19 @@ def handle_error(error, context=""):
 def test_agent_method(agent_name, method, params):
     """Test agent method execution."""
     try:
-        from agentmanager.runtime import AgentRuntime
-        
+        from agenthub.runtime import AgentRuntime
+
         runtime = AgentRuntime()
-        
+
         # Parse parameters if provided
         method_params = {}
         if params:
             import json
             method_params = json.loads(params)
-        
+
         # Execute agent method
         result = runtime.execute_agent(agent_name, method, method_params)
-        
+
         if "result" in result:
             console.print(f"\n[bold green]Success![/bold green]")
             console.print(f"Result: {result['result']}")
@@ -351,7 +351,7 @@ def test_agent_method(agent_name, method, params):
         else:
             console.print(f"\n[bold red]Execution failed:[/bold red]")
             console.print(f"Error: {result['error']}")
-            
+
     except Exception as e:
         handle_error(e, "agent method testing")
 ```

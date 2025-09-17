@@ -1,12 +1,12 @@
 # Agent Hub MVP Deployment Guide
 
-**Document Type**: MVP Deployment Guide  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Final  
-**Level**: L5 - MVP Deployment Level  
-**Audience**: Development Team, DevOps Team, End Users  
+**Document Type**: MVP Deployment Guide
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Final
+**Level**: L5 - MVP Deployment Level
+**Audience**: Development Team, DevOps Team, End Users
 
 ## 🎯 **MVP Deployment Overview**
 
@@ -105,7 +105,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
 # Verify installation
-python -c "import agentmanager; print('Installation successful!')"
+python -c "import agenthub; print('Installation successful!')"
 ```
 
 ### **3. Development Configuration**
@@ -117,11 +117,11 @@ development:
   enabled: true
   debug: true
   log_level: DEBUG
-  
+
 registry:
   github_token: ""  # Optional: for higher rate limits
   cache_ttl: 3600  # 1 hour
-  
+
 storage:
   base_path: ~/.agenthub
   max_cache_size: 100MB
@@ -139,7 +139,7 @@ pre-commit install
 pytest
 
 # Run with coverage
-pytest --cov=agentmanager --cov-report=html
+pytest --cov=agenthub --cov-report=html
 
 # Run specific test categories
 pytest -m unit              # Unit tests only
@@ -202,10 +202,10 @@ def test_method(input_text):
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         sys.exit(1)
-    
+
     method = sys.argv[1]
     params = json.loads(sys.argv[2])
-    
+
     if method == "test_method":
         result = test_method(params["input"])
         print(json.dumps({"result": result}))
@@ -221,7 +221,7 @@ EOF
 #### **Simple Installation (Recommended)**
 ```bash
 # Install via pip
-pip install agentmanager
+pip install agenthub
 
 # Verify installation
 agenthub --version
@@ -267,15 +267,15 @@ cat > ~/.agenthub/config/settings.yaml << EOF
 registry:
   cache_ttl: 3600          # Cache TTL in seconds
   max_retries: 3           # Maximum retry attempts
-  
+
 storage:
   max_cache_size: 500MB    # Maximum cache size
   cleanup_interval: 86400  # Cleanup interval in seconds
-  
+
 logging:
   level: INFO              # Log level (DEBUG, INFO, WARNING, ERROR)
   file: ~/.agenthub/logs/agenthub.log
-  
+
 performance:
   max_concurrent_agents: 5 # Maximum concurrent agent executions
   timeout: 300             # Default timeout in seconds
@@ -346,13 +346,13 @@ python -m build
 python -m twine upload dist/*
 
 # Install from PyPI
-pip install agentmanager
+pip install agenthub
 ```
 
 ### **2. Standalone Distribution**
 ```bash
 # Create standalone executable
-pyinstaller --onefile --name agenthub agentmanager/cli/main.py
+pyinstaller --onefile --name agenthub agenthub/cli/main.py
 
 # Create distribution package
 mkdir -p dist/agent-hub
@@ -407,7 +407,7 @@ CMD ["agenthub", "--help"]
 
 ### **1. Log Configuration**
 ```python
-# agentmanager/utils/logging.py
+# agenthub/utils/logging.py
 import logging
 import logging.handlers
 from pathlib import Path
@@ -416,11 +416,11 @@ def setup_logging(config):
     """Set up logging configuration."""
     log_level = getattr(logging, config.get('logging', {}).get('level', 'INFO'))
     log_file = config.get('logging', {}).get('file', '~/.agenthub/logs/agenthub.log')
-    
+
     # Create log directory
     log_path = Path(log_file).expanduser().parent
     log_path.mkdir(parents=True, exist_ok=True)
-    
+
     # Configure logging
     logging.basicConfig(
         level=log_level,
@@ -447,7 +447,7 @@ agenthub cache --info       # Show cache information
 
 ### **3. Performance Monitoring**
 ```python
-# agentmanager/utils/monitoring.py
+# agenthub/utils/monitoring.py
 import time
 import logging
 from functools import wraps
@@ -457,17 +457,17 @@ def monitor_performance(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.time()
-        
+
         try:
             result = func(*args, **kwargs)
             return result
         finally:
             execution_time = time.time() - start_time
-            
+
             # Log performance metrics (only in debug mode)
             if logging.getLogger().level <= logging.DEBUG:
                 logging.debug(f"{func.__name__}: {execution_time:.3f}s")
-    
+
     return wrapper
 ```
 
@@ -482,12 +482,12 @@ python --version  # Should be 3.12+
 python3.12 --version  # Alternative check
 
 # Permission issues
-sudo pip install agentmanager  # On Linux/macOS
-pip install --user agentmanager  # User installation
+sudo pip install agenthub  # On Linux/macOS
+pip install --user agenthub  # User installation
 
 # Dependency conflicts
 pip install --upgrade pip setuptools wheel
-pip install agentmanager --force-reinstall
+pip install agenthub --force-reinstall
 ```
 
 #### **2. Runtime Issues**
@@ -529,13 +529,13 @@ tail -f ~/.agenthub/logs/agenthub.log
 ### **1. Application Updates**
 ```bash
 # Update Agent Hub
-pip install --upgrade agentmanager
+pip install --upgrade agenthub
 
 # Update specific version
-pip install agentmanager==1.1.0
+pip install agenthub==1.1.0
 
 # Check for updates
-pip list --outdated | grep agentmanager
+pip list --outdated | grep agenthub
 ```
 
 ### **2. Agent Updates**
@@ -614,4 +614,4 @@ cp -r ~/.agenthub.backup.20250628 ~/.agenthub
 - **Production**: Reliable end-user deployment
 - **Maintenance**: Simple update and maintenance process
 
-This deployment guide provides **comprehensive instructions** for setting up Agent Hub MVP in any environment, ensuring successful deployment and operation across all target platforms. 
+This deployment guide provides **comprehensive instructions** for setting up Agent Hub MVP in any environment, ensuring successful deployment and operation across all target platforms.

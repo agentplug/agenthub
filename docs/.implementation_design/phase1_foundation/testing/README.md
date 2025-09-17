@@ -1,12 +1,12 @@
 # Phase 1: Testing Strategy & Plans
 
-**Document Type**: Testing Strategy Overview  
-**Phase**: 1 - Foundation  
-**Author**: William  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
-**Status**: Active  
-**Purpose**: Comprehensive testing strategy for Phase 1 modules  
+**Document Type**: Testing Strategy Overview
+**Phase**: 1 - Foundation
+**Author**: William
+**Date Created**: 2025-06-28
+**Last Updated**: 2025-06-28
+**Status**: Active
+**Purpose**: Comprehensive testing strategy for Phase 1 modules
 
 ## 🎯 **Phase 1 Testing Overview**
 
@@ -108,7 +108,7 @@ pytest tests/phase1_foundation/core/ -v
 pytest tests/phase1_foundation/cli/ -v
 
 # Run with coverage
-pytest tests/phase1_foundation/ --cov=agentmanager --cov-report=html
+pytest tests/phase1_foundation/ --cov=agenthub --cov-report=html
 
 # Run integration tests
 pytest tests/phase1_foundation/integration/ -v
