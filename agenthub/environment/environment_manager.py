@@ -494,6 +494,10 @@ class AdvancedEnvironmentManager:
         backup_name = f"{agent_name.replace('/', '_')}_{suffix}_{timestamp}"
         backup_path = backup_dir / backup_name
 
+        # Remove existing backup if it exists
+        if backup_path.exists():
+            shutil.rmtree(backup_path)
+
         shutil.copytree(agent_path, backup_path)
         return str(backup_path)
 

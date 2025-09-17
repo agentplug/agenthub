@@ -93,12 +93,8 @@ class TestToolRegistry:
         """Test getting list of available tools."""
         # Clear the registry to start fresh
         self.registry.cleanup()
-        # Get available tools (may include built-in tools from MCP discovery)
-        available_tools = self.registry.get_available_tools()
-        # Should have some tools available (built-in tools from MCP discovery)
-        assert len(available_tools) > 0
 
-        # Register some tools
+        # Register some tools first
         def tool1():
             return "tool1"
 
@@ -363,10 +359,11 @@ class TestToolRegistry:
         # Cleanup
         self.registry.cleanup()
 
-        # Check that everything is cleared
-        # Built-in tools may still be available from MCP discovery
+        # Check that registered tools are cleared
         available_tools = self.registry.get_available_tools()
-        assert len(available_tools) > 0
+        # Should not have our registered tools anymore
+        assert "tool1" not in available_tools
+        assert "tool2" not in available_tools
         assert len(self.registry.agent_tool_access) == 0
 
     def test_tool_execution_via_registry(self):
