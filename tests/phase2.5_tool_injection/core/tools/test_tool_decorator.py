@@ -18,24 +18,20 @@ class TestToolDecorator:
         # Reset the registry for each test
         ToolRegistry._instance = None
         self.registry = ToolRegistry()
-
+        
         # Patch the global registry to use our test instance
-        self.registry_patcher = patch(
-            "agenthub.core.tools.registry._registry", self.registry
-        )
+        self.registry_patcher = patch('agenthub.core.tools.registry._registry', self.registry)
         self.registry_patcher.start()
-
+        
         # Also patch the decorator's registry reference
-        self.decorator_patcher = patch(
-            "agenthub.core.tools.decorator._registry", self.registry
-        )
+        self.decorator_patcher = patch('agenthub.core.tools.decorator._registry', self.registry)
         self.decorator_patcher.start()
-
+        
     def teardown_method(self):
         """Clean up after each test."""
-        if hasattr(self, "registry_patcher"):
+        if hasattr(self, 'registry_patcher'):
             self.registry_patcher.stop()
-        if hasattr(self, "decorator_patcher"):
+        if hasattr(self, 'decorator_patcher'):
             self.decorator_patcher.stop()
 
     @patch("mcp.client.sse.sse_client")
@@ -231,8 +227,7 @@ class TestToolDecorator:
             def class_method(self, param: str) -> str:
                 return f"class_method: {param}"
 
-        # Create instance and check tool registration
-        instance = TestClass()
+        # Check tool registration
         assert "class_method_tool" in self.registry.get_available_tools()
 
         metadata = self.registry.get_tool_metadata("class_method_tool")
