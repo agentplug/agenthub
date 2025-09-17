@@ -136,7 +136,8 @@ class AgentWrapper:
             # Pass tool context if tools are assigned
             tool_context = None
             if self.assigned_tools and self.tool_registry:
-                tool_context = self.get_tool_context_json()
+                tool_context_json = self.get_tool_context_json()
+                tool_context = json.loads(tool_context_json)
 
             result = self.runtime.execute_agent(
                 self.namespace, self.agent_name, method_name, parameters, tool_context
@@ -671,7 +672,8 @@ class AgentWrapper:
             JSON string ready for agent execution
         """
 
-        tool_context = self.get_tool_context_json()
+        tool_context_json = self.get_tool_context_json()
+        tool_context = json.loads(tool_context_json)
 
         call_data = {
             "method": method,

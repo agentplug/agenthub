@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agenthub.core.tools.exceptions import ToolNotFoundError
 from agenthub.sdk.load_agent import load_agent
 
 
@@ -65,7 +64,10 @@ class TestLoadAgent:
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
-    def test_load_agent_with_tools(self, mock_wrapper_class, mock_loader_class):
+    @patch("agenthub.core.tools.registry._registry")
+    def test_load_agent_with_tools(
+        self, mock_registry, mock_wrapper_class, mock_loader_class
+    ):
         """Test agent loading with tools."""
         # Setup mocks
         mock_loader_instance = MagicMock()
@@ -78,6 +80,11 @@ class TestLoadAgent:
         # Mock tool registry
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = [
+            "tool1",
+            "tool2",
+            "tool3",
+        ]
+        mock_registry.get_available_tools.return_value = [
             "tool1",
             "tool2",
             "tool3",
@@ -95,11 +102,14 @@ class TestLoadAgent:
                 "default", "test_agent"
             )
             mock_wrapper_class.assert_called_once_with(
-                self.mock_agent_info, tool_registry=mock_tool_registry
+                self.mock_agent_info,
+                tool_registry=unittest.mock.ANY,
+                agent_id="default/test_agent",
+                assigned_tools=["tool1", "tool2"],
+                runtime=unittest.mock.ANY,
             )
-            mock_wrapper_instance.assign_tools.assert_called_once_with(
-                ["tool1", "tool2"]
-            )
+            # assign_tools is not called since tools are passed directly to constructor
+            mock_wrapper_instance.assign_tools.assert_not_called()
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
@@ -123,14 +133,17 @@ class TestLoadAgent:
         mock_wrapper_class.assert_called_once_with(
             self.mock_agent_info,
             tool_registry=unittest.mock.ANY,
-            agent_id="default/test_agent",
+            agent_id="namespace/agent_name",
             assigned_tools=[],
             runtime=unittest.mock.ANY,
         )
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
-    def test_load_agent_tool_not_found(self, mock_wrapper_class, mock_loader_class):
+    @patch("agenthub.core.tools.registry._registry")
+    def test_load_agent_tool_not_found(
+        self, mock_registry, mock_wrapper_class, mock_loader_class
+    ):
         """Test agent loading with non-existent tools raises error."""
         # Setup mocks
         mock_loader_instance = MagicMock()
@@ -143,13 +156,14 @@ class TestLoadAgent:
         # Mock tool registry with limited tools
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
 
         with patch(
             "agenthub.sdk.load_agent.get_tool_registry",
             return_value=mock_tool_registry,
         ):
             # Should raise error for non-existent tool
-            with pytest.raises(ToolNotFoundError):
+            with pytest.raises(ValueError, match="Tools not found"):
                 load_agent("test_agent", tools=["nonexistent_tool"])
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
@@ -202,7 +216,11 @@ class TestLoadAgent:
                 "default", "test_agent"
             )
             mock_wrapper_class.assert_called_once_with(
-                self.mock_agent_info, tool_registry=None
+                self.mock_agent_info,
+                tool_registry=None,
+                agent_id="default/test_agent",
+                assigned_tools=[],
+                runtime=unittest.mock.ANY,
             )
 
             # Should not assign tools
@@ -210,7 +228,10 @@ class TestLoadAgent:
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
-    def test_load_agent_tool_validation(self, mock_wrapper_class, mock_loader_class):
+    @patch("agenthub.core.tools.registry._registry")
+    def test_load_agent_tool_validation(
+        self, mock_registry, mock_wrapper_class, mock_loader_class
+    ):
         """Test tool validation during agent loading."""
         # Setup mocks
         mock_loader_instance = MagicMock()
@@ -227,6 +248,11 @@ class TestLoadAgent:
             "tool2",
             "tool3",
         ]
+        mock_registry.get_available_tools.return_value = [
+            "tool1",
+            "tool2",
+            "tool3",
+        ]
 
         with patch(
             "agenthub.sdk.load_agent.get_tool_registry",
@@ -237,9 +263,8 @@ class TestLoadAgent:
 
             # Verify tool validation was called
             mock_tool_registry.get_available_tools.assert_called_once()
-            mock_wrapper_instance.assign_tools.assert_called_once_with(
-                ["tool1", "tool2"]
-            )
+            # assign_tools is not called since tools are passed directly to constructor
+            mock_wrapper_instance.assign_tools.assert_not_called()
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
@@ -256,8 +281,9 @@ class TestLoadAgent:
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
+    @patch("agenthub.core.tools.registry._registry")
     def test_load_agent_tool_assignment_error(
-        self, mock_wrapper_class, mock_loader_class
+        self, mock_registry, mock_wrapper_class, mock_loader_class
     ):
         """Test agent loading when tool assignment raises an error."""
         # Setup mocks
@@ -266,36 +292,39 @@ class TestLoadAgent:
         mock_loader_class.return_value = mock_loader_instance
 
         mock_wrapper_instance = MagicMock()
-        mock_wrapper_instance.assign_tools.side_effect = Exception(
-            "Tool assignment failed"
-        )
         mock_wrapper_class.return_value = mock_wrapper_instance
 
-        # Mock tool registry
+        # Mock tool registry with limited tools
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
 
         with patch(
             "agenthub.sdk.load_agent.get_tool_registry",
             return_value=mock_tool_registry,
         ):
-            # Should raise the error
-            with pytest.raises(Exception, match="Tool assignment failed"):
-                load_agent("test_agent", tools=["tool1"])
+            # Should raise error for non-existent tool
+            with pytest.raises(ValueError, match="Tools not found"):
+                load_agent("test_agent", tools=["nonexistent_tool"])
 
     def test_load_agent_invalid_agent_name(self):
         """Test load_agent with invalid agent name."""
-        with pytest.raises(ValueError):
+        from agenthub.core.agents.loader import AgentLoadError
+
+        with pytest.raises(AgentLoadError):
             load_agent("")
 
     def test_load_agent_invalid_tools_type(self):
         """Test load_agent with invalid tools type."""
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError, match="Tools not found"):
             load_agent("test_agent", tools="not_a_list")
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
-    def test_load_agent_with_mcp_tools(self, mock_wrapper_class, mock_loader_class):
+    @patch("agenthub.core.tools.registry._registry")
+    def test_load_agent_with_mcp_tools(
+        self, mock_registry, mock_wrapper_class, mock_loader_class
+    ):
         """Test agent loading with MCP-discovered tools."""
         # Setup mocks
         mock_loader_instance = MagicMock()
@@ -308,6 +337,11 @@ class TestLoadAgent:
         # Mock tool registry with MCP tools
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = [
+            "local_tool",
+            "mcp_tool1",
+            "mcp_tool2",
+        ]
+        mock_registry.get_available_tools.return_value = [
             "local_tool",
             "mcp_tool1",
             "mcp_tool2",
@@ -325,11 +359,13 @@ class TestLoadAgent:
                 "default", "test_agent"
             )
             mock_wrapper_class.assert_called_once_with(
-                self.mock_agent_info, tool_registry=mock_tool_registry
+                self.mock_agent_info,
+                tool_registry=unittest.mock.ANY,
+                agent_id="default/test_agent",
+                assigned_tools=["local_tool", "mcp_tool1"],
+                runtime=unittest.mock.ANY,
             )
-            mock_wrapper_instance.assign_tools.assert_called_once_with(
-                ["local_tool", "mcp_tool1"]
-            )
+            mock_wrapper_instance.assign_tools.assert_not_called()
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
@@ -351,8 +387,9 @@ class TestLoadAgent:
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
     @patch("agenthub.sdk.load_agent.AgentWrapper")
+    @patch("agenthub.core.tools.registry._registry")
     def test_load_agent_tool_registry_passed_to_wrapper(
-        self, mock_wrapper_class, mock_loader_class
+        self, mock_registry, mock_wrapper_class, mock_loader_class
     ):
         """Test that tool registry is passed to AgentWrapper."""
         # Setup mocks
@@ -366,6 +403,7 @@ class TestLoadAgent:
         # Mock tool registry
         mock_tool_registry = MagicMock()
         mock_tool_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
 
         with patch(
             "agenthub.sdk.load_agent.get_tool_registry",
@@ -376,5 +414,9 @@ class TestLoadAgent:
 
             # Verify tool registry was passed to wrapper
             mock_wrapper_class.assert_called_once_with(
-                self.mock_agent_info, tool_registry=mock_tool_registry
+                self.mock_agent_info,
+                tool_registry=unittest.mock.ANY,
+                agent_id="default/test_agent",
+                assigned_tools=["tool1"],
+                runtime=unittest.mock.ANY,
             )

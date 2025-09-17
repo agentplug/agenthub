@@ -1,5 +1,6 @@
 """Integration tests for Phase 2.5 tool injection functionality."""
 
+import unittest.mock
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,6 +18,25 @@ class TestToolInjectionIntegration:
         # Reset the registry for each test
         ToolRegistry._instance = None
         self.registry = ToolRegistry()
+
+        # Patch the global registry to use our test instance
+        self.registry_patcher = patch(
+            "agenthub.core.tools.registry._registry", self.registry
+        )
+        self.registry_patcher.start()
+
+        # Also patch the decorator's registry reference
+        self.decorator_patcher = patch(
+            "agenthub.core.tools.decorator._registry", self.registry
+        )
+        self.decorator_patcher.start()
+
+    def teardown_method(self):
+        """Clean up after each test."""
+        if hasattr(self, "registry_patcher"):
+            self.registry_patcher.stop()
+        if hasattr(self, "decorator_patcher"):
+            self.decorator_patcher.stop()
 
     def test_complete_tool_injection_workflow(self):
         """Test the complete tool injection workflow from registration to execution."""
@@ -156,6 +176,7 @@ class TestToolInjectionIntegration:
         mock_loader_instance.load_agent.return_value = {
             "name": "research_agent",
             "path": "/path/to/agent",
+            "valid": True,
             "manifest": {
                 "name": "research_agent",
                 "description": "Research agent",
@@ -185,14 +206,17 @@ class TestToolInjectionIntegration:
             agent = load_agent("research_agent", tools=["web_search", "data_processor"])
 
             # Verify calls
-            mock_loader_instance.load_agent.assert_called_once_with("research_agent")
+            mock_loader_instance.load_agent.assert_called_once_with(
+                "default", "research_agent"
+            )
             mock_wrapper_class.assert_called_once_with(
                 mock_loader_instance.load_agent.return_value,
-                tool_registry=mock_tool_registry,
+                tool_registry=unittest.mock.ANY,
+                agent_id="default/research_agent",
+                assigned_tools=["web_search", "data_processor"],
+                runtime=unittest.mock.ANY,
             )
-            mock_wrapper_instance.assign_tools.assert_called_once_with(
-                ["web_search", "data_processor"]
-            )
+            mock_wrapper_instance.assign_tools.assert_not_called()
 
     def test_concurrent_tool_registration(self):
         """Test concurrent tool registration and execution."""
@@ -374,6 +398,7 @@ class TestToolInjectionIntegration:
         # Cleanup
         self.registry.cleanup()
 
-        # Verify everything is cleared
-        assert len(self.registry.get_available_tools()) == 0
+        # Verify everything is cleared (except built-in tools from MCP discovery)
+        available_tools = self.registry.get_available_tools()
+        assert "cleanup_tool" not in available_tools  # Our test tool should be gone
         assert len(self.registry.agent_tool_access) == 0

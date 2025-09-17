@@ -27,13 +27,17 @@ def load_agent(base_agent: str, tools: list[str] | None = None, **kwargs):
     # Get tool registry
     tool_registry = get_tool_registry()
 
-    # Validate tools exist
-    available_tools = tool_registry.get_available_tools()
-    invalid_tools = [tool for tool in tools if tool not in available_tools]
-    if invalid_tools:
-        raise ValueError(
-            f"Tools not found: {invalid_tools}. Available tools: {available_tools}"
-        )
+    # Validate tools exist if registry is available
+    if tool_registry is not None:
+        available_tools = tool_registry.get_available_tools()
+        invalid_tools = [tool for tool in tools if tool not in available_tools]
+        if invalid_tools:
+            raise ValueError(
+                f"Tools not found: {invalid_tools}. Available tools: {available_tools}"
+            )
+    elif tools:
+        # If no registry but tools requested, raise error
+        raise ValueError("Tool registry not available but tools were requested")
 
     # Parse agent name to get namespace and agent name
     # Handle agent name format - support both "agent" and "namespace/agent"
@@ -57,7 +61,7 @@ def load_agent(base_agent: str, tools: list[str] | None = None, **kwargs):
 
     # Assign tools if provided
     agent_id = f"{namespace}/{agent_name}"
-    if tools:
+    if tools and tool_registry is not None:
         from ..core.tools import assign_tools_to_agent
 
         assign_tools_to_agent(agent_id, tools)
