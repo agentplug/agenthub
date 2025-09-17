@@ -7,8 +7,8 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Beta-green.svg)]()
-[![PyPI version](https://badge.fury.io/py/agentplug.svg)](https://badge.fury.io/py/agentplug)
-[![PyPI downloads](https://pepy.tech/badge/agentplug)](https://pepy.tech/project/agentplug)
+[![PyPI version](https://badge.fury.io/py/agenthub-sdk.svg)](https://badge.fury.io/py/agenthub-sdk)
+[![PyPI downloads](https://pepy.tech/badge/agenthub-sdk)](https://pepy.tech/project/agenthub-sdk)
 
 [📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
 
@@ -34,7 +34,7 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub make
 ### With AgentHub
 ```python
 # One line, 30 seconds
-import agentplug as ah
+import agenthub as ah
 coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
@@ -54,16 +54,16 @@ code = coding_agent.generate_code("neural network class")
 
 ```bash
 # Install AgentHub
-pip install agentplug
+pip install agenthub-sdk
 
 # Verify installation
-agentplug --version
+agenthub --version
 ```
 
 ### 🎯 Your First Agent (30 seconds)
 
 ```python
-import agentplug as ah
+import agenthub as ah
 
 # 🪄 One line to load any agent
 paper_analyzer = ah.load_agent("agentplug/scientific-paper-analyzer")
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
 ```python
 # 🤖 Use tools with agents (run in separate process/terminal)
-import agentplug as ah
+import agenthub as ah
 
 # Load agent with custom tools
 agent = ah.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
@@ -123,22 +123,22 @@ result = agent.analyze("What are the latest AI trends?")
 
 ```bash
 # List all agents
-agentplug list
+agenthub list
 
 # Get agent information
-agentplug info agentplug/scientific-paper-analyzer
+agenthub info agentplug/scientific-paper-analyzer
 
 # Install new agent
-agentplug agent install agentplug/scientific-paper-analyzer
+agenthub agent install agentplug/scientific-paper-analyzer
 
 # Execute agent method
-agentplug exec agentplug/scientific-paper-analyzer analyze_paper "research.pdf"
+agenthub exec agentplug/scientific-paper-analyzer analyze_paper "research.pdf"
 
 # Check agent status
-agentplug agent status agentplug/scientific-paper-analyzer
+agenthub agent status agentplug/scientific-paper-analyzer
 
 # Remove an agent
-agentplug agent remove agentplug/scientific-paper-analyzer
+agenthub agent remove agentplug/scientific-paper-analyzer
 ```
 
 ## 🛠️ Creating Your Own Agent
@@ -177,7 +177,7 @@ entry_point: agent.py:CodingAgent
 ### 2. Test Locally
 
 ```bash
-agentplug exec ./my-coding-agent generate_code "hello world"
+agenthub exec ./my-coding-agent generate_code "hello world"
 ```
 
 ### 3. Publish to GitHub
@@ -194,7 +194,7 @@ git push -u origin main
 
 ```python
 # Anyone can now use your agent:
-import agentplug as ah
+import agenthub as ah
 agent = ah.load_agent("your-username/my-coding-agent")
 code = agent.generate_code("React component")
 ```
@@ -203,7 +203,7 @@ code = agent.generate_code("React component")
 
 ### Code Generation Agent
 ```python
-import agentplug as ah
+import agenthub as ah
 
 # Load coding agent
 coding_agent = ah.load_agent("agentplug/coding-agent")
@@ -219,7 +219,7 @@ print(review)
 
 ### Data Analysis Agent
 ```python
-import agentplug as ah
+import agenthub as ah
 
 # Load analysis agent with tools
 data_agent = ah.load_agent("agentplug/analysis-agent", tools=["data_analyzer", "web_search"])
@@ -231,7 +231,7 @@ print(insights)
 
 ### Scientific Paper Analyzer
 ```python
-import agentplug as ah
+import agenthub as ah
 
 # Load paper analyzer
 paper_agent = ah.load_agent("agentplug/scientific-paper-analyzer")
