@@ -342,7 +342,8 @@ class TestEnvironmentSetup:
             with patch("subprocess.run") as mock_pip_run:
                 mock_pip_run.return_value.returncode = 0
                 mock_pip_run.return_value.stdout = (
-                    "Package    Version\n---------- -------\nrequests   2.31.0\npandas     2.1.0"
+                    "Package    Version\n---------- -------\n"
+                    "requests   2.31.0\npandas     2.1.0"
                 )
 
                 packages = setup._get_installed_packages(str(venv_path))
