@@ -40,7 +40,8 @@ class AgentWrapper:
         self.tool_registry = tool_registry
         self.agent_id = (
             agent_id
-            or f"{agent_info.get('namespace', 'unknown')}/{agent_info.get('name', 'unknown')}"
+            or f"{agent_info.get('namespace', 'unknown')}/"
+            f"{agent_info.get('name', 'unknown')}"
         )
         self.assigned_tools = assigned_tools or []
         self.runtime = runtime
@@ -59,6 +60,19 @@ class AgentWrapper:
         # Extract interface for method operations
         self.manifest = agent_info.get("manifest", {})
         self.interface = self.manifest.get("interface", {})
+
+    def assign_tools(self, tool_names: list[str]) -> None:
+        """
+        Assign tools to this agent.
+
+        Args:
+            tool_names: List of tool names to assign to this agent
+        """
+        if self.tool_registry:
+            self.tool_registry.assign_tools_to_agent(self.agent_id, tool_names)
+            self.assigned_tools = tool_names.copy()
+        else:
+            raise RuntimeError("No tool registry available for tool assignment")
 
     def has_method(self, method_name: str) -> bool:
         """
@@ -400,9 +414,7 @@ class AgentWrapper:
         if not self.tool_registry:
             return False
 
-        from ..tools import can_agent_access_tool
-
-        return can_agent_access_tool(self.agent_id, tool_name)
+        return self.tool_registry.can_agent_access_tool(self.agent_id, tool_name)
 
     def get_available_tools(self) -> list[str]:
         """Get list of tools available to this agent."""
@@ -430,7 +442,7 @@ class AgentWrapper:
                         and query.lower() in metadata.get("description", "").lower()
                     ):
                         matching_tools.append(tool_name)
-                except:
+                except Exception:
                     pass
 
         return matching_tools
@@ -469,9 +481,7 @@ class AgentWrapper:
         if not self.can_access_tool(tool_name) or not self.tool_registry:
             return None
 
-        from ..tools import get_tool_metadata
-
-        metadata = get_tool_metadata(tool_name)
+        metadata = self.tool_registry.get_tool_metadata(tool_name)
         if metadata:
             return {
                 "name": metadata.name,
@@ -513,12 +523,14 @@ class AgentWrapper:
                     for example in metadata["examples"]:
                         # Convert from function call format to execute_tool format
                         if "(" in example:
-                            # Extract parameters from example like "add('param1', 'param2')"
+                            # Extract parameters from example like
+                            # "add('param1', 'param2')"
                             func_name = example.split("(")[0]
                             params_part = example.split("(", 1)[1].rsplit(")", 1)[0]
                             if params_part.strip():
                                 instructions.append(
-                                    f"  Usage: execute_tool('{func_name}', {params_part})"
+                                    f"  Usage: execute_tool('{func_name}', "
+                                    f"{params_part})"
                                 )
                             else:
                                 instructions.append(
@@ -575,19 +587,31 @@ class AgentWrapper:
             "get_tool_metadata_method": self.get_tool_metadata,
         }
 
-    def get_tool_context_json(self) -> dict[str, Any]:
+    def get_tool_context_json(self) -> str:
         """
         Get tool context in JSON format compatible with agent execution.
 
         Returns:
-            Dictionary with tool context in the format expected by agents
+            JSON string with tool context in the format expected by agents
         """
         if not self.assigned_tools or not self.tool_registry:
-            return {}
+            return json.dumps(
+                {
+                    "available_tools": [],
+                    "tool_descriptions": {},
+                    "tool_usage_examples": {},
+                    "tool_parameters": {},
+                    "tool_return_types": {},
+                    "tool_namespaces": {},
+                }
+            )
 
         # Get tool descriptions and usage examples
         tool_descriptions = {}
         tool_usage_examples = {}
+        tool_parameters = {}
+        tool_return_types = {}
+        tool_namespaces = {}
 
         for tool_name in self.assigned_tools:
             metadata = self.get_tool_metadata(tool_name)
@@ -601,11 +625,39 @@ class AgentWrapper:
                     # Fallback to basic example if no examples available
                     tool_usage_examples[tool_name] = [f"{tool_name}()"]
 
-        return {
-            "available_tools": self.assigned_tools,
-            "tool_descriptions": tool_descriptions,
-            "tool_usage_examples": tool_usage_examples,
-        }
+                # Add parameters and return types (convert types to strings for
+                # JSON serialization)
+                params = metadata.get("parameters", {})
+                serialized_params = {}
+                for param_name, param_info in params.items():
+                    if isinstance(param_info, dict):
+                        serialized_param = param_info.copy()
+                        if "type" in serialized_param and hasattr(
+                            serialized_param["type"], "__name__"
+                        ):
+                            serialized_param["type"] = serialized_param["type"].__name__
+                        serialized_params[param_name] = serialized_param
+                    else:
+                        serialized_params[param_name] = param_info
+
+                tool_parameters[tool_name] = serialized_params
+
+                return_type = metadata.get("return_type", "unknown")
+                if hasattr(return_type, "__name__"):
+                    return_type = return_type.__name__
+                tool_return_types[tool_name] = return_type
+                tool_namespaces[tool_name] = metadata.get("namespace", "custom")
+
+        return json.dumps(
+            {
+                "available_tools": self.assigned_tools,
+                "tool_descriptions": tool_descriptions,
+                "tool_usage_examples": tool_usage_examples,
+                "tool_parameters": tool_parameters,
+                "tool_return_types": tool_return_types,
+                "tool_namespaces": tool_namespaces,
+            }
+        )
 
     def generate_agent_call_json(self, method: str, parameters: dict[str, Any]) -> str:
         """
