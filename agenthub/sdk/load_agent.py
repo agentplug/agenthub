@@ -1,6 +1,6 @@
 """Enhanced load_agent function with tool injection support."""
 
-from ..core.agents import AgentLoader
+from ..core.agents import AgentLoader, AgentWrapper
 from ..core.tools import get_tool_registry
 
 
@@ -9,7 +9,8 @@ def load_agent(base_agent: str, tools: list[str] | None = None, **kwargs):
     Load an agent with optional tool injection capabilities.
 
     Args:
-        base_agent: Agent name in format "namespace/agent" (e.g., "agentplug/analysis-agent")
+        base_agent: Agent name in format "namespace/agent" (e.g.,
+            "agentplug/analysis-agent")
         tools: List of tool names to inject into the agent
         **kwargs: Additional arguments passed to the agent
 
@@ -35,12 +36,13 @@ def load_agent(base_agent: str, tools: list[str] | None = None, **kwargs):
         )
 
     # Parse agent name to get namespace and agent name
-    if "/" not in base_agent:
-        raise ValueError(
-            f"Invalid agent name format: {base_agent}. Expected: 'namespace/agent'"
-        )
-
-    namespace, agent_name = base_agent.split("/", 1)
+    # Handle agent name format - support both "agent" and "namespace/agent"
+    if "/" in base_agent:
+        namespace, agent_name = base_agent.split("/", 1)
+    else:
+        # Default namespace for backward compatibility
+        namespace = "default"
+        agent_name = base_agent
 
     # Create agent loader with tool registry and storage
     from ..storage.local_storage import LocalStorage
@@ -61,7 +63,6 @@ def load_agent(base_agent: str, tools: list[str] | None = None, **kwargs):
         assign_tools_to_agent(agent_id, tools)
 
     # Create agent wrapper with tool capabilities and runtime
-    from ..core.agents import AgentWrapper
     from ..runtime.agent_runtime import AgentRuntime
 
     # Create runtime with subprocess execution for proper environment isolation

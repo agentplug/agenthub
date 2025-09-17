@@ -1,5 +1,6 @@
 """Unit tests for enhanced load_agent functionality."""
 
+import unittest.mock
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -21,6 +22,7 @@ class TestLoadAgent:
         self.mock_agent_info = {
             "name": "test_agent",
             "path": "/path/to/agent",
+            "valid": True,
             "manifest": {
                 "name": "test_agent",
                 "description": "Test agent",
@@ -46,12 +48,16 @@ class TestLoadAgent:
         mock_wrapper_class.return_value = mock_wrapper_instance
 
         # Load agent
-        agent = load_agent("test_agent")
+        load_agent("test_agent")
 
         # Verify calls
-        mock_loader_instance.load_agent.assert_called_once_with("test_agent")
+        mock_loader_instance.load_agent.assert_called_once_with("default", "test_agent")
         mock_wrapper_class.assert_called_once_with(
-            self.mock_agent_info, tool_registry=None
+            self.mock_agent_info,
+            tool_registry=unittest.mock.ANY,
+            agent_id="default/test_agent",
+            assigned_tools=[],
+            runtime=unittest.mock.ANY,
         )
 
         # Verify no tools were assigned
@@ -82,10 +88,12 @@ class TestLoadAgent:
             return_value=mock_tool_registry,
         ):
             # Load agent with tools
-            agent = load_agent("test_agent", tools=["tool1", "tool2"])
+            load_agent("test_agent", tools=["tool1", "tool2"])
 
             # Verify calls
-            mock_loader_instance.load_agent.assert_called_once_with("test_agent")
+            mock_loader_instance.load_agent.assert_called_once_with(
+                "default", "test_agent"
+            )
             mock_wrapper_class.assert_called_once_with(
                 self.mock_agent_info, tool_registry=mock_tool_registry
             )
@@ -106,14 +114,18 @@ class TestLoadAgent:
         mock_wrapper_class.return_value = mock_wrapper_instance
 
         # Load agent with namespace
-        agent = load_agent("namespace/agent_name")
+        load_agent("namespace/agent_name")
 
         # Verify calls
         mock_loader_instance.load_agent.assert_called_once_with(
             "namespace", "agent_name"
         )
         mock_wrapper_class.assert_called_once_with(
-            self.mock_agent_info, tool_registry=None
+            self.mock_agent_info,
+            tool_registry=unittest.mock.ANY,
+            agent_id="default/test_agent",
+            assigned_tools=[],
+            runtime=unittest.mock.ANY,
         )
 
     @patch("agenthub.sdk.load_agent.AgentLoader")
@@ -153,12 +165,16 @@ class TestLoadAgent:
         mock_wrapper_class.return_value = mock_wrapper_instance
 
         # Load agent with empty tools list
-        agent = load_agent("test_agent", tools=[])
+        load_agent("test_agent", tools=[])
 
         # Verify calls
-        mock_loader_instance.load_agent.assert_called_once_with("test_agent")
+        mock_loader_instance.load_agent.assert_called_once_with("default", "test_agent")
         mock_wrapper_class.assert_called_once_with(
-            self.mock_agent_info, tool_registry=None
+            self.mock_agent_info,
+            tool_registry=unittest.mock.ANY,
+            agent_id="default/test_agent",
+            assigned_tools=[],
+            runtime=unittest.mock.ANY,
         )
 
         # Should not assign tools
@@ -179,10 +195,12 @@ class TestLoadAgent:
         # Mock no tool registry available
         with patch("agenthub.sdk.load_agent.get_tool_registry", return_value=None):
             # Should work without tools
-            agent = load_agent("test_agent")
+            load_agent("test_agent")
 
             # Verify calls
-            mock_loader_instance.load_agent.assert_called_once_with("test_agent")
+            mock_loader_instance.load_agent.assert_called_once_with(
+                "default", "test_agent"
+            )
             mock_wrapper_class.assert_called_once_with(
                 self.mock_agent_info, tool_registry=None
             )
@@ -215,7 +233,7 @@ class TestLoadAgent:
             return_value=mock_tool_registry,
         ):
             # Load agent with valid tools
-            agent = load_agent("test_agent", tools=["tool1", "tool2"])
+            load_agent("test_agent", tools=["tool1", "tool2"])
 
             # Verify tool validation was called
             mock_tool_registry.get_available_tools.assert_called_once()
@@ -300,10 +318,12 @@ class TestLoadAgent:
             return_value=mock_tool_registry,
         ):
             # Load agent with MCP tools
-            agent = load_agent("test_agent", tools=["local_tool", "mcp_tool1"])
+            load_agent("test_agent", tools=["local_tool", "mcp_tool1"])
 
             # Verify calls
-            mock_loader_instance.load_agent.assert_called_once_with("test_agent")
+            mock_loader_instance.load_agent.assert_called_once_with(
+                "default", "test_agent"
+            )
             mock_wrapper_class.assert_called_once_with(
                 self.mock_agent_info, tool_registry=mock_tool_registry
             )
