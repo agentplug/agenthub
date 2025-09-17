@@ -7,7 +7,7 @@ packages = ["agenthub"]
 
 [project]
 name = "agentplug"
-version = "0.1.1"
+version = "0.1.2"
 description = "AgentHub - The App Store for AI Agents"
 readme = "README.md"
 license = { file = "LICENSE" }
