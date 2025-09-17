@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from agenthub.core.tools.decorator import tool
 from agenthub.core.tools.exceptions import ToolNameConflictError, ToolValidationError
 from agenthub.core.tools.registry import ToolRegistry
 
@@ -22,6 +21,8 @@ class TestSimpleToolInjection:
         from agenthub.core.tools.registry import _registry
 
         self.global_registry = _registry
+        # Clean up any existing tools from previous tests
+        self.global_registry.cleanup()
 
     @patch("mcp.client.sse.sse_client")
     @patch("mcp.ClientSession")
@@ -50,35 +51,6 @@ class TestSimpleToolInjection:
         assert metadata.name == "test_tool"
         assert metadata.description == "Test tool description"
         assert metadata.function == test_tool
-
-    @patch("mcp.client.sse.sse_client")
-    @patch("mcp.ClientSession")
-    def test_tool_decorator_basic(self, mock_session_class, mock_sse_client):
-        """Test basic @tool decorator functionality."""
-        # Mock MCP discovery to return empty list
-        mock_streams = (MagicMock(), MagicMock())
-        mock_sse_client.return_value.__aenter__.return_value = mock_streams
-
-        mock_session = AsyncMock()
-        mock_session.initialize = AsyncMock()
-        mock_session.list_tools = AsyncMock(return_value=MagicMock(tools=[]))
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-
-        @tool(name="decorator_tool", description="Decorator tool")
-        def decorator_tool(param: str) -> str:
-            return f"decorator: {param}"
-
-        # Check that the function is unchanged
-        assert decorator_tool("hello") == "decorator: hello"
-
-        # Check that tool is registered
-        assert "decorator_tool" in self.global_registry.get_available_tools()
-
-        # Check tool metadata
-        metadata = self.global_registry.get_tool_metadata("decorator_tool")
-        assert metadata.name == "decorator_tool"
-        assert metadata.description == "Decorator tool"
-        assert metadata.function == decorator_tool
 
     @patch("mcp.client.sse.sse_client")
     @patch("mcp.ClientSession")

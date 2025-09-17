@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from agenthub.core.agents.wrapper import AgentWrapper
+from agenthub.core.tools.exceptions import ToolNotFoundError
 from agenthub.core.tools.metadata import ToolMetadata
 from agenthub.core.tools.registry import ToolRegistry
 
@@ -86,7 +87,9 @@ class TestAgentWrapper:
         """Test assigning non-existent tools raises error."""
         wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
 
-        with pytest.raises(RuntimeError):  # Should raise RuntimeError for nonexistent tool
+        with pytest.raises(
+            ToolNotFoundError
+        ):  # Should raise ToolNotFoundError for nonexistent tool
             wrapper.assign_tools(["nonexistent_tool"])
 
     def test_get_tool_context_json(self):
@@ -246,14 +249,18 @@ class TestAgentWrapper:
         wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
         # Don't assign any tools
 
-        with pytest.raises(ValueError):  # Should raise ValueError for no tool registry
+        with pytest.raises(
+            PermissionError
+        ):  # Should raise PermissionError for no tool access
             wrapper.execute_tool("test_tool", {"param": "test_value"})
 
     def test_execute_tool_nonexistent(self):
         """Test executing a non-existent tool."""
         wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
 
-        with pytest.raises(ValueError):  # Should raise ValueError for no tool registry
+        with pytest.raises(
+            PermissionError
+        ):  # Should raise PermissionError for no tool access
             wrapper.execute_tool("nonexistent_tool", {})
 
     def test_get_available_tools(self):

@@ -1,7 +1,7 @@
 """Integration tests for Phase 2.5 tool injection functionality."""
 
-from unittest.mock import MagicMock, patch
 import unittest.mock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -21,18 +21,22 @@ class TestToolInjectionIntegration:
         self.registry = ToolRegistry()
 
         # Patch the global registry to use our test instance
-        self.registry_patcher = patch('agenthub.core.tools.registry._registry', self.registry)
+        self.registry_patcher = patch(
+            "agenthub.core.tools.registry._registry", self.registry
+        )
         self.registry_patcher.start()
 
         # Also patch the decorator's registry reference
-        self.decorator_patcher = patch('agenthub.core.tools.decorator._registry', self.registry)
+        self.decorator_patcher = patch(
+            "agenthub.core.tools.decorator._registry", self.registry
+        )
         self.decorator_patcher.start()
 
     def teardown_method(self):
         """Clean up after each test."""
-        if hasattr(self, 'registry_patcher'):
+        if hasattr(self, "registry_patcher"):
             self.registry_patcher.stop()
-        if hasattr(self, 'decorator_patcher'):
+        if hasattr(self, "decorator_patcher"):
             self.decorator_patcher.stop()
 
     def test_complete_tool_injection_workflow(self):
@@ -203,7 +207,9 @@ class TestToolInjectionIntegration:
             load_agent("research_agent", tools=["web_search", "data_processor"])
 
             # Verify calls
-            mock_loader_instance.load_agent.assert_called_once_with("default", "research_agent")
+            mock_loader_instance.load_agent.assert_called_once_with(
+                "default", "research_agent"
+            )
             mock_wrapper_class.assert_called_once_with(
                 mock_loader_instance.load_agent.return_value,
                 tool_registry=unittest.mock.ANY,
@@ -300,19 +306,19 @@ class TestToolInjectionIntegration:
         # Verify parameter details
         required = metadata.parameters["required_param"]
         assert required["name"] == "required_param"
-        assert required["type"] == "str"
+        assert required["type"] is str
         assert required["required"] is True
         assert required["default"] is None
 
         optional = metadata.parameters["optional_param"]
         assert optional["name"] == "optional_param"
-        assert optional["type"] == "int"
+        assert optional["type"] is int
         assert optional["required"] is False
         assert optional["default"] == 42
 
         keyword = metadata.parameters["keyword_only"]
         assert keyword["name"] == "keyword_only"
-        assert keyword["type"] == "str"
+        assert keyword["type"] is str
         assert keyword["required"] is False
         assert keyword["default"] == "default"
 
