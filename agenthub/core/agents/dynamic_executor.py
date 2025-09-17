@@ -55,7 +55,8 @@ class DynamicAgentExecutor:
             if not hasattr(agent_instance, method_name):
                 available_methods = self._get_available_methods(agent_instance)
                 raise DynamicExecutionError(
-                    f"Method '{method_name}' not found. Available methods: {available_methods}"
+                    f"Method '{method_name}' not found. "
+                    f"Available methods: {available_methods}"
                 )
 
             method = getattr(agent_instance, method_name)
@@ -137,7 +138,7 @@ class DynamicAgentExecutor:
             List of method names
         """
         methods = []
-        for name, method in inspect.getmembers(agent_instance, inspect.ismethod):
+        for name, _method in inspect.getmembers(agent_instance, inspect.ismethod):
             if not name.startswith("_"):
                 methods.append(name)
         return methods

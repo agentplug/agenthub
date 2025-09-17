@@ -180,9 +180,8 @@ def info_agent(agent_name: str, base_path: str | None):
                     )
 
                     rprint("\n🌍 [bold]Environment:[/bold]")
-                    rprint(
-                        f"   Status: {'Active' if env_info.get('venv_exists') else 'Broken'}"
-                    )
+                    status = "Active" if env_info.get("venv_exists") else "Broken"
+                    rprint(f"   Status: {status}")
                     rprint(f"   Python: {env_info.get('python_executable', 'Unknown')}")
                     rprint(f"   UV Version: {env_info.get('uv_version', 'Unknown')}")
 

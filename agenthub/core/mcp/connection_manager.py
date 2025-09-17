@@ -34,7 +34,8 @@ class MCPConnectionPool:
             command="python",
             args=[
                 "-c",
-                "from agenthub.core.tools import get_mcp_server; import asyncio; asyncio.run(get_mcp_server().run_stdio())",
+                "from agenthub.core.tools import get_mcp_server; "
+                "import asyncio; asyncio.run(get_mcp_server().run_stdio())",
             ],
         )
 

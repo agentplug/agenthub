@@ -1,4 +1,7 @@
-"""CLI commands for advanced agent operations (migrate, clone, optimize, analyze-deps, python-versions)."""
+"""CLI commands for advanced agent operations.
+
+Includes migrate, clone, optimize, analyze-deps, python-versions.
+"""
 
 from pathlib import Path
 

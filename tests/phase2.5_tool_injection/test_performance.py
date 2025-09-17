@@ -19,21 +19,21 @@ class TestToolInjectionPerformance:
 
         # Patch the global registry to use our test instance
         self.registry_patcher = patch(
-            'agenthub.core.tools.registry._registry', self.registry
+            "agenthub.core.tools.registry._registry", self.registry
         )
         self.registry_patcher.start()
 
         # Also patch the decorator's registry reference
         self.decorator_patcher = patch(
-            'agenthub.core.tools.decorator._registry', self.registry
+            "agenthub.core.tools.decorator._registry", self.registry
         )
         self.decorator_patcher.start()
 
     def teardown_method(self):
         """Clean up after each test."""
-        if hasattr(self, 'registry_patcher'):
+        if hasattr(self, "registry_patcher"):
             self.registry_patcher.stop()
-        if hasattr(self, 'decorator_patcher'):
+        if hasattr(self, "decorator_patcher"):
             self.decorator_patcher.stop()
 
     def test_tool_registration_performance(self):

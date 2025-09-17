@@ -173,7 +173,8 @@ class TestCompleteInstallationWorkflow:
                             result.installation_time_seconds >= 0
                         )  # Allow 0 in test environment
 
-                        # Verify next steps - check for actual messages from implementation
+                        # Verify next steps - check for actual messages from
+                        # implementation
                         assert result.next_steps is not None
                         assert len(result.next_steps) > 0
                         assert any(
@@ -347,7 +348,8 @@ class TestCompleteInstallationWorkflow:
                         result = installer.install_agent("test/agent")
 
                         assert result.success is False
-                        # The error message is in the next_steps, not error_message field
+                        # The error message is in the next_steps, not
+                        # error_message field
                         assert any(
                             "Environment setup failed" in str(step) or "UV" in str(step)
                             for step in result.next_steps
@@ -408,7 +410,8 @@ class TestCompleteInstallationWorkflow:
                     ):
                         result = installer.install_agent("test/agent")
 
-                        # When dependencies fail, installation is still considered successful
+                        # When dependencies fail, installation is still
+                        # considered successful
                         # but with warnings
                         assert result.success is True  # Clone and validation succeeded
                         assert len(result.warnings) > 0
@@ -545,7 +548,8 @@ class TestCompleteInstallationWorkflow:
                     in result.next_steps
                 )
 
-                # Verify repository-specific guidance (may not be present in actual implementation)
+                # Verify repository-specific guidance (may not be present in
+                # actual implementation)
                 # Remove these assertions as they may not be in the actual next_steps
 
 

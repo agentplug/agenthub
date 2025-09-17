@@ -48,7 +48,8 @@ class AsyncToolExecutor:
             # Validate tool access
             if not self.tool_registry.can_agent_access_tool(self.agent_id, tool_name):
                 raise ToolAccessDeniedError(
-                    f"Agent '{self.agent_id}' does not have access to tool '{tool_name}'"
+                    f"Agent '{self.agent_id}' does not have access to "
+                    f"tool '{tool_name}'"
                 )
 
             # Check if tool exists
@@ -78,7 +79,10 @@ class AsyncToolExecutor:
         except Exception as e:
             error_type = type(e).__name__
             logger.error(f"Tool execution failed for {tool_name}: {e}")
-            return f'{{"error": "Tool execution failed: {str(e)}", "tool_name": "{tool_name}", "error_type": "{error_type}"}}'
+            return (
+                f'{{"error": "Tool execution failed: {str(e)}", '
+                f'"tool_name": "{tool_name}", "error_type": "{error_type}"}}'
+            )
 
         finally:
             # Record metrics
@@ -119,14 +123,16 @@ class AsyncToolExecutor:
                 last_error = e
                 if attempt < max_retries:
                     logger.warning(
-                        f"Tool execution attempt {attempt + 1} failed for {tool_name}: {e}. Retrying..."
+                        f"Tool execution attempt {attempt + 1} failed for "
+                        f"{tool_name}: {e}. Retrying..."
                     )
                     await asyncio.sleep(
                         retry_delay * (2**attempt)
                     )  # Exponential backoff
                 else:
                     logger.error(
-                        f"Tool execution failed after {max_retries + 1} attempts for {tool_name}: {e}"
+                        f"Tool execution failed after {max_retries + 1} attempts "
+                        f"for {tool_name}: {e}"
                     )
 
         # If we get here, all retries failed

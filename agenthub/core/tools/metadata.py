@@ -140,14 +140,16 @@ class ToolMetadata:
                 if isinstance(param_info, dict):
                     serialized_param = param_info.copy()
                     # Convert type objects to strings for JSON serialization
-                    if "type" in serialized_param and hasattr(serialized_param["type"], "__name__"):
+                    if "type" in serialized_param and hasattr(
+                        serialized_param["type"], "__name__"
+                    ):
                         serialized_param["type"] = serialized_param["type"].__name__
                     elif "type" in serialized_param:
                         serialized_param["type"] = str(serialized_param["type"])
                     serializable_params[param_name] = serialized_param
                 else:
                     serializable_params[param_name] = param_info
-        
+
         return {
             "name": self.name,
             "description": self.description,
@@ -175,12 +177,12 @@ class ToolMetadata:
         # Check for required fields
         if not self.name or not isinstance(self.name, str) or self.name.strip() == "":
             return False
-        
+
         if not self.description or not isinstance(self.description, str):
             return False
-        
+
         if not self.namespace or not isinstance(self.namespace, str):
             return False
-        
+
         # Additional validations can be added here
         return True

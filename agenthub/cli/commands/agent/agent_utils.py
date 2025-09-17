@@ -26,7 +26,7 @@ def display_simple_agent_list(agents: dict[str, str]):
     storage = LocalStorage()
     loader = AgentLoader(storage=storage)
 
-    for agent_name, path in agents.items():
+    for agent_name, _path in agents.items():
         try:
             # Parse agent name
             if "/" in agent_name:
@@ -124,9 +124,8 @@ def show_agent_status(agent_name: str, agent_path: str):
             env_setup = EnvironmentSetup()
             env_info = env_setup._collect_environment_info(path, venv_path)
 
-            rprint(
-                f"🌍 Environment: {'Active' if env_info.get('venv_exists') else 'Broken'}"
-            )
+            status = "Active" if env_info.get("venv_exists") else "Broken"
+            rprint(f"🌍 Environment: {status}")
             rprint(f"   Python: {env_info.get('python_executable', 'Unknown')}")
             rprint(f"   UV Version: {env_info.get('uv_version', 'Unknown')}")
 

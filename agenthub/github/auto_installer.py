@@ -336,7 +336,8 @@ class AutoInstaller:
                 next_steps.extend(
                     [
                         "📚 Dependencies installed successfully",
-                        f"📦 {len(dependency_result.installed_packages)} packages installed",
+                        f"📦 {len(dependency_result.installed_packages)} "
+                        f"packages installed",
                     ]
                 )
             else:
@@ -394,7 +395,8 @@ class AutoInstaller:
             next_steps.extend(
                 [
                     "❌ Repository validation failed - check:",
-                    "   • Required files (agent.py, agent.yaml, requirements.txt, README.md)",
+                    "   • Required files (agent.py, agent.yaml, requirements.txt, "
+                    "README.md)",
                     "   • File formats and content",
                 ]
             )
@@ -417,7 +419,8 @@ class AutoInstaller:
             [
                 "🔧 Try running the installation again",
                 "📖 Check the agent's repository for requirements",
-                "💡 Consider running without environment setup: setup_environment=False",
+                "💡 Consider running without environment setup: "
+                "setup_environment=False",
             ]
         )
 

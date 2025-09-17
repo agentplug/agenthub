@@ -56,7 +56,8 @@ class UnifiedAgentLoader:
         Load an agent with unified interface.
 
         Args:
-            agent_name: Agent name in format "namespace/agent" (e.g., "agentplug/analysis-agent")
+            agent_name: Agent name in format "namespace/agent"
+            (e.g., "agentplug/analysis-agent")
             options: Loading options including tools, environment setup, etc.
 
         Returns:
@@ -78,7 +79,8 @@ class UnifiedAgentLoader:
             if "/" not in agent_name:
                 return Result.fail(
                     validation_error(
-                        f"Invalid agent name format: {agent_name}. Expected: 'namespace/agent'",
+                        f"Invalid agent name format: {agent_name}. "
+                        f"Expected: 'developer/agent-name'",
                         {
                             "agent_name": agent_name,
                             "expected_format": "namespace/agent",
@@ -151,7 +153,8 @@ class UnifiedAgentLoader:
                     return validation_result
 
             logger.info(
-                f"Successfully loaded agent '{agent_name}' with {len(options.tools or [])} tools"
+                f"Successfully loaded agent '{agent_name}' with "
+                f"{len(options.tools or [])} tools"
             )
             return Result.ok(agent_wrapper)
 
@@ -174,7 +177,8 @@ class UnifiedAgentLoader:
             if not result.success:
                 return Result.fail(
                     execution_error(
-                        f"Failed to install agent '{agent_name}': {result.error_message}",
+                        f"Failed to install agent '{agent_name}': "
+                        f"{result.error_message}",
                         {
                             "agent_name": agent_name,
                             "installer_error": result.error_message,

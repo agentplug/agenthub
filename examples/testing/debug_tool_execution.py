@@ -24,12 +24,18 @@ def web_search(query: str, max_results: int = 5) -> dict:
     results = [
         {
             "title": f"Latest AI Trends 2024 - {query}",
-            "snippet": f"Comprehensive analysis of {query} showing major developments in artificial intelligence and machine learning.",
+            "snippet": (
+                f"Latest trends of {query} showing major developments in "
+                f"artificial intelligence and machine learning."
+            ),
             "url": "https://example.com/ai-trends-2024",
         },
         {
             "title": f"Machine Learning Advances - {query}",
-            "snippet": f"Recent breakthroughs in {query} including new algorithms and applications.",
+            "snippet": (
+                f"Recent breakthroughs in {query} including new algorithms "
+                f"and applications."
+            ),
             "url": "https://example.com/ml-advances",
         },
     ]
@@ -48,7 +54,8 @@ def web_search(query: str, max_results: int = 5) -> dict:
 def data_analyzer(data: str, analysis_type: str = "general") -> dict:
     """Data analyzer with detailed logging"""
     print(
-        f"🔍 [TOOL] data_analyzer called with data='{data[:30]}...', type='{analysis_type}'"
+        f"🔍 [TOOL] data_analyzer called with data='{data[:30]}...', "
+        f"type='{analysis_type}'"
     )
 
     result = {
@@ -103,7 +110,10 @@ async def main():
     print("TEST 2: Text that might trigger data analysis")
     print("=" * 50)
 
-    text2 = "Analyze this data: 'Sales increased by 25% this quarter, customer satisfaction is at 95%, and we have 1000 new users.'"
+    text2 = (
+        "Analyze this data: 'Sales increased by 25% this quarter, "
+        "customer satisfaction is at 95%, and we have 1000 new users.'"
+    )
     print(f"📝 Input: {text2}")
     print("\n🤖 Agent processing...")
 

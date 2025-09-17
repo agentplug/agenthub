@@ -48,19 +48,23 @@ class ToolInjector:
                 if metadata.parameters:
                     example_args = {}
                     for param_name, param_type in metadata.parameters.items():
-                        if param_type == str:
+                        if param_type is str:
                             example_args[param_name] = f"example_{param_name}"
-                        elif param_type == int:
+                        elif param_type is int:
                             example_args[param_name] = 42
-                        elif param_type == float:
+                        elif param_type is float:
                             example_args[param_name] = 3.14
-                        elif param_type == bool:
+                        elif param_type is bool:
                             example_args[param_name] = True
                         else:
                             example_args[param_name] = f"example_{param_name}"
 
+                    args_str = ", ".join(
+                        f"{k}={repr(v)}" for k, v in example_args.items()
+                    )
+                    function_call = f"{tool_name}({args_str})"
                     tool_examples[tool_name] = {
-                        "function_call": f"{tool_name}({', '.join(f'{k}={repr(v)}' for k, v in example_args.items())})",
+                        "function_call": function_call,
                         "arguments": example_args,
                     }
 
@@ -104,16 +108,18 @@ class ToolInjector:
 
         for tool_name in tool_names:
             prompt_parts.append(f"## {tool_name}")
-            prompt_parts.append(
-                f"Description: {descriptions.get(tool_name, 'No description available')}"
-            )
+            description = descriptions.get(tool_name, "No description available")
+            prompt_parts.append(f"Description: {description}")
 
             if tool_name in parameters:
                 param_info = []
                 for param_name, param_type in parameters[tool_name].items():
-                    param_info.append(
-                        f"  - {param_name}: {param_type.__name__ if hasattr(param_type, '__name__') else str(param_type)}"
+                    type_name = (
+                        param_type.__name__
+                        if hasattr(param_type, "__name__")
+                        else str(param_type)
                     )
+                    param_info.append(f"  - {param_name}: {type_name}")
 
                 if param_info:
                     prompt_parts.append("Parameters:")
@@ -128,8 +134,10 @@ class ToolInjector:
         prompt_parts.extend(
             [
                 "When you need to use a tool, you can call it through the MCP system.",
-                "The tool will be executed automatically and the result will be returned to you.",
-                "Make sure to use the correct parameter names and types as shown above.",
+                "The tool will be executed automatically and the result "
+                "will be returned to you.",
+                "Make sure to use the correct parameter names and types "
+                "as shown above.",
                 "",
             ]
         )

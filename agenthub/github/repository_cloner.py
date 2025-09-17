@@ -100,7 +100,8 @@ class RepositoryCloner:
         parts = agent_name.split("/")
         if len(parts) != 2:
             raise ValueError(
-                f"Invalid agent name format: {agent_name}. Expected: 'developer/agent-name'"
+                f"Invalid agent name format: {agent_name}. "
+                f"Expected: 'developer/agent-name'"
             )
 
         developer, agent = parts
@@ -131,9 +132,9 @@ class RepositoryCloner:
                 timeout=300,  # 5 minute timeout for large repositories
             )
             return result
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
             logger.error(f"Git clone timed out after 5 minutes: {github_url}")
-            raise CloneError(f"Clone operation timed out for {github_url}")
+            raise CloneError(f"Clone operation timed out for {github_url}") from e
 
     def _verify_clone_completeness(self, local_path: Path) -> bool:
         """
@@ -189,7 +190,8 @@ class RepositoryCloner:
             local_path: Path to the cloned repository
 
         Returns:
-            str: 'full' if full clone, 'shallow' if shallow clone, 'unknown' if can't determine
+            str: 'full' if full clone, 'shallow' if shallow clone,
+                 'unknown' if can't determine
         """
         try:
             # Check if .git/shallow file exists (indicates shallow clone)
@@ -258,13 +260,19 @@ class RepositoryCloner:
 
         # Validate agent name format
         if not self.url_parser.is_valid_agent_name(agent_name):
-            error_msg = f"Invalid agent name format: {agent_name}. Expected format: 'developer/agent-name'"
+            error_msg = (
+                f"Invalid agent name format: {agent_name}. "
+                f"Expected format: 'developer/agent-name'"
+            )
             logger.error(error_msg)
             raise ValueError(error_msg)
 
         # Check if git is available
         if not self._check_git_available():
-            error_msg = "Git is not available on this system. Please install git to clone repositories."
+            error_msg = (
+                "Git is not available on this system. "
+                "Please install git to clone repositories."
+            )
             logger.error(error_msg)
             raise GitNotAvailableError(error_msg)
 
@@ -279,7 +287,8 @@ class RepositoryCloner:
             if local_path.is_dir() and any(local_path.iterdir()):
                 error_msg = f"Directory already exists and is not empty: {local_path}"
                 logger.warning(error_msg)
-                # For now, we'll remove and re-clone. In production, we might want to update instead
+                # For now, we'll remove and re-clone. In production,
+                # we might want to update instead
                 shutil.rmtree(local_path)
                 logger.info(f"Removed existing directory: {local_path}")
 
@@ -297,7 +306,8 @@ class RepositoryCloner:
 
             if result.returncode == 0:
                 logger.info(
-                    f"Successfully cloned {agent_name} to {local_path} in {clone_time:.2f}s"
+                    f"Successfully cloned {agent_name} to {local_path} "
+                    f"in {clone_time:.2f}s"
                 )
 
                 # Verify clone completeness
@@ -305,7 +315,8 @@ class RepositoryCloner:
                     logger.warning(
                         f"Clone verification failed for {agent_name} at {local_path}"
                     )
-                    # Clone succeeded but verification failed - this might indicate a shallow clone
+                    # Clone succeeded but verification failed - this might
+                    # indicate a shallow clone
                     # We'll still return success but log the warning
 
                 # Check clone depth
@@ -349,7 +360,7 @@ class RepositoryCloner:
         except Exception as e:
             error_msg = f"Unexpected error during clone: {str(e)}"
             logger.error(error_msg)
-            raise CloneError(error_msg)
+            raise CloneError(error_msg) from e
 
     def is_agent_cloned(self, agent_name: str) -> bool:
         """

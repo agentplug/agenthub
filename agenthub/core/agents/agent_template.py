@@ -15,7 +15,8 @@ class DynamicAgent:
     """
     Base class for dynamic agents.
 
-    Agents should inherit from this class and implement methods as defined in their manifest.
+    Agents should inherit from this class and implement methods
+    as defined in their manifest.
     The framework will automatically discover and execute methods using reflection.
     """
 

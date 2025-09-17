@@ -88,7 +88,8 @@ def exec_agent(
                     except Exception as e:
                         rprint(f"❌ [red]Failed to load agent info: {e}[/red]")
                         rprint(
-                            "💡 [yellow]Falling back to basic parameter mapping[/yellow]"
+                            "💡 [yellow]Falling back to basic parameter "
+                            "mapping[/yellow]"
                         )
                         params = {"data": parameters}
             except json.JSONDecodeError as e:
@@ -121,7 +122,8 @@ def exec_agent(
                 f"{method_name} --interactive"
             )
             rprint(
-                "\n📦 [dim]Use 'agenthub agent install <agent>' to install new agents[/dim]"
+                "\n📦 [dim]Use 'agenthub agent install <agent>' to install "
+                "new agents[/dim]"
             )
             sys.exit(1)
 

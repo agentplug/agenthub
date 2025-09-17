@@ -7,8 +7,6 @@ This module provides:
 - MCP server integration for tool execution
 """
 
-import sys
-
 from .decorator import tool
 from .exceptions import (
     ToolAccessDeniedError,

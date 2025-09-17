@@ -134,10 +134,12 @@ def main():
             tool_context = analysis_agent.get_tool_context_json()
             print(f"   🔧 Available tools: {tool_context.get('available_tools', [])}")
             print(
-                f"   📝 Tool descriptions: {list(tool_context.get('tool_descriptions', {}).keys())}"
+                f"   📝 Tool descriptions: "
+                f"{list(tool_context.get('tool_descriptions', {}).keys())}"
             )
             print(
-                f"   💡 Tool usage examples: {list(tool_context.get('tool_usage_examples', {}).keys())}"
+                f"   💡 Tool usage examples: "
+                f"{list(tool_context.get('tool_usage_examples', {}).keys())}"
             )
 
             # Generate a sample agent call JSON
@@ -154,7 +156,8 @@ def main():
             print("   ⚠️  Analysis agent not loaded, showing demo context")
             print("   🔧 Available tools: ['add', 'multiply', 'process_text']")
             print(
-                "   📝 Tool descriptions: {'add': 'Add two numbers', 'multiply': 'Multiply numbers', 'process_text': 'Process text'}"
+                "{'add': 'Add two numbers', 'multiply': 'Multiply numbers', "
+                "'process_text': 'Process text'}"
             )
     except Exception as e:
         print(f"   ⚠️  Could not generate tool context: {e}")

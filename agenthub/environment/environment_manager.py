@@ -163,7 +163,10 @@ class AdvancedEnvironmentManager:
                     target_python=target_python_version,
                     migration_time=time.time() - start_time,
                     backup_path=backup_path,
-                    error_message=f"Migration incomplete: expected {target_python_version}, got {new_version}",
+                    error_message=(
+                        f"Migration incomplete: expected {target_python_version}, "
+                        f"got {new_version}"
+                    ),
                 )
 
             migration_time = time.time() - start_time
@@ -177,7 +180,8 @@ class AdvancedEnvironmentManager:
                 migration_time=migration_time,
                 backup_path=backup_path,
                 next_steps=[
-                    f"Successfully migrated from Python {current_version} to {target_python_version}",
+                    f"Successfully migrated from Python {current_version} to "
+                    f"{target_python_version}",
                     "Environment recreated with new Python version",
                     "All dependencies reinstalled",
                 ],

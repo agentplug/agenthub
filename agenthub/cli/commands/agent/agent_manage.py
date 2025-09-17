@@ -97,13 +97,17 @@ def repair_agent(agent_name: str, base_path: str | None, force_reinstall_deps: b
 
                 if dep_result.success:
                     package_count = len(dep_result.installed_packages)
-                    rprint(
-                        f"✅ [green]Dependencies installed: {package_count} packages[/green]"
+                    message = (
+                        f"✅ [green]Dependencies installed: "
+                        f"{package_count} packages[/green]"
                     )
+                    rprint(message)
                 else:
-                    rprint(
-                        f"⚠️ [yellow]Dependency installation failed: {dep_result.error_message}[/yellow]"
+                    message = (
+                        f"⚠️ [yellow]Dependency installation failed: "
+                        f"{dep_result.error_message}[/yellow]"
                     )
+                    rprint(message)
 
             rprint("\n🚀 [green]Agent repair completed successfully![/green]")
         else:
@@ -172,7 +176,7 @@ def cleanup_agents(dry_run: bool, remove_invalid: bool, remove_broken_envs: bool
             f"\n🧹 [bold]Found {len(cleanup_candidates)} agents needing cleanup:[/bold]"
         )
 
-        for agent_name, path, issues in cleanup_candidates:
+        for agent_name, _path, issues in cleanup_candidates:
             rprint(f"  • [cyan]{agent_name}[/cyan]: {', '.join(issues)}")
 
         if dry_run:
@@ -185,7 +189,7 @@ def cleanup_agents(dry_run: bool, remove_invalid: bool, remove_broken_envs: bool
 
         # Perform cleanup
         cleaned = 0
-        for agent_name, path, issues in cleanup_candidates:
+        for agent_name, _path, issues in cleanup_candidates:
             if (
                 (remove_invalid and "Invalid structure" in issues)
                 or (remove_broken_envs and "Broken environment" in issues)

@@ -40,7 +40,7 @@ def demonstrate_auto_installer():
     print("🔧 AUTO-INSTALLER DEMONSTRATION")
     print("=" * 60)
 
-    installer = AutoInstaller(setup_environment=True)
+    _ = AutoInstaller(setup_environment=True)
 
     print("1. AutoInstaller capabilities:")
     print("   - Repository cloning")
@@ -65,7 +65,7 @@ def demonstrate_environment_management():
     print("🌍 ENVIRONMENT MANAGEMENT")
     print("=" * 60)
 
-    manager = AdvancedEnvironmentManager()
+    _ = AdvancedEnvironmentManager()
 
     print("1. Python Version Migration:")
     print("   manager.migrate_python_version('dev/agent', '3.11')")
@@ -94,7 +94,7 @@ def demonstrate_repository_management():
     print("=" * 60)
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        cloner = RepositoryCloner(base_storage_path=Path(temp_dir))
+        _ = RepositoryCloner(base_storage_path=Path(temp_dir))
 
         print("1. Directory Structure:")
         print(f"   Base storage: {temp_dir}/agents/")

@@ -112,7 +112,8 @@ def smart_parameter_mapping(
     agent_info: dict, method_name: str, user_input: str
 ) -> dict[str, Any]:
     """
-    Intelligently map simple string input to appropriate parameters based on agent interface.
+    Intelligently map simple string input to appropriate parameters
+    based on agent interface.
 
     Args:
         agent_info: Agent information containing manifest and interface
