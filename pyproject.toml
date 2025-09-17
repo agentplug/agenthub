@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agenthub"
+name = "agenthub-sdk"
 version = "0.1.1"
 description = "AgentHub - The App Store for AI Agents"
 readme = "README.md"
