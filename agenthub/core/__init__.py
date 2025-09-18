@@ -16,6 +16,12 @@ from .agents import (
     ManifestValidationError,
 )
 
+# Import from llm package
+from .llm import (
+    CoreLLMService,
+    LogAnalysis,
+)
+
 # Import from mcp package
 from .mcp import (
     AgentToolManager,
@@ -81,6 +87,9 @@ __all__ = [
     "get_tool_manager",
     "get_mcp_client",
     "get_tool_injector",
+    # LLM components (new)
+    "CoreLLMService",
+    "LogAnalysis",
     # Unified exceptions
     "AgentHubError",
     "ValidationError",

@@ -14,6 +14,7 @@ def load_agent(
     external_tools: list[str] | None = None,  # New: external tools
     disabled_builtin_tools: list[str] | None = None,  # New: disable built-in tools
     knowledge: str | None = None,  # New: inject knowledge
+    monitoring: bool = False,  # New: enable real-time monitoring
     **kwargs,
 ) -> AgentWrapper:
     """
@@ -25,6 +26,7 @@ def load_agent(
         external_tools: List of external tool names to add
         disabled_builtin_tools: List of built-in tools to disable
         knowledge: Text knowledge to inject into agent context
+        monitoring: Enable real-time monitoring (default: False)
         **kwargs: Additional arguments passed to the agent
 
     Returns:
@@ -35,12 +37,13 @@ def load_agent(
         ValidationError: If configuration is invalid
 
     Example:
-        >>> # Phase 3 usage
+        >>> # Phase 3 usage with monitoring
         >>> agent = load_agent(
         ...     "agentplug/analysis-agent",
         ...     external_tools=['web_search', 'rag'],
         ...     disabled_builtin_tools=['keyword_extraction'],
-        ...     knowledge="You are a data analysis expert."
+        ...     knowledge="You are a data analysis expert.",
+        ...     monitoring=True
         ... )
         >>>
         >>> # Backward compatibility
@@ -65,7 +68,7 @@ def load_agent(
         agent_info = _load_agent_from_yaml(base_agent)
 
         # Create agent instance
-        agent = _create_agent_instance(agent_info)
+        agent = _create_agent_instance(agent_info, monitoring=monitoring)
 
         # Apply user configuration
         if external_tools:
@@ -103,7 +106,9 @@ def _load_agent_from_yaml(agent_name: str) -> dict[str, Any]:
     return agent_info
 
 
-def _create_agent_instance(agent_info: dict[str, Any]) -> AgentWrapper:
+def _create_agent_instance(
+    agent_info: dict[str, Any], monitoring: bool = False
+) -> AgentWrapper:
     """Create agent instance with enhanced capabilities."""
     from ..core.agents import AgentWrapper
     from ..runtime.agent_runtime import AgentRuntime
@@ -111,7 +116,10 @@ def _create_agent_instance(agent_info: dict[str, Any]) -> AgentWrapper:
 
     storage = LocalStorage()
     runtime = AgentRuntime(storage=storage)
+
+    # Configure ProcessManager with monitoring setting
     runtime.process_manager.use_dynamic_execution = False
+    runtime.process_manager.set_monitoring(monitoring)
 
     # Parse agent ID
     namespace = agent_info.get("namespace", "unknown")
