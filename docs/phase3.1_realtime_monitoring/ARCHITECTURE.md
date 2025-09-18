@@ -48,12 +48,13 @@ class CoreLLMService:
         self.model = model
         self.cache = {}
 
-    def generate(self, input_data, system_prompt=None, **kwargs):
+    def generate(self, input_data, system_prompt=None, return_json=False, **kwargs):
         """Adaptive LLM generation using AISuite
 
         Args:
             input_data: Either a string (single prompt) or list of messages (conversation)
             system_prompt: Optional system prompt to define AI behavior and context
+            return_json: If True, request JSON response from AISuite
             **kwargs: Additional parameters for AISuite
         """
         if not self.aisuite:
@@ -70,6 +71,7 @@ class CoreLLMService:
             return self.aisuite.generate(
                 prompt=full_prompt,
                 model=self.model,
+                return_json=return_json,
                 **kwargs
             )
         elif isinstance(input_data, list):
@@ -78,6 +80,7 @@ class CoreLLMService:
             return self.aisuite.generate(
                 prompt=prompt,
                 model=self.model,
+                return_json=return_json,
                 **kwargs
             )
         else:
@@ -148,10 +151,10 @@ class CoreLLMService:
     # log_prompt = "Analyze these logs: {text}"
     # response = core_llm.analyze_text(logs, log_prompt, "You are an expert at analyzing logs.")
 
-    def analyze_text(self, text, prompt_template, system_prompt=None):
+    def analyze_text(self, text, prompt_template, system_prompt=None, return_json=False):
         """Analyze any text content using AISuite with custom prompt template"""
         formatted_prompt = prompt_template.format(text=text)
-        return self.generate(formatted_prompt, system_prompt=system_prompt)
+        return self.generate(formatted_prompt, system_prompt=system_prompt, return_json=return_json)
 
     def _initialize_aisuite(self):
         """Initialize AISuite client"""
@@ -180,7 +183,41 @@ class LLMAnalyzer:
         # Use Core LLM Component for log analysis with custom prompt and system prompt
         log_text = '\n'.join(logs)
         system_prompt = "You are an expert at analyzing agent execution logs. Focus on identifying what the agent is doing, detecting errors, and providing actionable insights."
-        return self.core_llm.analyze_text(log_text, self.log_analysis_prompt, system_prompt)
+        response = self.core_llm.analyze_text(log_text, self.log_analysis_prompt, system_prompt, return_json=True)
+        return self._parse_log_analysis_response(response)
+
+    def _parse_log_analysis_response(self, response) -> LogAnalysis:
+        """Parse log analysis response (handles both JSON objects and strings)"""
+        try:
+            # If AISuite returns JSON object directly
+            if isinstance(response, dict):
+                data = response
+            else:
+                # If AISuite returns JSON string, parse it
+                data = json.loads(response)
+
+            return LogAnalysis(
+                summary=data.get("summary", "Working..."),
+                progress=data.get("progress", 0),
+                status=data.get("status", "working"),
+                errors=data.get("errors", []),
+                suggestions=data.get("suggestions", [])
+            )
+        except (json.JSONDecodeError, TypeError):
+            return self._fallback_analysis([])
+
+    def _fallback_analysis(self, logs: List[str]) -> LogAnalysis:
+        """Fallback analysis when AISuite is not available"""
+        log_text = ' '.join(logs).lower()
+
+        if any(word in log_text for word in ['error', 'failed', 'exception']):
+            return LogAnalysis("❌ Error detected", 0, "error", ["Error found"], ["Check logs"])
+        elif any(word in log_text for word in ['processing', 'analyzing', 'working']):
+            return LogAnalysis("📊 Processing...", 50, "working", [], [])
+        elif any(word in log_text for word in ['complete', 'finished', 'done']):
+            return LogAnalysis("✅ Complete", 100, "complete", [], [])
+        else:
+            return LogAnalysis("🔄 Working...", 25, "working", [], [])
 
     def _get_log_analysis_prompt(self):
         """Get log analysis prompt template"""

@@ -273,12 +273,13 @@ class CoreLLMService:
             print("Warning: AISuite not available, using fallback")
             return None
 
-    def generate(self, input_data, system_prompt=None, **kwargs) -> str:
+    def generate(self, input_data, system_prompt=None, return_json=False, **kwargs):
         """Adaptive LLM generation using AISuite
 
         Args:
             input_data: Either a string (single prompt) or list of messages (conversation)
             system_prompt: Optional system prompt to define AI behavior and context
+            return_json: If True, request JSON response from AISuite
             **kwargs: Additional parameters for AISuite
         """
         if not self.aisuite:
@@ -296,6 +297,7 @@ class CoreLLMService:
                 response = self.aisuite.generate(
                     prompt=full_prompt,
                     model=self.model,
+                    return_json=return_json,
                     **kwargs
                 )
                 return response
@@ -305,6 +307,7 @@ class CoreLLMService:
                 response = self.aisuite.generate(
                     prompt=prompt,
                     model=self.model,
+                    return_json=return_json,
                     **kwargs
                 )
                 return response
@@ -392,13 +395,13 @@ class CoreLLMService:
     #
     # Remember the system instructions above and respond accordingly.
 
-    def analyze_text(self, text: str, prompt_template: str, system_prompt: str = None) -> str:
+    def analyze_text(self, text: str, prompt_template: str, system_prompt: str = None, return_json: bool = False):
         """Analyze any text content using AISuite with custom prompt template"""
         if not text:
             return self._fallback_response()
 
         formatted_prompt = prompt_template.format(text=text)
-        return self.generate(formatted_prompt, system_prompt=system_prompt)
+        return self.generate(formatted_prompt, system_prompt=system_prompt, return_json=return_json)
 
     def _fallback_response(self) -> str:
         """Fallback response when AISuite is not available"""
@@ -423,7 +426,7 @@ class LLMAnalyzer:
         """Analyze logs using Core LLM Component"""
         log_text = '\n'.join(logs)
         system_prompt = "You are an expert at analyzing agent execution logs. Focus on identifying what the agent is doing, detecting errors, and providing actionable insights."
-        response = self.core_llm.analyze_text(log_text, self.log_analysis_prompt, system_prompt)
+        response = self.core_llm.analyze_text(log_text, self.log_analysis_prompt, system_prompt, return_json=True)
         return self._parse_log_analysis_response(response)
 
     def _get_log_analysis_prompt(self) -> str:
@@ -449,10 +452,16 @@ class LLMAnalyzer:
             }}
         """
 
-    def _parse_log_analysis_response(self, response: str) -> LogAnalysis:
-        """Parse log analysis response"""
+    def _parse_log_analysis_response(self, response) -> LogAnalysis:
+        """Parse log analysis response (handles both JSON objects and strings)"""
         try:
-            data = json.loads(response)
+            # If AISuite returns JSON object directly
+            if isinstance(response, dict):
+                data = response
+            else:
+                # If AISuite returns JSON string, parse it
+                data = json.loads(response)
+
             return LogAnalysis(
                 summary=data.get("summary", "Working..."),
                 progress=data.get("progress", 0),
@@ -460,7 +469,7 @@ class LLMAnalyzer:
                 errors=data.get("errors", []),
                 suggestions=data.get("suggestions", [])
             )
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             return self._fallback_analysis([])
 
     def _fallback_analysis(self, logs: List[str]) -> LogAnalysis:
