@@ -110,44 +110,6 @@ class AgentWrapper:
 
         return self.interface_validator.get_method_info(self.interface, method_name)
 
-    def execute(self, method_name: str, parameters: dict) -> dict:
-        """
-        Execute an agent method.
-
-        Args:
-            method_name: Name of the method to execute
-            parameters: Method parameters
-
-        Returns:
-            Execution result
-
-        Raises:
-            AgentExecutionError: If execution fails
-        """
-        if not self.runtime:
-            raise AgentExecutionError("No runtime provided for agent execution")
-
-        if not self.has_method(method_name):
-            available = ", ".join(self.methods) if self.methods else "none"
-            raise AgentExecutionError(
-                f"Method '{method_name}' not available in agent '{self.name}'. "
-                f"Available methods: {available}"
-            )
-
-        try:
-            # Pass tool context if tools are assigned
-            tool_context = None
-            if self.assigned_tools and self.tool_registry:
-                tool_context_json = self.get_tool_context_json()
-                tool_context = json.loads(tool_context_json)
-
-            result = self.runtime.execute_agent(
-                self.namespace, self.agent_name, method_name, parameters, tool_context
-            )
-            return result
-        except Exception as e:
-            raise AgentExecutionError(f"Failed to execute {method_name}: {e}") from e
-
     def __getattr__(self, method_name: str):
         """
         Magic method to enable direct method calls on the wrapper.
@@ -580,6 +542,61 @@ class AgentWrapper:
                     )
 
         return resolved_params
+
+    def execute(self, method: str, parameters: dict[str, Any]) -> Any:
+        """
+        Execute an agent method with monitoring support.
+
+        Args:
+            method: Name of the method to execute
+            parameters: Parameters for the method
+
+        Returns:
+            Result from agent execution
+        """
+        if not self.runtime:
+            raise AgentExecutionError("No runtime available for agent execution")
+
+        # Check if we have a MonitoredProcessManager
+        if hasattr(self.runtime.process_manager, "execute_agent_with_monitoring"):
+            # Use monitoring-enabled execution but preserve original result structure
+            monitored_result = (
+                self.runtime.process_manager.execute_agent_with_monitoring(
+                    agent_path=self.path,
+                    method=method,
+                    parameters=parameters,
+                    tool_context=json.loads(self.get_tool_context_json()),
+                )
+            )
+
+            # If monitoring failed to parse, fall back to standard execution
+            if (
+                "error" in monitored_result
+                and "Invalid JSON response" in monitored_result["error"]
+            ):
+                logger.warning(
+                    "Monitoring failed to parse agent output, "
+                    "falling back to standard execution"
+                )
+                return self.runtime.execute_agent(
+                    namespace=self.namespace,
+                    agent_name=self.name,
+                    method=method,
+                    parameters=parameters,
+                    tool_context=json.loads(self.get_tool_context_json()),
+                )
+
+            # Return the full monitoring result (includes execution_time)
+            return monitored_result
+        else:
+            # Use standard execution
+            return self.runtime.execute_agent(
+                namespace=self.namespace,
+                agent_name=self.name,
+                method=method,
+                parameters=parameters,
+                tool_context=json.loads(self.get_tool_context_json()),
+            )
 
     # Phase 3: Enhanced tool management methods
 
