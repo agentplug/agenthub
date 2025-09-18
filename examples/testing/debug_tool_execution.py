@@ -1,139 +1,132 @@
 #!/usr/bin/env python3
 """
-Debug Tool Execution Demo
+Tool Execution Debugging - User-Friendly Example
 
-This demo shows the actual tool execution process with detailed logging.
+This example shows how to debug and understand tool execution
+in a user-friendly way.
 """
 
-import asyncio
-import json
-
 import agenthub as ah
-from agenthub.core.tools import get_available_tools, tool
 
 
-# Define tools with detailed logging
-@tool(name="web_search", description="Search the web for real-time information")
-def web_search(query: str, max_results: int = 5) -> dict:
-    """Web search with detailed logging"""
-    print(
-        f"🔍 [TOOL] web_search called with query='{query}', max_results={max_results}"
-    )
+def main():
+    """Demonstrate tool execution debugging."""
+    print("🔧 Tool Execution Debugging")
+    print("=" * 35)
+    print("This example shows how to debug tool execution.\n")
 
-    # Simulate web search (using mock data for reliability)
-    results = [
-        {
-            "title": f"Latest AI Trends 2024 - {query}",
-            "snippet": (
-                f"Latest trends of {query} showing major developments in "
-                f"artificial intelligence and machine learning."
-            ),
-            "url": "https://example.com/ai-trends-2024",
-        },
-        {
-            "title": f"Machine Learning Advances - {query}",
-            "snippet": (
-                f"Recent breakthroughs in {query} including new algorithms "
-                f"and applications."
-            ),
-            "url": "https://example.com/ml-advances",
-        },
-    ]
+    # Example 1: Basic tool execution
+    print("📋 Example 1: Basic Tool Execution")
+    print("-" * 35)
 
-    result = {
-        "query": query,
-        "results": results[:max_results],
-        "total_found": len(results),
-    }
+    try:
+        # Load agent with math tools
+        agent = ah.load_agent(
+            "agentplug/analysis-agent", external_tools=["add", "multiply", "subtract"]
+        )
 
-    print(f"✅ [TOOL] web_search returned {len(results)} results")
-    return result
+        print(f"✅ Agent loaded with tools: {agent.get_assigned_tools()}")
 
+        # Test simple math
+        print("🧮 Testing: What is 15 + 7?")
+        result = agent.analyze_text("What is 15 plus 7?")
+        print(f"📊 Result: {result}")
 
-@tool(name="data_analyzer", description="Analyze data and provide insights")
-def data_analyzer(data: str, analysis_type: str = "general") -> dict:
-    """Data analyzer with detailed logging"""
-    print(
-        f"🔍 [TOOL] data_analyzer called with data='{data[:30]}...', "
-        f"type='{analysis_type}'"
-    )
+    except Exception as e:
+        print(f"⚠️  Error: {e}")
 
-    result = {
-        "data": data,
-        "analysis_type": analysis_type,
-        "insights": [
-            f"Data length: {len(data)} characters",
-            f"Word count: {len(data.split())} words",
-            f"Analysis type: {analysis_type}",
-            "Key patterns identified",
-            "Statistical analysis completed",
-        ],
-        "summary": f"Analyzed {len(data)} characters of {analysis_type} data",
-    }
+    print()
 
-    print(f"✅ [TOOL] data_analyzer returned {len(result['insights'])} insights")
-    return result
+    # Example 2: Tool execution with detailed output
+    print("📋 Example 2: Detailed Tool Execution")
+    print("-" * 40)
 
+    try:
+        # Load agent with more tools
+        agent = ah.load_agent(
+            "agentplug/analysis-agent",
+            external_tools=["add", "multiply", "subtract", "divide"],
+        )
 
-async def main():
-    """Debug the complete tool execution flow."""
-    print("🐛 DEBUG TOOL EXECUTION DEMO")
-    print("=" * 50)
+        print(f"🔧 Available tools: {agent.get_assigned_tools()}")
 
-    # Show available tools
-    print(f"📋 Available tools: {get_available_tools()}")
+        # Test complex math
+        print("🧮 Testing: What is (20 * 3) - 15?")
+        result = agent.analyze_text("What is 20 times 3, then subtract 15?")
+        print(f"📊 Result: {result}")
 
-    # Load agent with tools
-    print("\n🤖 Loading agent with tools...")
-    agent = ah.load_agent(
-        agent_name="agentplug/analysis-agent", tools=["web_search", "data_analyzer"]
-    )
+        # Show tool context
+        print("\n🔍 Tool Context Information:")
+        tool_context = agent.get_tool_context_json()
+        print(f"📝 Tool context generated: {len(tool_context)} characters")
 
-    print(f"✅ Agent loaded: {type(agent).__name__}")
-    print(f"📋 Available methods: {agent.get_available_methods()}")
-    print(f"🔧 Assigned tools: {agent.get_assigned_tools()}")
+    except Exception as e:
+        print(f"⚠️  Error: {e}")
 
-    # Test 1: Text that should trigger web search
-    print("\n" + "=" * 50)
-    print("TEST 1: Text that should trigger web search")
-    print("=" * 50)
+    print()
 
-    text1 = "What are the latest trends in artificial intelligence?"
-    print(f"📝 Input: {text1}")
-    print("\n🤖 Agent processing...")
+    # Example 3: Error handling
+    print("📋 Example 3: Error Handling")
+    print("-" * 30)
 
-    result1 = agent.analyze_text(text1, analysis_type="general")
-    print(f"\n📊 Result: {json.dumps(result1, indent=2)}")
+    try:
+        # Load agent with limited tools
+        agent = ah.load_agent(
+            "agentplug/analysis-agent", external_tools=["add"]  # Only addition tool
+        )
 
-    # Test 2: Text that might trigger data analysis
-    print("\n" + "=" * 50)
-    print("TEST 2: Text that might trigger data analysis")
-    print("=" * 50)
+        print(f"🔧 Available tools: {agent.get_assigned_tools()}")
 
-    text2 = (
-        "Analyze this data: 'Sales increased by 25% this quarter, "
-        "customer satisfaction is at 95%, and we have 1000 new users.'"
-    )
-    print(f"📝 Input: {text2}")
-    print("\n🤖 Agent processing...")
+        # Test something that might need more tools
+        print("🧮 Testing: What is 10 * 5? (only have addition tool)")
+        result = agent.analyze_text("What is 10 times 5?")
+        print(f"📊 Result: {result}")
 
-    result2 = agent.analyze_text(text2, analysis_type="general")
-    print(f"\n📊 Result: {json.dumps(result2, indent=2)}")
+    except Exception as e:
+        print(f"⚠️  Error: {e}")
 
-    # Test 3: Simple text that shouldn't need tools
-    print("\n" + "=" * 50)
-    print("TEST 3: Simple text that shouldn't need tools")
-    print("=" * 50)
+    print()
 
-    text3 = "This is a simple greeting message."
-    print(f"📝 Input: {text3}")
-    print("\n🤖 Agent processing...")
+    # Example 4: Tool availability check
+    print("📋 Example 4: Tool Availability Check")
+    print("-" * 40)
 
-    result3 = agent.analyze_text(text3, analysis_type="general")
-    print(f"\n📊 Result: {json.dumps(result3, indent=2)}")
+    try:
+        agent = ah.load_agent(
+            "agentplug/analysis-agent", external_tools=["add", "multiply", "web_search"]
+        )
 
-    print("\n🎉 Debug demo complete!")
+        print(f"🔧 Assigned tools: {agent.get_assigned_tools()}")
+
+        # Check if specific tools are available
+        tools_to_check = ["add", "multiply", "web_search", "divide"]
+        for tool in tools_to_check:
+            if agent.can_access_tool(tool):
+                print(f"✅ Tool '{tool}' is available")
+            else:
+                print(f"❌ Tool '{tool}' is not available")
+
+    except Exception as e:
+        print(f"⚠️  Error: {e}")
+
+    print()
+
+    # Summary
+    print("🎯 Debugging Summary")
+    print("-" * 20)
+    print("✅ Key debugging techniques:")
+    print("• Check assigned tools with get_assigned_tools()")
+    print("• Verify tool availability with can_access_tool()")
+    print("• Review tool context with get_tool_context_json()")
+    print("• Handle errors gracefully with try/except")
+    print("• Test with simple examples first")
+
+    print("\n💡 Common issues and solutions:")
+    print("• Tool not found: Check tool name spelling")
+    print("• Agent not responding: Verify agent is loaded correctly")
+    print("• Unexpected results: Check tool parameters and context")
+    print("• Performance issues: Limit number of tools if not needed")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

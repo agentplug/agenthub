@@ -8,9 +8,7 @@ This module provides a modular architecture organized into:
 
 # Import from agents package
 from .agents import (
-    AgentExecutionError,
     AgentLoader,
-    AgentLoadError,
     AgentWrapper,
     InterfaceValidationError,
     InterfaceValidator,
@@ -41,6 +39,16 @@ from .tools import (
     get_available_tools,
     get_mcp_server,
     tool,
+)
+from .tools.exceptions import (
+    AgentExecutionError,
+    AgentHubError,
+    AgentLoadError,
+    ConfigurationError,
+    InstallationError,
+    KnowledgeError,
+    ToolConflictError,
+    ValidationError,
 )
 
 __all__ = [
@@ -73,4 +81,11 @@ __all__ = [
     "get_tool_manager",
     "get_mcp_client",
     "get_tool_injector",
+    # Unified exceptions
+    "AgentHubError",
+    "ValidationError",
+    "ToolConflictError",
+    "InstallationError",
+    "KnowledgeError",
+    "ConfigurationError",
 ]

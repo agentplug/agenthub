@@ -1,10 +1,10 @@
 # Phase 3: SDK Integration and Production Polish
 
-**Document Type**: Phase Implementation Design  
-**Author**: AgentHub Team  
-**Date Created**: 2025-01-27  
-**Last Updated**: 2025-01-27  
-**Status**: Ready for Implementation  
+**Document Type**: Phase Implementation Design
+**Author**: AgentHub Team
+**Date Created**: 2025-01-27
+**Last Updated**: 2025-01-27
+**Status**: Ready for Implementation
 **Purpose**: Production-ready SDK with user-oriented interface and comprehensive tool management
 
 ## 🎯 **Phase 3 Overview**
@@ -32,6 +32,7 @@ Phase 3 replaces the dependencies list in `agent.yaml` with **installation comma
 ## 🚀 **Core Features**
 
 ### **1. User-Oriented Agent Loading**
+
 ```python
 # Simple, intuitive interface for users
 agent = amg.load_agent(
@@ -49,6 +50,7 @@ agent = amg.load_agent(
 ```
 
 ### **2. Enhanced Tool Management**
+
 - **Built-in Tools**: Defined by agent developers in agent.yaml `builtin_tools` section
 - **External Tools**: Mapped from current `tools` parameter → `external_tools` parameter
 - **Disabled Built-in Tools**: New `disabled_builtin_tools` parameter to disable specific built-in tools
@@ -58,24 +60,53 @@ agent = amg.load_agent(
 - **Tool Validation**: Comprehensive parameter validation and error messages
 
 ### **3. Simple Knowledge Injection**
+
 - **Text-based Knowledge**: Users inject knowledge as simple text strings
 - **Quick Onboarding**: No complex schemas or categories
 - **Agent Context**: Knowledge automatically available to agent's AI
 
 ### **4. Production-Ready Error Handling**
+
 - **Specific Error Types**: `AgentLoadError`, `AgentExecutionError`, `ValidationError`
 - **Helpful Messages**: Clear guidance and suggestions for fixing issues
 - **Graceful Recovery**: Robust error handling and recovery strategies
 
-## 🏗️ **Architecture Design**
+## 🏗️ **Refined Architecture Design**
 
-### **Separation of Concerns**
+### **Clean Architecture Principles**
 
 | Component | Responsibility | Interface |
 |-----------|---------------|-----------|
 | **Agent Developer** | Define agent capabilities | agent.yaml with builtin_tools |
 | **End User** | Configure agent for their needs | Simple API parameters |
 | **Framework** | Handle complexity and integration | Load YAML + apply user config |
+
+### **Modular Design Structure**
+
+```
+agenthub/
+├── sdk/                          # User-facing SDK (Simple API)
+│   ├── load_agent.py            # Main load_agent function
+│   └── exceptions.py            # User-friendly exceptions
+├── core/                        # Core business logic
+│   ├── agents/                  # Agent management
+│   │   ├── tool_manager.py     # Built-in tool management
+│   │   └── wrapper.py          # Enhanced agent wrapper
+│   ├── knowledge/               # Knowledge management
+│   │   └── manager.py          # Knowledge injection
+│   └── installation/            # Installation system
+│       ├── command_executor.py  # Command execution engine
+│       └── plugins/            # Installation method plugins
+└── config/                      # Configuration management
+    └── agent_config.py         # Enhanced YAML parsing
+```
+
+**Key Benefits:**
+
+- **Clean Architecture**: Single responsibility, loose coupling, high cohesion
+- **Scalable Design**: Plugin architecture, modular components, configuration-driven
+- **User Experience**: Simple API, progressive disclosure, clear error messages
+- **Maintainability**: Easy testing, consistent patterns, comprehensive documentation
 
 ### **Enhanced agent.yaml Schema (For Developers)**
 
@@ -107,7 +138,7 @@ builtin_tools:
       text: { type: "string", required: true }
       analysis_type: { type: "string", enum: ["sentiment", "entities", "keywords"] }
       confidence_threshold: { type: "number", default: 0.8, minimum: 0.0, maximum: 1.0 }
-  
+
   keyword_extraction:
     description: "Extract keywords from text content"
     required: false  # Optional feature - can be disabled
@@ -115,7 +146,7 @@ builtin_tools:
       text: { type: "string", required: true }
       max_keywords: { type: "integer", default: 10, minimum: 1, maximum: 50 }
       language: { type: "string", default: "en", enum: ["en", "es", "fr", "de"] }
-  
+
   sentiment_analysis:
     description: "Analyze sentiment of text content"
     required: false  # Optional feature - can be disabled
@@ -150,14 +181,14 @@ def load_agent(
 ):
     """
     Load agent with user-friendly configuration.
-    
+
     Args:
         agent_name: Agent name in format "namespace/agent"
         tools: DEPRECATED - use external_tools instead (for backward compatibility)
         external_tools: List of external tool names to add (mapped from current 'tools')
         disabled_builtin_tools: List of built-in tools to disable (all enabled by default)
         knowledge: Text knowledge to inject into agent context
-        
+
     Returns:
         AgentWrapper instance with configured tools and knowledge
     """
@@ -167,17 +198,17 @@ def load_agent(
             raise ValueError("Cannot specify both 'tools' and 'external_tools'. Use 'external_tools' instead.")
         external_tools = tools
         warnings.warn("'tools' parameter is deprecated. Use 'external_tools' instead.", DeprecationWarning)
-    
+
     # Load agent definition from YAML (developer created)
     agent_info = load_agent_from_yaml(agent_name)
-    
+
     # Create agent instance
     agent = create_agent_instance(agent_info)
-    
+
     # Apply user configuration
     if external_tools:
         agent.add_external_tools(external_tools)
-    
+
     if disabled_builtin_tools:
         # Validate disabled tools at framework level
         for tool_name in disabled_builtin_tools:
@@ -186,10 +217,10 @@ def load_agent(
                 if tool_info.required:
                     raise ValueError(f"Built-in tool '{tool_name}' cannot be disabled (required core functionality)")
         agent.disable_builtin_tools(disabled_builtin_tools)
-    
+
     if knowledge:
         agent.inject_knowledge(knowledge)
-    
+
     return agent
 ```
 
@@ -286,7 +317,7 @@ class AgentClass:
         self.disabled_builtin_tools: Set[str] = set()  # Agent manages disabled tools
         self.knowledge: str = ""
         self._load_builtin_tools_from_yaml()
-    
+
     def _load_builtin_tools_from_yaml(self):
         """Load built-in tools from agent.yaml builtin_tools section"""
         # This would be populated from agent.yaml builtin_tools section
@@ -320,47 +351,47 @@ class AgentClass:
                 }
             )
         }
-    
+
     def disable_builtin_tools(self, disabled_builtin_tools: Set[str]) -> None:
         """Set which tools are disabled (called by framework)"""
         self.disabled_builtin_tools = disabled_builtin_tools
-    
+
     def add_external_tools(self, tool_names: List[str]) -> None:
         """Add external tools from user (mapped from current 'tools' parameter)"""
         for tool_name in tool_names:
             if tool_name not in self.tool_registry.get_available_tools():
                 raise ValueError(f"External tool '{tool_name}' not found in registry")
             self.external_tools.append(tool_name)
-    
+
     def inject_knowledge(self, knowledge_text: str) -> None:
         """Inject knowledge - simple text"""
         self.knowledge = knowledge_text
-    
+
     def get_available_tools(self) -> List[str]:
         """Get all available tools (enabled built-in + external)"""
         available = []
-        
+
         # Add enabled built-in tools
         for name, tool in self.builtin_tools.items():
             if name not in self.disabled_builtin_tools:
                 available.append(name)
-        
+
         # Add external tools
         available.extend(self.external_tools)
-        
+
         return available
-    
+
     def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """Execute tool with disabled tool checking"""
         # Check if tool is disabled
         if tool_name in self.disabled_builtin_tools:
             raise ValueError(f"Tool '{tool_name}' is disabled by user configuration")
-        
+
         # Validate parameters
         errors = self.validate_tool_parameters(tool_name, parameters)
         if errors:
             raise ValueError(f"Tool parameter validation failed: {'; '.join(errors)}")
-        
+
         # Execute tool
         if tool_name in self.builtin_tools:
             return self._execute_builtin_tool(tool_name, parameters)
@@ -368,7 +399,7 @@ class AgentClass:
             return self._execute_external_tool(tool_name, parameters)
         else:
             raise ValueError(f"Tool '{tool_name}' not found")
-    
+
     def _execute_builtin_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """Execute built-in tool"""
         if tool_name == "text_analyzer":
@@ -379,26 +410,26 @@ class AgentClass:
             return self._core_analyzer(parameters)
         else:
             raise ValueError(f"Built-in tool '{tool_name}' not implemented")
-    
+
     def _execute_external_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """Execute external tool via MCP (existing functionality)"""
         # This uses the existing MCP system from Phase 2.5
         return self.tool_registry.execute_tool(tool_name, parameters)
-    
+
     def main(self):
         """Command handler - agent developer must implement this"""
         import sys
         import json
-        
+
         # Parse execution data from framework
         execution_data = json.loads(sys.argv[1])
         method = execution_data["method"]
         parameters = execution_data["parameters"]
         disabled_builtin_tools = set(execution_data.get("disabled_builtin_tools", []))
-        
+
         # Configure disabled tools (set by framework)
         self.disable_builtin_tools(disabled_builtin_tools)
-        
+
         # Execute method
         if method == "analyze_data":
             result = self.analyze_data(parameters)
@@ -408,7 +439,7 @@ class AgentClass:
             result = self.execute_tool(tool_name, tool_params)
         else:
             result = {"error": f"Unknown method: {method}"}
-        
+
         # Return result
         print(json.dumps(result))
 
@@ -428,11 +459,11 @@ class ToolInfo:
 ```python
 class ProcessManager:
     """Framework side - passes disabled tools to agent"""
-    
-    def execute_agent(self, agent_path: str, method: str, parameters: dict, 
+
+    def execute_agent(self, agent_path: str, method: str, parameters: dict,
                      disabled_builtin_tools: Set[str] = None) -> dict:
         """Execute agent with disabled tools information"""
-        
+
         # Add disabled tools to execution data
         execution_data = {
             "method": method,
@@ -440,7 +471,7 @@ class ProcessManager:
             "disabled_builtin_tools": list(disabled_builtin_tools or []),  # Pass to agent
             "tool_context": self.tool_context
         }
-        
+
         # Execute agent command
         result = subprocess.run(
             [python_executable, str(agent_script), json.dumps(execution_data)],
@@ -449,16 +480,16 @@ class ProcessManager:
             text=True,
             timeout=self.timeout,
         )
-        
+
         return self._parse_result(result)
 
 class AgentWrapper:
     """Framework side - manages user configuration"""
-    
+
     def __init__(self, agent_name: str, disabled_builtin_tools: Set[str] = None):
         self.agent_name = agent_name
         self.disabled_builtin_tools = disabled_builtin_tools or set()
-    
+
     def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """Execute tool through agent command with disabled tools info"""
         # Call agent with disabled tools information
@@ -471,9 +502,9 @@ class AgentWrapper:
             },
             disabled_builtin_tools=self.disabled_builtin_tools
         )
-        
+
         return result
-    
+
     def get_available_tools(self) -> List[str]:
         """Get available tools from agent (agent handles filtering)"""
         result = self.process_manager.execute_agent(
@@ -482,7 +513,7 @@ class AgentWrapper:
             parameters={},
             disabled_builtin_tools=self.disabled_builtin_tools
         )
-        
+
         return result.get("tools", [])
 ```
 
@@ -493,20 +524,20 @@ class KnowledgeManager:
     def __init__(self):
         self.knowledge: str = ""
         self.knowledge_metadata: Dict[str, Any] = {}
-    
+
     def inject_knowledge(self, knowledge_text: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         """Inject text-based knowledge into agent context"""
         self.knowledge = knowledge_text
         self.knowledge_metadata = metadata or {}
-    
+
     def get_knowledge(self) -> str:
         """Get injected knowledge"""
         return self.knowledge
-    
+
     def is_knowledge_available(self) -> bool:
         """Check if knowledge is available"""
         return bool(self.knowledge.strip())
-    
+
     def clear_knowledge(self) -> None:
         """Clear injected knowledge"""
         self.knowledge = ""
@@ -521,7 +552,7 @@ class AgentLoadError(Exception):
     def __init__(self, message: str, suggestions: Optional[List[str]] = None):
         super().__init__(message)
         self.suggestions = suggestions or []
-    
+
     def __str__(self):
         base_msg = super().__str__()
         if self.suggestions:
@@ -535,7 +566,7 @@ class AgentExecutionError(Exception):
         super().__init__(message)
         self.method_name = method_name
         self.parameters = parameters
-    
+
     def __str__(self):
         return f"Execution failed for method '{self.method_name}': {super().__str__()}"
 
@@ -546,7 +577,7 @@ class ValidationError(Exception):
         self.parameter_name = parameter_name
         self.expected_type = expected_type
         self.actual_value = actual_value
-    
+
     def __str__(self):
         return f"Validation failed for parameter '{self.parameter_name}': expected {self.expected_type}, got {type(self.actual_value).__name__}"
 ```
@@ -554,6 +585,7 @@ class ValidationError(Exception):
 ## 🎯 **User Experience Examples**
 
 ### **Basic Agent Loading**
+
 ```python
 import agentmanager as amg
 
@@ -563,6 +595,7 @@ result = agent.analyze_data("Customer feedback text")
 ```
 
 ### **Backward Compatibility (Phase 2.5 → Phase 3)**
+
 ```python
 # Current usage (Phase 2.5) - still works with deprecation warning
 agent = amg.load_agent(
@@ -572,6 +605,7 @@ agent = amg.load_agent(
 ```
 
 ### **Agent with Tool Configuration (Phase 3)**
+
 ```python
 # New usage (Phase 3) - more explicit and powerful
 agent = amg.load_agent(
@@ -591,6 +625,7 @@ result = agent.analyze_data("Customer feedback text", {"use_tools": True})
 ```
 
 ### **Error Handling for Required Tools**
+
 ```python
 # This will raise an error - cannot disable required tools
 try:
@@ -610,6 +645,7 @@ agent = amg.load_agent(
 ```
 
 ### **Agent with Knowledge Injection**
+
 ```python
 # Agent with knowledge for better responses
 agent = amg.load_agent(
@@ -622,6 +658,7 @@ result = agent.analyze_data("Customer feedback text")
 ```
 
 ### **Complete Configuration**
+
 ```python
 # Full configuration example
 agent = amg.load_agent(
@@ -638,35 +675,41 @@ result = agent.analyze_data("Customer feedback text", {"analysis_type": "compreh
 ## 📋 **Implementation Roadmap**
 
 ### **Week 1-2: Enhanced agent.yaml Schema**
+
 - [ ] Add builtin_tools section to agent.yaml
 - [ ] Update agent validation to handle new schema
 - [ ] Create tool configuration parser
 
 ### **Week 3-4: User-Oriented API**
+
 - [ ] Implement simplified load_agent function
 - [ ] Add external_tools parameter
 - [ ] Add disabled_builtin_tools parameter
 - [ ] Add knowledge parameter
 
 ### **Week 5-6: Tool Management System**
+
 - [ ] Implement ToolManager class
 - [ ] Add tool conflict resolution
 - [ ] Add tool parameter validation
 - [ ] Integrate with existing MCP system
 
 ### **Week 7-8: Knowledge Management**
+
 - [ ] Implement KnowledgeManager class
 - [ ] Add knowledge injection to agent context
 - [ ] Add knowledge query capabilities
 - [ ] Integrate with agent execution
 
 ### **Week 9-10: Error Handling & Testing**
+
 - [ ] Implement enhanced error types
 - [ ] Add comprehensive error messages
 - [ ] Add parameter validation
 - [ ] Create comprehensive test suite
 
 ### **Week 11-12: Integration & Documentation**
+
 - [ ] Integrate all components
 - [ ] Update documentation
 - [ ] Create migration examples
@@ -683,43 +726,46 @@ result = agent.analyze_data("Customer feedback text", {"analysis_type": "compreh
 ## 🔄 **Migration Strategy**
 
 ### **For Existing Agents (Breaking Change Required)**
+
 1. **Agent Developer Implementation**: Existing agents must implement tool management logic
 2. **Required Changes**: Add `disable_builtin_tools()`, `get_available_tools()`, and `main()` methods
 3. **Migration Helper**: CLI tool to help migrate agents to new interface
 4. **Transition Period**: Framework supports both old and new agent interfaces during transition
 
 ### **For Users**
+
 1. **Enhanced Features**: New features available through new parameters
 2. **Clear Documentation**: Migration guide and examples for agent developers
 3. **Support**: Help with migration process
 4. **Breaking Change**: Existing agents need updates to support tool disabling
 
 ### **Migration Requirements for Agent Developers**
+
 ```python
 # Existing agents must add these methods:
 class ExistingAgent:
     def disable_builtin_tools(self, disabled_builtin_tools: Set[str]) -> None:
         """Required: Set which tools are disabled"""
         self.disabled_builtin_tools = disabled_builtin_tools
-    
+
     def get_available_tools(self) -> List[str]:
         """Required: Return available tools (filtered by disabled)"""
         return [tool for tool in self.all_tools if tool not in self.disabled_builtin_tools]
-    
+
     def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """Required: Check if tool is disabled before executing"""
         if tool_name in self.disabled_builtin_tools:
             raise ValueError(f"Tool '{tool_name}' is disabled")
         # ... existing tool execution logic
-    
+
     def main(self):
         """Required: Command handler for framework communication"""
         import sys
         import json
-        
+
         execution_data = json.loads(sys.argv[1])
         disabled_builtin_tools = set(execution_data.get("disabled_builtin_tools", []))
-        
+
         self.disable_builtin_tools(disabled_builtin_tools)
         # ... rest of command handling
 ```
@@ -727,12 +773,14 @@ class ExistingAgent:
 ## 🚀 **Key Benefits**
 
 ### **For Users**
+
 - **Simple Interface**: No YAML editing required
 - **Intuitive Parameters**: Clear, self-explanatory parameter names
 - **Quick Setup**: Configure agents in seconds
 - **Powerful Features**: Full tool and knowledge management
 
 ### **For Agent Developers**
+
 - **Rich YAML**: Define complex tool schemas and capabilities
 - **Clear Documentation**: YAML serves as living documentation
 - **Flexible Design**: Support any tool parameters and validation
@@ -740,6 +788,7 @@ class ExistingAgent:
 - **Command Interface**: Must implement command handler for framework communication
 
 ### **For Framework**
+
 - **Clean Architecture**: Clear separation of concerns
 - **Maintainable**: Easy to extend and modify
 - **Production Ready**: Robust error handling and validation

@@ -20,9 +20,6 @@ recursive-include tests *.py *.yaml *.yml *.json
 # Include sample data
 recursive-include sample_docs *.pdf *.py
 
-# Include MCP sample
-recursive-include mcp-sample *.py
-
 # Exclude unnecessary files
 exclude *.pyc
 exclude *.pyo
