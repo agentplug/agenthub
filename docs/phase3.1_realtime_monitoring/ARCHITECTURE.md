@@ -48,11 +48,12 @@ class CoreLLMService:
         self.model = model
         self.cache = {}
 
-    def generate(self, input_data, **kwargs):
+    def generate(self, input_data, system_prompt=None, **kwargs):
         """Adaptive LLM generation using AISuite
 
         Args:
             input_data: Either a string (single prompt) or list of messages (conversation)
+            system_prompt: Optional system prompt to define AI behavior and context
             **kwargs: Additional parameters for AISuite
         """
         if not self.aisuite:
@@ -60,14 +61,20 @@ class CoreLLMService:
 
         if isinstance(input_data, str):
             # Single prompt - direct processing
+            if system_prompt:
+                # Combine system prompt with user prompt
+                full_prompt = f"System: {system_prompt}\n\nUser: {input_data}"
+            else:
+                full_prompt = input_data
+
             return self.aisuite.generate(
-                prompt=input_data,
+                prompt=full_prompt,
                 model=self.model,
                 **kwargs
             )
         elif isinstance(input_data, list):
             # Messages - organize into context and focus on current
-            prompt = self._organize_messages_to_prompt(input_data)
+            prompt = self._organize_messages_to_prompt(input_data, system_prompt)
             return self.aisuite.generate(
                 prompt=prompt,
                 model=self.model,
@@ -76,7 +83,7 @@ class CoreLLMService:
         else:
             raise ValueError("input_data must be string (prompt) or list (messages)")
 
-    def _organize_messages_to_prompt(self, messages):
+    def _organize_messages_to_prompt(self, messages, system_prompt=None):
         """Convert conversation messages to a single prompt with context"""
         if not messages:
             return ""
@@ -85,31 +92,67 @@ class CoreLLMService:
         context_messages = messages[:-1] if len(messages) > 1 else []
         current_message = messages[-1]
 
-        # Build context from previous messages
+        # Build context from previous messages (keep it concise)
         context = ""
         if context_messages:
-            context = "Previous conversation context:\n"
-            for msg in context_messages:
+            context = "Previous conversation:\n"
+            # Limit context to last 3-4 messages to avoid overwhelming
+            recent_messages = context_messages[-3:] if len(context_messages) > 3 else context_messages
+            for msg in recent_messages:
                 role = msg.get("role", "user")
                 content = msg.get("content", "")
+                # Truncate long messages
+                if len(content) > 200:
+                    content = content[:200] + "..."
                 context += f"{role}: {content}\n"
             context += "\n"
 
-        # Focus on current message
+        # Current request
         current_content = current_message.get("content", "")
         current_role = current_message.get("role", "user")
 
-        # Create focused prompt
-        prompt = f"{context}Current {current_role} request: {current_content}\n\nPlease respond to the current request, taking into account the previous context if relevant."
+        # Structure: System prompt + Context + Current request + Instructions
+        prompt_parts = []
 
-        return prompt
+        if system_prompt:
+            prompt_parts.append(f"SYSTEM INSTRUCTIONS: {system_prompt}")
+            prompt_parts.append("")
 
-    def analyze_text(self, text, analysis_type="general"):
+        if context:
+            prompt_parts.append(context)
+
+        prompt_parts.append(f"CURRENT {current_role.upper()} REQUEST: {current_content}")
+        prompt_parts.append("")
+
+        if system_prompt:
+            prompt_parts.append("Remember the system instructions above and respond accordingly.")
+        else:
+            prompt_parts.append("Please respond to the current request, taking into account the previous context if relevant.")
+
+        return "\n".join(prompt_parts)
+
+    # Usage Examples with System Prompts:
+    #
+    # Single prompt with system prompt:
+    # response = core_llm.generate("What is the weather?", system_prompt="You are a helpful weather assistant.")
+    #
+    # Conversation with system prompt:
+    # messages = [
+    #     {"role": "user", "content": "What is Python?"},
+    #     {"role": "assistant", "content": "Python is a programming language..."},
+    #     {"role": "user", "content": "How do I install it?"}
+    # ]
+    # response = core_llm.generate(messages, system_prompt="You are a programming tutor. Be concise and practical.")
+    #
+    # Log analysis with system prompt:
+    # response = core_llm.analyze_text(logs, "log_analysis", "You are an expert at analyzing agent execution logs.")
+
+    def analyze_text(self, text, analysis_type="general", system_prompt=None):
         """Analyze any text content using AISuite"""
         prompt = self._get_analysis_prompt(analysis_type)
         formatted_prompt = prompt.format(text=text)
 
-        return self.generate(formatted_prompt)
+        return self.generate(formatted_prompt, system_prompt=system_prompt)
 
     def _get_analysis_prompt(self, analysis_type):
         """Get appropriate prompt template for analysis type"""
@@ -165,9 +208,10 @@ class LLMAnalyzer:
         self.cache = {}
 
     def analyze(self, logs):
-        # Use Core LLM Component for log analysis
+        # Use Core LLM Component for log analysis with system prompt
         log_text = '\n'.join(logs)
-        return self.core_llm.analyze_text(log_text, analysis_type="log_analysis")
+        system_prompt = "You are an expert at analyzing agent execution logs. Focus on identifying what the agent is doing, detecting errors, and providing actionable insights."
+        return self.core_llm.analyze_text(log_text, analysis_type="log_analysis", system_prompt=system_prompt)
 ```
 
 ### 4. TerminalDisplay
