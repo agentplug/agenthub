@@ -12,7 +12,7 @@ from agenthub.config import get_config
 from agenthub.core.tools import get_available_tools, run_resources, tool
 
 
-def _load_model_name(self) -> str:
+def _load_model_name() -> str:
     """
     Automatically detect and return the best available model based on API keys.
     Follows aisuite provider format: <provider>:<model-name>
