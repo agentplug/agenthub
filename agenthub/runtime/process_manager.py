@@ -36,6 +36,7 @@ class ProcessManager:
             DynamicAgentExecutor() if use_dynamic_execution else None
         )
         self.monitoring = monitoring
+        self.monitoring_config = {}
 
         # Initialize monitoring components if enabled
         if self.monitoring:
@@ -43,12 +44,14 @@ class ProcessManager:
                 from agenthub.core.llm.llm_service import CoreLLMService
                 from agenthub.monitoring.llm_analyzer import LLMAnalyzer
                 from agenthub.monitoring.log_streamer import LogStreamer
-                from agenthub.monitoring.terminal_display import TerminalDisplay
+                from agenthub.monitoring.enhanced_terminal_display import EnhancedTerminalDisplay
 
                 self.core_llm = CoreLLMService()
                 self.llm_analyzer = LLMAnalyzer(self.core_llm)
                 self.log_streamer = LogStreamer()
-                self.terminal_display = TerminalDisplay()
+                from agenthub.monitoring.config import MonitoringConfig
+                default_config = MonitoringConfig()
+                self.terminal_display = EnhancedTerminalDisplay(default_config)
                 logger.info("Real-time monitoring components initialized")
             except ImportError as e:
                 logger.warning(f"Monitoring components not available: {e}")
@@ -60,21 +63,39 @@ class ProcessManager:
             self.log_streamer = None
             self.terminal_display = None
 
-    def set_monitoring(self, enabled: bool) -> None:
+    def set_monitoring(self, enabled: bool, config: dict = None) -> None:
         """Enable or disable monitoring dynamically."""
         if enabled and not self.monitoring:
             try:
                 from agenthub.core.llm.llm_service import CoreLLMService
                 from agenthub.monitoring.llm_analyzer import LLMAnalyzer
                 from agenthub.monitoring.log_streamer import LogStreamer
-                from agenthub.monitoring.terminal_display import TerminalDisplay
+                from agenthub.monitoring.enhanced_terminal_display import EnhancedTerminalDisplay
 
                 self.core_llm = CoreLLMService()
                 self.llm_analyzer = LLMAnalyzer(self.core_llm)
                 self.log_streamer = LogStreamer()
-                self.terminal_display = TerminalDisplay()
+                
+                # Create MonitoringConfig object for enhanced terminal display
+                from agenthub.monitoring.config import MonitoringConfig
+                monitoring_config = MonitoringConfig(
+                    enabled=True,
+                    display_mode=config.get("display_mode", "incremental") if config else "incremental",
+                    interactive=config.get("interactive", False) if config else False,
+                    refresh_rate=config.get("refresh_rate", 1.0) if config else 1.0,
+                    max_memory_mb=config.get("max_memory_mb", 100) if config else 100,
+                    analysis_interval=config.get("analysis_interval", 2.0) if config else 2.0,
+                    export_format=config.get("export_format", "json") if config else "json",
+                    show_metrics=config.get("show_metrics", True) if config else True,
+                    enable_learning=config.get("enable_learning", True) if config else True,
+                )
+                
+                self.terminal_display = EnhancedTerminalDisplay(monitoring_config)
+                
+                # Store monitoring configuration
+                self.monitoring_config = config or {}
                 self.monitoring = True
-                logger.info("Real-time monitoring enabled")
+                logger.info(f"Real-time monitoring enabled with {monitoring_config.display_mode} mode")
             except ImportError as e:
                 logger.warning(f"Monitoring components not available: {e}")
                 self.monitoring = False
@@ -84,6 +105,7 @@ class ProcessManager:
             self.llm_analyzer = None
             self.log_streamer = None
             self.terminal_display = None
+            self.monitoring_config = {}
             logger.info("Real-time monitoring disabled")
 
     def execute_agent(
