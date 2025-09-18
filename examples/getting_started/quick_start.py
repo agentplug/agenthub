@@ -1,252 +1,102 @@
 #!/usr/bin/env python3
 """
-AgentHub Quick Start Examples
+AgentHub Quick Start - Simple Examples
 
-This file demonstrates all core functionality of AgentHub in simple,
-executable examples. Run this file to see AgentHub in action.
+This file demonstrates the most common AgentHub usage patterns
+in simple, executable examples. Perfect for beginners!
 """
 
-import tempfile
-from pathlib import Path
-
-from agenthub.environment.environment_manager import AdvancedEnvironmentManager
-from agenthub.github.auto_installer import AutoInstaller
-from agenthub.github.repository_cloner import RepositoryCloner
+import agenthub as ah
 
 
-def demonstrate_basic_installation():
-    """Demonstrate basic agent installation and usage."""
-    print("=" * 60)
-    print("🚀 BASIC AGENT INSTALLATION")
-    print("=" * 60)
+def example_1_basic_agent():
+    """Load and use an agent without any tools."""
+    print("📋 Example 1: Basic Agent")
+    print("-" * 30)
 
-    try:
-        # This would work with real repositories
-        print("1. Loading agent (would auto-install if not found):")
-        print("   agent = load_agent('agentplug/scientific-paper-analyzer')")
-        print("   ✓ Auto-installs from GitHub")
-        print("   ✓ Creates UV environment")
-        print("   ✓ Installs dependencies")
-        print("   ✓ Returns ready-to-use agent")
+    # Load an agent
+    agent = ah.load_agent("agentplug/analysis-agent")
 
-    except Exception as e:
-        print(f"   Note: {e}")
-        print("   This requires actual GitHub repositories to work")
+    # Use the agent
+    result = agent.analyze_text("This is a great product! I love using it.")
+    print(f"Result: {result}")
+    print()
 
 
-def demonstrate_auto_installer():
-    """Demonstrate the AutoInstaller class."""
-    print("\n" + "=" * 60)
-    print("🔧 AUTO-INSTALLER DEMONSTRATION")
-    print("=" * 60)
+def example_2_agent_with_tools():
+    """Load an agent with external tools."""
+    print("📋 Example 2: Agent with Tools")
+    print("-" * 30)
 
-    _ = AutoInstaller(setup_environment=True)
+    # Load an agent with math tools
+    agent = ah.load_agent(
+        "agentplug/analysis-agent", external_tools=["add", "multiply"]
+    )
 
-    print("1. AutoInstaller capabilities:")
-    print("   - Repository cloning")
-    print("   - Structure validation")
-    print("   - Environment creation")
-    print("   - Dependency installation")
-    print("   - Progress tracking")
-    print("   - Error handling")
-
-    print("\n2. Installation result structure:")
-    print("   result = installer.install_agent('developer/agent')")
-    print("   - result.success: bool")
-    print("   - result.local_path: str")
-    print("   - result.installation_time_seconds: float")
-    print("   - result.error_message: Optional[str]")
-    print("   - result.next_steps: List[str]")
+    # Ask the agent to do math
+    result = agent.analyze_text("What is 15 times 7?")
+    print(f"Result: {result}")
+    print()
 
 
-def demonstrate_environment_management():
-    """Demonstrate advanced environment management."""
-    print("\n" + "=" * 60)
-    print("🌍 ENVIRONMENT MANAGEMENT")
-    print("=" * 60)
+def example_3_file_processing():
+    """Process a file using an agent (demonstrates path resolution)."""
+    print("📋 Example 3: File Processing")
+    print("-" * 30)
 
-    _ = AdvancedEnvironmentManager()
+    # Load an agent that can process files
+    agent = ah.load_agent("agentplug/scientific-paper-analyzer")
 
-    print("1. Python Version Migration:")
-    print("   manager.migrate_python_version('dev/agent', '3.11')")
-    print("   - Creates backup")
-    print("   - Recreates environment")
-    print("   - Reinstalls dependencies")
-    print("   - Verifies Python version")
-
-    print("\n2. Environment Cloning:")
-    print("   manager.clone_environment('prod/agent', 'dev/agent-copy')")
-    print("   - Copies entire agent directory")
-    print("   - Updates agent configuration")
-    print("   - Maintains isolation")
-
-    print("\n3. Environment Optimization:")
-    print("   manager.optimize_environment('dev/agent')")
-    print("   - Removes cache files")
-    print("   - Cleans build artifacts")
-    print("   - Reports space saved")
+    # Process a file (relative path will be automatically resolved)
+    result = agent.analyze_paper("sample_docs/2501.12948v1.pdf")
+    print(f"Result: {result}")
+    print()
 
 
-def demonstrate_repository_management():
-    """Demonstrate repository management capabilities."""
-    print("\n" + "=" * 60)
-    print("📁 REPOSITORY MANAGEMENT")
-    print("=" * 60)
+def example_4_multiple_agents():
+    """Use multiple agents for different tasks."""
+    print("📋 Example 4: Multiple Agents")
+    print("-" * 30)
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        _ = RepositoryCloner(base_storage_path=Path(temp_dir))
+    # Load different agents
+    coding_agent = ah.load_agent("agentplug/coding-agent")
+    analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
-        print("1. Directory Structure:")
-        print(f"   Base storage: {temp_dir}/agents/")
-        print("   Structure: developer/agent-name/")
-        print("   - agent.py")
-        print("   - agent.yaml")
-        print("   - requirements.txt")
-        print("   - .venv/ (virtual environment)")
+    # Use coding agent
+    code_result = coding_agent.generate_code(
+        "Create a Python function to calculate fibonacci numbers"
+    )
+    print(f"Coding Result: {code_result}")
 
-        print("\n2. Agent Discovery:")
-        print("   agents = cloner.list_cloned_agents()")
-        print("   # Returns dict: {'developer/agent': '/path/to/agent'}")
-
-
-def demonstrate_cli_equivalents():
-    """Show CLI equivalents of programmatic functionality."""
-    print("\n" + "=" * 60)
-    print("💻 CLI EQUIVALENTS")
-    print("=" * 60)
-
-    cli_commands = [
-        # Installation
-        ("Install agent", "agenthub install developer/agent-name"),
-        (
-            "Install with custom path",
-            "agenthub install developer/agent-name --base-path /opt/agents",
-        ),
-        ("Force reinstall", "agenthub install developer/agent-name --force"),
-        # Listing
-        ("List agents", "agenthub list"),
-        ("Detailed list", "agenthub list --detailed"),
-        # Environment
-        ("Repair environment", "agenthub repair developer/agent-name"),
-        ("Migrate Python", "agenthub migrate developer/agent-name 3.11"),
-        ("Clone agent", "agenthub clone source/agent target/agent"),
-        ("Optimize", "agenthub optimize developer/agent-name"),
-        # Backup
-        ("Create backup", "agenthub backup developer/agent-name"),
-        ("Restore backup", "agenthub restore /path/to/backup"),
-        # Analysis
-        ("Check status", "agenthub status developer/agent-name"),
-        ("Analyze dependencies", "agenthub analyze-deps developer/agent-name"),
-        ("Python versions", "agenthub python-versions"),
-        # Maintenance
-        ("Cleanup", "agenthub cleanup --dry-run"),
-        ("Remove agent", "agenthub remove developer/agent-name"),
-    ]
-
-    for description, command in cli_commands:
-        print(f"   {description:25} → {command}")
-
-
-def demonstrate_workflow_examples():
-    """Show complete workflow examples."""
-    print("\n" + "=" * 60)
-    print("📊 WORKFLOW EXAMPLES")
-    print("=" * 60)
-
-    print("1. Development Workflow:")
-    print("   agenthub install company/production-agent")
-    print("   agenthub clone company/production-agent dev/my-copy")
-    print("   agenthub migrate dev/my-copy 3.11")
-    print("   agenthub optimize dev/my-copy")
-
-    print("\n2. Production Deployment:")
-    print("   agenthub install company/agent --base-path /opt/agents")
-    print("   agenthub backup company/agent --backup-path /backups")
-    print("   agenthub status company/agent")
-
-    print("\n3. Team Collaboration:")
-    print("   # Alice creates development copy")
-    print("   agenthub clone prod/agent alice/prod-agent-dev")
-
-    print("   # Bob creates testing copy")
-    print("   agenthub clone prod/agent bob/prod-agent-test")
-
-    print("   # Charlie creates staging copy")
-    print("   agenthub clone prod/agent charlie/prod-agent-staging")
-
-    print("\n4. Maintenance Schedule:")
-    print("   # Weekly optimization")
-    print("   agenthub optimize company/agent")
-    print("   ")
-    print("   # Monthly dependency analysis")
-    print("   agenthub analyze-deps company/agent")
-    print("   ")
-    print("   # Quarterly cleanup")
-    print("   agenthub cleanup")
-
-
-def demonstrate_agent_structure():
-    """Show the expected agent repository structure."""
-    print("\n" + "=" * 60)
-    print("📋 AGENT REPOSITORY STRUCTURE")
-    print("=" * 60)
-
-    structure = """
-my-awesome-agent/
-├── agent.py              # Main agent implementation
-├── agent.yaml           # Configuration and interface definition
-├── requirements.txt     # Python dependencies
-├── README.md           # Documentation
-├── pyproject.toml      # UV project configuration (optional)
-└── examples/           # Usage examples (optional)
-
-agent.yaml example:
-```yaml
-name: my-awesome-agent
-version: 1.0.0
-description: An awesome agent for AI tasks
-python_version: "3.11+"
-
-interface:
-  methods:
-    process_data:
-      description: Process input data
-      parameters:
-        data:
-          type: string
-      returns:
-        type: object
-
-dependencies:
-  - openai>=1.0.0
-  - requests>=2.25.0
-```
-    """
-
-    print(structure)
+    # Use analysis agent
+    analysis_result = analysis_agent.analyze_text(
+        "The user interface is intuitive and easy to use."
+    )
+    print(f"Analysis Result: {analysis_result}")
+    print()
 
 
 def main():
-    """Run all demonstrations."""
-    print("🎯 AgentHub Quick Start Examples")
-    print("This demonstrates all core functionality of AgentHub")
-    print("=" * 80)
+    """Run all examples."""
+    print("🚀 AgentHub Quick Start Examples")
+    print("=" * 50)
+    print("These examples show the most common usage patterns.\n")
 
-    demonstrate_basic_installation()
-    demonstrate_auto_installer()
-    demonstrate_environment_management()
-    demonstrate_repository_management()
-    demonstrate_cli_equivalents()
-    demonstrate_workflow_examples()
-    demonstrate_agent_structure()
+    try:
+        example_1_basic_agent()
+        example_2_agent_with_tools()
+        example_3_file_processing()
+        example_4_multiple_agents()
 
-    print("\n" + "=" * 80)
-    print("✨ Examples completed!")
-    print("\nNext steps:")
-    print("1. Install AgentHub: pip install agenthub")
-    print("2. Try: agenthub install agentplug/scientific-paper-analyzer")
-    print("3. Check: agenthub --help")
-    print("4. Read: docs/USER_GUIDE.md")
+        print("🎉 All examples completed successfully!")
+        print("\n💡 Next Steps:")
+        print("• Try modifying the examples above")
+        print("• Check out examples/tools/ for more advanced usage")
+        print("• Read the documentation for more features")
+
+    except Exception as e:
+        print(f"❌ Error running examples: {e}")
+        print("Make sure you have the required agents installed.")
 
 
 if __name__ == "__main__":
