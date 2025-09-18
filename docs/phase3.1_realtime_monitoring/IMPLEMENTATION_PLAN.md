@@ -4,7 +4,7 @@
 
 This is a simplified implementation plan following KISS and YAGNI principles. We deliver 80% of the value with 20% of the complexity.
 
-## Simple Implementation (4 Weeks)
+## Simple Implementation (5 Weeks)
 
 ### Week 1: LogStreamer
 
@@ -44,27 +44,38 @@ class LogStreamer:
         return logs
 ```
 
-### Week 2: LLMAnalyzer
+### Week 2: Core LLM Component
 
-**Goal**: LLM-powered log analysis and summarization
+**Goal**: Centralized LLM service for system-wide use
 
 **Deliverables**:
 
-- `LLMAnalyzer` class with OpenAI integration
-- Intelligent activity identification
-- Smart progress estimation and error detection
+- `CoreLLMService` class with OpenAI integration
+- Centralized LLM client management
+- Caching and error handling
+- Fallback support when LLM unavailable
 
 **Implementation**:
 
 ```python
-class LLMAnalyzer:
-    def __init__(self, llm_client):
-        self.llm_client = llm_client
+class CoreLLMService:
+    def __init__(self, api_key=None, model="gpt-3.5-turbo"):
+        self.client = self._initialize_client(api_key)
+        self.model = model
         self.cache = {}
 
-    def analyze(self, logs):
-        # Use LLM to analyze logs intelligently
-        prompt = f"""
+    def analyze_logs(self, logs, prompt_template=None):
+        """Analyze logs with custom prompt template"""
+        if not self.client:
+            return self._fallback_analysis(logs)
+
+        prompt = prompt_template or self._default_log_analysis_prompt()
+        formatted_prompt = prompt.format(logs='\n'.join(logs))
+
+        return self._call_llm(formatted_prompt)
+
+    def _default_log_analysis_prompt(self):
+        return """
         Analyze these agent execution logs and provide a concise summary:
 
         {logs}
@@ -84,12 +95,32 @@ class LLMAnalyzer:
             "suggestions": ["..."]
         }}
         """
-
-        response = self.llm_client.analyze(prompt)
-        return self._parse_response(response)
 ```
 
-### Week 3: TerminalDisplay
+### Week 3: LLMAnalyzer
+
+**Goal**: Log analysis using the Core LLM Component
+
+**Deliverables**:
+
+- `LLMAnalyzer` class using Core LLM Component
+- Intelligent activity identification
+- Smart progress estimation and error detection
+
+**Implementation**:
+
+```python
+class LLMAnalyzer:
+    def __init__(self, core_llm_service):
+        self.core_llm = core_llm_service
+        self.cache = {}
+
+    def analyze(self, logs):
+        # Use Core LLM Component for analysis
+        return self.core_llm.analyze_logs(logs)
+```
+
+### Week 4: TerminalDisplay
 
 **Goal**: Simple terminal display for real-time updates
 
@@ -115,7 +146,7 @@ class TerminalDisplay:
         print(f"\r{message}")
 ```
 
-### Week 4: Integration and Testing
+### Week 5: Integration and Testing
 
 **Goal**: Integrate all components and test
 
@@ -140,8 +171,9 @@ class ProcessManager:
         process = subprocess.Popen([...])
 
         # Initialize monitoring
+        core_llm = CoreLLMService()
         streamer = LogStreamer(process)
-        analyzer = SimpleAnalyzer()
+        analyzer = LLMAnalyzer(core_llm)
         display = TerminalDisplay()
 
         # Start monitoring

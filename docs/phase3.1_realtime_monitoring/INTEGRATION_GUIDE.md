@@ -53,8 +53,9 @@ class ProcessManager:
         )
 
         # Initialize monitoring components
+        core_llm = CoreLLMService()
         streamer = LogStreamer(process)
-        analyzer = LLMAnalyzer(self.llm_client)
+        analyzer = LLMAnalyzer(core_llm)
         display = TerminalDisplay()
 
         # Start real-time monitoring
@@ -240,9 +241,9 @@ class LogStreamer:
             self.stderr_thread.join(timeout=1)
 ```
 
-### 2. LLMAnalyzer Component
+### 2. Core LLM Component
 
-**Location**: `agenthub/monitoring/llm_analyzer.py`
+**Location**: `agenthub/core/llm/llm_service.py`
 
 ```python
 import json
@@ -258,22 +259,23 @@ class LogAnalysis:
     errors: List[str]
     suggestions: List[str]
 
-class LLMAnalyzer:
-    def __init__(self, llm_client=None):
-        self.llm_client = llm_client or self._initialize_openai_client()
+class CoreLLMService:
+    def __init__(self, api_key=None, model="gpt-3.5-turbo"):
+        self.client = self._initialize_client(api_key)
+        self.model = model
         self.cache = {}
 
-    def _initialize_openai_client(self):
+    def _initialize_client(self, api_key):
         """Initialize OpenAI client"""
         try:
-            return openai.OpenAI()
+            return openai.OpenAI(api_key=api_key)
         except Exception as e:
             print(f"Warning: Could not initialize OpenAI client: {e}")
             return None
 
-    def analyze(self, logs: List[str]) -> LogAnalysis:
-        """Analyze logs using LLM"""
-        if not self.llm_client or not logs:
+    def analyze_logs(self, logs: List[str], prompt_template=None):
+        """Analyze logs with custom prompt template"""
+        if not self.client or not logs:
             return self._fallback_analysis(logs)
 
         # Create cache key
@@ -282,13 +284,14 @@ class LLMAnalyzer:
             return self.cache[cache_key]
 
         # Prepare prompt
-        prompt = self._create_analysis_prompt(logs)
+        prompt = prompt_template or self._default_log_analysis_prompt()
+        formatted_prompt = prompt.format(logs='\n'.join(logs))
 
         try:
             # Call LLM
-            response = self.llm_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": formatted_prompt}],
                 max_tokens=200,
                 temperature=0.1
             )
@@ -304,29 +307,28 @@ class LLMAnalyzer:
             print(f"LLM analysis failed: {e}")
             return self._fallback_analysis(logs)
 
-    def _create_analysis_prompt(self, logs: List[str]) -> str:
-        """Create prompt for LLM analysis"""
-        log_text = '\n'.join(logs)
-        return f"""
-Analyze these agent execution logs and provide a concise summary:
+    def _default_log_analysis_prompt(self):
+        """Default prompt for log analysis"""
+        return """
+        Analyze these agent execution logs and provide a concise summary:
 
-{log_text}
+        {logs}
 
-Please provide:
-1. What the agent is currently doing (max 50 characters)
-2. Any errors or issues detected
-3. Progress estimation (0-100%)
-4. Actionable suggestions if errors found
+        Please provide:
+        1. What the agent is currently doing (max 50 characters)
+        2. Any errors or issues detected
+        3. Progress estimation (0-100%)
+        4. Actionable suggestions if errors found
 
-Format as JSON:
-{{
-    "summary": "...",
-    "progress": 75,
-    "status": "working",
-    "errors": ["..."],
-    "suggestions": ["..."]
-}}
-"""
+        Format as JSON:
+        {{
+            "summary": "...",
+            "progress": 75,
+            "status": "working",
+            "errors": ["..."],
+            "suggestions": ["..."]
+        }}
+        """
 
     def _parse_llm_response(self, response: str) -> LogAnalysis:
         """Parse LLM response"""
@@ -356,7 +358,25 @@ Format as JSON:
             return LogAnalysis("🔄 Working...", 25, "working", [], [])
 ```
 
-### 3. TerminalDisplay Component
+### 3. LLMAnalyzer Component
+
+**Location**: `agenthub/monitoring/llm_analyzer.py`
+
+```python
+from agenthub.core.llm.llm_service import CoreLLMService, LogAnalysis
+from typing import List
+
+class LLMAnalyzer:
+    def __init__(self, core_llm_service: CoreLLMService):
+        self.core_llm = core_llm_service
+        self.cache = {}
+
+    def analyze(self, logs: List[str]) -> LogAnalysis:
+        """Analyze logs using Core LLM Component"""
+        return self.core_llm.analyze_logs(logs)
+```
+
+### 4. TerminalDisplay Component
 
 **Location**: `agenthub/monitoring/terminal_display.py`
 
@@ -465,6 +485,10 @@ print(result)
 ### New Files Added
 
 ```
+agenthub/core/llm/
+├── __init__.py
+└── llm_service.py
+
 agenthub/monitoring/
 ├── __init__.py
 ├── log_streamer.py

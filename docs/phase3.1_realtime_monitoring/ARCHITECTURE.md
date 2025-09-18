@@ -8,9 +8,11 @@ This design follows **Keep It Simple, Stupid (KISS)** and **You Aren't Gonna Nee
 
 ```
 Agent Subprocess → LogStreamer → LLMAnalyzer → Terminal Display
+                                    ↓
+                              Core LLM Component
 ```
 
-## Core Components (Only 3!)
+## Core Components (4 Components)
 
 ### 1. LogStreamer
 
@@ -33,21 +35,31 @@ class LogStreamer:
         pass
 ```
 
-### 2. LLMAnalyzer
+### 2. Core LLM Component
 
-**Purpose**: LLM-powered log analysis and summarization
+**Purpose**: Centralized LLM service for the entire AgentHub system
 
 **Implementation**:
 
 ```python
-class LLMAnalyzer:
-    def __init__(self, llm_client):
-        self.llm_client = llm_client
+class CoreLLMService:
+    def __init__(self, api_key=None, model="gpt-3.5-turbo"):
+        self.client = self._initialize_client(api_key)
+        self.model = model
         self.cache = {}
 
-    def analyze(self, logs):
-        # Use LLM to analyze logs intelligently
-        prompt = f"""
+    def analyze_logs(self, logs, prompt_template=None):
+        """Analyze logs with custom prompt template"""
+        if not self.client:
+            return self._fallback_analysis(logs)
+
+        prompt = prompt_template or self._default_log_analysis_prompt()
+        formatted_prompt = prompt.format(logs='\n'.join(logs))
+
+        return self._call_llm(formatted_prompt)
+
+    def _default_log_analysis_prompt(self):
+        return """
         Analyze these agent execution logs and provide a concise summary:
 
         {logs}
@@ -67,12 +79,26 @@ class LLMAnalyzer:
             "suggestions": ["..."]
         }}
         """
-
-        response = self.llm_client.analyze(prompt)
-        return self._parse_response(response)
 ```
 
-### 3. TerminalDisplay
+### 3. LLMAnalyzer
+
+**Purpose**: Log analysis using the Core LLM Component
+
+**Implementation**:
+
+```python
+class LLMAnalyzer:
+    def __init__(self, core_llm_service):
+        self.core_llm = core_llm_service
+        self.cache = {}
+
+    def analyze(self, logs):
+        # Use Core LLM Component for analysis
+        return self.core_llm.analyze_logs(logs)
+```
+
+### 4. TerminalDisplay
 
 **Purpose**: Show updates in terminal
 
@@ -101,8 +127,9 @@ class ProcessManager:
         process = subprocess.Popen(...)
 
         # LLM-powered monitoring
+        core_llm = CoreLLMService()
         streamer = LogStreamer(process)
-        analyzer = LLMAnalyzer(llm_client)
+        analyzer = LLMAnalyzer(core_llm)
         display = TerminalDisplay()
 
         streamer.start()
@@ -128,6 +155,7 @@ class ProcessManager:
 ## What We Kept (KISS)
 
 - ✅ Real-time log streaming
+- ✅ Core LLM component for system-wide use
 - ✅ LLM-powered log analysis
 - ✅ Intelligent error detection
 - ✅ Basic terminal display
@@ -136,7 +164,7 @@ class ProcessManager:
 
 ## Benefits
 
-1. **Simple to implement** - Only 3 components
+1. **Simple to implement** - Only 4 components
 2. **Easy to understand** - Clear, straightforward code
 3. **Fast to develop** - No complex integrations
 4. **Reliable** - Fewer moving parts

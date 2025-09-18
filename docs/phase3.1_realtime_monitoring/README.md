@@ -47,15 +47,16 @@ Phase 3.1 introduces comprehensive real-time monitoring and observability capabi
 ### Core Components
 
 1. **LogStreamer**: Real-time subprocess log capture
-2. **LLMAnalyzer**: LLM-powered log analysis and summarization
-3. **MonitorDisplay**: Live terminal interface for status updates
+2. **Core LLM Component**: Centralized LLM service for system-wide use
+3. **LLMAnalyzer**: Log analysis using the Core LLM Component
+4. **MonitorDisplay**: Live terminal interface for status updates
 
 ### Data Flow
 
 ```
 Agent Subprocess → LogStreamer → LLMAnalyzer → MonitorDisplay → User
-                     ↓              ↓
-                Raw Logs    LLM-Powered Summary
+                     ↓              ↓              ↓
+                Raw Logs    Core LLM Component    Summary
 ```
 
 ## Implementation Strategy (KISS & YAGNI)
@@ -66,19 +67,25 @@ Agent Subprocess → LogStreamer → LLMAnalyzer → MonitorDisplay → User
 - Implement threaded log reading for stdout/stderr
 - Create non-blocking log capture system
 
-### Week 2: LLMAnalyzer
+### Week 2: Core LLM Component
 
-- LLM integration for intelligent log analysis
+- Centralized LLM service for system-wide use
+- OpenAI integration with fallback support
+- Caching and error handling
+
+### Week 3: LLMAnalyzer
+
+- Log analysis using Core LLM Component
 - Smart progress summarization
 - Context-aware error detection and suggestions
 
-### Week 3: TerminalDisplay
+### Week 4: TerminalDisplay
 
 - Simple real-time display format
 - Basic status updates
 - Clear error presentation
 
-### Week 4: Integration and Testing
+### Week 5: Integration and Testing
 
 - Complete integration with ProcessManager
 - Basic testing and documentation
@@ -166,11 +173,12 @@ result = agent.analyze_paper("sample.pdf")
 ## Implementation Timeline
 
 - **Week 1**: LogStreamer (real-time log capture)
-- **Week 2**: SimpleAnalyzer (basic pattern matching)
-- **Week 3**: TerminalDisplay (simple terminal updates)
-- **Week 4**: Integration and testing
+- **Week 2**: Core LLM Component (centralized LLM service)
+- **Week 3**: LLMAnalyzer (log analysis using Core LLM)
+- **Week 4**: TerminalDisplay (simple terminal updates)
+- **Week 5**: Integration and testing
 
-**Total: 4 weeks instead of 12 weeks**
+**Total: 5 weeks instead of 12 weeks**
 
 ## Dependencies
 
