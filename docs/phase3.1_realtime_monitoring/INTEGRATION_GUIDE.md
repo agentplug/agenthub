@@ -286,6 +286,11 @@ class CoreLLMService:
             return self._fallback_response()
 
         try:
+            # Prepare request parameters
+            request_kwargs = kwargs.copy()
+            if return_json:
+                request_kwargs["response_format"] = {"type": "json_object"}
+
             if isinstance(input_data, str):
                 # Single prompt - convert to messages format
                 messages = []
@@ -296,7 +301,7 @@ class CoreLLMService:
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
-                    **kwargs
+                    **request_kwargs
                 )
                 return response.choices[0].message.content
 
@@ -307,7 +312,7 @@ class CoreLLMService:
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
-                    **kwargs
+                    **request_kwargs
                 )
                 return response.choices[0].message.content
             else:
@@ -386,13 +391,7 @@ class CoreLLMService:
             return self._fallback_response()
 
         formatted_prompt = prompt_template.format(text=text)
-
-        # If JSON response is requested, modify the prompt to request JSON format
-        if return_json:
-            json_instruction = "\n\nPlease respond with valid JSON only, no additional text."
-            formatted_prompt += json_instruction
-
-        return self.generate(formatted_prompt, system_prompt=system_prompt)
+        return self.generate(formatted_prompt, system_prompt=system_prompt, return_json=return_json)
 
     def _fallback_response(self) -> str:
         """Fallback response when AISuite is not available"""
