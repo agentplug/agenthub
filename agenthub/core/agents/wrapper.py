@@ -1,18 +1,16 @@
-"""Agent wrapper for unified agent interface with tool capabilities."""
+"""Enhanced agent wrapper for Phase 3 with tool management and knowledge injection."""
 
 import json
 import logging
+import os
 from typing import Any
 
+from ..knowledge import KnowledgeManager
+from ..mcp.agent_tool_manager import AgentToolManager
+from ..tools.exceptions import AgentExecutionError
 from .validator import InterfaceValidator
 
 logger = logging.getLogger(__name__)
-
-
-class AgentExecutionError(Exception):
-    """Raised when agent execution fails."""
-
-    pass
 
 
 class AgentWrapper:
@@ -27,13 +25,13 @@ class AgentWrapper:
         runtime=None,
     ):
         """
-        Initialize the agent wrapper with tool capabilities.
+        Initialize the enhanced agent wrapper with Phase 3 features.
 
         Args:
             agent_info: Agent information from AgentLoader
             tool_registry: Optional tool registry for tool capabilities
             agent_id: Unique identifier for this agent
-            assigned_tools: List of tools assigned to this agent
+            assigned_tools: List of external tools assigned to this agent
             runtime: Optional runtime for executing methods
         """
         self.agent_info = agent_info
@@ -60,6 +58,10 @@ class AgentWrapper:
         # Extract interface for method operations
         self.manifest = agent_info.get("manifest", {})
         self.interface = self.manifest.get("interface", {})
+
+        # Phase 3: Initialize managers
+        self.tool_manager = AgentToolManager(self.manifest)
+        self.knowledge_manager = KnowledgeManager()
 
     def assign_tools(self, tool_names: list[str]) -> None:
         """
@@ -225,7 +227,10 @@ class AgentWrapper:
                     method_name, kwargs, interface_params
                 )
 
-                return self.execute(method_name, kwargs)
+                # Resolve relative file paths to absolute paths
+                resolved_kwargs = self._resolve_file_paths(kwargs)
+
+                return self.execute(method_name, resolved_kwargs)
 
             except Exception as e:
                 # Provide helpful error message for debugging
@@ -369,22 +374,9 @@ class AgentWrapper:
             "assigned_tools": self.assigned_tools,
         }
 
+    # Simplified tool execution using unified tool manager
     def execute_tool(self, tool_name: str, *args, **kwargs) -> Any:
-        """
-        Execute a tool with access control.
-
-        Args:
-            tool_name: Name of the tool to execute
-            *args: Positional arguments for the tool
-            **kwargs: Keyword arguments for the tool
-
-        Returns:
-            Tool execution result
-
-        Raises:
-            PermissionError: If agent doesn't have access to the tool
-            ValueError: If tool doesn't exist
-        """
+        """Execute a tool with access control (simplified)."""
         if not self.tool_registry:
             raise ValueError("No tool registry available")
 
@@ -409,184 +401,6 @@ class AgentWrapper:
         except Exception as e:
             print(f"❌ Agent '{self.agent_id}' error executing tool '{tool_name}': {e}")
             raise
-
-    def can_access_tool(self, tool_name: str) -> bool:
-        """Check if agent can access a specific tool."""
-        if not self.tool_registry:
-            return False
-
-        return self.tool_registry.can_agent_access_tool(self.agent_id, tool_name)
-
-    def get_available_tools(self) -> list[str]:
-        """Get list of tools available to this agent."""
-        return self.assigned_tools
-
-    def has_tool(self, tool_name: str) -> bool:
-        """Check if agent has access to a specific tool."""
-        return self.can_access_tool(tool_name)
-
-    def search_tools(self, query: str) -> list[str]:
-        """Search tools by name or description."""
-        if not query:
-            return self.assigned_tools
-
-        matching_tools = []
-        for tool_name in self.assigned_tools:
-            if query.lower() in tool_name.lower():
-                matching_tools.append(tool_name)
-            else:
-                # Check tool description
-                try:
-                    metadata = self.get_tool_metadata(tool_name)
-                    if (
-                        metadata
-                        and query.lower() in metadata.get("description", "").lower()
-                    ):
-                        matching_tools.append(tool_name)
-                except Exception:
-                    pass
-
-        return matching_tools
-
-    def get_tool_help(self, tool_name: str) -> str:
-        """Get help information for a tool."""
-        if not self.has_tool(tool_name):
-            return f"Tool '{tool_name}' not available to this agent"
-
-        try:
-            metadata = self.get_tool_metadata(tool_name)
-            if not metadata:
-                return f"Tool '{tool_name}' - No metadata available"
-
-            help_text = f"Tool: {tool_name}\n"
-            help_text += (
-                f"Description: {metadata.get('description', 'No description')}\n"
-            )
-
-            parameters = metadata.get("parameters", {})
-            if parameters:
-                help_text += "Parameters:\n"
-                for param_name, param_info in parameters.items():
-                    param_type = param_info.get("type", "unknown")
-                    required = param_info.get("required", False)
-                    help_text += (
-                        f"  {param_name} ({param_type}){'*' if required else ''}\n"
-                    )
-
-            return help_text
-        except Exception as e:
-            return f"Tool '{tool_name}' - Error getting help: {e}"
-
-    def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
-        """Get metadata for a tool (only if agent has access)."""
-        if not self.can_access_tool(tool_name) or not self.tool_registry:
-            return None
-
-        metadata = self.tool_registry.get_tool_metadata(tool_name)
-        if metadata:
-            return {
-                "name": metadata.name,
-                "description": metadata.description,
-                "namespace": metadata.namespace,
-                "parameters": metadata.parameters,
-                "examples": metadata.examples,
-            }
-        return None
-
-    def get_assigned_tools(self) -> list[str]:
-        """Get list of tools assigned to this agent."""
-        return self.assigned_tools.copy()
-
-    def get_tool_instructions(self) -> str:
-        """
-        Generate tool usage instructions for the agent.
-
-        Returns:
-            Formatted string with tool usage instructions
-        """
-        if not self.assigned_tools or not self.tool_registry:
-            return ""
-
-        instructions = []
-        instructions.append("🔧 AVAILABLE TOOLS:")
-        instructions.append(
-            "You have access to the following tools. Use them when appropriate:"
-        )
-        instructions.append("")
-
-        for tool_name in self.assigned_tools:
-            metadata = self.get_tool_metadata(tool_name)
-            if metadata:
-                instructions.append(f"• {tool_name}: {metadata['description']}")
-
-                # Add usage examples from metadata
-                if metadata.get("examples"):
-                    for example in metadata["examples"]:
-                        # Convert from function call format to execute_tool format
-                        if "(" in example:
-                            # Extract parameters from example like
-                            # "add('param1', 'param2')"
-                            func_name = example.split("(")[0]
-                            params_part = example.split("(", 1)[1].rsplit(")", 1)[0]
-                            if params_part.strip():
-                                instructions.append(
-                                    f"  Usage: execute_tool('{func_name}', "
-                                    f"{params_part})"
-                                )
-                            else:
-                                instructions.append(
-                                    f"  Usage: execute_tool('{func_name}')"
-                                )
-                        else:
-                            instructions.append(f"  Usage: execute_tool('{tool_name}')")
-                        break  # Only show first example
-
-                instructions.append("")
-
-        instructions.append("💡 TOOL USAGE GUIDELINES:")
-        instructions.append("- Use tools when they can help solve the user's request")
-        instructions.append("- Call execute_tool(tool_name, *args) to use a tool")
-        instructions.append("- Tools return results that you can use in your response")
-        instructions.append("- If a tool fails, explain the error to the user")
-        instructions.append("")
-
-        return "\n".join(instructions)
-
-    def inject_tool_context(self) -> None:
-        """
-        Inject tool context into the agent's environment.
-        This method should be called to make tools available to the agent.
-        """
-        if not self.assigned_tools or not self.tool_registry:
-            return
-
-        # Add tool execution method to agent's context
-        if hasattr(self, "execute_tool"):
-            # Make execute_tool available in the agent's namespace
-            if hasattr(self, "agent_info") and "manifest" in self.agent_info:
-                # This would be where we inject the tool context
-                # For now, we'll just store the instructions
-                self._tool_instructions = self.get_tool_instructions()
-                print(f"🔧 Injected tool context for agent '{self.agent_id}'")
-                print(f"📋 Available tools: {self.assigned_tools}")
-
-    def get_tool_context(self) -> dict[str, Any]:
-        """
-        Get tool context information for the agent.
-
-        Returns:
-            Dictionary with tool context information
-        """
-        if not self.assigned_tools or not self.tool_registry:
-            return {}
-
-        return {
-            "assigned_tools": self.assigned_tools,
-            "tool_instructions": self.get_tool_instructions(),
-            "execute_tool_method": self.execute_tool,
-            "can_access_tool_method": self.can_access_tool,
-            "get_tool_metadata_method": self.get_tool_metadata,
-        }
 
     def get_tool_context_json(self) -> str:
         """
@@ -660,6 +474,34 @@ class AgentWrapper:
             }
         )
 
+    def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
+        """Get metadata for a tool."""
+        if not self.tool_registry:
+            return None
+
+        # Check if tool is assigned to this agent
+        if tool_name not in self.assigned_tools:
+            return None
+
+        metadata = self.tool_registry.get_tool_metadata(tool_name)
+        if metadata:
+            return {
+                "name": metadata.name,
+                "description": metadata.description,
+                "namespace": metadata.namespace,
+                "parameters": metadata.parameters,
+                "examples": metadata.examples,
+            }
+        return None
+
+    def can_access_tool(self, tool_name: str) -> bool:
+        """Check if agent can access a specific tool."""
+        return tool_name in self.assigned_tools
+
+    def get_assigned_tools(self) -> list[str]:
+        """Get list of tools assigned to this agent."""
+        return self.assigned_tools.copy()
+
     def generate_agent_call_json(self, method: str, parameters: dict[str, Any]) -> str:
         """
         Generate a complete agent call JSON with tool context.
@@ -682,3 +524,207 @@ class AgentWrapper:
         }
 
         return json.dumps(call_data, indent=2)
+
+    def _resolve_file_paths(self, parameters: dict[str, Any]) -> dict[str, Any]:
+        """
+        Resolve relative file paths to absolute paths in parameters.
+
+        This ensures that when the agent runs in a subprocess with a different
+        working directory, file paths are still accessible.
+
+        Args:
+            parameters: Dictionary of method parameters
+
+        Returns:
+            Dictionary with resolved file paths
+        """
+        resolved_params = parameters.copy()
+
+        # Common file path parameter names to check
+        file_path_keys = [
+            "file_path",
+            "file",
+            "path",
+            "input_file",
+            "output_file",
+            "source_file",
+            "target_file",
+            "document",
+            "paper",
+            "pdf",
+            "image",
+            "video",
+            "audio",
+            "data_file",
+            "config_file",
+        ]
+
+        for key, value in resolved_params.items():
+            # Check if this looks like a file path parameter
+            if isinstance(value, str) and (
+                key.lower() in file_path_keys
+                or any(
+                    keyword in key.lower()
+                    for keyword in ["file", "path", "document", "paper"]
+                )
+            ):
+
+                # If it's a relative path, resolve it to absolute
+                if not os.path.isabs(value):
+                    # Resolve relative to current working directory
+                    resolved_path = os.path.abspath(value)
+                    resolved_params[key] = resolved_path
+                    logger.debug(
+                        f"Resolved relative path '{value}' to absolute path "
+                        f"'{resolved_path}'"
+                    )
+
+        return resolved_params
+
+    # Phase 3: Enhanced tool management methods
+
+    def add_external_tools(self, tool_names: list[str]) -> None:
+        """Add external tools from user."""
+        if self.tool_registry is None:
+            raise ValueError("Tool registry not available")
+
+        # Use the unified tool manager to assign tools
+        assigned_tools = self.tool_manager.assign_tools_to_agent(
+            self.agent_id, tool_names
+        )
+        self.assigned_tools.extend(assigned_tools)
+        logger.info(f"Added external tools to agent {self.agent_id}: {assigned_tools}")
+
+    def disable_builtin_tools(self, tool_names: list[str]) -> None:
+        """Disable specified built-in tools."""
+        self.tool_manager.disable_builtin_tools(tool_names)
+        logger.info(f"Disabled built-in tools for agent {self.agent_id}: {tool_names}")
+
+    def enable_builtin_tools(self, tool_names: list[str]) -> None:
+        """Enable specified built-in tools."""
+        self.tool_manager.enable_builtin_tools(tool_names)
+        logger.info(f"Enabled built-in tools for agent {self.agent_id}: {tool_names}")
+
+    def get_builtin_tools(self) -> dict[str, Any]:
+        """Get built-in tools information."""
+        return {
+            name: {
+                "description": tool.description,
+                "required": tool.required,
+                "enabled": tool.enabled,
+                "parameters": tool.parameters,
+            }
+            for name, tool in self.tool_manager.builtin_tools.items()
+        }
+
+    def get_all_available_tools(self) -> list[str]:
+        """Get all available tools (enabled built-in + external)."""
+        return self.tool_manager.get_all_available_tools(self.agent_id)
+
+    def is_builtin_tool_available(self, tool_name: str) -> bool:
+        """Check if a built-in tool is available."""
+        return self.tool_manager.is_builtin_tool_available(tool_name)
+
+    def is_builtin_tool_required(self, tool_name: str) -> bool:
+        """Check if a built-in tool is required."""
+        return self.tool_manager.is_builtin_tool_required(tool_name)
+
+    def validate_builtin_tool_parameters(
+        self, tool_name: str, parameters: dict[str, Any]
+    ) -> list[str]:
+        """Validate parameters for a built-in tool."""
+        return self.tool_manager.validate_builtin_tool_parameters(tool_name, parameters)
+
+    # Phase 3: Knowledge management methods
+
+    def inject_knowledge(
+        self, knowledge_text: str, metadata: dict[str, Any] | None = None
+    ) -> str:
+        """Inject knowledge into agent context."""
+        knowledge_id = self.knowledge_manager.inject_knowledge(knowledge_text, metadata)
+        logger.info(f"Injected knowledge into agent {self.agent_id}: {knowledge_id}")
+        return knowledge_id
+
+    def get_knowledge(self) -> str:
+        """Get injected knowledge."""
+        return self.knowledge_manager.get_knowledge()
+
+    def get_knowledge_metadata(self) -> dict[str, Any]:
+        """Get knowledge metadata."""
+        return self.knowledge_manager.get_metadata()
+
+    def is_knowledge_available(self) -> bool:
+        """Check if knowledge is available."""
+        return self.knowledge_manager.is_knowledge_available()
+
+    def clear_knowledge(self) -> None:
+        """Clear injected knowledge."""
+        self.knowledge_manager.clear_knowledge()
+        logger.info(f"Cleared knowledge for agent {self.agent_id}")
+
+    def search_knowledge(self, query: str) -> str | None:
+        """Search knowledge for relevant information."""
+        return self.knowledge_manager.search_knowledge(query)
+
+    def get_knowledge_summary(self) -> dict[str, Any]:
+        """Get summary of current knowledge."""
+        return self.knowledge_manager.get_knowledge_summary()
+
+    # Phase 3: Enhanced tool execution with built-in tool support
+
+    def execute_tool_enhanced(self, tool_name: str, parameters: dict[str, Any]) -> Any:
+        """Execute tool with enhanced Phase 3 support (built-in + external)."""
+        # Check if it's a built-in tool
+        if tool_name in self.tool_manager.builtin_tools:
+            if not self.tool_manager.builtin_tools[tool_name].enabled:
+                raise ValueError(f"Built-in tool '{tool_name}' is disabled")
+
+            # Validate parameters
+            errors = self.tool_manager.validate_tool_parameters(tool_name, parameters)
+            if errors:
+                raise ValueError(
+                    f"Tool parameter validation failed: {'; '.join(errors)}"
+                )
+
+            # Execute via runtime
+            if self.runtime:
+                return self.runtime.execute_tool(tool_name, parameters)
+            else:
+                raise ValueError("No runtime available for built-in tool execution")
+
+        # Check if it's an external tool
+        elif tool_name in self.assigned_tools:
+            return self.execute_tool(tool_name, **parameters)
+
+        else:
+            available_builtin = self.tool_manager.get_available_tools()
+            available_external = self.assigned_tools
+            all_available = available_builtin + available_external
+            raise ValueError(
+                f"Tool '{tool_name}' not found. Available tools: {all_available}"
+            )
+
+    # Phase 3: Enhanced metadata access
+
+    def get_tool_summary(self) -> dict[str, Any]:
+        """Get comprehensive tool summary."""
+        return self.tool_manager.get_tool_summary(self.agent_id)
+
+    def get_agent_summary(self) -> dict[str, Any]:
+        """Get comprehensive agent summary."""
+        return {
+            "basic_info": {
+                "name": self.name,
+                "namespace": self.namespace,
+                "version": self.version,
+                "description": self.description,
+                "path": self.path,
+            },
+            "capabilities": {
+                "methods": self.methods,
+                "has_runtime": self.runtime is not None,
+                "has_tool_registry": self.tool_registry is not None,
+            },
+            "tools": self.get_tool_summary(),
+            "knowledge": self.get_knowledge_summary(),
+        }
