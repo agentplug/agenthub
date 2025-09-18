@@ -1,4 +1,4 @@
-"""Unit tests for enhanced AgentWrapper functionality."""
+"""Unit tests for enhanced AgentWrapper functionality with Phase 3 features."""
 
 import json
 from unittest.mock import patch
@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from agenthub.core.agents.wrapper import AgentWrapper
-from agenthub.core.tools.exceptions import ToolNotFoundError
+from agenthub.core.tools.exceptions import ToolConflictError, ToolNotFoundError
 from agenthub.core.tools.metadata import ToolMetadata
 from agenthub.core.tools.registry import ToolRegistry
 
@@ -20,9 +20,10 @@ class TestAgentWrapper:
         ToolRegistry._instance = None
         self.registry = ToolRegistry()
 
-        # Mock agent info
+        # Mock agent info with Phase 3 features
         self.agent_info = {
             "name": "test_agent",
+            "namespace": "default",
             "path": "/path/to/agent",
             "manifest": {
                 "name": "test_agent",
@@ -30,6 +31,13 @@ class TestAgentWrapper:
                 "version": "1.0.0",
                 "entry_point": "agent.py",
                 "methods": ["run", "analyze", "process"],
+                "builtin_tools": {
+                    "text_analyzer": {
+                        "description": "Analyze text content",
+                        "required": True,
+                        "parameters": {"text": {"type": "string", "required": True}},
+                    }
+                },
             },
         }
 
@@ -374,3 +382,164 @@ class TestAgentWrapper:
         wrapper3 = AgentWrapper(different_info, tool_registry=self.tool_registry)
 
         assert wrapper1 != wrapper3
+
+    # Phase 3: Test new built-in tool management features
+
+    def test_builtin_tools_initialization(self):
+        """Test that built-in tools are properly initialized."""
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Check that built-in tools are loaded
+        assert "text_analyzer" in wrapper.tool_manager.builtin_tools
+        builtin_tool = wrapper.tool_manager.builtin_tools["text_analyzer"]
+        assert builtin_tool.description == "Analyze text content"
+        assert builtin_tool.required is True
+        assert builtin_tool.enabled is True
+
+    def test_disable_builtin_tools(self):
+        """Test disabling built-in tools."""
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Initially enabled
+        assert wrapper.tool_manager.builtin_tools["text_analyzer"].enabled is True
+
+        # Disable the tool
+        wrapper.disable_builtin_tools(["text_analyzer"])
+
+        # Should be disabled
+        assert wrapper.tool_manager.builtin_tools["text_analyzer"].enabled is False
+
+    def test_disable_required_builtin_tool(self):
+        """Test that required built-in tools cannot be disabled."""
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Try to disable a required tool
+        with pytest.raises(ValueError, match="cannot be disabled"):
+            wrapper.disable_builtin_tools(["text_analyzer"])
+
+    def test_add_external_tools(self):
+        """Test adding external tools."""
+
+        # Register some tools
+        def tool1():
+            return "tool1"
+
+        def tool2():
+            return "tool2"
+
+        self.registry.register_tool("tool1", tool1, "Tool 1")
+        self.registry.register_tool("tool2", tool2, "Tool 2")
+
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Add external tools
+        wrapper.add_external_tools(["tool1", "tool2"])
+
+        # Check that tools were added
+        assert "tool1" in wrapper.assigned_tools
+        assert "tool2" in wrapper.assigned_tools
+
+    def test_add_external_tools_conflict_with_builtin(self):
+        """Test that external tools cannot conflict with built-in tools."""
+
+        # Register a tool with the same name as a built-in tool
+        def text_analyzer():
+            return "external text analyzer"
+
+        self.registry.register_tool(
+            "text_analyzer", text_analyzer, "External text analyzer"
+        )
+
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Try to add external tool with same name as built-in
+        with pytest.raises(ToolConflictError, match="conflicts with built-in tool"):
+            wrapper.add_external_tools(["text_analyzer"])
+
+    def test_get_all_available_tools(self):
+        """Test getting all available tools (built-in + external)."""
+
+        # Register external tools
+        def tool1():
+            return "tool1"
+
+        self.registry.register_tool("tool1", tool1, "Tool 1")
+
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+        wrapper.add_external_tools(["tool1"])
+
+        # Get all available tools
+        available_tools = wrapper.get_all_available_tools()
+
+        # Should include both built-in and external tools
+        assert "text_analyzer" in available_tools  # Built-in tool
+        assert "tool1" in available_tools  # External tool
+
+    def test_knowledge_management(self):
+        """Test knowledge injection and retrieval."""
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Initially no knowledge
+        assert not wrapper.knowledge_manager.is_knowledge_available()
+
+        # Inject knowledge
+        knowledge_id = wrapper.inject_knowledge("You are a helpful AI assistant.")
+        assert knowledge_id is not None
+
+        # Check knowledge is available
+        assert wrapper.knowledge_manager.is_knowledge_available()
+        assert "helpful AI assistant" in wrapper.knowledge_manager.get_knowledge()
+
+        # Clear knowledge
+        wrapper.clear_knowledge()
+        assert not wrapper.knowledge_manager.is_knowledge_available()
+
+    def test_tool_summary(self):
+        """Test getting comprehensive tool summary."""
+
+        # Register external tools
+        def tool1():
+            return "tool1"
+
+        self.registry.register_tool("tool1", tool1, "Tool 1")
+
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+        wrapper.add_external_tools(["tool1"])
+
+        # Get tool summary
+        summary = wrapper.get_tool_summary()
+
+        # Check built-in tools section
+        assert "builtin_tools" in summary
+        assert summary["builtin_tools"]["total"] == 1
+        assert summary["builtin_tools"]["enabled"] == 1
+        assert summary["builtin_tools"]["required"] == 1
+        assert "text_analyzer" in summary["builtin_tools"]["names"]
+
+        # Check external tools section
+        assert "external_tools" in summary
+        assert summary["external_tools"]["count"] == 1
+        assert "tool1" in summary["external_tools"]["names"]
+
+        # Check all available tools
+        assert "all_available" in summary
+        assert "text_analyzer" in summary["all_available"]
+        assert "tool1" in summary["all_available"]
+
+    def test_agent_summary(self):
+        """Test getting comprehensive agent summary."""
+        wrapper = AgentWrapper(self.agent_info, tool_registry=self.tool_registry)
+
+        # Get agent summary
+        summary = wrapper.get_agent_summary()
+
+        # Check basic info
+        assert "basic_info" in summary
+        assert summary["basic_info"]["name"] == "test_agent"
+        assert summary["basic_info"]["namespace"] == "default"
+
+        # Check tool summary
+        assert "tool_summary" in summary
+
+        # Check knowledge summary
+        assert "knowledge_summary" in summary
