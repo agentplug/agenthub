@@ -247,8 +247,7 @@ class LogStreamer:
 
 ```python
 import json
-import openai
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
 @dataclass
@@ -260,78 +259,153 @@ class LogAnalysis:
     suggestions: List[str]
 
 class CoreLLMService:
-    def __init__(self, api_key=None, model="gpt-3.5-turbo"):
-        self.client = self._initialize_client(api_key)
+    def __init__(self, aisuite_client=None, model="gpt-3.5-turbo"):
+        self.aisuite = aisuite_client or self._initialize_aisuite()
         self.model = model
         self.cache = {}
 
-    def _initialize_client(self, api_key):
-        """Initialize OpenAI client"""
+    def _initialize_aisuite(self):
+        """Initialize AISuite client"""
         try:
-            return openai.OpenAI(api_key=api_key)
-        except Exception as e:
-            print(f"Warning: Could not initialize OpenAI client: {e}")
+            from aisuite import AISuiteClient
+            return AISuiteClient()
+        except ImportError:
+            print("Warning: AISuite not available, using fallback")
             return None
 
-    def analyze_logs(self, logs: List[str], prompt_template=None):
-        """Analyze logs with custom prompt template"""
-        if not self.client or not logs:
-            return self._fallback_analysis(logs)
+    def generate(self, input_data, **kwargs) -> str:
+        """Adaptive LLM generation using AISuite
 
-        # Create cache key
-        cache_key = hash(' '.join(logs))
-        if cache_key in self.cache:
-            return self.cache[cache_key]
-
-        # Prepare prompt
-        prompt = prompt_template or self._default_log_analysis_prompt()
-        formatted_prompt = prompt.format(logs='\n'.join(logs))
+        Args:
+            input_data: Either a string (single prompt) or list of messages (conversation)
+            **kwargs: Additional parameters for AISuite
+        """
+        if not self.aisuite:
+            return self._fallback_response()
 
         try:
-            # Call LLM
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": formatted_prompt}],
-                max_tokens=200,
-                temperature=0.1
-            )
-
-            # Parse response
-            analysis = self._parse_llm_response(response.choices[0].message.content)
-
-            # Cache result
-            self.cache[cache_key] = analysis
-            return analysis
-
+            if isinstance(input_data, str):
+                # Single prompt - direct processing
+                response = self.aisuite.generate(
+                    prompt=input_data,
+                    model=self.model,
+                    **kwargs
+                )
+                return response
+            elif isinstance(input_data, list):
+                # Messages - organize into context and focus on current
+                prompt = self._organize_messages_to_prompt(input_data)
+                response = self.aisuite.generate(
+                    prompt=prompt,
+                    model=self.model,
+                    **kwargs
+                )
+                return response
+            else:
+                raise ValueError("input_data must be string (prompt) or list (messages)")
         except Exception as e:
-            print(f"LLM analysis failed: {e}")
-            return self._fallback_analysis(logs)
+            print(f"AISuite generation failed: {e}")
+            return self._fallback_response()
 
-    def _default_log_analysis_prompt(self):
-        """Default prompt for log analysis"""
-        return """
-        Analyze these agent execution logs and provide a concise summary:
+    def _organize_messages_to_prompt(self, messages):
+        """Convert conversation messages to a single prompt with context"""
+        if not messages:
+            return ""
 
-        {logs}
+        # Separate context (previous messages) from current message
+        context_messages = messages[:-1] if len(messages) > 1 else []
+        current_message = messages[-1]
 
-        Please provide:
-        1. What the agent is currently doing (max 50 characters)
-        2. Any errors or issues detected
-        3. Progress estimation (0-100%)
-        4. Actionable suggestions if errors found
+        # Build context from previous messages
+        context = ""
+        if context_messages:
+            context = "Previous conversation context:\n"
+            for msg in context_messages:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                context += f"{role}: {content}\n"
+            context += "\n"
 
-        Format as JSON:
-        {{
-            "summary": "...",
-            "progress": 75,
-            "status": "working",
-            "errors": ["..."],
-            "suggestions": ["..."]
-        }}
-        """
+        # Focus on current message
+        current_content = current_message.get("content", "")
+        current_role = current_message.get("role", "user")
 
-    def _parse_llm_response(self, response: str) -> LogAnalysis:
-        """Parse LLM response"""
+        # Create focused prompt
+        prompt = f"{context}Current {current_role} request: {current_content}\n\nPlease respond to the current request, taking into account the previous context if relevant."
+
+        return prompt
+
+    # Usage Examples:
+    #
+    # Single prompt:
+    # response = core_llm.generate("What is the weather today?")
+    #
+    # Conversation messages:
+    # messages = [
+    #     {"role": "user", "content": "What is Python?"},
+    #     {"role": "assistant", "content": "Python is a programming language..."},
+    #     {"role": "user", "content": "How do I install it?"}
+    # ]
+    # response = core_llm.generate(messages)
+
+    def analyze_text(self, text: str, analysis_type: str = "general") -> Any:
+        """Analyze any text content using AISuite"""
+        if not text:
+            return self._fallback_analysis([])
+
+        prompt = self._get_analysis_prompt(analysis_type)
+        formatted_prompt = prompt.format(text=text)
+
+        response = self.generate(formatted_prompt)
+
+        if analysis_type == "log_analysis":
+            return self._parse_log_analysis_response(response)
+        else:
+            return response
+
+    def _get_analysis_prompt(self, analysis_type: str) -> str:
+        """Get appropriate prompt template for analysis type"""
+        prompts = {
+            "log_analysis": """
+                Analyze these agent execution logs and provide a concise summary:
+
+                {text}
+
+                Please provide:
+                1. What the agent is currently doing (max 50 characters)
+                2. Any errors or issues detected
+                3. Progress estimation (0-100%)
+                4. Actionable suggestions if errors found
+
+                Format as JSON:
+                {{
+                    "summary": "...",
+                    "progress": 75,
+                    "status": "working",
+                    "errors": ["..."],
+                    "suggestions": ["..."]
+                }}
+            """,
+            "general": """
+                Analyze the following text and provide insights:
+
+                {text}
+            """,
+            "error_analysis": """
+                Analyze this error and provide suggestions:
+
+                {text}
+
+                Provide:
+                1. Error type and cause
+                2. Possible solutions
+                3. Prevention tips
+            """
+        }
+        return prompts.get(analysis_type, prompts["general"])
+
+    def _parse_log_analysis_response(self, response: str) -> LogAnalysis:
+        """Parse log analysis response"""
         try:
             data = json.loads(response)
             return LogAnalysis(
@@ -345,7 +419,7 @@ class CoreLLMService:
             return self._fallback_analysis([])
 
     def _fallback_analysis(self, logs: List[str]) -> LogAnalysis:
-        """Fallback analysis when LLM is not available"""
+        """Fallback analysis when AISuite is not available"""
         log_text = ' '.join(logs).lower()
 
         if any(word in log_text for word in ['error', 'failed', 'exception']):
@@ -356,6 +430,10 @@ class CoreLLMService:
             return LogAnalysis("✅ Complete", 100, "complete", [], [])
         else:
             return LogAnalysis("🔄 Working...", 25, "working", [], [])
+
+    def _fallback_response(self) -> str:
+        """Fallback response when AISuite is not available"""
+        return "AISuite not available"
 ```
 
 ### 3. LLMAnalyzer Component
@@ -373,7 +451,8 @@ class LLMAnalyzer:
 
     def analyze(self, logs: List[str]) -> LogAnalysis:
         """Analyze logs using Core LLM Component"""
-        return self.core_llm.analyze_logs(logs)
+        log_text = '\n'.join(logs)
+        return self.core_llm.analyze_text(log_text, analysis_type="log_analysis")
 ```
 
 ### 4. TerminalDisplay Component
@@ -512,7 +591,7 @@ agenthub/__init__.py                        # Update exports
 
 ```python
 # requirements.txt additions
-openai>=1.0.0
+aisuite>=1.0.0
 ```
 
 ### Existing Dependencies Used
@@ -532,8 +611,9 @@ sys
 ### Environment Variables
 
 ```bash
-# Optional: OpenAI API key (if not set, falls back to simple analysis)
-export OPENAI_API_KEY="your-api-key-here"
+# Optional: AISuite configuration (if not set, falls back to simple analysis)
+export AISUITE_API_KEY="your-api-key-here"
+export AISUITE_MODEL="gpt-3.5-turbo"
 
 # Optional: Monitoring settings
 export AGENTHUB_MONITORING_ENABLED="true"
@@ -546,7 +626,7 @@ export AGENTHUB_MONITORING_UPDATE_INTERVAL="0.5"
 # Default configuration
 MONITORING_ENABLED = True
 UPDATE_INTERVAL = 0.5  # seconds
-LLM_MODEL = "gpt-3.5-turbo"
+AISUITE_MODEL = "gpt-3.5-turbo"
 CACHE_SIZE = 100
 ```
 
@@ -599,9 +679,9 @@ def test_monitoring_integration():
 
 ## Error Handling
 
-### LLM Failures
+### AISuite Failures
 
-- **Fallback to simple analysis** when LLM unavailable
+- **Fallback to simple analysis** when AISuite unavailable
 - **Graceful degradation** without breaking agent execution
 - **Clear error messages** for debugging
 
@@ -615,13 +695,13 @@ def test_monitoring_integration():
 
 ### API Keys
 
-- **Environment variables** for OpenAI API key
+- **Environment variables** for AISuite API key
 - **No hardcoded credentials** in code
 - **Optional feature** - works without API key
 
 ### Log Content
 
-- **No sensitive data** sent to LLM
+- **No sensitive data** sent to AISuite
 - **Local processing** for sensitive logs
 - **Configurable filtering** for sensitive information
 

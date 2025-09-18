@@ -37,48 +37,119 @@ class LogStreamer:
 
 ### 2. Core LLM Component
 
-**Purpose**: Centralized LLM service for the entire AgentHub system
+**Purpose**: General-purpose LLM service using AISuite for the entire AgentHub system
 
 **Implementation**:
 
 ```python
 class CoreLLMService:
-    def __init__(self, api_key=None, model="gpt-3.5-turbo"):
-        self.client = self._initialize_client(api_key)
+    def __init__(self, aisuite_client=None, model="gpt-3.5-turbo"):
+        self.aisuite = aisuite_client or self._initialize_aisuite()
         self.model = model
         self.cache = {}
 
-    def analyze_logs(self, logs, prompt_template=None):
-        """Analyze logs with custom prompt template"""
-        if not self.client:
-            return self._fallback_analysis(logs)
+    def generate(self, input_data, **kwargs):
+        """Adaptive LLM generation using AISuite
 
-        prompt = prompt_template or self._default_log_analysis_prompt()
-        formatted_prompt = prompt.format(logs='\n'.join(logs))
-
-        return self._call_llm(formatted_prompt)
-
-    def _default_log_analysis_prompt(self):
-        return """
-        Analyze these agent execution logs and provide a concise summary:
-
-        {logs}
-
-        Please provide:
-        1. What the agent is currently doing (max 50 characters)
-        2. Any errors or issues detected
-        3. Progress estimation (0-100%)
-        4. Actionable suggestions if errors found
-
-        Format as JSON:
-        {{
-            "summary": "...",
-            "progress": 75,
-            "status": "working",
-            "errors": ["..."],
-            "suggestions": ["..."]
-        }}
+        Args:
+            input_data: Either a string (single prompt) or list of messages (conversation)
+            **kwargs: Additional parameters for AISuite
         """
+        if not self.aisuite:
+            return self._fallback_response()
+
+        if isinstance(input_data, str):
+            # Single prompt - direct processing
+            return self.aisuite.generate(
+                prompt=input_data,
+                model=self.model,
+                **kwargs
+            )
+        elif isinstance(input_data, list):
+            # Messages - organize into context and focus on current
+            prompt = self._organize_messages_to_prompt(input_data)
+            return self.aisuite.generate(
+                prompt=prompt,
+                model=self.model,
+                **kwargs
+            )
+        else:
+            raise ValueError("input_data must be string (prompt) or list (messages)")
+
+    def _organize_messages_to_prompt(self, messages):
+        """Convert conversation messages to a single prompt with context"""
+        if not messages:
+            return ""
+
+        # Separate context (previous messages) from current message
+        context_messages = messages[:-1] if len(messages) > 1 else []
+        current_message = messages[-1]
+
+        # Build context from previous messages
+        context = ""
+        if context_messages:
+            context = "Previous conversation context:\n"
+            for msg in context_messages:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                context += f"{role}: {content}\n"
+            context += "\n"
+
+        # Focus on current message
+        current_content = current_message.get("content", "")
+        current_role = current_message.get("role", "user")
+
+        # Create focused prompt
+        prompt = f"{context}Current {current_role} request: {current_content}\n\nPlease respond to the current request, taking into account the previous context if relevant."
+
+        return prompt
+
+    def analyze_text(self, text, analysis_type="general"):
+        """Analyze any text content using AISuite"""
+        prompt = self._get_analysis_prompt(analysis_type)
+        formatted_prompt = prompt.format(text=text)
+
+        return self.generate(formatted_prompt)
+
+    def _get_analysis_prompt(self, analysis_type):
+        """Get appropriate prompt template for analysis type"""
+        prompts = {
+            "log_analysis": """
+                Analyze these agent execution logs and provide a concise summary:
+
+                {text}
+
+                Please provide:
+                1. What the agent is currently doing (max 50 characters)
+                2. Any errors or issues detected
+                3. Progress estimation (0-100%)
+                4. Actionable suggestions if errors found
+
+                Format as JSON:
+                {{
+                    "summary": "...",
+                    "progress": 75,
+                    "status": "working",
+                    "errors": ["..."],
+                    "suggestions": ["..."]
+                }}
+            """,
+            "general": """
+                Analyze the following text and provide insights:
+
+                {text}
+            """
+        }
+        return prompts.get(analysis_type, prompts["general"])
+
+    def _initialize_aisuite(self):
+        """Initialize AISuite client"""
+        try:
+            from aisuite import AISuiteClient
+            return AISuiteClient()
+        except ImportError:
+            print("Warning: AISuite not available, using fallback")
+            return None
 ```
 
 ### 3. LLMAnalyzer
@@ -94,8 +165,9 @@ class LLMAnalyzer:
         self.cache = {}
 
     def analyze(self, logs):
-        # Use Core LLM Component for analysis
-        return self.core_llm.analyze_logs(logs)
+        # Use Core LLM Component for log analysis
+        log_text = '\n'.join(logs)
+        return self.core_llm.analyze_text(log_text, analysis_type="log_analysis")
 ```
 
 ### 4. TerminalDisplay
@@ -155,7 +227,7 @@ class ProcessManager:
 ## What We Kept (KISS)
 
 - ✅ Real-time log streaming
-- ✅ Core LLM component for system-wide use
+- ✅ Core LLM component using AISuite for system-wide use
 - ✅ LLM-powered log analysis
 - ✅ Intelligent error detection
 - ✅ Basic terminal display

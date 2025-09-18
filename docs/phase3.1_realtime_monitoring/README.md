@@ -47,7 +47,7 @@ Phase 3.1 introduces comprehensive real-time monitoring and observability capabi
 ### Core Components
 
 1. **LogStreamer**: Real-time subprocess log capture
-2. **Core LLM Component**: Centralized LLM service for system-wide use
+2. **Core LLM Component**: General-purpose LLM service using AISuite for system-wide use
 3. **LLMAnalyzer**: Log analysis using the Core LLM Component
 4. **MonitorDisplay**: Live terminal interface for status updates
 
@@ -69,9 +69,10 @@ Agent Subprocess → LogStreamer → LLMAnalyzer → MonitorDisplay → User
 
 ### Week 2: Core LLM Component
 
-- Centralized LLM service for system-wide use
-- OpenAI integration with fallback support
+- General-purpose LLM service using AISuite for system-wide use
+- AISuite integration with fallback support
 - Caching and error handling
+- Support for various analysis types (logs, general text, etc.)
 
 ### Week 3: LLMAnalyzer
 
@@ -186,7 +187,7 @@ result = agent.analyze_paper("sample.pdf")
 
 - **threading**: For concurrent log processing
 - **queue**: For log buffering
-- **openai**: For LLM-powered log analysis
+- **aisuite**: For LLM-powered analysis and generation
 
 ### Existing Dependencies
 
