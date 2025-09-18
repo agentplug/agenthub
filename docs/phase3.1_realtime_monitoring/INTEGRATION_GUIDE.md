@@ -392,61 +392,62 @@ class CoreLLMService:
     #
     # Remember the system instructions above and respond accordingly.
 
-    def analyze_text(self, text: str, analysis_type: str = "general", system_prompt: str = None) -> Any:
-        """Analyze any text content using AISuite"""
+    def analyze_text(self, text: str, prompt_template: str, system_prompt: str = None) -> str:
+        """Analyze any text content using AISuite with custom prompt template"""
         if not text:
-            return self._fallback_analysis([])
+            return self._fallback_response()
 
-        prompt = self._get_analysis_prompt(analysis_type)
-        formatted_prompt = prompt.format(text=text)
+        formatted_prompt = prompt_template.format(text=text)
+        return self.generate(formatted_prompt, system_prompt=system_prompt)
 
-        response = self.generate(formatted_prompt, system_prompt=system_prompt)
+    def _fallback_response(self) -> str:
+        """Fallback response when AISuite is not available"""
+        return "AISuite not available"
+```
 
-        if analysis_type == "log_analysis":
-            return self._parse_log_analysis_response(response)
-        else:
-            return response
+### 3. LLMAnalyzer Component
 
-    def _get_analysis_prompt(self, analysis_type: str) -> str:
-        """Get appropriate prompt template for analysis type"""
-        prompts = {
-            "log_analysis": """
-                Analyze these agent execution logs and provide a concise summary:
+**Location**: `agenthub/monitoring/llm_analyzer.py`
 
-                {text}
+```python
+from agenthub.core.llm.llm_service import CoreLLMService, LogAnalysis
+from typing import List
 
-                Please provide:
-                1. What the agent is currently doing (max 50 characters)
-                2. Any errors or issues detected
-                3. Progress estimation (0-100%)
-                4. Actionable suggestions if errors found
+class LLMAnalyzer:
+    def __init__(self, core_llm_service: CoreLLMService):
+        self.core_llm = core_llm_service
+        self.cache = {}
+        self.log_analysis_prompt = self._get_log_analysis_prompt()
 
-                Format as JSON:
-                {{
-                    "summary": "...",
-                    "progress": 75,
-                    "status": "working",
-                    "errors": ["..."],
-                    "suggestions": ["..."]
-                }}
-            """,
-            "general": """
-                Analyze the following text and provide insights:
+    def analyze(self, logs: List[str]) -> LogAnalysis:
+        """Analyze logs using Core LLM Component"""
+        log_text = '\n'.join(logs)
+        system_prompt = "You are an expert at analyzing agent execution logs. Focus on identifying what the agent is doing, detecting errors, and providing actionable insights."
+        response = self.core_llm.analyze_text(log_text, self.log_analysis_prompt, system_prompt)
+        return self._parse_log_analysis_response(response)
 
-                {text}
-            """,
-            "error_analysis": """
-                Analyze this error and provide suggestions:
+    def _get_log_analysis_prompt(self) -> str:
+        """Get log analysis prompt template"""
+        return """
+            Analyze these agent execution logs and provide a concise summary:
 
-                {text}
+            {text}
 
-                Provide:
-                1. Error type and cause
-                2. Possible solutions
-                3. Prevention tips
-            """
-        }
-        return prompts.get(analysis_type, prompts["general"])
+            Please provide:
+            1. What the agent is currently doing (max 50 characters)
+            2. Any errors or issues detected
+            3. Progress estimation (0-100%)
+            4. Actionable suggestions if errors found
+
+            Format as JSON:
+            {{
+                "summary": "...",
+                "progress": 75,
+                "status": "working",
+                "errors": ["..."],
+                "suggestions": ["..."]
+            }}
+        """
 
     def _parse_log_analysis_response(self, response: str) -> LogAnalysis:
         """Parse log analysis response"""
@@ -474,30 +475,6 @@ class CoreLLMService:
             return LogAnalysis("✅ Complete", 100, "complete", [], [])
         else:
             return LogAnalysis("🔄 Working...", 25, "working", [], [])
-
-    def _fallback_response(self) -> str:
-        """Fallback response when AISuite is not available"""
-        return "AISuite not available"
-```
-
-### 3. LLMAnalyzer Component
-
-**Location**: `agenthub/monitoring/llm_analyzer.py`
-
-```python
-from agenthub.core.llm.llm_service import CoreLLMService, LogAnalysis
-from typing import List
-
-class LLMAnalyzer:
-    def __init__(self, core_llm_service: CoreLLMService):
-        self.core_llm = core_llm_service
-        self.cache = {}
-
-    def analyze(self, logs: List[str]) -> LogAnalysis:
-        """Analyze logs using Core LLM Component"""
-        log_text = '\n'.join(logs)
-        system_prompt = "You are an expert at analyzing agent execution logs. Focus on identifying what the agent is doing, detecting errors, and providing actionable insights."
-        return self.core_llm.analyze_text(log_text, analysis_type="log_analysis", system_prompt=system_prompt)
 ```
 
 ### 4. TerminalDisplay Component

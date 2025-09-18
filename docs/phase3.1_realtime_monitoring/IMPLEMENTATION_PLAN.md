@@ -148,43 +148,10 @@ class CoreLLMService:
 
         return "\n".join(prompt_parts)
 
-    def analyze_text(self, text, analysis_type="general", system_prompt=None):
-        """Analyze any text content using AISuite"""
-        prompt = self._get_analysis_prompt(analysis_type)
-        formatted_prompt = prompt.format(text=text)
-
+    def analyze_text(self, text, prompt_template, system_prompt=None):
+        """Analyze any text content using AISuite with custom prompt template"""
+        formatted_prompt = prompt_template.format(text=text)
         return self.generate(formatted_prompt, system_prompt=system_prompt)
-
-    def _get_analysis_prompt(self, analysis_type):
-        """Get appropriate prompt template for analysis type"""
-        prompts = {
-            "log_analysis": """
-                Analyze these agent execution logs and provide a concise summary:
-
-                {text}
-
-                Please provide:
-                1. What the agent is currently doing (max 50 characters)
-                2. Any errors or issues detected
-                3. Progress estimation (0-100%)
-                4. Actionable suggestions if errors found
-
-                Format as JSON:
-                {{
-                    "summary": "...",
-                    "progress": 75,
-                    "status": "working",
-                    "errors": ["..."],
-                    "suggestions": ["..."]
-                }}
-            """,
-            "general": """
-                Analyze the following text and provide insights:
-
-                {text}
-            """
-        }
-        return prompts.get(analysis_type, prompts["general"])
 
     def _initialize_aisuite(self):
         """Initialize AISuite client"""
@@ -213,12 +180,36 @@ class LLMAnalyzer:
     def __init__(self, core_llm_service):
         self.core_llm = core_llm_service
         self.cache = {}
+        self.log_analysis_prompt = self._get_log_analysis_prompt()
 
     def analyze(self, logs):
-        # Use Core LLM Component for log analysis with system prompt
+        # Use Core LLM Component for log analysis with custom prompt and system prompt
         log_text = '\n'.join(logs)
         system_prompt = "You are an expert at analyzing agent execution logs. Focus on identifying what the agent is doing, detecting errors, and providing actionable insights."
-        return self.core_llm.analyze_text(log_text, analysis_type="log_analysis", system_prompt=system_prompt)
+        return self.core_llm.analyze_text(log_text, self.log_analysis_prompt, system_prompt)
+
+    def _get_log_analysis_prompt(self):
+        """Get log analysis prompt template"""
+        return """
+            Analyze these agent execution logs and provide a concise summary:
+
+            {text}
+
+            Please provide:
+            1. What the agent is currently doing (max 50 characters)
+            2. Any errors or issues detected
+            3. Progress estimation (0-100%)
+            4. Actionable suggestions if errors found
+
+            Format as JSON:
+            {{
+                "summary": "...",
+                "progress": 75,
+                "status": "working",
+                "errors": ["..."],
+                "suggestions": ["..."]
+            }}
+        """
 ```
 
 ### Week 4: TerminalDisplay
