@@ -13,11 +13,11 @@ import logging
 from agenthub import core, runtime, storage
 from agenthub.config import AgentHubConfig, get_config, set_config
 from agenthub.core.agents import AgentLoader, AgentWrapper
-from agenthub.core.loader import load_agent
 from agenthub.core.logging import get_logger, set_quiet_mode, setup_logging
 from agenthub.core.tools import get_tool_metadata
 from agenthub.runtime.agent_runtime import AgentRuntime
 from agenthub.sdk import get_available_tools, run_resources, tool
+from agenthub.sdk.load_agent import load_agent
 from agenthub.storage.local_storage import LocalStorage
 
 # Suppress HTTP logs immediately on import
