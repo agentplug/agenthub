@@ -7,6 +7,8 @@ The framework will automatically explore tool information and inject
 it into agents via the command format.
 """
 
+import json
+
 import agenthub as ah
 
 
@@ -73,7 +75,8 @@ def main():
     print("🔍 Declaring Analysis Agent...")
     try:
         analysis_agent = ah.load_agent(
-            "agentplug/analysis-agent", tools=["add", "multiply", "process_text"]
+            "agentplug/analysis-agent",
+            external_tools=["add", "multiply", "process_text"],
         )
         print(f"   ✅ Analysis Agent: {analysis_agent.name}")
         print(f"   🔧 Assigned tools: {analysis_agent.get_assigned_tools()}")
@@ -86,7 +89,7 @@ def main():
     print("\n💻 Declaring Coding Agent...")
     try:
         coding_agent = ah.load_agent(
-            "agentplug/coding-agent", tools=["add", "subtract", "greet"]
+            "agentplug/coding-agent", external_tools=["add", "subtract", "greet"]
         )
         print(f"   ✅ Coding Agent: {coding_agent.name}")
         print(f"   🔧 Assigned tools: {coding_agent.get_assigned_tools()}")
@@ -100,7 +103,7 @@ def main():
     try:
         math_agent = ah.load_agent(
             "agentplug/analysis-agent",  # Reusing analysis agent for demo
-            tools=["add", "subtract", "multiply", "divide"],
+            external_tools=["add", "subtract", "multiply", "divide"],
         )
         print(f"   ✅ Math Agent: {math_agent.name}")
         print(f"   🔧 Assigned tools: {math_agent.get_assigned_tools()}")
@@ -114,7 +117,7 @@ def main():
     try:
         text_agent = ah.load_agent(
             "agentplug/coding-agent",  # Reusing coding agent for demo
-            tools=["greet", "process_text", "get_weather"],
+            external_tools=["greet", "process_text", "get_weather"],
         )
         print(f"   ✅ Text Agent: {text_agent.name}")
         print(f"   🔧 Assigned tools: {text_agent.get_assigned_tools()}")
@@ -131,7 +134,8 @@ def main():
     print("📋 Analysis Agent Tool Context:")
     try:
         if "analysis_agent" in locals() and analysis_agent:
-            tool_context = analysis_agent.get_tool_context_json()
+            tool_context_json = analysis_agent.get_tool_context_json()
+            tool_context = json.loads(tool_context_json)
             print(f"   🔧 Available tools: {tool_context.get('available_tools', [])}")
             print(
                 f"   📝 Tool descriptions: "
