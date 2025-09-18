@@ -5,6 +5,7 @@ This directory contains comprehensive examples demonstrating AgentHub's capabili
 ## 📁 Directory Structure
 
 ### 🚀 Getting Started (`getting_started/`)
+
 Essential examples for new users to understand basic AgentHub functionality.
 
 - **`quick_start.py`** - Complete quick start guide with all core features
@@ -13,6 +14,7 @@ Essential examples for new users to understand basic AgentHub functionality.
 - **`offline_agents.py`** - Working with local/offline agents
 
 ### 🔧 Tools (`tools/`)
+
 Examples focused on tool integration and MCP (Model Context Protocol).
 
 - **`agent_loading_with_tools.py`** - Load agents with tool assignments
@@ -20,6 +22,7 @@ Examples focused on tool integration and MCP (Model Context Protocol).
 - **`mcp_tool_client.py`** - MCP client usage examples
 
 ### 🧪 Testing (`testing/`)
+
 Examples for testing, debugging, and validation.
 
 - **`debug_tool_execution.py`** - Debug tool execution with detailed logging
@@ -29,19 +32,13 @@ Examples for testing, debugging, and validation.
 - **`tool_discovery_service.py`** - Tool discovery and metadata
 
 ### 🚀 Advanced (`advanced/`)
+
 Complex examples showcasing advanced AgentHub features.
 
 - **`business_automation_showcase.py`** - Business process automation
 - **`dynamic_agent_orchestration.py`** - Dynamic agent orchestration
 - **`code_generation_workflow.py`** - Code generation workflows
 - **`content_analysis_suite.py`** - Content analysis and processing
-
-### 📦 Deprecated (`deprecated/`)
-Legacy examples that are no longer recommended but kept for reference.
-
-- **`auto_installation_demo.py`** - Legacy auto-installation (use quick_start.py)
-- **`clone_agent.py`** - Legacy agent cloning (use agent_declaration.py)
-- **`core_unified_interface.py`** - Legacy interface (use modern examples)
 
 ## 🎯 Quick Start
 
