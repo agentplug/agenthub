@@ -112,25 +112,18 @@ class TerminalDisplay:
         print()
 
     def _render_progress(self):
-        """Render progress section"""
-        progress = self.current_analysis.progress
+        """Render status section without misleading progress bar"""
         status_emoji = self._get_status_emoji(self.current_analysis.status)
+        status = self.current_analysis.status
 
-        # Progress bar
-        bar_width = 50
-        filled = int((progress / 100) * bar_width)
-        bar = "█" * filled + "░" * (bar_width - filled)
-
-        print(f"📊 Progress: {status_emoji} {progress:3d}% [{bar}]")
+        print(f"🔄 Status: {status_emoji} {status.upper()}")
         print()
 
     def _render_status(self):
         """Render status section"""
         summary = self.current_analysis.summary
-        status = self.current_analysis.status
 
-        print(f"📝 Status: {summary}")
-        print(f"🔄 State: {status.upper()}")
+        print(f"📝 Activity: {summary}")
         print(f"📋 Logs: {self.log_count} lines captured")
         print()
 
