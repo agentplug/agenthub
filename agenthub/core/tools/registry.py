@@ -30,6 +30,8 @@ class ToolRegistry:
             self.tool_metadata: dict[str, ToolMetadata] = {}
             # Tool access control: agent_id -> list of allowed tool names
             self.agent_tool_access: dict[str, list[str]] = {}
+            # Load built-in tools automatically
+            self._load_builtin_tools()
             self._initialized = True
 
     def register_tool(
@@ -266,6 +268,15 @@ class ToolRegistry:
             for tool_name in agent_tools
             if tool_name in self.tool_metadata
         ]
+    
+    def _load_builtin_tools(self) -> None:
+        """Load all built-in tools into the registry."""
+        try:
+            from .builtin.loader import load_all_builtin_tools
+            load_all_builtin_tools(self)
+        except ImportError:
+            # Built-in tools not available, skip silently
+            pass
 
 
 # Global registry instance
