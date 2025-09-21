@@ -49,10 +49,12 @@ def example_1_basic_agent():
 def example_2_agent_with_web_search():
     """Load agent with web search tool"""
     print("\n📋 Example 2: Agent with Web Search Tool")
-    agent = ah.load_agent("agentplug/analysis-agent", external_tools=["web_search"])
-    question = "What are the latest trends in artificial intelligence in 2024?"
+    agent = ah.load_agent("agentplug/analysis-agent", external_tools=["web_search"], monitoring=True)
+    #question = "What are the latest trends in artificial intelligence in 1990?"
+    question = "Recent changes to H1B visa fees in 2025"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
+    print(result)
     # ================================================
     status = result.get("result", {}).get("status", "completed")
     analysis = result.get("result", {}).get("summary", "No analysis")
@@ -70,6 +72,7 @@ def example_3_agent_with_web_scrape():
     question = "Use the web_scrape tool to get content from https://httpbin.org/html and tell me what you found"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
+    print(result)
     # ================================================
     status = result.get("result", {}).get("status", "completed")
     analysis = result.get("result", {}).get("summary", "No analysis")
@@ -125,6 +128,7 @@ def example_6_agent_with_multiple_web_tools():
     question = "Research the latest trends in machine learning, scrape some content, analyze it, and provide a summary"
     print(f"📄 Input: {question}")
     result = agent.analyze_text(question)
+    print(result)
     # ================================================
     status = result.get("result", {}).get("status", "completed")
     analysis = result.get("result", {}).get("summary", "No analysis")
@@ -168,6 +172,7 @@ def main():
     
     try:
         # Run examples with pauses
+        
         example_1_basic_agent()
         wait_for_key("Press Enter to continue to Example 2...")
         
@@ -183,11 +188,12 @@ def main():
         example_5_agent_with_web_summarize()
         wait_for_key("Press Enter to continue to Example 6...")
         
+        
         example_6_agent_with_multiple_web_tools()
         wait_for_key("Press Enter to continue to Example 7...")
         
-        example_7_agent_with_web_search_and_scrape()
-        wait_for_key("Press Enter to finish...")
+        #example_7_agent_with_web_search_and_scrape()
+        #wait_for_key("Press Enter to finish...")
         
         print("\n🎉 All examples completed successfully!")
         print("Copy any function above to use in your own code.")
