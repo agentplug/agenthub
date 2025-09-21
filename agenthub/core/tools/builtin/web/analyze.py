@@ -75,6 +75,15 @@ class ContentAnalyzer:
     def analyze_content_directly(self, content: str, options: Dict[str, Any], metadata: Dict[str, Any] = None) -> Dict[str, Any]:
         """Analyze content directly without URL scraping."""
         try:
+            # Handle case where content might be a list instead of string
+            if isinstance(content, list):
+                # Join list elements into a single string
+                content = ' '.join(str(item) for item in content if item)
+            
+            # Ensure content is a string
+            if not isinstance(content, str):
+                content = str(content)
+            
             if not content or len(content.strip()) < 50:
                 return {
                     "success": False,
@@ -398,6 +407,15 @@ class LanguageDetector:
 def analyze_content_directly(content: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """Analyze content directly without scraping from URL."""
     try:
+        # Handle case where content might be a list instead of string
+        if isinstance(content, list):
+            # Join list elements into a single string
+            content = ' '.join(str(item) for item in content if item)
+        
+        # Ensure content is a string
+        if not isinstance(content, str):
+            content = str(content)
+        
         if not content or len(content.strip()) < 50:
             return {
                 "success": False,

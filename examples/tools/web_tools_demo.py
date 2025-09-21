@@ -184,7 +184,7 @@ def demo_5_multiple_tools_workflow():
         "Shows how agents can use multiple web tools for comprehensive analysis"
     )
     
-    question = "Research the latest trends in Python programming, analyze the content, and provide a comprehensive summary"
+    question = "Research the latest trends in Python programming in 2025, analyze the content, and provide a comprehensive summary"
     
     print("\n🔄 MULTI-TOOL WORKFLOW:")
     print("   1. Search for current information")
@@ -328,6 +328,7 @@ def full_demo():
     print("=" * 60)
     
     try:
+        '''
         # Run all demos with pauses
         demo_1_web_search_comparison()
         wait_for_key("Press Enter to continue to web scraping demo...")
@@ -340,7 +341,7 @@ def full_demo():
         
         demo_4_web_summarization_comparison()
         wait_for_key("Press Enter to continue to multiple tools demo...")
-        
+        '''
         demo_5_multiple_tools_workflow()
         wait_for_key("Press Enter to continue to advanced workflow demo...")
         
