@@ -94,7 +94,7 @@ class ToolRegistry:
                             tools = await session.list_tools()
                             return [tool.name for tool in tools.tools]
                 except Exception as e:
-                    print(f"⚠️  MCP discovery failed: {e}")
+                    print(f"ℹ️  MCP discovery skipped (local tools only): {e}")
                     return []
 
             # Check if we're already in an event loop

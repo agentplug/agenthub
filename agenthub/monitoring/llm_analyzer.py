@@ -43,11 +43,22 @@ class LLMAnalyzer:
         if not logs:
             return self._fallback_analysis([])
 
-        log_text = "\n".join(logs)
+        # Filter out known non-error messages before analysis
+        filtered_logs = []
+        for log in logs:
+            filtered_log = self._filter_non_error_messages(log.lower())
+            if filtered_log.strip():  # Only keep non-empty logs after filtering
+                filtered_logs.append(log)  # Keep original case for LLM analysis
+
+        # Use filtered logs for analysis, but fallback to original if empty
+        analysis_logs = filtered_logs if filtered_logs else logs
+        log_text = "\n".join(analysis_logs)
+        
         system_prompt = (
             "You are an expert at analyzing agent execution logs. "
             "Focus on identifying what the agent is doing, detecting "
-            "errors, and providing actionable insights."
+            "real errors (not warnings or expected messages), and providing actionable insights. "
+            "Ignore MCP discovery failures and tool warnings as these are expected behavior."
         )
 
         response = self.core_llm.analyze_text(
@@ -67,11 +78,17 @@ class LLMAnalyzer:
 
             {text}
 
+            IMPORTANT: Only report REAL errors, not warnings or expected messages:
+            - Ignore "MCP discovery failed" - this is expected for local tools
+            - Ignore "warning:" messages from web tools - these are expected behavior
+            - Ignore "unhandled errors in a TaskGroup" - this is expected for local tools
+            - Only report actual execution failures, exceptions, or critical errors
+
             Please provide:
             1. What the agent is currently doing (max 50 characters)
-            2. Any errors or issues detected
+            2. Any REAL errors or critical issues detected (not warnings)
             3. Progress estimation (0-100%)
-            4. Actionable suggestions if errors found
+            4. Actionable suggestions if real errors found
 
             Format as JSON:
             {{
@@ -120,8 +137,11 @@ class LLMAnalyzer:
 
         log_text = " ".join(logs).lower()
 
+        # Filter out known non-error messages that should not trigger error detection
+        filtered_log_text = self._filter_non_error_messages(log_text)
+
         error_words = ["error", "failed", "exception", "traceback"]
-        if any(word in log_text for word in error_words):
+        if any(word in filtered_log_text for word in error_words):
             return LogAnalysis(
                 "❌ Error detected", 0, "error", ["Error found"], ["Check logs"]
             )
@@ -139,3 +159,28 @@ class LLMAnalyzer:
             return LogAnalysis("🚀 Starting...", 10, "starting", [], [])
 
         return LogAnalysis("🔄 Working...", 25, "working", [], [])
+
+    def _filter_non_error_messages(self, log_text: str) -> str:
+        """
+        Filter out known non-error messages that should not trigger error detection.
+        
+        Args:
+            log_text: Raw log text to filter
+            
+        Returns:
+            Filtered log text with non-error messages removed
+        """
+        # Remove MCP discovery failure warnings (these are expected for local tools)
+        log_text = log_text.replace("mcp discovery failed", "")
+        
+        # Remove web tool warning messages (these are expected when no URL is provided)
+        log_text = log_text.replace("warning:", "")
+        log_text = log_text.replace("no url or content provided", "")
+        log_text = log_text.replace("empty or invalid url provided", "")
+        log_text = log_text.replace("both url and content provided", "")
+        
+        # Remove other common non-error messages
+        log_text = log_text.replace("unhandled errors in a taskgroup", "")
+        log_text = log_text.replace("mcp execution failed", "")
+        
+        return log_text
