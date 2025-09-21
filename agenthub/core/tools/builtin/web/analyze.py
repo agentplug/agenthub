@@ -44,11 +44,22 @@ class ContentAnalyzer:
             content = scrape_result['data']['text']
             metadata = scrape_result['data'].get('metadata', {})
             
-            if not content or len(content.strip()) < 50:
+            if not content or len(content.strip()) < 10:
                 return {
-                    "success": False,
-                    "error": "Insufficient content to analyze",
-                    "error_type": "content_error"
+                    "success": True,
+                    "data": {
+                        "warning": "Content too short for meaningful analysis",
+                        "suggestion": "Provide longer content (at least 10 characters) for better analysis results",
+                        "analysis": {
+                            "sentiment": "neutral",
+                            "topics": [],
+                            "keywords": [],
+                            "entities": [],
+                            "readability_score": 0,
+                            "language": "unknown"
+                        }
+                    },
+                    "analyzed_at": time.time()
                 }
             
             # Analyze the content
