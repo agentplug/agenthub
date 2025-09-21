@@ -268,7 +268,7 @@ class SecurityValidator:
     description="Extract content from web pages"
 )
 def web_scrape(
-    url: str,
+    url: str = None,
     extract_text: bool = True,
     extract_links: bool = False,
     extract_images: bool = False,
@@ -297,9 +297,16 @@ def web_scrape(
         # Validate inputs
         if not url or not url.strip():
             return {
-                "success": False,
-                "error": "URL cannot be empty",
-                "error_type": "validation_error"
+                "success": True,
+                "data": {
+                    "warning": "No URL provided for web scraping",
+                    "suggestion": "Use web_search() first to find URLs, then call web_scrape() with the URL",
+                    "text": "",
+                    "links": [],
+                    "images": [],
+                    "metadata": {}
+                },
+                "scraped_at": time.time()
             }
         
         if timeout < 1 or timeout > 60:

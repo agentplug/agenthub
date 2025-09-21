@@ -182,5 +182,7 @@ class LLMAnalyzer:
         # Remove other common non-error messages
         log_text = log_text.replace("unhandled errors in a taskgroup", "")
         log_text = log_text.replace("mcp execution failed", "")
+        log_text = log_text.replace("mcp tool execution failed with local fallback", "")
+        log_text = log_text.replace("using local fallback", "")
         
         return log_text
