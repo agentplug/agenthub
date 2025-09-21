@@ -22,7 +22,6 @@ __all__ = [
     'web_scrape_async',
     'web_summarize',
     'web_analyze',
-    'web_search_and_scrape',
     
     # Base classes
     'BaseTool',

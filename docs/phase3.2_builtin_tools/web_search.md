@@ -152,35 +152,6 @@ def web_analyze(
     pass
 ```
 
-### 5. Web Search with Scraping
-
-```python
-@tool(
-    name="web_search_and_scrape",
-    description="Search the web and scrape content from results"
-)
-def web_search_and_scrape(
-    query: str,
-    max_results: int = 5,
-    scrape_content: bool = True,
-    engine: str = "duckduckgo",
-    timeout: int = 10
-) -> dict:
-    """
-    Search the web and scrape content from top results.
-    
-    Args:
-        query: Search query string
-        max_results: Maximum number of results to scrape
-        scrape_content: Whether to scrape full content from results
-        engine: Search engine to use
-        timeout: Scraping timeout per URL
-    
-    Returns:
-        dict: Search results with scraped content
-    """
-    pass
-```
 
 ## 🏗️ Implementation Architecture
 

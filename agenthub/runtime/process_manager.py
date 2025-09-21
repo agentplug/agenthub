@@ -237,7 +237,17 @@ class ProcessManager:
         """Prepare execution data with tool context."""
         execution_data = {"method": method, "parameters": parameters}
         if tool_context:
-            execution_data["tool_context"] = tool_context
+            # Add explicit tool validation instructions
+            if "tool_constraints" in tool_context:
+                execution_data["tool_context"] = tool_context
+            else:
+                # Add default tool constraints if not present
+                tool_context["tool_constraints"] = {
+                    "only_use_available_tools": True,
+                    "available_tool_names": tool_context.get("available_tools", []),
+                    "forbidden_tools": []
+                }
+                execution_data["tool_context"] = tool_context
         return execution_data
 
     def _prepare_monitoring_command(self, agent_path, agent_script, execution_data):

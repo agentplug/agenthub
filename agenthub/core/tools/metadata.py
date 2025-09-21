@@ -119,9 +119,9 @@ class ToolMetadata:
                 elif "text" in param_name.lower():
                     param_examples.append('"Hello world"')
                 else:
-                    param_examples.append(f'"{param_name}_value"')
+                    param_examples.append(f'"{param_name}"')
             else:
-                param_examples.append(f'"{param_name}_value"')
+                param_examples.append(f'"{param_name}"')
 
         # Generate function call example
         if param_examples:

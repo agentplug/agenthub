@@ -425,16 +425,26 @@ class AgentWrapper:
                 tool_return_types[tool_name] = return_type
                 tool_namespaces[tool_name] = metadata.get("namespace", "custom")
 
-        return json.dumps(
-            {
-                "available_tools": self.assigned_tools,
-                "tool_descriptions": tool_descriptions,
-                "tool_usage_examples": tool_usage_examples,
-                "tool_parameters": tool_parameters,
-                "tool_return_types": tool_return_types,
-                "tool_namespaces": tool_namespaces,
-            }
-        )
+        # Create base tool context
+        tool_context = {
+            "available_tools": self.assigned_tools,
+            "tool_descriptions": tool_descriptions,
+            "tool_usage_examples": tool_usage_examples,
+            "tool_parameters": tool_parameters,
+            "tool_return_types": tool_return_types,
+            "tool_namespaces": tool_namespaces,
+                "tool_constraints": {
+                    "only_use_available_tools": True,
+                    "available_tool_names": self.assigned_tools,
+                    "forbidden_tools": []
+                }
+        }
+        
+        # Enhance with validation information
+        from agenthub.core.tools.validation import enhance_tool_context_with_validation
+        tool_context = enhance_tool_context_with_validation(tool_context)
+        
+        return json.dumps(tool_context)
 
     def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
         """Get metadata for a tool."""

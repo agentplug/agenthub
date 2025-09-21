@@ -53,8 +53,20 @@ class AgentToolManager:
         self.builtin_tools: dict[str, BuiltinToolInfo] = {}
         self.disabled_tools: set[str] = set()
 
+        # Ensure built-in tools are imported and registered
+        self._ensure_builtin_tools_loaded()
+
         if agent_manifest:
             self._load_builtin_tools_from_manifest(agent_manifest)
+
+    def _ensure_builtin_tools_loaded(self) -> None:
+        """Ensure built-in tools are imported and registered."""
+        try:
+            # Import built-in tools to trigger registration
+            from agenthub.core.tools.builtin import web_analyze, web_summarize, web_search, web_scrape
+            logger.info("Built-in tools loaded and registered")
+        except ImportError as e:
+            logger.warning(f"Failed to import built-in tools: {e}")
 
     def _load_builtin_tools_from_manifest(self, manifest: dict[str, Any]) -> None:
         """Load built-in tools from agent.yaml builtin_tools section."""

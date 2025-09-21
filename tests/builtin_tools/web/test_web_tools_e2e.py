@@ -19,8 +19,7 @@ from agenthub.core.tools.builtin.web import (
     web_search,
     web_scrape,
     web_summarize,
-    web_analyze,
-    web_search_and_scrape
+    web_analyze
 )
 
 
@@ -37,8 +36,7 @@ class TestWebToolsE2E:
             'web_search',
             'web_scrape', 
             'web_summarize',
-            'web_analyze',
-            'web_search_and_scrape'
+            'web_analyze'
         ]
         
         for tool_name in expected_tools:
@@ -108,23 +106,6 @@ class TestWebToolsE2E:
         assert "keywords" in result["data"]
         assert "entities" in result["data"]
     
-    def test_web_search_and_scrape_direct_usage(self):
-        """Test direct usage of web search and scrape tool."""
-        result = web_search_and_scrape(
-            query="artificial intelligence",
-            max_results=3,
-            scrape_content=True,
-            engine="duckduckgo",
-            timeout=10
-        )
-        
-        # Search may return 0 results due to API limitations
-        assert result["success"] == True
-        assert "query" in result
-        assert "search_results" in result
-        assert "scraped_content" in result
-        assert result["total_found"] >= 0
-        assert result["total_scraped"] >= 0
     
     def test_web_tools_error_handling(self):
         """Test error handling in web tools."""
@@ -395,8 +376,7 @@ class TestWebToolsAgentIntegration:
             'web_search',
             'web_scrape',
             'web_summarize', 
-            'web_analyze',
-            'web_search_and_scrape'
+            'web_analyze'
         ]
         
         for tool in expected_web_tools:
@@ -415,8 +395,7 @@ class TestWebToolsAgentIntegration:
             'web_search',
             'web_scrape',
             'web_summarize',
-            'web_analyze', 
-            'web_search_and_scrape'
+            'web_analyze'
         ]
         
         for tool in expected_tools:
@@ -428,7 +407,7 @@ class TestWebToolsAgentIntegration:
         
         registry = get_tool_registry()
         
-        web_tools = ['web_search', 'web_scrape', 'web_summarize', 'web_analyze', 'web_search_and_scrape']
+        web_tools = ['web_search', 'web_scrape', 'web_summarize', 'web_analyze']
         
         for tool_name in web_tools:
             if tool_name in registry.registered_tools:

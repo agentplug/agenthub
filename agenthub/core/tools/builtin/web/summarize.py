@@ -49,6 +49,35 @@ class ContentSummarizer:
                     "error_type": "content_error"
                 }
             
+            # Use the direct content summarization method
+            result = self.summarize_content_directly(content, options, metadata)
+            
+            # Add URL to the result if successful
+            if result.get('success', False):
+                result['data']['url'] = url
+            
+            return result
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Summarization failed: {e}",
+                "error_type": "summarization_error"
+            }
+    
+    def summarize_content_directly(self, content: str, options: Dict[str, Any], metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Summarize content directly without URL scraping."""
+        try:
+            if not content or len(content.strip()) < 100:
+                return {
+                    "success": False,
+                    "error": "Insufficient content to summarize",
+                    "error_type": "content_error"
+                }
+            
+            if metadata is None:
+                metadata = {}
+            
             # Generate summary
             summary = self.summarizer.summarize(
                 content,
@@ -57,7 +86,6 @@ class ContentSummarizer:
             )
             
             result = {
-                "url": url,
                 "summary": summary,
                 "original_length": len(content),
                 "summary_length": len(summary),
@@ -248,12 +276,39 @@ class KeyPointExtractor:
         return key_points[:5]  # Return top 5 key points
 
 
+def summarize_content_directly(content: str, options: Dict[str, Any]) -> Dict[str, Any]:
+    """Summarize content directly without scraping from URL."""
+    try:
+        if not content or len(content.strip()) < 100:
+            return {
+                "success": False,
+                "error": "Insufficient content to summarize (minimum 100 characters)",
+                "error_type": "content_error"
+            }
+        
+        # Create summarizer
+        summarizer = ContentSummarizer()
+        
+        # Summarize content directly
+        result = summarizer.summarize_content_directly(content, options)
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error summarizing content: {e}",
+            "error_type": "summarization_error"
+        }
+
+
 @tool(
     name="web_summarize",
-    description="Summarize web content using AI"
+    description="Summarize web content or text using AI"
 )
 def web_summarize(
-    url: str,
+    url: str = None,
+    content: str = None,
     max_length: int = 500,
     language: str = "en",
     style: str = "informative",
@@ -261,10 +316,11 @@ def web_summarize(
     extract_entities: bool = False
 ) -> Dict[str, Any]:
     """
-    Extract and summarize web page content using AI.
+    Extract and summarize web page content or provided text using AI.
     
     Args:
-        url: URL to summarize
+        url: URL to summarize (optional if content is provided)
+        content: Direct text content to summarize (optional if url is provided)
         max_length: Maximum summary length in characters
         language: Target language for summary
         style: Summary style ('informative', 'concise', 'detailed')
@@ -275,12 +331,69 @@ def web_summarize(
         dict: Summary with key points, entities, and metadata
     """
     try:
-        # Validate inputs
+        # Handle case where neither URL nor content is provided
+        if not url and not content:
+            return {
+                "success": True,
+                "data": {
+                    "warning": "No URL or content provided for summarization",
+                    "suggestion": "Use web_search() first to find URLs, then call web_summarize() with the URL or content",
+                    "summary": "No content available to summarize",
+                    "key_points": [],
+                    "entities": [],
+                    "metadata": {
+                        "original_length": 0,
+                        "summary_length": 0,
+                        "compression_ratio": 0
+                    }
+                },
+                "summarized_at": time.time()
+            }
+        
+        # Handle case where both URL and content are provided
+        if url and content:
+            return {
+                "success": True,
+                "data": {
+                    "warning": "Both URL and content provided, summarizing content directly",
+                    "summary_data": summarize_content_directly(content, {
+                        'max_length': max_length,
+                        'language': language,
+                        'style': style,
+                        'include_key_points': include_key_points,
+                        'extract_entities': extract_entities
+                    }).get('data', {})
+                },
+                "summarized_at": time.time()
+            }
+        
+        # If content is provided, summarize it directly
+        if content:
+            return summarize_content_directly(content, {
+                'max_length': max_length,
+                'language': language,
+                'style': style,
+                'include_key_points': include_key_points,
+                'extract_entities': extract_entities
+            })
+        
+        # Handle empty or invalid URL
         if not url or not url.strip():
             return {
-                "success": False,
-                "error": "URL cannot be empty",
-                "error_type": "validation_error"
+                "success": True,
+                "data": {
+                    "warning": "Empty or invalid URL provided",
+                    "suggestion": "Provide a valid URL or use web_search() first to find URLs",
+                    "summary": "No content available to summarize",
+                    "key_points": [],
+                    "entities": [],
+                    "metadata": {
+                        "original_length": 0,
+                        "summary_length": 0,
+                        "compression_ratio": 0
+                    }
+                },
+                "summarized_at": time.time()
             }
         
         if max_length < 50 or max_length > 2000:

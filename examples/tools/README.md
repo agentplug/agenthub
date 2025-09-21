@@ -1,162 +1,90 @@
-# Tools Examples
+# Web Tools Demo
 
-Examples focused on tool integration, MCP (Model Context Protocol), and tool management using the `run_resources()` method.
+This demo clearly demonstrates the difference between agents with and without web tools, perfect for client presentations.
 
-## 🔧 Examples Overview
+## Quick Start
 
-### `agent_loading_with_tools.py`
-- **Purpose**: Load agents with tool assignments
-- **Features**: Tool discovery, assignment, execution
-- **Duration**: ~3 minutes
-- **Prerequisites**: MCP tool server running
-
-### `mcp_tool_server.py`
-- **Purpose**: MCP tool server implementation using `run_resources()`
-- **Features**: Tool registration, HTTP server, MCP protocol
-- **Duration**: Continuous (background service)
-- **Prerequisites**: FastMCP, uvicorn
-
-### `mcp_tool_client.py`
-- **Purpose**: MCP client usage examples
-- **Features**: Client connection, tool discovery, execution
-- **Duration**: ~2 minutes
-- **Prerequisites**: MCP tool server running
-
-## 🚀 Quick Start
-
-### Method 1: Using run_resources() (Recommended)
-
-1. **Start the MCP server with run_resources()**:
-   ```python
-   from agenthub.core.tools import run_resources
-
-   # This starts the MCP server in the background
-   run_resources()
-   ```
-
-2. **Run agent examples**:
-   ```bash
-   python examples/tools/agent_loading_with_tools.py
-   ```
-
-### Method 2: Direct Server Execution
-
-1. **Start the MCP server directly**:
-   ```bash
-   python examples/tools/mcp_tool_server.py
-   ```
-
-2. **Run agent examples**:
-   ```bash
-   python examples/tools/agent_loading_with_tools.py
-   ```
-
-3. **Test MCP client**:
-   ```bash
-   python examples/tools/mcp_tool_client.py
-   ```
-
-## 🔧 Available Tools
-
-The MCP server provides these tools:
-- `multiply` - Mathematical multiplication
-- `add` - Mathematical addition
-- `subtract` - Mathematical subtraction
-- `divide` - Mathematical division
-- `web_search` - Web search functionality
-- `compare_numbers` - Number comparison
-
-## 💡 Usage Examples
-
-### Basic Tool Server with run_resources()
-
-```python
-#!/usr/bin/env python3
-"""
-Basic example of starting a tool server using run_resources()
-"""
-from agenthub.core.tools import tool, run_resources
-
-@tool(name="hello", description="Say hello to someone")
-def hello(name: str) -> str:
-    return f"Hello, {name}!"
-
-@tool(name="add", description="Add two numbers")
-def add(a: int, b: int) -> int:
-    return a + b
-
-if __name__ == "__main__":
-    print("🚀 Starting tool server with run_resources()...")
-    run_resources()  # This starts the MCP server
+```bash
+python web_tools_demo.py
 ```
 
-### Using Tools with Agents
+## Demo Options
 
-```python
-#!/usr/bin/env python3
-"""
-Example of using tools with agents after starting run_resources()
-"""
-import agenthub as ah
+### 1. Quick Demo (5 minutes) - Recommended for clients
+- Shows key comparisons between agents with/without web tools
+- Demonstrates web search, scraping, and multiple tools working together
+- Perfect for showcasing the value proposition
 
-# Start the tool server (run this in a separate terminal or process)
-# from agenthub.core.tools import run_resources
-# run_resources()
+### 2. Full Demo (15 minutes) - Complete showcase
+- All 7 comprehensive demos
+- Individual tool comparisons
+- Real-world business scenario
+- Complete feature demonstration
 
-# Load agent with tools
-agent = ah.load_agent('agentplug/analysis-agent', tools=['add', 'multiply'])
+### 3. Individual Tool Tests
+- Direct tool testing without agents
+- Verifies all tools are working correctly
+- Useful for debugging and validation
 
-# Use the agent
-result = agent.analyze_text("Calculate 5 + 3 and then multiply by 2")
-print(result)
-```
+## What Each Demo Shows
 
-### Custom Tool Development
+### Demo 1: Web Search Tool
+- **Without**: Agent can only use training data (limited, outdated)
+- **With**: Agent can search for current, real-time information
+- **Question**: "What are the latest developments in AI regulation in 2025?"
 
-```python
-#!/usr/bin/env python3
-"""
-Example of creating custom tools and using run_resources()
-"""
-from agenthub.core.tools import tool, run_resources
+### Demo 2: Web Scraping Tool
+- **Without**: Agent cannot access specific website content
+- **With**: Agent can extract and analyze content from any website
+- **Question**: "Analyze the content from https://httpbin.org/html"
 
-@tool(name="weather", description="Get weather for a location")
-def get_weather(location: str) -> dict:
-    # Simulate weather data
-    return {
-        "location": location,
-        "temperature": 22,
-        "condition": "sunny"
-    }
+### Demo 3: Web Analysis Tool
+- **Without**: Agent cannot perform sentiment analysis or topic extraction
+- **With**: Agent provides sentiment, topics, and readability analysis
+- **Question**: "Analyze sentiment, topics, and readability of content"
 
-@tool(name="file_info", description="Get information about a file")
-def file_info(filepath: str) -> dict:
-    import os
-    if os.path.exists(filepath):
-        stat = os.stat(filepath)
-        return {
-            "path": filepath,
-            "size": stat.st_size,
-            "modified": stat.st_mtime
-        }
-    return {"error": "File not found"}
+### Demo 4: Web Summarization Tool
+- **Without**: Agent cannot process long articles effectively
+- **With**: Agent can summarize and extract key points from long content
+- **Question**: "Summarize key points from a long article"
 
-if __name__ == "__main__":
-    print("🔧 Starting custom tool server...")
-    run_resources()
-```
+### Demo 5: Multiple Tools Working Together
+- Shows how agents can chain multiple web tools
+- Demonstrates comprehensive research workflows
+- **Question**: "Research trends, analyze content, and provide summary"
 
-## 📋 Tool Development
+### Demo 6: Search and Scrape Combo Tool
+- Shows the efficiency of combined operations
+- One tool that searches and scrapes automatically
+- **Question**: "Find and analyze latest information about ML best practices"
 
-To add new tools:
-1. Edit `mcp_tool_server.py` or create your own server file
-2. Add your tool function with `@tool` decorator
-3. Use `run_resources()` to start the server
-4. Test with `agent_loading_with_tools.py`
+### Demo 7: Real-World Business Scenario
+- Competitive analysis using multiple web tools
+- Shows practical business value
+- **Question**: "Conduct competitive analysis of AI customer service tools"
 
-## 🐛 Troubleshooting
+## Key Benefits Demonstrated
 
-- **Connection refused**: Make sure MCP server is running with `run_resources()`
-- **Tool not found**: Check tool registration in server
-- **Import errors**: Install required dependencies
-- **Server not starting**: Ensure `run_resources()` is called in the main block
+1. **Real-time Information Access**: Agents can access current data
+2. **Content Extraction**: Agents can analyze specific web content
+3. **Advanced Analysis**: Sentiment, topics, readability insights
+4. **Efficient Summarization**: Process long articles quickly
+5. **Workflow Automation**: Multiple tools working together
+6. **Business Value**: Real-world competitive analysis
+
+## Perfect for Client Demos
+
+This demo is specifically designed for client presentations because it:
+- Clearly shows the difference between agents with/without tools
+- Uses real-world examples and scenarios
+- Demonstrates measurable business value
+- Is easy to follow and understand
+- Shows both individual and combined tool capabilities
+
+## Technical Notes
+
+- All demos use the `agentplug/analysis-agent` for consistency
+- Tools are loaded using the `external_tools` parameter
+- Monitoring is enabled for multi-tool demos
+- Error handling ensures smooth demo experience
+- Results are truncated for readability but show full capabilities

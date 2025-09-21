@@ -51,9 +51,31 @@ class ContentAnalyzer:
                     "error_type": "content_error"
                 }
             
+            # Analyze the content
+            return self.analyze_content_directly(content, options, metadata)
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Analysis failed: {e}",
+                "error_type": "analysis_error"
+            }
+    
+    def analyze_content_directly(self, content: str, options: Dict[str, Any], metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Analyze content directly without URL scraping."""
+        try:
+            if not content or len(content.strip()) < 50:
+                return {
+                    "success": False,
+                    "error": "Insufficient content to analyze",
+                    "error_type": "content_error"
+                }
+            
+            if metadata is None:
+                metadata = {}
+            
             # Perform analysis
             analysis = {
-                "url": url,
                 "content_length": len(content),
                 "word_count": len(content.split()),
                 "metadata": metadata
@@ -362,12 +384,39 @@ class LanguageDetector:
         }
 
 
+def analyze_content_directly(content: str, options: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze content directly without scraping from URL."""
+    try:
+        if not content or len(content.strip()) < 50:
+            return {
+                "success": False,
+                "error": "Insufficient content to analyze (minimum 50 characters)",
+                "error_type": "content_error"
+            }
+        
+        # Create analyzer
+        analyzer = ContentAnalyzer()
+        
+        # Analyze content directly
+        result = analyzer.analyze_content_directly(content, options)
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error analyzing content: {e}",
+            "error_type": "analysis_error"
+        }
+
+
 @tool(
     name="web_analyze",
-    description="Analyze web content for insights and patterns"
+    description="Analyze web content or text for insights and patterns"
 )
 def web_analyze(
-    url: str,
+    url: str = None,
+    content: str = None,
     analysis_types: List[str] = None,
     extract_sentiment: bool = True,
     extract_topics: bool = True,
@@ -378,10 +427,11 @@ def web_analyze(
     timeout: int = 15
 ) -> Dict[str, Any]:
     """
-    Analyze web content for insights and patterns.
+    Analyze web content or provided text for insights and patterns.
     
     Args:
-        url: URL to analyze
+        url: URL to analyze (optional if content is provided)
+        content: Direct text content to analyze (optional if url is provided)
         analysis_types: List of analysis types to perform
         extract_sentiment: Analyze content sentiment
         extract_topics: Extract main topics and themes
@@ -394,12 +444,71 @@ def web_analyze(
         dict: Analysis results with insights and patterns
     """
     try:
-        # Validate inputs
+        # Handle case where neither URL nor content is provided
+        if not url and not content:
+            return {
+                "success": True,
+                "data": {
+                    "warning": "No URL or content provided for analysis",
+                    "suggestion": "Use web_search() first to find URLs, then call web_analyze() with the URL or content",
+                    "analysis": {
+                        "sentiment": "neutral",
+                        "topics": [],
+                        "keywords": [],
+                        "entities": [],
+                        "readability_score": 0,
+                        "language": "unknown"
+                    }
+                },
+                "analyzed_at": time.time()
+            }
+        
+        # Handle case where both URL and content are provided
+        if url and content:
+            return {
+                "success": True,
+                "data": {
+                    "warning": "Both URL and content provided, analyzing content directly",
+                    "analysis": analyze_content_directly(content, {
+                        'extract_sentiment': extract_sentiment,
+                        'extract_topics': extract_topics,
+                        'extract_keywords': extract_keywords,
+                        'extract_entities': extract_entities,
+                        'analyze_readability': analyze_readability,
+                        'detect_language': detect_language
+                    }).get('data', {})
+                },
+                "analyzed_at": time.time()
+            }
+        
+        # If content is provided, analyze it directly
+        if content:
+            return analyze_content_directly(content, {
+                'extract_sentiment': extract_sentiment,
+                'extract_topics': extract_topics,
+                'extract_keywords': extract_keywords,
+                'extract_entities': extract_entities,
+                'analyze_readability': analyze_readability,
+                'detect_language': detect_language
+            })
+        
+        # Handle empty or invalid URL
         if not url or not url.strip():
             return {
-                "success": False,
-                "error": "URL cannot be empty",
-                "error_type": "validation_error"
+                "success": True,
+                "data": {
+                    "warning": "Empty or invalid URL provided",
+                    "suggestion": "Provide a valid URL or use web_search() first to find URLs",
+                    "analysis": {
+                        "sentiment": "neutral",
+                        "topics": [],
+                        "keywords": [],
+                        "entities": [],
+                        "readability_score": 0,
+                        "language": "unknown"
+                    }
+                },
+                "analyzed_at": time.time()
             }
         
         # Create analyzer
