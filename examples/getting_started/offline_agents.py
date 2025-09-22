@@ -7,7 +7,7 @@ def main():
     analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
     # Generate code using the correct method
-    code = coding_agent.generate_code(
+    code = coding_agent.solve(
         "Create a Python function that calculates compound interest "
         "with monthly contributions"
     )
