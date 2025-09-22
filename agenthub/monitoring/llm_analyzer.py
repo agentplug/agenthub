@@ -68,7 +68,9 @@ class LLMAnalyzer:
             {text}
 
             Please provide:
-            1. What the agent is currently doing (max 50 characters)
+            1. What the agent is currently doing (max 50 characters).
+               You must answer the main thing agent is doing, and say I'm
+               instead of the agent is doing something.
             2. Any errors or issues detected
             3. Progress estimation (0-100%)
             4. Actionable suggestions if errors found
