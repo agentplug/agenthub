@@ -282,7 +282,7 @@ class BenchmarkRunner:
                 <td>{test.get('execution_time', 0):.3f}</td>
                 <td>{test.get('memory_usage', 0):.1f}</td>
                 <td class="{success_class}">{'✓' if test.get('success', False) else '✗'}</td>
-                <td>{test.get('accuracy_score', 0):.3f if test.get('accuracy_score') else 'N/A'}</td>
+                <td>{f"{test.get('accuracy_score', 0):.3f}" if test.get('accuracy_score') is not None else 'N/A'}</td>
                 <td>{test.get('error_message', '')}</td>
             </tr>
 """
