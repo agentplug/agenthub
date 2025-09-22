@@ -3,11 +3,15 @@
 import json
 import logging
 import os
+import time
 from typing import Any
 
 from ..knowledge import KnowledgeManager
+from ..llm.llm_decision_engine import LLMDecisionEngine
 from ..mcp.agent_tool_manager import AgentToolManager
 from ..tools.exceptions import AgentExecutionError
+from .solve_interface import AgentSolveInterface
+from .solve_result import SolveResult
 from .validator import InterfaceValidator
 
 logger = logging.getLogger(__name__)
@@ -62,6 +66,10 @@ class AgentWrapper:
         # Phase 3: Initialize managers
         self.tool_manager = AgentToolManager(self.manifest)
         self.knowledge_manager = KnowledgeManager()
+
+        # Phase 3.2: Initialize solve() components
+        self.llm_decision_engine = LLMDecisionEngine()
+        self._custom_solve_agent = None
 
     def assign_tools(self, tool_names: list[str]) -> None:
         """
@@ -127,6 +135,10 @@ class AgentWrapper:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{method_name}'"
             )
+
+        # Check if it's the solve method first
+        if method_name == "solve":
+            return self.solve
 
         if not self.has_method(method_name):
             # Provide helpful error message with available methods
@@ -744,4 +756,243 @@ class AgentWrapper:
             },
             "tools": self.get_tool_summary(),
             "knowledge": self.get_knowledge_summary(),
+        }
+
+    # Phase 3.2: Intelligent solve() method
+
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs
+    ) -> SolveResult:
+        """
+        Intelligently solve a user query by selecting and executing the most
+        appropriate method.
+
+        This method implements the Phase 3.2 intelligent solve functionality:
+        1. Check if agent has custom solve() method
+        2. If yes, delegate to custom solve()
+        3. If no, use LLM to select best method and extract parameters
+        4. Execute selected method with extracted parameters
+
+        Args:
+            query: User's natural language query
+            context: Optional context information (tools, knowledge, etc.)
+            **kwargs: Additional parameters
+
+        Returns:
+            SolveResult with execution details and results
+        """
+        start_time = time.time()
+
+        try:
+            # Check if agent has custom solve() method
+            if self._has_custom_solve():
+                return self._execute_custom_solve(query, context, **kwargs)
+            else:
+                return self._execute_framework_solve(query, context, **kwargs)
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            logger.error(f"Error in solve() method: {e}")
+            # Return error in the same format as agent execution errors
+            return {"error": str(e), "execution_time": execution_time}
+
+    def _has_custom_solve(self) -> bool:
+        """Check if agent has a custom solve() method."""
+        try:
+            if self._custom_solve_agent is None:
+                # Try to load the agent and check for solve method
+                self._custom_solve_agent = self._load_custom_solve_agent()
+
+            return self._custom_solve_agent is not None
+        except Exception as e:
+            logger.debug(f"Could not check for custom solve method: {e}")
+            return False
+
+    def _load_custom_solve_agent(self) -> AgentSolveInterface | None:
+        """Load agent instance and check for custom solve method."""
+        try:
+            if not self.runtime:
+                return None
+
+            # Try to import and instantiate the agent
+            # This is a simplified approach - in practice, you'd need more robust
+            # loading
+            agent_module = self._load_agent_module()
+            if agent_module and hasattr(agent_module, "solve"):
+                # Check if it implements the interface
+                if isinstance(agent_module, AgentSolveInterface):
+                    return agent_module
+                elif callable(getattr(agent_module, "solve", None)):
+                    # Create a wrapper for non-interface agents
+                    return CustomSolveWrapper(agent_module)
+
+            return None
+        except Exception as e:
+            logger.debug(f"Could not load custom solve agent: {e}")
+            return None
+
+    def _load_agent_module(self):
+        """Load the agent module (simplified implementation)."""
+        # This is a placeholder - in practice, you'd need to implement
+        # proper module loading based on the agent path
+        return None
+
+    def _execute_custom_solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs
+    ) -> SolveResult:
+        """Execute custom solve method if available."""
+        start_time = time.time()
+
+        try:
+            # Prepare context with tools and knowledge
+            full_context = self._prepare_solve_context(context)
+
+            # Execute custom solve method
+            result = self._custom_solve_agent.solve(query, full_context, **kwargs)
+
+            execution_time = time.time() - start_time
+
+            # Return the actual result in the same format as direct method calls
+            return result
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            logger.error(f"Error in custom solve method: {e}")
+            return {"error": str(e), "execution_time": execution_time}
+
+    def _execute_framework_solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs
+    ) -> SolveResult:
+        """Execute framework-level solve using LLM method selection."""
+        start_time = time.time()
+
+        try:
+            # Prepare context
+            full_context = self._prepare_solve_context(context)
+
+            # Get available methods with metadata
+            agent_methods = self._get_method_metadata()
+
+            if not agent_methods:
+                return {
+                    "error": "No methods available for this agent",
+                    "execution_time": time.time() - start_time,
+                }
+
+            # Use LLM to select method
+            method_name, confidence, reasoning = self.llm_decision_engine.select_method(
+                query, agent_methods, full_context
+            )
+
+            if not method_name:
+                return {
+                    "error": "Could not select appropriate method",
+                    "execution_time": time.time() - start_time,
+                }
+
+            # Get method parameters
+            method_info = self.get_method_info(method_name)
+            method_parameters = method_info.get("parameters", {})
+
+            # Extract parameters from query
+            extracted_params, param_confidence, param_reasoning = (
+                self.llm_decision_engine.extract_parameters(
+                    query, method_name, method_parameters, full_context
+                )
+            )
+
+            # Execute the selected method
+            result = self.execute(method_name, extracted_params)
+
+            execution_time = time.time() - start_time
+
+            # Combine reasoning (for future use if needed)
+            # combined_reasoning = f"Method selection: {reasoning}. "
+            # f"Parameter extraction: {param_reasoning}"
+            # combined_confidence = min(confidence, param_confidence)
+
+            # Return the exact same format as direct method calls
+            return result
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            logger.error(f"Error in framework solve method: {e}")
+            return {"error": str(e), "execution_time": execution_time}
+
+    def _prepare_solve_context(
+        self, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Prepare context for solve method with tools and knowledge."""
+        full_context = context or {}
+
+        # Add tool context
+        if self.assigned_tools:
+            full_context["available_tools"] = self.assigned_tools
+            full_context["tool_descriptions"] = {
+                tool: self.get_tool_metadata(tool) for tool in self.assigned_tools
+            }
+
+        # Add knowledge context
+        if self.is_knowledge_available():
+            full_context["knowledge"] = self.get_knowledge()
+            full_context["knowledge_metadata"] = self.get_knowledge_metadata()
+
+        # Add agent information
+        full_context["agent_info"] = {
+            "name": self.name,
+            "namespace": self.namespace,
+            "version": self.version,
+            "description": self.description,
+            "methods": self.methods,
+        }
+
+        return full_context
+
+    def _get_method_metadata(self) -> list[dict[str, Any]]:
+        """Get metadata for all available methods."""
+        methods = []
+
+        for method_name in self.methods:
+            try:
+                method_info = self.get_method_info(method_name)
+                methods.append(
+                    {
+                        "name": method_name,
+                        "description": method_info.get(
+                            "description", f"Execute {method_name}"
+                        ),
+                        "parameters": method_info.get("parameters", {}),
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Could not get metadata for method {method_name}: {e}")
+                methods.append(
+                    {
+                        "name": method_name,
+                        "description": f"Execute {method_name}",
+                        "parameters": {},
+                    }
+                )
+
+        return methods
+
+
+class CustomSolveWrapper(AgentSolveInterface):
+    """Wrapper for agents with custom solve methods."""
+
+    def __init__(self, agent_instance):
+        self.agent_instance = agent_instance
+
+    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+        """Delegate to the agent's custom solve method."""
+        return self.agent_instance.solve(query, context, **kwargs)
+
+    def get_solve_capabilities(self) -> dict[str, Any]:
+        """Get solve capabilities from the wrapped agent."""
+        if hasattr(self.agent_instance, "get_solve_capabilities"):
+            return self.agent_instance.get_solve_capabilities()
+        return {
+            "has_custom_solve": True,
+            "description": "Custom solve method (wrapped)",
+            "version": "1.0.0",
         }
