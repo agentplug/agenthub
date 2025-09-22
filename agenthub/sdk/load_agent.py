@@ -4,8 +4,9 @@ import warnings
 from typing import Any
 
 from ..core.agents import AgentLoader, AgentWrapper
+from ..core.agents.loader import AgentLoadError
 from ..core.tools import get_tool_registry
-from ..core.tools.exceptions import AgentLoadError, ValidationError
+from ..core.tools.exceptions import ValidationError
 
 
 def load_agent(
@@ -63,10 +64,26 @@ def load_agent(
             stacklevel=2,
         )
 
+    # Try to load agent definition from YAML first
     try:
-        # Load agent definition from YAML (developer created)
         agent_info = _load_agent_from_yaml(base_agent)
+    except AgentLoadError as e:
+        # If agent not found, try to auto-install it
+        if "not found" in str(e).lower():
+            print(
+                f"🤖 Agent '{base_agent}' not found locally. "
+                f"Attempting to auto-install..."
+            )
+            try:
+                agent_info = _auto_install_agent(base_agent)
+            except Exception as install_error:
+                raise AgentLoadError(
+                    f"Failed to auto-install agent '{base_agent}': {install_error}"
+                ) from install_error
+        else:
+            raise e
 
+    try:
         # Create agent instance
         agent = _create_agent_instance(agent_info, monitoring=monitoring)
 
@@ -104,6 +121,28 @@ def _load_agent_from_yaml(agent_name: str) -> dict[str, Any]:
         raise AgentLoadError(f"Invalid agent: {agent_name}")
 
     return agent_info
+
+
+def _auto_install_agent(agent_name: str) -> dict[str, Any]:
+    """Auto-install an agent if it's not found locally."""
+    from ..github.auto_installer import AutoInstaller
+
+    # Create auto-installer
+    installer = AutoInstaller()
+
+    # Install the agent
+    result = installer.install_agent(agent_name)
+
+    if not result.success:
+        raise AgentLoadError(
+            f"Failed to auto-install agent '{agent_name}': {result.error_message}"
+        )
+
+    print(f"✅ Successfully installed agent '{agent_name}'!")
+    print(f"📁 Location: {result.local_path}")
+
+    # Load the newly installed agent
+    return _load_agent_from_yaml(agent_name)
 
 
 def _create_agent_instance(
