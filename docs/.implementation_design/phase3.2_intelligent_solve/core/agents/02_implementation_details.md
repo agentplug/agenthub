@@ -196,16 +196,10 @@ class LLMDecisionEngine:
     def __init__(self, llm_service: CoreLLMService = None):
         # Use existing CoreLLMService or create new instance
         self.llm_service = llm_service or CoreLLMService()
-        self.cache = {}
         self.confidence_threshold = 0.7
 
     def select_method(self, query: str, agent_metadata: dict) -> dict:
         """Select best method using LLM analysis."""
-        # Check cache first
-        cache_key = f"{agent_metadata.get('agent_id', 'unknown')}:{hash(query)}"
-        if cache_key in self.cache:
-            return self.cache[cache_key]
-
         # Prepare method information using existing agent structure
         methods_info = self._prepare_methods_info(agent_metadata)
 
@@ -226,9 +220,6 @@ class LLMDecisionEngine:
             # Validate selection
             if not self._validate_method_selection(selection, agent_metadata):
                 selection = self._fallback_method_selection(query, agent_metadata)
-
-            # Cache result
-            self.cache[cache_key] = selection
 
             return selection
 

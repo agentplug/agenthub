@@ -79,14 +79,12 @@ class SolveLLMService:
     def __init__(self, llm_service: CoreLLMService = None):
         """Initialize SolveLLMService with existing CoreLLMService."""
         self.llm_service = llm_service or CoreLLMService()
-        self.cache = {}
         self.rate_limiter = RateLimiter()
         self.performance_monitor = PerformanceMonitor()
 
         # Configuration
         self.confidence_threshold = 0.7
         self.max_retries = 3
-        self.cache_ttl = 300  # 5 minutes
         self.rate_limit_requests = 100  # per minute
 
     def select_method(
@@ -99,14 +97,6 @@ class SolveLLMService:
         start_time = time.time()
 
         try:
-            # Check cache first
-            cache_key = self._generate_cache_key('method_selection', query, agent_metadata)
-            if cache_key in self.cache:
-                cached_result = self.cache[cache_key]
-                if time.time() - cached_result['timestamp'] < self.cache_ttl:
-                    logger.info("Using cached method selection result")
-                    return cached_result['result']
-
             # Rate limiting
             self.rate_limiter.wait_if_needed()
 
@@ -123,12 +113,6 @@ class SolveLLMService:
 
             # Add processing time
             result.processing_time = time.time() - start_time
-
-            # Cache result
-            self.cache[cache_key] = {
-                'result': result,
-                'timestamp': time.time()
-            }
 
             # Log performance
             self.performance_monitor.record_method_selection(result)
@@ -149,14 +133,6 @@ class SolveLLMService:
         start_time = time.time()
 
         try:
-            # Check cache first
-            cache_key = self._generate_cache_key('parameter_extraction', query, method_info)
-            if cache_key in self.cache:
-                cached_result = self.cache[cache_key]
-                if time.time() - cached_result['timestamp'] < self.cache_ttl:
-                    logger.info("Using cached parameter extraction result")
-                    return cached_result['result']
-
             # Rate limiting
             self.rate_limiter.wait_if_needed()
 
@@ -170,12 +146,6 @@ class SolveLLMService:
 
             # Add processing time
             result.processing_time = time.time() - start_time
-
-            # Cache result
-            self.cache[cache_key] = {
-                'result': result,
-                'timestamp': time.time()
-            }
 
             # Log performance
             self.performance_monitor.record_parameter_extraction(result)
@@ -483,17 +453,6 @@ Response Format (JSON):
 
         return result
 
-    def _generate_cache_key(self, operation: str, query: str, metadata: Dict[str, Any]) -> str:
-        """Generate cache key for operation."""
-        # Create a hash of the operation, query, and relevant metadata
-        key_data = {
-            'operation': operation,
-            'query': query,
-            'agent_id': metadata.get('agent_id', 'unknown'),
-            'methods': sorted(metadata.get('methods', [])),
-            'interface': metadata.get('interface', {})
-        }
-        return f"{operation}:{hash(str(key_data))}"
 
     def _handle_method_selection_error(
         self,

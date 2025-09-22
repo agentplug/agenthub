@@ -254,14 +254,11 @@ class MethodSelectionRuntime:
     def __init__(self, llm_engine=None):
         """Initialize method selection runtime."""
         self.llm_engine = llm_engine
-        self.cache = {}
         self.performance_metrics = {
             'total_selections': 0,
             'successful_selections': 0,
             'failed_selections': 0,
-            'average_processing_time': 0.0,
-            'cache_hits': 0,
-            'cache_misses': 0
+            'average_processing_time': 0.0
         }
 
     def select_method(self, query: str, agent_metadata: Dict[str, Any], context: Dict[str, Any] = None) -> MethodSelectionResult:
@@ -269,15 +266,6 @@ class MethodSelectionRuntime:
         start_time = time.time()
 
         try:
-            # Check cache first
-            cache_key = self._generate_cache_key(query, agent_metadata)
-            if cache_key in self.cache:
-                self.performance_metrics['cache_hits'] += 1
-                logger.info("Using cached method selection result")
-                return self.cache[cache_key]
-
-            self.performance_metrics['cache_misses'] += 1
-
             # Use LLM engine for method selection
             if self.llm_engine:
                 selection = self.llm_engine.select_method(query, agent_metadata, context)
@@ -293,9 +281,6 @@ class MethodSelectionRuntime:
                 processing_time=time.time() - start_time,
                 success=selection.get('confidence', 0.0) > 0.5
             )
-
-            # Cache result
-            self.cache[cache_key] = result
 
             # Update performance metrics
             self._update_performance_metrics(result)
@@ -367,16 +352,6 @@ class MethodSelectionRuntime:
             'alternative_methods': available_methods[1:]
         }
 
-    def _generate_cache_key(self, query: str, agent_metadata: Dict[str, Any]) -> str:
-        """Generate cache key for method selection."""
-        # Create a hash of the query and relevant metadata
-        key_data = {
-            'query': query,
-            'agent_id': agent_metadata.get('agent_id', 'unknown'),
-            'methods': sorted(agent_metadata.get('methods', [])),
-            'interface': agent_metadata.get('interface', {})
-        }
-        return f"method_selection:{hash(str(key_data))}"
 
     def _update_performance_metrics(self, result: MethodSelectionResult):
         """Update performance metrics."""
@@ -396,10 +371,6 @@ class MethodSelectionRuntime:
         """Get performance metrics."""
         return self.performance_metrics.copy()
 
-    def clear_cache(self):
-        """Clear method selection cache."""
-        self.cache.clear()
-        logger.info("Method selection cache cleared")
 ```
 
 ### **3. Parameter Extraction Runtime**

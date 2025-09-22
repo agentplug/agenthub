@@ -304,8 +304,6 @@ class SolveConfig:
     # Confidence threshold for method selection
     confidence_threshold: float = 0.7
 
-    # Enable/disable caching
-    enable_caching: bool = True
 
     # Enable/disable fallback methods
     fallback_enabled: bool = True
@@ -316,8 +314,6 @@ class SolveConfig:
     # Performance monitoring
     performance_monitoring: bool = True
 
-    # Cache TTL in seconds
-    cache_ttl: int = 300
 
     # Maximum retries for LLM calls
     max_retries: int = 3
@@ -331,8 +327,6 @@ class SolveConfig:
         if self.confidence_threshold < 0.0 or self.confidence_threshold > 1.0:
             raise ValueError("Confidence threshold must be between 0.0 and 1.0")
 
-        if self.cache_ttl < 0:
-            raise ValueError("Cache TTL must be non-negative")
 
         if self.max_retries < 0:
             raise ValueError("Max retries must be non-negative")
@@ -347,11 +341,9 @@ class SolveConfig:
         """Convert to dictionary."""
         return {
             'confidence_threshold': self.confidence_threshold,
-            'enable_caching': self.enable_caching,
             'fallback_enabled': self.fallback_enabled,
             'llm_config': self.llm_config or {},
             'performance_monitoring': self.performance_monitoring,
-            'cache_ttl': self.cache_ttl,
             'max_retries': self.max_retries,
             'rate_limit_requests': self.rate_limit_requests,
             'rate_limit_window': self.rate_limit_window
