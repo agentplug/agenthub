@@ -53,7 +53,6 @@ class LLMDecisionEngine:
 
         # Prepare method information for LLM
         method_info = self._prepare_method_info(agent_methods)
-        print(method_info)
 
         # Create system prompt for method selection
         system_prompt = self._create_method_selection_prompt()
