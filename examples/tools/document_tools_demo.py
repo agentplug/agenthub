@@ -22,6 +22,7 @@ from agenthub.core.tools.builtin.document import (
     document_chunk, 
     document_extract_metadata
 )
+import time
 
 # Enable monitoring for better visibility
 print("🔍 Monitoring enabled for agent testing")
@@ -210,10 +211,6 @@ def test_agent_without_document_tools(documents: dict):
     print("=" * 50)
     
     try:
-        # Load agent without document tools
-        print("🔍 Loading agent with monitoring enabled...")
-        agent = ah.load_agent("agentplug/analysis-agent", monitoring=True)
-        
         print("Agent capabilities without document tools:")
         print("- Can only work with text provided directly")
         print("- Cannot access or search through documents")
@@ -238,6 +235,10 @@ def test_agent_without_document_tools(documents: dict):
         for i, question in enumerate(questions, 1):
             print(f"\n{i}. Question: {question}")
             print("⏳ Processing...")
+            
+            # Create a fresh agent instance for each question to avoid state pollution
+            print("🔍 Loading fresh agent with monitoring enabled...")
+            agent = ah.load_agent("agentplug/analysis-agent", monitoring=True)
             
             # Include document context in the question
             full_question = f"{document_context}\n\n{question}"
@@ -264,6 +265,11 @@ def test_agent_without_document_tools(documents: dict):
             print(f"🔧 Tools used: {', '.join(tools_used) if tools_used else 'None'}")
             print(f"📝 Response: {analysis}")
             print("   Limitation: Cannot access or search documents directly")
+            
+            # Add interactive prompt between questions
+            if i < len(questions):
+                print(f"\n⏸️  Question {i} completed. Press Enter to continue to question {i+1}...")
+                input()
             
     except Exception as e:
         print(f"❌ Error loading agent: {e}")
@@ -334,6 +340,11 @@ def test_agent_with_document_tools(documents: dict):
             print(f"🔧 Tools used: {', '.join(tools_used) if tools_used else 'None'}")
             print(f"📝 Response: {analysis}")
             print("   ✅ Agent can now access and analyze documents directly!")
+            
+            # Add interactive prompt between questions
+            if i < len(questions):
+                print(f"\n⏸️  Question {i} completed. Press Enter to continue to question {i+1}...")
+                input()
             
     except Exception as e:
         print(f"❌ Error loading agent: {e}")

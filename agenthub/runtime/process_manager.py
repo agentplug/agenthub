@@ -350,10 +350,10 @@ class ProcessManager:
         for line in stdout_lines:
             if "[STDOUT]" in line:
                 result_text += line.split("[STDOUT]")[-1].strip()
-            else:
-                result_text += line.strip()
 
         logger.debug(f"Attempting to parse JSON: {result_text[:200]}...")
+        logger.debug(f"Full result text length: {len(result_text)}")
+        logger.debug(f"Number of stdout lines: {len(stdout_lines)}")
         return result_text
 
     def _parse_failed_result(self, final_analysis, execution_time):
