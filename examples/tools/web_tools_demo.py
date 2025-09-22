@@ -380,11 +380,8 @@ def main():
         elif choice == "2":
             full_demo()
             break
-        elif choice == "3":
-            test_direct_tool_usage()
-            break
         else:
-            print("❌ Invalid choice. Please enter 1, 2, or 3.")
+            print("❌ Invalid choice. Please enter 1 or 2.")
 
 
 if __name__ == "__main__":
