@@ -5,6 +5,7 @@ from typing import Any
 
 from ..knowledge import KnowledgeManager
 from ..mcp.agent_tool_manager import AgentToolManager
+from ..tools.exceptions import AgentExecutionError
 from .agent_info import AgentInfo
 from .method_executor import MethodExecutor
 from .solve import SolveEngine
