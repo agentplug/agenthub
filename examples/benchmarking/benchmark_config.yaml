@@ -1,0 +1,259 @@
+# AgentHub Tool Benchmarking Configuration
+
+# Global benchmark settings
+benchmark:
+  name: "AgentHub Tool Performance Benchmark"
+  version: "1.0.0"
+  description: "Comprehensive benchmarking of AgentHub built-in and MCP tools"
+  
+  # Execution settings
+  execution:
+    timeout: 300  # seconds
+    max_retries: 3
+    parallel_tests: false  # Run tests in parallel (experimental)
+    
+  # Output settings
+  output:
+    format: ["json", "html", "csv"]  # Output formats
+    directory: "benchmark_results"
+    include_raw_data: true
+    generate_charts: true
+
+# Tool-specific configurations
+tools:
+  web_search:
+    enabled: true
+    test_queries:
+      - "Python programming tutorial"
+      - "Machine learning best practices"
+      - "Climate change research"
+      - "Web development trends 2024"
+      - "Artificial intelligence ethics"
+    engines: ["duckduckgo", "google", "bing"]
+    max_results: 5
+    timeout: 30
+    
+  web_scrape:
+    enabled: true
+    test_urls:
+      - "https://httpbin.org/html"
+      - "https://httpbin.org/json"
+      - "https://example.com"
+      - "https://httpbin.org/xml"
+    extract_text: true
+    extract_links: true
+    extract_metadata: true
+    timeout: 30
+    
+  web_summarize:
+    enabled: true
+    test_urls:
+      - "https://en.wikipedia.org/wiki/Artificial_intelligence"
+      - "https://en.wikipedia.org/wiki/Machine_learning"
+    max_length: 200
+    timeout: 60
+    
+  web_analyze:
+    enabled: true
+    test_urls:
+      - "https://news.ycombinator.com"
+      - "https://github.com"
+    analysis_types: ["sentiment", "topics", "entities"]
+    timeout: 60
+    
+  document_parse:
+    enabled: true
+    test_files:
+      - type: "txt"
+        content: "sample_business_report.txt"
+        size: "medium"
+      - type: "json"
+        content: "sample_data_analysis.json"
+        size: "small"
+      - type: "md"
+        content: "sample_technical_doc.md"
+        size: "medium"
+      - type: "pdf"
+        content: "sample_report.pdf"
+        size: "large"
+    extract_metadata: true
+    extract_tables: true
+    extract_images: false
+    extract_links: true
+    
+  document_search:
+    enabled: true
+    test_queries:
+      - "revenue growth metrics"
+      - "technical implementation details"
+      - "customer satisfaction data"
+      - "performance optimization"
+      - "security best practices"
+    source_directories: ["test_documents/"]
+    max_results: 10
+    similarity_threshold: 0.7
+    chunk_size: 1000
+    
+  document_chunk:
+    enabled: true
+    test_documents: ["large_document.txt"]
+    chunk_sizes: [500, 1000, 2000]
+    overlap_percentages: [10, 20, 30]
+    
+  document_extract_metadata:
+    enabled: true
+    test_files: ["sample_report.pdf", "sample_document.docx"]
+    include_analysis: true
+    include_keywords: true
+    include_entities: true
+    include_topics: true
+
+# Performance thresholds
+thresholds:
+  execution_time:
+    excellent: 1.0    # seconds
+    good: 3.0
+    acceptable: 10.0
+    poor: 30.0
+    
+  memory_usage:
+    excellent: 50     # MB
+    good: 100
+    acceptable: 200
+    poor: 500
+    
+  accuracy:
+    excellent: 0.95
+    good: 0.85
+    acceptable: 0.75
+    poor: 0.60
+    
+  success_rate:
+    excellent: 0.99
+    good: 0.95
+    acceptable: 0.90
+    poor: 0.80
+
+# Test data generation
+test_data:
+  synthetic:
+    enabled: true
+    document_count: 100
+    query_count: 50
+    url_count: 25
+    
+  real_world:
+    enabled: true
+    web_sources: ["news", "blogs", "documentation"]
+    document_types: ["reports", "manuals", "articles"]
+    
+  stress_testing:
+    enabled: true
+    concurrent_requests: 10
+    duration_minutes: 5
+    ramp_up_seconds: 30
+
+# Quality evaluation
+quality_evaluation:
+  search_relevance:
+    method: "semantic_similarity"
+    model: "all-MiniLM-L6-v2"
+    threshold: 0.7
+    
+  content_extraction:
+    method: "content_preservation"
+    metrics: ["completeness", "accuracy", "structure"]
+    
+  parsing_accuracy:
+    method: "ground_truth_comparison"
+    tolerance: 0.05
+    
+  performance_consistency:
+    method: "coefficient_of_variation"
+    threshold: 0.2
+
+# Reporting
+reporting:
+  formats:
+    json:
+      enabled: true
+      pretty_print: true
+      include_raw_data: true
+      
+    html:
+      enabled: true
+      template: "default"
+      include_charts: true
+      interactive: true
+      
+    csv:
+      enabled: true
+      include_metadata: true
+      
+    pdf:
+      enabled: false
+      template: "executive_summary"
+      
+  charts:
+    execution_time_trends: true
+    memory_usage_distribution: true
+    accuracy_comparison: true
+    success_rate_overview: true
+    tool_comparison_matrix: true
+    
+  sections:
+    executive_summary: true
+    detailed_results: true
+    performance_analysis: true
+    recommendations: true
+    appendix: true
+
+# CI/CD Integration
+ci_cd:
+  enabled: true
+  triggers:
+    - "pull_request"
+    - "push_to_main"
+    - "release_tag"
+    
+  quality_gates:
+    min_success_rate: 0.90
+    max_avg_execution_time: 10.0
+    min_avg_accuracy: 0.80
+    max_memory_usage: 200
+    
+  notifications:
+    slack:
+      enabled: false
+      webhook_url: ""
+      channel: "#benchmarks"
+      
+    email:
+      enabled: false
+      recipients: ["dev-team@company.com"]
+      
+    github:
+      enabled: true
+      comment_on_pr: true
+      create_issue_on_failure: true
+
+# Environment settings
+environment:
+  python_version: "3.11"
+  dependencies:
+    - "sentence-transformers"
+    - "psutil"
+    - "requests"
+    - "beautifulsoup4"
+    - "pypdf2"
+    - "python-docx"
+    
+  system_requirements:
+    min_memory: "2GB"
+    min_disk_space: "1GB"
+    recommended_cpu: "4 cores"
+    
+  test_environment:
+    isolated: true
+    cleanup_after: true
+    preserve_logs: true
