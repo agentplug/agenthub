@@ -521,7 +521,7 @@ class CoreLLMService:
             else:
                 raise ValueError("input_data must be string or list")
         except Exception as e:
-            print(f"AISuite generation failed: {e}")
+            logger.error(f"AISuite generation failed: {e}")
             return self._fallback_response()
 
     def _organize_messages_to_aisuite_format(
@@ -611,7 +611,7 @@ class CoreLLMService:
 
             return ai.Client()
         except ImportError:
-            print("Warning: AISuite not available, using fallback")
+            logger.warning("AISuite not available, using fallback")
             return None
 
     def _fallback_response(self) -> str:

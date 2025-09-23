@@ -78,7 +78,6 @@ class LLMDecisionEngine:
                 user_prompt, system_prompt=system_prompt, return_json=True
             )
 
-            print(response)
             # Parse response
             result = json.loads(response)
 
@@ -133,8 +132,6 @@ class LLMDecisionEngine:
             response = self.llm_service.generate(
                 user_prompt, system_prompt=system_prompt, return_json=True
             )
-            print(response)
-
             # Parse response
             result = json.loads(response)
 
