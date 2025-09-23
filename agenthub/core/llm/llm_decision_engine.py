@@ -78,6 +78,8 @@ class LLMDecisionEngine:
                 user_prompt, system_prompt=system_prompt, return_json=True
             )
 
+            print(response)
+
             # Parse response
             result = json.loads(response)
 
@@ -132,6 +134,9 @@ class LLMDecisionEngine:
             response = self.llm_service.generate(
                 user_prompt, system_prompt=system_prompt, return_json=True
             )
+
+            print(response)
+
             # Parse response
             result = json.loads(response)
 
@@ -200,6 +205,19 @@ class LLMDecisionEngine:
             "If no method is clearly appropriate, select the most general method "
             "and provide a low confidence score."
             "Answer must be directly json format, not ```json or ``` or anything else."
+            """Output format: {
+            "reasoning": ,
+            "selected_method": ,
+            "confidence":
+            }"""
+            """Incorrect Output format: ```json
+            {
+            "reasoning": ,
+            "parameters": ,
+            "confidence":
+            }
+            ```
+            """
         )
 
     def _create_method_selection_user_prompt(
@@ -242,6 +260,20 @@ Available Methods:
             "- List: Extract comma-separated or list-like values\n"
             "- File paths: Extract file references and paths"
             "Answer must be directly json format, not ```json or ``` or anything else."
+            """CorrectOutput format: {
+            "reasoning": ,
+            "parameters": ,
+            "confidence":
+            }"""
+            """
+            Incorrect Output format: ```json
+            {
+            "reasoning": ,
+            "parameters": ,
+            "confidence":
+            }
+            ```
+            """
         )
 
     def _create_parameter_extraction_user_prompt(
