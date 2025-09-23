@@ -10,8 +10,8 @@ from ..knowledge import KnowledgeManager
 from ..llm.llm_decision_engine import LLMDecisionEngine
 from ..mcp.agent_tool_manager import AgentToolManager
 from ..tools.exceptions import AgentExecutionError
-from .solve_interface import AgentSolveInterface
-from .solve_result import SolveResult
+from .solve.interface import AgentSolveInterface
+from .solve.result import SolveResult
 from .validator import InterfaceValidator
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class AgentWrapper:
 
         # Phase 3.2: Initialize solve() components
         self.llm_decision_engine = LLMDecisionEngine()
-        self._custom_solve_agent = None
+        self._custom_solve_agent: AgentSolveInterface | None = None
 
     def assign_tools(self, tool_names: list[str]) -> None:
         """
@@ -795,15 +795,23 @@ class AgentWrapper:
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(f"Error in solve() method: {e}")
-            # Return error in the same format as agent execution errors
-            return {"error": str(e), "execution_time": execution_time}
+            # Return error as SolveResult
+            return SolveResult(
+                result=None,
+                success=False,
+                error=str(e),
+                execution_time=execution_time,
+                method_used="solve",
+                method_type="framework",
+            )
 
     def _has_custom_solve(self) -> bool:
         """Check if agent has a custom solve() method."""
         try:
             if self._custom_solve_agent is None:
                 # Try to load the agent and check for solve method
-                self._custom_solve_agent = self._load_custom_solve_agent()
+                agent = self._load_custom_solve_agent()
+                self._custom_solve_agent = agent
 
             return self._custom_solve_agent is not None
         except Exception as e:
@@ -854,16 +862,32 @@ class AgentWrapper:
                 raise RuntimeError("No custom solve agent available")
 
             # This code is reachable because the raise above is conditional
-            result = self._custom_solve_agent.solve(query, full_context, **kwargs)  # type: ignore[unreachable]
+            result = self._custom_solve_agent.solve(query, full_context, **kwargs)
             execution_time = time.time() - start_time
 
-            # Return the actual result in the same format as direct method calls
-            return result
+            # Convert result to SolveResult if it's not already
+            if isinstance(result, SolveResult):
+                return result
+            else:
+                return SolveResult(
+                    result=result,
+                    success=True,
+                    method_used="custom_solve",
+                    method_type="custom",
+                    execution_time=execution_time,
+                )
 
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(f"Error in custom solve method: {e}")
-            return {"error": str(e), "execution_time": execution_time}
+            return SolveResult(
+                result=None,
+                success=False,
+                error=str(e),
+                execution_time=execution_time,
+                method_used="custom_solve",
+                method_type="custom",
+            )
 
     def _execute_framework_solve(
         self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
@@ -879,10 +903,14 @@ class AgentWrapper:
             agent_methods = self._get_method_metadata()
 
             if not agent_methods:
-                return {
-                    "error": "No methods available for this agent",
-                    "execution_time": time.time() - start_time,
-                }
+                return SolveResult(
+                    result=None,
+                    success=False,
+                    error="No methods available for this agent",
+                    execution_time=time.time() - start_time,
+                    method_used="framework_solve",
+                    method_type="framework",
+                )
 
             # Use LLM to select method
             method_name, confidence, reasoning = self.llm_decision_engine.select_method(
@@ -890,10 +918,14 @@ class AgentWrapper:
             )
 
             if not method_name:
-                return {
-                    "error": "Could not select appropriate method",
-                    "execution_time": time.time() - start_time,
-                }
+                return SolveResult(
+                    result=None,
+                    success=False,
+                    error="Could not select appropriate method",
+                    execution_time=time.time() - start_time,
+                    method_used="framework_solve",
+                    method_type="framework",
+                )
 
             # Get method parameters
             method_info = self.get_method_info(method_name)
@@ -916,13 +948,31 @@ class AgentWrapper:
             # f"Parameter extraction: {param_reasoning}"
             # combined_confidence = min(confidence, param_confidence)
 
-            # Return the exact same format as direct method calls
-            return result
+            # Convert result to SolveResult
+            if isinstance(result, SolveResult):
+                return result
+            else:
+                return SolveResult(
+                    result=result,
+                    success=True,
+                    method_used=method_name,
+                    method_type="framework",
+                    execution_time=execution_time,
+                    confidence=confidence,
+                    reasoning=reasoning,
+                )
 
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(f"Error in framework solve method: {e}")
-            return {"error": str(e), "execution_time": execution_time}
+            return SolveResult(
+                result=None,
+                success=False,
+                error=str(e),
+                execution_time=execution_time,
+                method_used="framework_solve",
+                method_type="framework",
+            )
 
     def _prepare_solve_context(
         self, context: dict[str, Any] | None = None
