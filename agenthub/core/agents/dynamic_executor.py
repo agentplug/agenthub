@@ -18,9 +18,9 @@ class DynamicExecutionError(Exception):
 class DynamicAgentExecutor:
     """Dynamic agent executor that uses reflection and manifest-based execution."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the dynamic executor."""
-        self.loaded_agents = {}  # Cache for loaded agent classes
+        self.loaded_agents: dict[str, type] = {}  # Cache for loaded agent classes
 
     def execute_agent_method(
         self,
@@ -151,7 +151,7 @@ class DynamicAgentExecutor:
 
     def _map_parameters_dynamically(
         self,
-        method: callable,
+        method: Any,
         parameters: dict[str, Any],
         manifest: dict[str, Any] | None = None,
         method_name: str = "",
@@ -230,7 +230,8 @@ class DynamicAgentExecutor:
             interface = manifest.get("interface", {})
             methods = interface.get("methods", {})
             method_def = methods.get(method_name, {})
-            return method_def.get("parameters", {})
+            params = method_def.get("parameters", {})
+            return params if isinstance(params, dict) else {}
         except Exception:
             return {}
 

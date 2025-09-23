@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class MethodExecutor:
     """Handles method execution and parameter mapping."""
 
-    def __init__(self, agent_wrapper):
+    def __init__(self, agent_wrapper: Any) -> None:
         """Initialize method executor."""
         self.agent_wrapper = agent_wrapper
 
@@ -98,9 +98,7 @@ class MethodExecutor:
                 return mapped_kwargs
             elif args and kwargs and interface_params:
                 # Handle mixed positional and named arguments
-                mapped_kwargs = self._map_mixed_arguments(
-                    method, args, kwargs, interface_params
-                )
+                mapped_kwargs = self._map_mixed_arguments(method, args, kwargs)
                 return mapped_kwargs
             else:
                 # No mapping needed, return as-is
@@ -110,7 +108,7 @@ class MethodExecutor:
             return parameters
 
     def _map_positional_to_named_args(
-        self, method_name: str, args: list, kwargs: dict
+        self, method_name: str, args: list[Any], kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """Map positional arguments to named parameters based on method signature."""
         method_info = self.agent_wrapper.agent_info.get_method_info(method_name)
@@ -137,7 +135,7 @@ class MethodExecutor:
         return mapped_params
 
     def _map_mixed_arguments(
-        self, method_name: str, args: list, kwargs: dict
+        self, method_name: str, args: list[Any], kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """Handle mixed positional and keyword arguments."""
         method_info = self.agent_wrapper.agent_info.get_method_info(method_name)

@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from .manifest import ManifestParser
 from .validator import InterfaceValidator
@@ -18,7 +19,7 @@ class AgentLoadError(Exception):
 class AgentLoader:
     """Load and validate agents from storage with tool capabilities."""
 
-    def __init__(self, storage=None, tool_registry=None):
+    def __init__(self, storage: Any = None, tool_registry: Any = None) -> None:
         """
         Initialize the agent loader.
 
@@ -173,7 +174,8 @@ class AgentLoader:
         if not self.storage:
             raise AgentLoadError("No storage provided for agent discovery")
 
-        return self.storage.discover_agents()
+        agents = self.storage.discover_agents()
+        return agents if isinstance(agents, list) else []
 
     def get_agent_info(self, namespace: str, agent_name: str) -> dict:
         """
