@@ -2,6 +2,7 @@
 
 import threading
 from collections.abc import Callable
+from typing import Any
 
 from mcp.server import FastMCP
 
@@ -12,19 +13,20 @@ from .metadata import ToolMetadata
 class ToolRegistry:
     """Singleton registry for managing tools and FastMCP server."""
 
-    _instance = None
+    _instance: "ToolRegistry | None" = None
     _lock = threading.Lock()
 
-    def __new__(cls):
+    def __new__(cls) -> "ToolRegistry":
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
-                    cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
-        if not self._initialized:
+    def __init__(self) -> None:
+        if not hasattr(self, "_initialized") or not getattr(
+            self, "_initialized", False
+        ):
             self.mcp_server = FastMCP("AgentHub Tools")
             self.registered_tools: dict[str, Callable] = {}
             self.tool_metadata: dict[str, ToolMetadata] = {}
@@ -86,7 +88,7 @@ class ToolRegistry:
             from mcp import ClientSession
             from mcp.client.sse import sse_client
 
-            async def discover_tools():
+            async def discover_tools() -> list[str]:
                 try:
                     async with sse_client(url="http://localhost:8000/sse") as streams:
                         async with ClientSession(*streams) as session:
@@ -130,7 +132,7 @@ class ToolRegistry:
             from mcp import ClientSession
             from mcp.client.sse import sse_client
 
-            async def get_tool_info():
+            async def get_tool_info() -> dict[str, Any] | None:
                 async with sse_client(url="http://localhost:8000/sse") as streams:
                     async with ClientSession(*streams) as session:
                         await session.initialize()
@@ -198,7 +200,7 @@ class ToolRegistry:
         """Remove a tool from the registry (alias for unregister_tool)."""
         return self.unregister_tool(name)
 
-    def execute_tool(self, name: str, parameters: dict) -> any:
+    def execute_tool(self, name: str, parameters: dict) -> Any:
         """Execute a tool with given parameters."""
         if name not in self.registered_tools:
             raise ToolNotFoundError(f"Tool '{name}' not found")
@@ -211,7 +213,7 @@ class ToolRegistry:
         if metadata.name in self.registered_tools:
             raise ToolNameConflictError(f"Tool '{metadata.name}' is already registered")
 
-        self.registered_tools[metadata.name] = metadata.function
+        self.registered_tools[metadata.name] = metadata.function or (lambda: None)
         self.tool_metadata[metadata.name] = metadata
 
     def clear_agent_tools(self, agent_id: str) -> None:
@@ -277,7 +279,7 @@ def get_available_tools() -> list[str]:
     return _registry.get_available_tools()
 
 
-def get_mcp_server():
+def get_mcp_server() -> FastMCP:
     """Get the FastMCP server instance."""
     return _registry.mcp_server
 
@@ -317,7 +319,7 @@ def get_agent_tool_metadata(agent_id: str) -> list[ToolMetadata]:
     return _registry.get_agent_tool_metadata(agent_id)
 
 
-def run_resources():
+def run_resources() -> None:
     """Run the MCP server"""
     mcp_server = get_mcp_server()
     mcp_server.run(transport="sse")

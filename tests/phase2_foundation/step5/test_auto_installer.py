@@ -362,16 +362,16 @@ class TestAutoInstaller:
     @patch.object(RepositoryCloner, "list_cloned_agents")
     def test_list_installed_agents(self, mock_list, auto_installer):
         """Test listing installed agents."""
-        mock_list.return_value = [
-            {"name": "test/agent1", "path": "/tmp/agent1"},
-            {"name": "test/agent2", "path": "/tmp/agent2"},
-        ]
+        mock_list.return_value = {
+            "test/agent1": "/tmp/agent1",
+            "test/agent2": "/tmp/agent2",
+        }
 
         agents = auto_installer.list_installed_agents()
 
         assert len(agents) == 2
-        assert agents[0]["name"] == "test/agent1"
-        assert agents[1]["name"] == "test/agent2"
+        assert "test/agent1" in agents
+        assert "test/agent2" in agents
 
     @patch.object(RepositoryCloner, "remove_agent")
     def test_remove_agent(self, mock_remove, auto_installer):

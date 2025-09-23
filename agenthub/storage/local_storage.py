@@ -82,7 +82,7 @@ class LocalStorage:
         Raises:
             OSError: If unable to read agents directory
         """
-        agents = []
+        agents: list[dict[str, str]] = []
 
         if not self._agents_dir.exists():
             logger.debug(f"Agents directory does not exist: {self._agents_dir}")
@@ -166,7 +166,8 @@ class LocalStorage:
 
             with open(manifest_path) as f:
                 manifest = yaml.safe_load(f)
-                return manifest.get("version")
+                version = manifest.get("version")
+                return str(version) if version is not None else None
         except Exception as e:
             logger.debug(f"Error reading version from {manifest_path}: {e}")
             return None

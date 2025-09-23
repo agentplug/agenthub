@@ -1,9 +1,11 @@
 """Display formatting utilities for CLI commands."""
 
+from typing import Any
+
 from rich import print as rprint
 
 
-def format_agent_result(agent_result, execution_time: float = 0):
+def format_agent_result(agent_result: Any, execution_time: float = 0) -> None:
     """Format and display agent execution result."""
     if execution_time > 0:
         rprint(f"\n✅ [green]Success![/green] [dim]({execution_time:.1f}s)[/dim]")

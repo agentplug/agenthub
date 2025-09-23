@@ -13,7 +13,7 @@ from agenthub.core.tools import get_tool_registry
 class ToolInjector:
     """Injects tool metadata into agent contexts."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the tool injector."""
         self.tool_manager = get_tool_manager()
         self.tool_registry = get_tool_registry()
@@ -46,7 +46,7 @@ class ToolInjector:
 
                 # Create example usage
                 if metadata.parameters:
-                    example_args = {}
+                    example_args: dict[str, Any] = {}
                     for param_name, param_type in metadata.parameters.items():
                         if param_type is str:
                             example_args[param_name] = f"example_{param_name}"
@@ -69,8 +69,12 @@ class ToolInjector:
                     }
 
         # Create system prompt with tool information
+        # Filter out None values from tool_parameters
+        filtered_tool_parameters = {
+            k: v for k, v in tool_parameters.items() if v is not None
+        }
         system_prompt = self._create_tool_system_prompt(
-            assigned_tools, tool_descriptions, tool_parameters, tool_examples
+            assigned_tools, tool_descriptions, filtered_tool_parameters, tool_examples
         )
 
         return {
@@ -172,7 +176,11 @@ class ToolInjector:
                     "description": (
                         metadata.description if metadata else "No description"
                     ),
-                    "parameter_count": len(metadata.parameters) if metadata else 0,
+                    "parameter_count": (
+                        len(metadata.parameters)
+                        if metadata and metadata.parameters
+                        else 0
+                    ),
                 }
             )
 

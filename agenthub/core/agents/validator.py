@@ -1,6 +1,7 @@
 """Interface validator for agent interfaces."""
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class InterfaceValidationError(Exception):
 class InterfaceValidator:
     """Validate agent interfaces and methods."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the interface validator."""
         pass
 
@@ -109,7 +110,7 @@ class InterfaceValidator:
 
         return method_name in methods
 
-    def get_method_info(self, interface: dict, method_name: str) -> dict:
+    def get_method_info(self, interface: dict, method_name: str) -> dict[str, Any]:
         """
         Get information about a specific method.
 
@@ -128,7 +129,8 @@ class InterfaceValidator:
                 f"Method '{method_name}' not found in interface"
             )
 
-        return interface["methods"][method_name]
+        method_info = interface["methods"][method_name]
+        return method_info if isinstance(method_info, dict) else {}
 
     def get_available_methods(self, interface: dict) -> list[str]:
         """

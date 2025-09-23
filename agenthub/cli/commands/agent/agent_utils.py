@@ -12,7 +12,7 @@ from agenthub.github.repository_validator import RepositoryValidator
 console = Console()
 
 
-def display_simple_agent_list(agents: dict[str, str]):
+def display_simple_agent_list(agents: dict[str, str]) -> None:
     """Display simple agent list with descriptions."""
     from agenthub.core.agents.loader import AgentLoader
     from agenthub.storage.local_storage import LocalStorage
@@ -61,7 +61,9 @@ def display_simple_agent_list(agents: dict[str, str]):
     console.print(table)
 
 
-def display_detailed_agent_list(agents: dict[str, str], cloner: RepositoryCloner):
+def display_detailed_agent_list(
+    agents: dict[str, str], cloner: RepositoryCloner
+) -> None:
     """Display detailed agent information."""
     validator = RepositoryValidator()
 
@@ -93,7 +95,7 @@ def display_detailed_agent_list(agents: dict[str, str], cloner: RepositoryCloner
     console.print(table)
 
 
-def show_agent_status(agent_name: str, agent_path: str):
+def show_agent_status(agent_name: str, agent_path: str) -> None:
     """Show detailed status for a single agent."""
     from agenthub.environment.environment_setup import EnvironmentSetup
 

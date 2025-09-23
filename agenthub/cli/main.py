@@ -12,7 +12,7 @@ from .commands.core.validate import core_validate
 
 @click.group()
 @click.version_option()
-def cli():
+def cli() -> None:
     """AgentHub - AI Agent Management Platform."""
     pass
 
@@ -28,7 +28,7 @@ cli.add_command(core_validate.commands["validate"])
 cli.add_command(core_remove.commands["remove"])
 
 
-def main():
+def main() -> None:
     """Main entry point for the CLI."""
     cli()
 

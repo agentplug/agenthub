@@ -158,12 +158,13 @@ def smart_parameter_mapping(
         return {"input": user_input}  # Final fallback
 
 
-def _get_method_definition(agent_info: dict, method_name: str) -> dict | None:
+def _get_method_definition(agent_info: dict, method_name: str) -> dict[str, Any] | None:
     """Get method definition from agent interface."""
     manifest = agent_info.get("manifest", {})
     interface = manifest.get("interface", {})
     methods = interface.get("methods", {})
-    return methods.get(method_name)
+    method_def = methods.get(method_name)
+    return method_def if isinstance(method_def, dict) else None
 
 
 def _find_best_parameter_for_input(parameters: dict, user_input: str) -> str | None:
@@ -221,6 +222,7 @@ def _find_best_parameter_for_input(parameters: dict, user_input: str) -> str | N
 
     # Return the parameter with the highest score
     if param_scores:
-        return max(param_scores, key=param_scores.get)
+        best_param = max(param_scores, key=lambda x: param_scores[x])
+        return str(best_param) if best_param is not None else None
 
     return None

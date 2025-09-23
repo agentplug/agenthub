@@ -23,10 +23,10 @@ class MigrationResult:
     migration_time: float
     backup_path: str | None = None
     error_message: str | None = None
-    warnings: list[str] = None
-    next_steps: list[str] = None
+    warnings: list[str] | None = None
+    next_steps: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.warnings is None:
             self.warnings = []
         if self.next_steps is None:
@@ -44,9 +44,9 @@ class CloneResult:
     source_path: str
     target_path: str
     error_message: str | None = None
-    warnings: list[str] = None
+    warnings: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.warnings is None:
             self.warnings = []
 
@@ -68,7 +68,7 @@ class OptimizationResult:
 class AdvancedEnvironmentManager:
     """Advanced environment management with migration, cloning, and optimization."""
 
-    def __init__(self, base_storage_path: Path | None = None):
+    def __init__(self, base_storage_path: Path | None = None) -> None:
         self.base_storage_path = (
             base_storage_path or Path.home() / ".agenthub" / "agents"
         )
@@ -149,7 +149,7 @@ class AdvancedEnvironmentManager:
                     migration_time=time.time() - start_time,
                     backup_path=backup_path,
                     error_message=result.error_message,
-                    next_steps=result.next_steps,
+                    next_steps=result.next_steps or [],
                 )
 
             # Verify new Python version

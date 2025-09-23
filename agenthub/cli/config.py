@@ -8,7 +8,7 @@ from typing import Any
 class CLIConfig:
     """Manage CLI configuration and preferences."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config_dir = Path.home() / ".agenthub"
         self.config_file = self.config_dir / "cli_config.json"
         self.config_dir.mkdir(parents=True, exist_ok=True)
@@ -19,7 +19,10 @@ class CLIConfig:
         if self.config_file.exists():
             try:
                 with open(self.config_file) as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    return (
+                        data if isinstance(data, dict) else self._get_default_config()
+                    )
             except Exception:
                 return self._get_default_config()
         return self._get_default_config()
@@ -56,4 +59,4 @@ class CLIConfig:
 
     def show(self) -> dict[str, Any]:
         """Show current configuration."""
-        return self._config.copy()
+        return dict(self._config)

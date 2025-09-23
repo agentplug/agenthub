@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class MCPClient:
     """MCP client for tool execution."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the MCP client."""
         self.tool_registry = get_tool_registry()
         self.client: ClientSession | None = None
@@ -65,9 +65,11 @@ class MCPClient:
             async with get_connection_pool().get_connection() as client:
                 result = await client.call_tool(tool_name, arguments)
 
-                if result and len(result) > 0:
+                if result and hasattr(result, "content") and len(result.content) > 0:
                     return (
-                        result[0].text if hasattr(result[0], "text") else str(result[0])
+                        result.content[0].text
+                        if hasattr(result.content[0], "text")
+                        else str(result.content[0])
                     )
                 else:
                     return json.dumps({"error": "No result returned from tool"})
@@ -90,10 +92,13 @@ class MCPClient:
         """
         return self.tool_registry.get_available_tools()
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the MCP client connection."""
         if self.client:
-            await self.client.close()
+            if hasattr(self.client, "close"):
+                await self.client.close()
+            elif hasattr(self.client, "aclose"):
+                await self.client.aclose()
             self.client = None
 
 

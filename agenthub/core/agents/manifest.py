@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -17,11 +18,11 @@ class ManifestValidationError(Exception):
 class ManifestParser:
     """Parse and validate agent manifest files."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the manifest parser."""
         pass
 
-    def parse_manifest(self, manifest_path: str) -> dict:
+    def parse_manifest(self, manifest_path: str) -> dict[str, Any]:
         """
         Parse and validate an agent manifest file.
 
@@ -50,9 +51,11 @@ class ManifestParser:
             raise ManifestValidationError(f"Error reading manifest: {e}") from e
 
         # Validate the parsed data
-        self._validate_manifest(manifest_data)
-
-        return manifest_data
+        if isinstance(manifest_data, dict):
+            self._validate_manifest(manifest_data)
+            return manifest_data
+        else:
+            raise ManifestValidationError("Manifest must be a valid JSON object")
 
     def _validate_manifest(self, manifest: dict) -> None:
         """

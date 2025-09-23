@@ -55,7 +55,7 @@ class RepositoryValidator:
         ".gitignore",  # Git ignore file
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the repository validator."""
         self.logger = logger
 

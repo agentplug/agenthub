@@ -46,7 +46,7 @@ class MCPHTTPLogFilter(logging.Filter):
         return True
 
 
-def suppress_mcp_http_logs():
+def suppress_mcp_http_logs() -> None:
     """Suppress MCP client HTTP logs globally."""
     # Aggressively suppress all MCP and HTTP related loggers
     mcp_loggers = [

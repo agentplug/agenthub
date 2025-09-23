@@ -8,15 +8,18 @@ This module provides a modular architecture organized into:
 
 # Import from agents package
 from .agents import (
-    AgentExecutionError,
+    AgentInfo,
     AgentLoader,
-    AgentLoadError,
     AgentWrapper,
     InterfaceValidationError,
     InterfaceValidator,
     ManifestParser,
     ManifestValidationError,
+    MethodExecutor,
 )
+
+# Import from llm package
+from .llm import CoreLLMService, LogAnalysis
 
 # Import from mcp package
 from .mcp import (
@@ -42,9 +45,20 @@ from .tools import (
     get_mcp_server,
     tool,
 )
+from .tools.exceptions import (
+    AgentExecutionError,
+    AgentHubError,
+    AgentLoadError,
+    ConfigurationError,
+    InstallationError,
+    KnowledgeError,
+    ToolConflictError,
+    ValidationError,
+)
 
 __all__ = [
     # Agent components
+    "AgentInfo",
     "AgentLoader",
     "AgentLoadError",
     "AgentWrapper",
@@ -53,6 +67,7 @@ __all__ = [
     "InterfaceValidationError",
     "ManifestParser",
     "ManifestValidationError",
+    "MethodExecutor",
     # Tool components
     "ToolRegistry",
     "tool",
@@ -73,4 +88,14 @@ __all__ = [
     "get_tool_manager",
     "get_mcp_client",
     "get_tool_injector",
+    # LLM components (new)
+    "CoreLLMService",
+    "LogAnalysis",
+    # Unified exceptions
+    "AgentHubError",
+    "ValidationError",
+    "ToolConflictError",
+    "InstallationError",
+    "KnowledgeError",
+    "ConfigurationError",
 ]

@@ -19,7 +19,7 @@ from ...utils.parameter_helpers import (
 
 
 @click.group()
-def core_exec():
+def core_exec() -> None:
     """Core exec command group."""
     pass
 
@@ -33,7 +33,7 @@ def core_exec():
 )
 def exec_agent(
     agent_name: str, method_name: str, parameters: str = "", interactive: bool = False
-):
+) -> None:
     """Execute any agent method with full flexibility.
 
     Examples:

@@ -15,7 +15,7 @@ from .agent_utils import (
 
 
 @click.group()
-def agent_list():
+def agent_list() -> None:
     """Agent listing, information, and status commands."""
     pass
 
@@ -29,12 +29,10 @@ def agent_list():
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def list_agents(detailed: bool, base_path: str | None):
+def list_agents(detailed: bool, base_path: str | None) -> None:
     """List all installed agents."""
     try:
-        cloner = RepositoryCloner(
-            base_storage_path=Path(base_path) if base_path else None
-        )
+        cloner = RepositoryCloner(base_storage_path=base_path)
         agents = cloner.list_cloned_agents()
 
         if not agents:
@@ -52,7 +50,7 @@ def list_agents(detailed: bool, base_path: str | None):
 
 @agent_list.command("status")
 @click.argument("agent_name", required=False)
-def status(agent_name: str | None):
+def status(agent_name: str | None) -> None:
     """Show detailed status of agents or a specific agent."""
     try:
         cloner = RepositoryCloner()
@@ -63,7 +61,11 @@ def status(agent_name: str | None):
                 rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
                 return
 
-            show_agent_status(agent_name, cloner.get_agent_path(agent_name))
+            agent_path = cloner.get_agent_path(agent_name)
+            if agent_path:
+                show_agent_status(agent_name, agent_path)
+            else:
+                rprint(f"❌ [red]Could not get path for agent '{agent_name}'[/red]")
         else:
             # All agents status
             agents = cloner.list_cloned_agents()
@@ -88,7 +90,7 @@ def status(agent_name: str | None):
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def info_agent(agent_name: str, base_path: str | None):
+def info_agent(agent_name: str, base_path: str | None) -> None:
     """Show detailed information about an installed agent."""
     try:
         from agenthub.core.agents.loader import AgentLoader
@@ -103,9 +105,7 @@ def info_agent(agent_name: str, base_path: str | None):
         namespace, name = agent_name.split("/", 1)
 
         # Initialize system
-        storage = LocalStorage()
-        if base_path:
-            storage.base_storage_path = Path(base_path)
+        storage = LocalStorage(base_dir=Path(base_path) if base_path else None)
         loader = AgentLoader(storage=storage)
 
         # Load agent info

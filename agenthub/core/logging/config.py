@@ -118,7 +118,7 @@ class LoggingManager:
 
         # Choose formatter based on settings
         if self.settings.format == "structured":
-            formatter = StructuredFormatter()
+            formatter: logging.Formatter = StructuredFormatter()
         elif self.settings.format == "detailed":
             formatter = ColorfulFormatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -150,7 +150,7 @@ class LoggingManager:
         """Setup file handler for logging."""
         from logging.handlers import RotatingFileHandler
 
-        log_file = Path(self.settings.log_file)
+        log_file = Path(self.settings.log_file or "agenthub.log")
         log_file.parent.mkdir(parents=True, exist_ok=True)
 
         file_handler = RotatingFileHandler(

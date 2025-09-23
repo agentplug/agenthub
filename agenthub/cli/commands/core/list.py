@@ -16,13 +16,13 @@ console = Console()
 
 
 @click.group()
-def core_list():
+def core_list() -> None:
     """Core list command group."""
     pass
 
 
 @core_list.command("list")
-def list_agents():
+def list_agents() -> None:
     """List all available agents."""
     try:
         # Initialize system

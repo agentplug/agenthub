@@ -20,7 +20,7 @@ class DynamicAgent:
     The framework will automatically discover and execute methods using reflection.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the agent."""
         pass
 
@@ -38,7 +38,7 @@ class DynamicAgent:
         }
 
 
-def main():
+def main() -> None:
     """
     Main entry point for dynamic agent execution.
 

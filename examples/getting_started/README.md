@@ -1,47 +1,57 @@
 # Getting Started Examples
 
-These examples are perfect for new users who want to understand AgentHub's core functionality.
+These examples are perfect for beginners who want to learn AgentHub quickly and easily.
 
-## 🚀 Quick Start
+## 📚 Examples Overview
 
-**Start here**: `quick_start.py` - Complete walkthrough of all AgentHub features
+### **Quick Start** (`quick_start.py`)
 
-## 📋 Examples Overview
+- **Best for**: Complete beginners
+- **What it shows**: Basic agent usage, tool assignment, file processing, multiple agents
+- **Key features**: Simple, executable examples with clear explanations
 
-### `quick_start.py`
-- **Purpose**: Complete introduction to AgentHub
-- **Features**: Installation, agent loading, tool usage, error handling
-- **Duration**: ~5 minutes
-- **Prerequisites**: None
+### **Offline Agents** (`offline_agents.py`)
 
-### `agent_declaration.py`
-- **Purpose**: Learn how to declare and configure agents
-- **Features**: Agent configuration, tool assignments, metadata
-- **Duration**: ~3 minutes
-- **Prerequisites**: Basic Python knowledge
+- **Best for**: Understanding basic agent interactions
+- **What it shows**: Loading agents and calling their methods
+- **Key features**: Clean, focused examples without external dependencies
 
-### `online_agent.py`
-- **Purpose**: Work with online/remote agents
-- **Features**: Remote agent loading, network communication
-- **Duration**: ~2 minutes
-- **Prerequisites**: Internet connection
+### **Online Agent** (`online_agent.py`)
 
-### `offline_agents.py`
-- **Purpose**: Work with local/offline agents
-- **Features**: Local agent loading, file system operations
-- **Duration**: ~2 minutes
-- **Prerequisites**: Local agent files
+- **Best for**: File processing and path resolution
+- **What it shows**: How to process files with automatic path resolution
+- **Key features**: Minimal example demonstrating file handling
 
-## 🎯 Learning Path
+### **Agent Declaration** (`agent_declaration.py`)
 
-1. **First time?** → `quick_start.py`
-2. **Want to configure agents?** → `agent_declaration.py`
-3. **Working with remote agents?** → `online_agent.py`
-4. **Working with local agents?** → `offline_agents.py`
+- **Best for**: Understanding tool assignment
+- **What it shows**: Different ways to configure agents with tools
+- **Key features**: Tool assignment patterns and configurations
 
-## 💡 Tips
+## 🚀 Getting Started
 
-- All examples include detailed comments
-- Run examples in order for best learning experience
-- Check the main README.md for prerequisites
-- Use `--help` flag for command-line options
+1. **Start with**: `quick_start.py` - Run this first to see AgentHub in action
+2. **Learn basics**: `offline_agents.py` - Understand how agents work
+3. **Try tools**: `agent_declaration.py` - Learn about tool assignment
+4. **Process files**: `online_agent.py` - See file processing in action
+
+## 💡 Tips for Beginners
+
+- **Run examples in order** - They build upon each other
+- **Modify the examples** - Change parameters to see different results
+- **Check the output** - Each example shows what's happening
+- **Don't worry about errors** - Examples include error handling
+
+## 🔧 Prerequisites
+
+- AgentHub installed (`pip install agenthub`)
+- Basic Python knowledge
+- Internet connection (for loading agents)
+
+## 📖 Next Steps
+
+After mastering these examples:
+
+- Check out `examples/tools/` for advanced tool usage
+- Explore `examples/advanced/` for complex workflows
+- Read the full documentation for more features

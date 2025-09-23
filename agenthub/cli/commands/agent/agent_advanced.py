@@ -17,7 +17,7 @@ console = Console()
 
 
 @click.group()
-def agent_advanced():
+def agent_advanced() -> None:
     """Advanced agent operations commands."""
     pass
 
@@ -46,7 +46,7 @@ def migrate_agent(
     backup: bool,
     force: bool,
     base_path: str | None,
-):
+) -> None:
     """Migrate agent environment to a different Python version."""
     try:
         # Validate agent name format
@@ -125,7 +125,7 @@ def migrate_agent(
 )
 def clone_agent(
     source_agent: str, target_agent: str, include_env: bool, base_path: str | None
-):
+) -> None:
     """Clone an existing agent to a new agent."""
     try:
         # Validate agent name formats
@@ -182,7 +182,7 @@ def clone_agent(
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def optimize_agent(agent_name: str, base_path: str | None):
+def optimize_agent(agent_name: str, base_path: str | None) -> None:
     """Optimize agent environment for size and performance."""
     try:
         # Validate agent name format
@@ -235,7 +235,7 @@ def optimize_agent(agent_name: str, base_path: str | None):
 
 
 @agent_advanced.command("python-versions")
-def list_python_versions():
+def list_python_versions() -> None:
     """List available Python versions for migration."""
     try:
         manager = AdvancedEnvironmentManager()
@@ -265,7 +265,7 @@ def list_python_versions():
     type=click.Path(),
     help="Custom base storage path for agents",
 )
-def analyze_dependencies(agent_name: str, base_path: str | None):
+def analyze_dependencies(agent_name: str, base_path: str | None) -> None:
     """Analyze agent dependencies for conflicts and issues."""
     try:
         # Validate agent name format

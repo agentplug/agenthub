@@ -2,10 +2,10 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from .manifest import ManifestParser
 from .validator import InterfaceValidator
-from .wrapper import AgentWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class AgentLoadError(Exception):
 class AgentLoader:
     """Load and validate agents from storage with tool capabilities."""
 
-    def __init__(self, storage=None, tool_registry=None):
+    def __init__(self, storage: Any = None, tool_registry: Any = None) -> None:
         """
         Initialize the agent loader.
 
@@ -31,7 +31,6 @@ class AgentLoader:
         self.manifest_parser = ManifestParser()
         self.interface_validator = InterfaceValidator()
         self.tool_registry = tool_registry
-        self.assigned_tools = {}  # agent_id -> list of tool names
 
     def load_agent_by_path(self, agent_path: str) -> dict:
         """
@@ -175,7 +174,8 @@ class AgentLoader:
         if not self.storage:
             raise AgentLoadError("No storage provided for agent discovery")
 
-        return self.storage.discover_agents()
+        agents = self.storage.discover_agents()
+        return agents if isinstance(agents, list) else []
 
     def get_agent_info(self, namespace: str, agent_name: str) -> dict:
         """
@@ -226,49 +226,3 @@ class AgentLoader:
                 "error": str(e),
                 "valid_structure": False,
             }
-
-    def load_agent_with_tools(
-        self, agent_path: str, tools: list[str] | None = None
-    ) -> "AgentWrapper":
-        """
-        Load an agent with tool capabilities.
-
-        Args:
-            agent_path: Path to the agent directory
-            tools: List of tool names to assign to the agent
-
-        Returns:
-            AgentWrapper instance with tool capabilities
-        """
-        if tools is None:
-            tools = []
-
-        # Load agent info
-        agent_info = self.load_agent_by_path(agent_path)
-        if not agent_info.get("valid", False):
-            raise AgentLoadError(f"Invalid agent: {agent_path}")
-
-        # Assign tools if tool registry is available
-        namespace = agent_info.get("namespace", "unknown")
-        name = agent_info.get("name", "unknown")
-        agent_id = f"{namespace}/{name}"
-        if self.tool_registry and tools:
-            from ..tools import assign_tools_to_agent
-
-            assign_tools_to_agent(agent_id, tools)
-            self.assigned_tools[agent_id] = tools
-
-        # Create agent wrapper with tool capabilities
-        return AgentWrapper(agent_info, self.tool_registry, agent_id, tools)
-
-    def assign_tools_to_agent(self, agent_id: str, tools: list[str]) -> None:
-        """Assign tools to an agent."""
-        if self.tool_registry:
-            from ..tools import assign_tools_to_agent
-
-            assign_tools_to_agent(agent_id, tools)
-            self.assigned_tools[agent_id] = tools
-
-    def get_agent_tools(self, agent_id: str) -> list[str]:
-        """Get tools assigned to an agent."""
-        return self.assigned_tools.get(agent_id, [])

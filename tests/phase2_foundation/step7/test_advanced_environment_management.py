@@ -12,9 +12,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from agenthub.environment.environment_manager import (
-    AdvancedEnvironmentManager,
-)
+from agenthub.environment.environment_manager import AdvancedEnvironmentManager
 
 
 class TestProductIntegrationEnvironmentManagement:
