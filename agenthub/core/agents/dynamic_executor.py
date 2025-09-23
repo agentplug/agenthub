@@ -45,7 +45,13 @@ class DynamicAgentExecutor:
             DynamicExecutionError: If execution fails
         """
         try:
-            # Load agent class dynamically
+            # Clear cache to prevent state pollution between calls
+            # This ensures each call gets a fresh agent class load
+            cache_key = str(Path(agent_path) / "agent.py")
+            if cache_key in self.loaded_agents:
+                del self.loaded_agents[cache_key]
+
+            # Load agent class dynamically (fresh load)
             agent_class = self._load_agent_class(agent_path)
 
             # Create agent instance
