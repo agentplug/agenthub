@@ -5,9 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from agenthub.github.repository_validator import (
-    RepositoryValidator,
-)
+from agenthub.github.repository_validator import RepositoryValidator
 
 
 class TestRepositoryValidator:
