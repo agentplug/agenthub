@@ -182,7 +182,7 @@ class CoreLLMService:
             AISuite client instance or None if not available
         """
         try:
-            import aisuite as ai
+            import aisuite as ai  # type: ignore[import-untyped]
 
             return ai.Client()
         except ImportError:

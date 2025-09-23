@@ -212,16 +212,10 @@ class AutoInstaller:
                 ),
             )
 
-            if success:
-                logger.info(
-                    f"Agent installation completed successfully in "
-                    f"{installation_time:.2f}s"
-                )
-            else:
-                logger.warning(
-                    f"Agent installation completed with issues in "
-                    f"{installation_time:.2f}s"
-                )
+            logger.info(
+                f"Agent installation completed successfully in "
+                f"{installation_time:.2f}s"
+            )
 
             return result
 
