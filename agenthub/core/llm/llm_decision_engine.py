@@ -78,6 +78,7 @@ class LLMDecisionEngine:
                 user_prompt, system_prompt=system_prompt, return_json=True
             )
 
+            print(response)
             # Parse response
             result = json.loads(response)
 
@@ -190,9 +191,9 @@ class LLMDecisionEngine:
             "analyze a user query and select the most appropriate method from a "
             "list of available agent methods.\n\n"
             "You must respond with a JSON object containing:\n"
+            '- "reasoning": A brief explanation of why this method was selected\n'
             '- "selected_method": The name of the most appropriate method\n'
-            '- "confidence": A confidence score between 0.0 and 1.0\n'
-            '- "reasoning": A brief explanation of why this method was selected\n\n'
+            '- "confidence": A confidence score between 0.0 and 1.0\n\n'
             "Consider the following factors when selecting a method:\n"
             "1. Semantic similarity between the query and method description\n"
             "2. Parameter compatibility (can the required parameters be extracted "
@@ -201,6 +202,7 @@ class LLMDecisionEngine:
             "4. Confidence level based on clarity of the match\n\n"
             "If no method is clearly appropriate, select the most general method "
             "and provide a low confidence score."
+            "Answer must be directly json format, not ```json or ``` or anything else."
         )
 
     def _create_method_selection_user_prompt(
@@ -224,11 +226,11 @@ Available Methods:
             "analyze a user query and extract the appropriate parameters for a "
             "specific agent method.\n\n"
             "You must respond with a JSON object containing:\n"
+            '- "reasoning": A brief explanation of how parameters were extracted\n'
             '- "parameters": A dictionary of parameter names and their extracted '
             "values\n"
             '- "confidence": A confidence score between 0.0 and 1.0 for the '
-            "extraction\n"
-            '- "reasoning": A brief explanation of how parameters were extracted\n\n'
+            "extraction\n\n"
             "Guidelines for parameter extraction:\n"
             "1. Extract only parameters that are defined in the method signature\n"
             "2. Use reasonable defaults for optional parameters when not specified\n"
@@ -242,6 +244,7 @@ Available Methods:
             "- Boolean: Convert yes/no, true/false, enable/disable to boolean\n"
             "- List: Extract comma-separated or list-like values\n"
             "- File paths: Extract file references and paths"
+            "Answer must be directly json format, not ```json or ``` or anything else."
         )
 
     def _create_parameter_extraction_user_prompt(
