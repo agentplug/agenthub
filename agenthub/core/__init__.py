@@ -8,12 +8,14 @@ This module provides a modular architecture organized into:
 
 # Import from agents package
 from .agents import (
+    AgentInfo,
     AgentLoader,
     AgentWrapper,
     InterfaceValidationError,
     InterfaceValidator,
     ManifestParser,
     ManifestValidationError,
+    MethodExecutor,
 )
 
 # Import from llm package
@@ -59,6 +61,7 @@ from .tools.exceptions import (
 
 __all__ = [
     # Agent components
+    "AgentInfo",
     "AgentLoader",
     "AgentLoadError",
     "AgentWrapper",
@@ -67,6 +70,7 @@ __all__ = [
     "InterfaceValidationError",
     "ManifestParser",
     "ManifestValidationError",
+    "MethodExecutor",
     # Tool components
     "ToolRegistry",
     "tool",

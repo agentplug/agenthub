@@ -258,6 +258,8 @@ class ProcessManager:
 
     def _start_monitoring_session(self, command, agent_dir):
         """Start the monitoring session with log streaming and terminal display."""
+        # Clear logs from previous executions to prevent accumulation
+        self.log_streamer.clear_logs()
         self.log_streamer.start_streaming(command, cwd=str(agent_dir))
         self.terminal_display.start_display()
         return time.time()

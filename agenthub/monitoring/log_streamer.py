@@ -174,6 +174,11 @@ class LogStreamer:
         if self.stderr_thread and self.stderr_thread.is_alive():
             self.stderr_thread.join(timeout=1)
 
+    def clear_logs(self):
+        """Clear all captured logs to prevent accumulation between calls"""
+        with self._lock:
+            self.logs.clear()
+
     def is_complete(self) -> bool:
         """
         Check if subprocess has completed

@@ -1,10 +1,10 @@
 # Phase 3: Installation Commands with UV
 
-**Document Type**: Implementation Example  
-**Author**: AgentHub Team  
-**Date Created**: 2025-01-27  
-**Last Updated**: 2025-01-27  
-**Status**: Ready for Implementation  
+**Document Type**: Implementation Example
+**Author**: AgentHub Team
+**Date Created**: 2025-01-27
+**Last Updated**: 2025-01-27
+**Status**: Ready for Implementation
 **Purpose**: Show how Phase 3 uses installation commands instead of dependencies list
 
 ## 🎯 **Key Change: Commands Instead of Dependencies**
@@ -52,7 +52,7 @@ builtin_tools:
       text: { type: "string", required: true }
       analysis_type: { type: "string", enum: ["sentiment", "entities", "keywords"] }
       confidence_threshold: { type: "number", default: 0.8, minimum: 0.0, maximum: 1.0 }
-  
+
   keyword_extraction:
     description: "Extract keywords from text content"
     required: false  # Optional feature - can be disabled
@@ -60,7 +60,7 @@ builtin_tools:
       text: { type: "string", required: true }
       max_keywords: { type: "integer", default: 10, minimum: 1, maximum: 50 }
       language: { type: "string", default: "en", enum: ["en", "es", "fr", "de"] }
-  
+
   sentiment_analysis:
     description: "Analyze sentiment of text content"
     required: false  # Optional feature - can be disabled
@@ -166,7 +166,7 @@ def setup_environment(self, agent_path: str) -> EnvironmentSetupResult:
         text=True,
         timeout=60
     )
-    
+
     # Step 2: Install dependencies
     if dependencies:
         result = subprocess.run(
@@ -213,7 +213,7 @@ def setup_environment(self, agent_path: str) -> EnvironmentSetupResult:
 
 ### **Current agent.yaml (Phase 2.5)**
 ```yaml
-dependencies: 
+dependencies:
   - "aisuite[openai]>=0.1.7"
   - "python-dotenv>=1.0.0"
 ```

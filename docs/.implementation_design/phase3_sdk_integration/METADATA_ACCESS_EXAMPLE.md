@@ -35,14 +35,14 @@ try:
     method_info = agent.get_method_info("analyze_data")
     print(f"Method Description: {method_info.get('description', 'No description')}")
     print(f"Method Parameters: {list(method_info.get('parameters', {}).keys())}")
-    
+
     # Show parameter details
     for param_name, param_info in method_info.get('parameters', {}).items():
         param_type = param_info.get('type', 'unknown')
         required = param_info.get('required', False)
         default = param_info.get('default', 'No default')
         print(f"  {param_name}: {param_type} {'(required)' if required else f'(default: {default})'}")
-        
+
 except Exception as e:
     print(f"Error getting method info: {e}")
 ```
@@ -59,7 +59,7 @@ for tool_name, tool_info in agent.builtin_tools.items():
     print(f"  Required: {tool_info.required}")
     print(f"  Description: {tool_info.description}")
     print(f"  Parameters: {tool_info.parameters}")
-    
+
     # Check if tool can be disabled
     if tool_info.required:
         print(f"  ⚠️  This tool cannot be disabled (core functionality)")
@@ -100,7 +100,7 @@ for tool_name, tool_info in agent.builtin_tools.items():
 # Example: Build a dynamic agent interface
 def build_agent_interface(agent):
     """Build a dynamic interface for an agent based on its metadata."""
-    
+
     interface = {
         "name": agent.name,
         "version": agent.version,
@@ -108,7 +108,7 @@ def build_agent_interface(agent):
         "methods": {},
         "tools": {}
     }
-    
+
     # Add method information
     for method_name in agent.methods:
         try:
@@ -120,7 +120,7 @@ def build_agent_interface(agent):
             }
         except Exception as e:
             interface["methods"][method_name] = {"error": str(e)}
-    
+
     # Add tool information
     for tool_name, tool_info in agent.builtin_tools.items():
         interface["tools"][tool_name] = {
@@ -128,7 +128,7 @@ def build_agent_interface(agent):
             "required": tool_info.required,
             "parameters": tool_info.parameters
         }
-    
+
     return interface
 
 # Use the dynamic interface
@@ -149,7 +149,7 @@ def safe_execute_method(agent, method_name, *args, **kwargs):
     if not agent.has_method(method_name):
         available = ", ".join(agent.methods)
         raise ValueError(f"Method '{method_name}' not available. Available: {available}")
-    
+
     try:
         return agent.execute(method_name, kwargs if kwargs else {})
     except Exception as e:
@@ -160,7 +160,7 @@ def check_tool_availability(agent, tool_name):
     """Check if a tool is available and can be disabled."""
     if tool_name not in agent.builtin_tools:
         return False, "Tool not found"
-    
+
     tool_info = agent.builtin_tools[tool_name]
     if tool_info.required:
         return True, "Tool available but required (cannot be disabled)"
@@ -171,17 +171,17 @@ def check_tool_availability(agent, tool_name):
 def validate_agent(agent):
     """Validate that an agent meets minimum requirements."""
     issues = []
-    
+
     if not agent.methods:
         issues.append("No methods available")
-    
+
     if not agent.builtin_tools:
         issues.append("No built-in tools defined")
-    
+
     required_tools = [name for name, info in agent.builtin_tools.items() if info.required]
     if not required_tools:
         issues.append("No required tools defined")
-    
+
     return len(issues) == 0, issues
 
 # Usage examples
