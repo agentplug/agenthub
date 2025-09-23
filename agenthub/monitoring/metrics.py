@@ -31,7 +31,7 @@ class ToolExecutionMetric:
 class MetricsCollector:
     """Collects and stores performance metrics."""
 
-    def __init__(self, max_metrics: int = 10000):
+    def __init__(self, max_metrics: int = 10000) -> None:
         """Initialize metrics collector.
 
         Args:
@@ -44,7 +44,7 @@ class MetricsCollector:
 
     def record_metric(
         self, name: str, value: float, tags: dict[str, str] | None = None
-    ):
+    ) -> None:
         """Record a metric value.
 
         Args:
@@ -65,7 +65,7 @@ class MetricsCollector:
         execution_time: float,
         success: bool,
         error_type: str | None = None,
-    ):
+    ) -> None:
         """Record a tool execution metric.
 
         Args:
@@ -144,7 +144,7 @@ class MetricsCollector:
                 return {}
 
             # Group by tool name
-            tool_stats = defaultdict(
+            tool_stats: dict[str, dict[str, Any]] = defaultdict(
                 lambda: {"count": 0, "success_count": 0, "total_time": 0.0}
             )
 
@@ -194,7 +194,7 @@ class MetricsCollector:
                 return {}
 
             # Group by agent ID
-            agent_stats = defaultdict(
+            agent_stats: dict[str, dict[str, Any]] = defaultdict(
                 lambda: {
                     "count": 0,
                     "success_count": 0,
@@ -232,7 +232,7 @@ class MetricsCollector:
 
             return result
 
-    def clear_metrics(self):
+    def clear_metrics(self) -> None:
         """Clear all metrics."""
         with self._lock:
             self._metrics.clear()
@@ -251,7 +251,7 @@ def get_metrics_collector() -> MetricsCollector:
     return _metrics_collector
 
 
-def record_metric(name: str, value: float, tags: dict[str, str] | None = None):
+def record_metric(name: str, value: float, tags: dict[str, str] | None = None) -> None:
     """Record a metric value."""
     get_metrics_collector().record_metric(name, value, tags)
 
@@ -262,7 +262,7 @@ def record_tool_execution(
     execution_time: float,
     success: bool,
     error_type: str | None = None,
-):
+) -> None:
     """Record a tool execution metric."""
     get_metrics_collector().record_tool_execution(
         tool_name, agent_id, execution_time, success, error_type
