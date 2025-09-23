@@ -9,10 +9,13 @@ A unified, reusable LLM service that provides:
 - Comprehensive logging and debugging
 
 Usage:
-    from agenthub.core.llm.llm_service import CoreLLMService
+    from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
 
-    # Auto-detect best available model
+    # Auto-detect best available model (creates new instance)
     service = CoreLLMService()
+
+    # Use shared instance (recommended to avoid duplicate model detection logs)
+    service = get_shared_llm_service()
 
     # Use specific model
     service = CoreLLMService(model="ollama:gpt-oss:120b")
@@ -164,6 +167,11 @@ class CoreLLMService:
                    If None and auto_detect=True, auto-detects best available model.
             auto_detect: Whether to auto-detect model if not provided
         """
+        # Initialize caching first (needed by model detection)
+        self.cache: dict[str, Any] = {}
+        self._model_info: ModelInfo | None = None
+        self._ollama_url_cache: str | None = None
+
         # Model selection
         if model:
             self.model = model
@@ -179,10 +187,6 @@ class CoreLLMService:
             self.client = self._initialize_aisuite_with_config(self.model)
         else:
             self.client = aisuite_client
-
-        # Performance and caching
-        self.cache: dict[str, Any] = {}
-        self._model_info: ModelInfo | None = None
 
     def _detect_best_model(self) -> str:
         """
@@ -243,22 +247,30 @@ class CoreLLMService:
         return None
 
     def _detect_ollama_url(self) -> str:
-        """Auto-detect Ollama API URL with fallback options."""
+        """Auto-detect Ollama API URL with fallback options (cached)."""
+        # Return cached URL if available
+        if self._ollama_url_cache is not None:
+            return self._ollama_url_cache
+
         # 1. Environment variable (user override)
         if os.getenv("OLLAMA_API_URL"):
             url = os.getenv("OLLAMA_API_URL")
             logger.info(f"🔧 Using Ollama URL from environment: {url}")
+            self._ollama_url_cache = url
             return url
 
         # 2. Try to find running Ollama instance
         for url in ModelConfig.OLLAMA_URLS:
             if self._check_ollama_available(url):
                 logger.info(f"🔍 Auto-detected Ollama URL: {url}")
+                self._ollama_url_cache = url
                 return url
 
         # 3. Default fallback
         logger.debug("Using default Ollama URL: http://localhost:11434")
-        return "http://localhost:11434"
+        url = "http://localhost:11434"
+        self._ollama_url_cache = url
+        return url
 
     def _check_ollama_available(self, url: str) -> bool:
         """Check if Ollama is running at the given URL."""
@@ -609,3 +621,64 @@ class CoreLLMService:
             Fallback response string
         """
         return "AISuite not available"
+
+
+# =============================================================================
+# SHARED INSTANCE MANAGEMENT
+# =============================================================================
+
+# Global shared instance to prevent duplicate model detection logs
+_shared_llm_service: CoreLLMService | None = None
+
+
+def get_shared_llm_service(
+    model: str | None = None, auto_detect: bool = True
+) -> CoreLLMService:
+    """
+    Get a shared CoreLLMService instance to avoid duplicate model detection logs.
+
+    This function helps prevent the repetitive Ollama model detection logs that
+    occur when multiple components create their own CoreLLMService instances.
+
+    Args:
+        model: Model identifier in format "provider:model-name".
+               If None and auto_detect=True, auto-detects best available model.
+        auto_detect: Whether to auto-detect model if not provided
+
+    Returns:
+        Shared CoreLLMService instance
+
+    Note:
+        If you need a service with a specific model that differs from the shared
+        instance, create a new CoreLLMService instance directly.
+    """
+    global _shared_llm_service
+
+    # If no shared instance exists, create one
+    if _shared_llm_service is None:
+        _shared_llm_service = CoreLLMService(model=model, auto_detect=auto_detect)
+        logger.debug("Created shared CoreLLMService instance")
+        return _shared_llm_service
+
+    # If shared instance exists but different model requested, create new instance
+    if model and model != _shared_llm_service.model:
+        logger.debug(
+            f"Creating new CoreLLMService for model {model} "
+            f"(shared has {_shared_llm_service.model})"
+        )
+        return CoreLLMService(model=model, auto_detect=auto_detect)
+
+    # Return existing shared instance
+    logger.debug("Reusing shared CoreLLMService instance")
+    return _shared_llm_service
+
+
+def reset_shared_llm_service() -> None:
+    """
+    Reset the shared LLM service instance.
+
+    Useful for testing or when you want to force re-detection of models.
+    """
+    global _shared_llm_service
+    _shared_llm_service = None
+    logger.debug("Reset shared CoreLLMService instance")

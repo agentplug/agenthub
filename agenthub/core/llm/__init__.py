@@ -6,6 +6,17 @@ It uses AISuite to support multiple LLM providers with a consistent API.
 """
 
 from .llm_decision_engine import LLMDecisionEngine
-from .llm_service import CoreLLMService, LogAnalysis
+from .llm_service import (
+    CoreLLMService,
+    LogAnalysis,
+    get_shared_llm_service,
+    reset_shared_llm_service,
+)
 
-__all__ = ["CoreLLMService", "LogAnalysis", "LLMDecisionEngine"]
+__all__ = [
+    "CoreLLMService",
+    "LogAnalysis",
+    "LLMDecisionEngine",
+    "get_shared_llm_service",
+    "reset_shared_llm_service",
+]
