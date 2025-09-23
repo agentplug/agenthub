@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Any
 
-from .llm_service import CoreLLMService
+from .llm_service import CoreLLMService, get_shared_llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,10 @@ class LLMDecisionEngine:
         Initialize the LLM Decision Engine.
 
         Args:
-            llm_service: Optional LLM service instance. If None, creates a new one
-                        with auto-detected model.
+            llm_service: Optional LLM service instance. If None, uses the shared
+                        instance to avoid duplicate model detection logs.
         """
-        self.llm_service = llm_service or CoreLLMService()
+        self.llm_service = llm_service or get_shared_llm_service()
 
     def get_current_model(self) -> str:
         """
