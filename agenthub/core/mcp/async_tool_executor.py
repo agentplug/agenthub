@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -61,9 +62,11 @@ class AsyncToolExecutor:
             async with self.connection_pool.get_connection() as client:
                 result = await client.call_tool(tool_name, arguments)
 
-                if result and len(result) > 0:
+                if result and hasattr(result, "content") and len(result.content) > 0:
                     response = (
-                        result[0].text if hasattr(result[0], "text") else str(result[0])
+                        result.content[0].text
+                        if hasattr(result.content[0], "text")
+                        else str(result.content[0])
                     )
                     success = True
                     return response
@@ -136,7 +139,13 @@ class AsyncToolExecutor:
                     )
 
         # If we get here, all retries failed
-        raise last_error
+        if last_error is not None:
+            raise last_error
+        else:
+            raise RuntimeError(
+                f"Tool execution failed for {tool_name} "
+                f"after {max_retries + 1} attempts"
+            )
 
     async def execute_multiple_tools(
         self, tool_requests: list[dict[str, Any]]
@@ -158,19 +167,21 @@ class AsyncToolExecutor:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Convert exceptions to error strings
-        processed_results = []
+        processed_results: list[str] = []
         for result in results:
             if isinstance(result, Exception):
                 processed_results.append(
                     f'{{"error": "Tool execution failed: {str(result)}"}}'
                 )
             else:
-                processed_results.append(result)
+                processed_results.append(str(result))
 
         return processed_results
 
     @asynccontextmanager
-    async def tool_execution_context(self, tool_name: str, arguments: dict[str, Any]):
+    async def tool_execution_context(
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> AsyncGenerator[str, None]:
         """Context manager for tool execution with proper resource management.
 
         Args:

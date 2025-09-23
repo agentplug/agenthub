@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from mcp.client.session import ClientSession
@@ -42,7 +43,7 @@ class MCPConnectionPool:
         stdio_transport = stdio_client(server_params)
         client = await stdio_transport.__aenter__()
         logger.debug("Created new MCP connection")
-        return client
+        return client  # type: ignore
 
     async def _cleanup_idle_connections(self) -> None:
         """Clean up idle connections."""
@@ -66,7 +67,10 @@ class MCPConnectionPool:
     async def _close_connection(self, connection: ClientSession) -> None:
         """Close a specific connection."""
         try:
-            await connection.close()
+            if hasattr(connection, "close"):
+                await connection.close()
+            elif hasattr(connection, "aclose"):
+                await connection.aclose()
             if connection in self._connections:
                 self._connections.remove(connection)
             if connection in self._connection_times:
@@ -76,7 +80,7 @@ class MCPConnectionPool:
             logger.error(f"Error closing connection: {e}")
 
     @asynccontextmanager
-    async def get_connection(self):
+    async def get_connection(self) -> AsyncGenerator[ClientSession, None]:
         """Get a connection from the pool (context manager)."""
         connection = None
         try:
