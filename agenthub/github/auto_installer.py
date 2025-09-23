@@ -181,15 +181,9 @@ class AutoInstaller:
 
             # Step 6: Determine success and collect results
             installation_time = time.time() - start_time
-            success = (
-                clone_result.success
-                and validation_result.is_valid
-                and (
-                    not self.setup_environment
-                    or not environment_result
-                    or environment_result.success
-                )
-            )
+            # Consider installation successful if agent is cloned and validated
+            # Environment setup failure should not prevent agent loading
+            success = clone_result.success and validation_result.is_valid
 
             # Step 7: Create result object
             result = InstallationResult(
