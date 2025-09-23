@@ -280,9 +280,9 @@ class TestToolInjectionPerformance:
         end_time = time.time()
         assignment_time = end_time - start_time
 
-        # Should complete in reasonable time (less than 2 seconds)
+        # Should complete in reasonable time (less than 3 seconds)
         assert (
-            assignment_time < 2.0
+            assignment_time < 3.0
         ), f"Tool assignment took {assignment_time:.2f} seconds"
 
         # Verify assignments

@@ -99,8 +99,9 @@ class TestMCPClient:
         mock_connection = AsyncMock()
         mock_client = AsyncMock()
         mock_result = MagicMock()
-        mock_result.text = '{"result": "success"}'
-        mock_client.call_tool.return_value = [mock_result]
+        mock_result.content = [MagicMock()]
+        mock_result.content[0].text = '{"result": "success"}'
+        mock_client.call_tool.return_value = mock_result
 
         mock_connection.__aenter__.return_value = mock_client
         mock_pool.get_connection.return_value = mock_connection
