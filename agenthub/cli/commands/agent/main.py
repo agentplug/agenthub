@@ -14,7 +14,7 @@ from .agent_manage import agent_manage
 
 
 @click.group()
-def agent():
+def agent() -> None:
     """Agent management commands."""
     pass
 
