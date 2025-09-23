@@ -14,13 +14,13 @@ console = Console()
 
 
 @click.group()
-def core_validate():
+def core_validate() -> None:
     """Core validate command group."""
     pass
 
 
 @core_validate.command("validate")
-def validate_system():
+def validate_system() -> None:
     """Validate system health and agent integrity."""
     try:
         # Initialize system

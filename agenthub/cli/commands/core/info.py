@@ -14,14 +14,14 @@ console = Console()
 
 
 @click.group()
-def core_info():
+def core_info() -> None:
     """Core info command group."""
     pass
 
 
 @core_info.command("info")
 @click.argument("agent_name")
-def info_agent(agent_name: str):
+def info_agent(agent_name: str) -> None:
     """Show detailed information about an agent."""
     try:
         # Parse agent name

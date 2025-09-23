@@ -1,7 +1,5 @@
 """CLI command for removing agents (legacy)."""
 
-from pathlib import Path
-
 import click
 from rich import print as rprint
 
@@ -9,7 +7,7 @@ from agenthub.github.repository_cloner import RepositoryCloner
 
 
 @click.group()
-def core_remove():
+def core_remove() -> None:
     """Core remove command group."""
     pass
 
@@ -22,7 +20,7 @@ def core_remove():
     help="Custom base storage path for agents",
 )
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def remove_agent(agent_name: str, base_path: str | None, force: bool):
+def remove_agent(agent_name: str, base_path: str | None, force: bool) -> None:
     """Remove an installed agent.
 
     This is a legacy command. Use 'agenthub agent remove <agent>' instead.
@@ -30,7 +28,7 @@ def remove_agent(agent_name: str, base_path: str | None, force: bool):
     rprint("⚠️  [yellow]This command is deprecated.[/yellow]")
     rprint("💡 [cyan]Use instead: agenthub agent remove <agent>[/cyan]")
 
-    cloner = RepositoryCloner(base_storage_path=Path(base_path) if base_path else None)
+    cloner = RepositoryCloner(base_storage_path=base_path)
 
     if not cloner.is_agent_cloned(agent_name):
         rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
