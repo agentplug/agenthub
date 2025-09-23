@@ -19,10 +19,7 @@ from .agents import (
 )
 
 # Import from llm package
-from .llm import (
-    CoreLLMService,
-    LogAnalysis,
-)
+from .llm import CoreLLMService, LogAnalysis
 
 # Import from mcp package
 from .mcp import (

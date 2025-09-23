@@ -16,7 +16,7 @@ def load_agent(
     disabled_builtin_tools: list[str] | None = None,  # New: disable built-in tools
     knowledge: str | None = None,  # New: inject knowledge
     monitoring: bool = False,  # New: enable real-time monitoring
-    **kwargs,
+    **kwargs: Any,
 ) -> AgentWrapper:
     """
     Load agent with user-friendly Phase 3 configuration.
