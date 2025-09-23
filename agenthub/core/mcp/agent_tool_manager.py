@@ -184,7 +184,10 @@ class AgentToolManager:
         }
 
         expected_python_type = type_mapping.get(expected_type, str)
-        return isinstance(value, expected_python_type)
+        if expected_python_type is None:
+            return False
+        # Use type() instead of isinstance for better type checking
+        return type(value) is expected_python_type
 
     async def _ensure_client(self) -> ClientSession:
         """Ensure MCP client is connected."""
@@ -342,8 +345,12 @@ class AgentToolManager:
             result = await client.call_tool(tool_name, arguments)
 
             # Convert result to JSON string
-            if result and len(result) > 0:
-                return result[0].text if hasattr(result[0], "text") else str(result[0])
+            if result and hasattr(result, "content") and len(result.content) > 0:
+                return (
+                    result.content[0].text
+                    if hasattr(result.content[0], "text")
+                    else str(result.content[0])
+                )
             else:
                 return json.dumps({"error": "No result returned from tool"})
 
@@ -415,7 +422,10 @@ class AgentToolManager:
     async def close(self) -> None:
         """Close the MCP client connection."""
         if self.client:
-            await self.client.close()
+            if hasattr(self.client, "close"):
+                await self.client.close()
+            elif hasattr(self.client, "aclose"):
+                await self.client.aclose()
             self.client = None
 
 
