@@ -16,7 +16,7 @@ class AgentHubError(Exception):
         self.suggestions = suggestions or []
         self.context = context or {}
 
-    def __str__(self):
+    def __str__(self) -> str:
         base_msg = super().__str__()
         if self.suggestions:
             suggestions_text = "\n".join(
@@ -97,7 +97,7 @@ class AgentLoadError(AgentError):
         super().__init__(message, suggestions)
         self.agent_name = agent_name
 
-    def __str__(self):
+    def __str__(self) -> str:
         message = str(self.args[0]) if self.args else ""
         base_message = (
             f"Failed to load agent '{self.agent_name}': {message}"
@@ -142,7 +142,7 @@ class ValidationError(AgentHubError):
         self.expected_type = expected_type
         self.actual_value = actual_value
 
-    def __str__(self):
+    def __str__(self) -> str:
         base_msg = super().__str__()
         if self.parameter_name and self.expected_type:
             return (
@@ -161,7 +161,7 @@ class InstallationError(AgentHubError):
         self.command = command
         self.exit_code = exit_code
 
-    def __str__(self):
+    def __str__(self) -> str:
         base_msg = super().__str__()
         if self.command:
             return f"Installation failed for command '{self.command}': {base_msg}"
