@@ -32,7 +32,7 @@ class AgentRuntime:
             self.environment_setup = EnvironmentSetup()
         except Exception as e:
             logger.warning(f"Environment setup not available: {e}")
-            self.environment_setup = None
+            self.environment_setup = None  # type: ignore
 
     def execute_agent(
         self,
@@ -40,7 +40,7 @@ class AgentRuntime:
         agent_name: str,
         method: str,
         parameters: dict,
-        tool_context: dict = None,
+        tool_context: dict | None = None,
     ) -> dict:
         """
         Execute an agent method with full runtime coordination.
