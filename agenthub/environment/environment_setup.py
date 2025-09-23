@@ -32,7 +32,7 @@ class EnvironmentSetupResult:
     next_steps: list[str] | None = None
     environment_info: dict[str, Any] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize lists if they are None."""
         if self.warnings is None:
             self.warnings = []
@@ -55,7 +55,7 @@ class DependencyInstallResult:
     warnings: list[str] | None = None
     next_steps: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize lists if they are None."""
         if self.warnings is None:
             self.warnings = []
@@ -78,7 +78,7 @@ class UVNotAvailableError(EnvironmentSetupError):
 class EnvironmentSetup:
     """Manages UV virtual environment creation and dependency installation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the environment setup."""
         self.logger = logger
         if not self._check_uv_available():
@@ -331,7 +331,7 @@ class EnvironmentSetup:
                     env=install_env,
                 )
 
-            if result.returncode != 0:
+            if result and result.returncode != 0:
                 return EnvironmentSetupResult(
                     success=False,
                     agent_path=agent_path,

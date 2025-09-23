@@ -16,6 +16,7 @@ try:
     ENVIRONMENT_AVAILABLE = True
 except ImportError:
     ENVIRONMENT_AVAILABLE = False
+    EnvironmentSetup = None  # type: ignore
 
 from .repository_cloner import CloneResult, RepositoryCloner
 from .repository_validator import RepositoryValidator, ValidationResult
@@ -38,10 +39,10 @@ class InstallationResult:
     dependency_result: object | None = None  # DependencyInstallResult
     installation_time_seconds: float | None = None
     error_message: str | None = None
-    warnings: list[str] = None
-    next_steps: list[str] = None
+    warnings: list[str] | None = None
+    next_steps: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize lists if they are None."""
         if self.warnings is None:
             self.warnings = []
@@ -65,7 +66,7 @@ class AutoInstaller:
 
     def __init__(
         self, base_storage_path: str | None = None, setup_environment: bool = True
-    ):
+    ) -> None:
         """
         Initialize the AutoInstaller.
 
@@ -78,6 +79,7 @@ class AutoInstaller:
         self.repository_validator = RepositoryValidator()
         self.setup_environment = setup_environment
         self.base_storage_path = self.repository_cloner.base_storage_path
+        self.environment_setup: EnvironmentSetup | None = None
 
         # Initialize environment setup if available
         if setup_environment and ENVIRONMENT_AVAILABLE:
@@ -162,7 +164,11 @@ class AutoInstaller:
 
             # Step 5: Install dependencies (if environment setup succeeded)
             dependency_result = None
-            if environment_result and environment_result.success:
+            if (
+                environment_result
+                and environment_result.success
+                and self.environment_setup
+            ):
                 logger.debug("Step 5: Installing dependencies")
                 dependency_result = self.environment_setup.install_dependencies(
                     clone_result.local_path, environment_result.venv_path
@@ -324,20 +330,31 @@ class AutoInstaller:
             f"🔗 GitHub URL: {clone_result.github_url}",
         ]
 
-        if environment_result and environment_result.success:
+        if (
+            environment_result
+            and hasattr(environment_result, "success")
+            and environment_result.success
+        ):
+            venv_path = getattr(environment_result, "venv_path", "N/A")
             next_steps.extend(
                 [
                     "🌍 Virtual environment created successfully",
-                    f"📦 Environment path: {environment_result.venv_path}",
+                    f"📦 Environment path: {venv_path}",
                 ]
             )
 
-            if dependency_result and dependency_result.success:
+            if (
+                dependency_result
+                and hasattr(dependency_result, "success")
+                and dependency_result.success
+            ):
+                installed_packages = getattr(
+                    dependency_result, "installed_packages", []
+                )
                 next_steps.extend(
                     [
                         "📚 Dependencies installed successfully",
-                        f"📦 {len(dependency_result.installed_packages)} "
-                        f"packages installed",
+                        f"📦 {len(installed_packages)} " "packages installed",
                     ]
                 )
             else:
@@ -346,7 +363,7 @@ class AutoInstaller:
             # Add activation command if environment setup is available
             if self.environment_setup:
                 activation_cmd = self.environment_setup.activate_environment(
-                    environment_result.venv_path
+                    getattr(environment_result, "venv_path", "")
                 )
                 next_steps.append(f"💡 Activation command: {activation_cmd}")
 
@@ -471,23 +488,49 @@ Agent: {agent_name}
 Error: {error_message}
 Time: {install_time:.2f}s"""
 
-    def list_installed_agents(self):
+    def list_installed_agents(self) -> list[str]:
         """List all installed agents."""
-        return self.repository_cloner.list_cloned_agents()
+        cloned_agents = self.repository_cloner.list_cloned_agents()
+        return list(cloned_agents.keys())
 
     def remove_agent(self, agent_name: str) -> bool:
         """Remove an installed agent."""
         return self.repository_cloner.remove_agent(agent_name)
 
     # Alias methods for test compatibility
-    def _get_next_steps_for_validation_failure(self, validation_result):
+    def _get_next_steps_for_validation_failure(
+        self, validation_result: ValidationResult
+    ) -> list[str]:
         """Alias for backward compatibility with tests."""
         return self._get_next_steps_for_failure("", None, validation_result, None)
 
     def _collect_all_warnings(
-        self, validation_result, environment_result, dependency_result
-    ):
-        """Alias for backward compatibility with tests."""
-        return self._collect_warnings(
-            None, validation_result, environment_result, dependency_result
-        )
+        self,
+        validation_result: ValidationResult,
+        environment_result: object | None,
+        dependency_result: object | None,
+    ) -> list[str]:
+        """Collect all warnings from validation, environment, and dependency results."""
+        warnings: list[str] = []
+
+        # Add validation warnings
+        if hasattr(validation_result, "warnings") and validation_result.warnings:
+            warnings.extend(validation_result.warnings)
+
+        # Add environment warnings
+        if (
+            environment_result
+            and hasattr(environment_result, "warnings")
+            and environment_result.warnings
+        ):
+            warnings.extend(environment_result.warnings)
+
+        # Add dependency warnings
+        if (
+            dependency_result
+            and hasattr(dependency_result, "warnings")
+            and dependency_result.warnings
+        ):
+            warnings.extend(dependency_result.warnings)
+
+        return warnings
