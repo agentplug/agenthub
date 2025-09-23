@@ -21,11 +21,12 @@ class ToolRegistry:
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
-                    cls._instance._initialized: bool = False
         return cls._instance
 
     def __init__(self) -> None:
-        if not self._initialized:
+        if not hasattr(self, "_initialized") or not getattr(
+            self, "_initialized", False
+        ):
             self.mcp_server = FastMCP("AgentHub Tools")
             self.registered_tools: dict[str, Callable] = {}
             self.tool_metadata: dict[str, ToolMetadata] = {}
