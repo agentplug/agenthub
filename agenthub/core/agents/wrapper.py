@@ -140,7 +140,7 @@ class AgentWrapper:
                 tool_descriptions[tool_name] = f"Tool: {tool_name}"
 
         # Ensure all values are JSON serializable
-        def make_serializable(obj):
+        def make_serializable(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {k: make_serializable(v) for k, v in obj.items()}
             elif isinstance(obj, list):
