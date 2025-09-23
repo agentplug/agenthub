@@ -86,6 +86,8 @@ class AgentWrapper:
         """Assign tools to agent."""
         if self.tool_registry:
             self.tool_registry.assign_tools_to_agent(self.agent_id, tool_names)
+            # Also update the tool manager
+            self.tool_manager.assign_tools_to_agent(self.agent_id, tool_names)
             self.assigned_tools = tool_names.copy()
         else:
             raise RuntimeError("No tool registry available for tool assignment")
@@ -121,22 +123,44 @@ class AgentWrapper:
                     tool_usage_examples[tool_name] = (
                         tool_metadata.examples[0] if tool_metadata.examples else ""
                     ) or ""
-                    tool_parameters[tool_name] = tool_metadata.parameters or {}
-                    tool_return_types[tool_name] = tool_metadata.return_type or "string"
+                    # Convert parameters to JSON-serializable format
+                    params = tool_metadata.parameters or {}
+                    tool_parameters[tool_name] = {
+                        k: str(v) if isinstance(v, type) else v
+                        for k, v in params.items()
+                    }
+                    tool_return_types[tool_name] = (
+                        str(tool_metadata.return_type)
+                        if tool_metadata.return_type
+                        else "string"
+                    )
                     tool_namespaces[tool_name] = tool_metadata.namespace or "custom"
             except Exception as e:
                 logger.warning(f"Could not get metadata for tool {tool_name}: {e}")
                 tool_descriptions[tool_name] = f"Tool: {tool_name}"
 
+        # Ensure all values are JSON serializable
+        def make_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_serializable(item) for item in obj]
+            elif isinstance(obj, type):
+                return str(obj)
+            else:
+                return obj
+
         return json.dumps(
-            {
-                "available_tools": self.assigned_tools,
-                "tool_descriptions": tool_descriptions,
-                "tool_usage_examples": tool_usage_examples,
-                "tool_parameters": tool_parameters,
-                "tool_return_types": tool_return_types,
-                "tool_namespaces": tool_namespaces,
-            }
+            make_serializable(
+                {
+                    "available_tools": self.assigned_tools,
+                    "tool_descriptions": tool_descriptions,
+                    "tool_usage_examples": tool_usage_examples,
+                    "tool_parameters": tool_parameters,
+                    "tool_return_types": tool_return_types,
+                    "tool_namespaces": tool_namespaces,
+                }
+            )
         )
 
     def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
@@ -158,6 +182,8 @@ class AgentWrapper:
         """Add external tools to agent."""
         if self.tool_registry:
             self.tool_registry.assign_tools_to_agent(self.agent_id, tool_names)
+            # Also update the tool manager
+            self.tool_manager.assign_tools_to_agent(self.agent_id, tool_names)
             self.assigned_tools.extend(tool_names)
         else:
             raise RuntimeError("No tool registry available for tool assignment")
