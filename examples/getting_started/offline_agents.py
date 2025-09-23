@@ -7,7 +7,7 @@ def main():
     analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
     # Generate code using the correct method
-    code = coding_agent.generate_code(
+    code = coding_agent.solve(
         "Create a Python function that calculates compound interest "
         "with monthly contributions"
     )
@@ -26,7 +26,7 @@ def main():
 
     insights = analysis_agent.analyze_text(feedback)
     print("\n📊 Customer Feedback Analysis:")
-    print(insights)
+    print(insights["result"])
 
 
 if __name__ == "__main__":
