@@ -27,9 +27,19 @@ class LLMDecisionEngine:
         Initialize the LLM Decision Engine.
 
         Args:
-            llm_service: Optional LLM service instance. If None, creates a new one.
+            llm_service: Optional LLM service instance. If None, creates a new one
+                        with auto-detected model.
         """
         self.llm_service = llm_service or CoreLLMService()
+
+    def get_current_model(self) -> str:
+        """
+        Get the currently configured model name.
+
+        Returns:
+            str: Current model identifier in aisuite format
+        """
+        return self.llm_service.get_current_model()
 
     def select_method(
         self,
@@ -122,6 +132,7 @@ class LLMDecisionEngine:
             response = self.llm_service.generate(
                 user_prompt, system_prompt=system_prompt, return_json=True
             )
+            print(response)
 
             # Parse response
             result = json.loads(response)
