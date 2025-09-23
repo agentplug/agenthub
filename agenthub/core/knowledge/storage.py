@@ -53,7 +53,8 @@ class KnowledgeStorage:
 
         try:
             with open(knowledge_file, encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                return data if isinstance(data, dict) else None
         except Exception as e:
             logger.error(f"Failed to retrieve knowledge {knowledge_id}: {e}")
             return None

@@ -6,6 +6,7 @@ structured insights about progress, errors, and suggestions.
 """
 
 import json
+from typing import Any
 
 from agenthub.core.llm.llm_service import CoreLLMService, LogAnalysis
 
@@ -27,7 +28,7 @@ class LLMAnalyzer:
             core_llm_service: Core LLM service instance for log analysis
         """
         self.core_llm = core_llm_service
-        self.cache = {}
+        self.cache: dict[str, Any] = {}
         self.log_analysis_prompt = self._get_log_analysis_prompt()
 
     def analyze(self, logs: list[str]) -> LogAnalysis:

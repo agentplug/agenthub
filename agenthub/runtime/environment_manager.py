@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class EnvironmentManager:
     """Manages isolated virtual environments for agents."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the environment manager."""
         pass
 

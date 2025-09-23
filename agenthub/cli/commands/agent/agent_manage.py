@@ -17,7 +17,7 @@ console = Console()
 
 
 @click.group()
-def agent_manage():
+def agent_manage() -> None:
     """Agent management commands."""
     pass
 
@@ -34,18 +34,22 @@ def agent_manage():
     is_flag=True,
     help="Force reinstall all dependencies",
 )
-def repair_agent(agent_name: str, base_path: str | None, force_reinstall_deps: bool):
+def repair_agent(
+    agent_name: str, base_path: str | None, force_reinstall_deps: bool
+) -> None:
     """Repair a broken agent environment."""
     try:
-        cloner = RepositoryCloner(
-            base_storage_path=Path(base_path) if base_path else None
-        )
+        cloner = RepositoryCloner(base_storage_path=base_path)
 
         if not cloner.is_agent_cloned(agent_name):
             rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
             return
 
         agent_path = cloner.get_agent_path(agent_name)
+        if not agent_path:
+            rprint(f"❌ [red]Could not get path for agent '{agent_name}'[/red]")
+            return
+
         rprint(f"🔧 [cyan]Repairing agent: {agent_name}[/cyan]")
         rprint(f"📁 Path: {agent_path}")
 
@@ -127,7 +131,9 @@ def repair_agent(agent_name: str, base_path: str | None, force_reinstall_deps: b
 @click.option(
     "--remove-broken-envs", is_flag=True, help="Remove broken virtual environments"
 )
-def cleanup_agents(dry_run: bool, remove_invalid: bool, remove_broken_envs: bool):
+def cleanup_agents(
+    dry_run: bool, remove_invalid: bool, remove_broken_envs: bool
+) -> None:
     """Clean up and optimize agent storage."""
     try:
         cloner = RepositoryCloner()
@@ -159,7 +165,9 @@ def cleanup_agents(dry_run: bool, remove_invalid: bool, remove_broken_envs: bool
             venv_path = Path(path) / ".venv"
             if venv_path.exists():
                 try:
-                    env_info = env_setup._collect_environment_info(path, venv_path)
+                    env_info = env_setup._collect_environment_info(
+                        Path(path), venv_path
+                    )
                     if not env_info.get("venv_exists", False):
                         issues.append("Broken environment")
                 except Exception:

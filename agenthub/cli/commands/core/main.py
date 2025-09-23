@@ -10,7 +10,7 @@ from .validate import core_validate
 
 
 @click.group()
-def core():
+def core() -> None:
     """Core AgentHub commands."""
     pass
 

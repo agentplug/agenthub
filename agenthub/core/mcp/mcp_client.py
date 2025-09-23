@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class MCPClient:
     """MCP client for tool execution."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the MCP client."""
         self.tool_registry = get_tool_registry()
         self.client: ClientSession | None = None
@@ -90,7 +90,7 @@ class MCPClient:
         """
         return self.tool_registry.get_available_tools()
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the MCP client connection."""
         if self.client:
             await self.client.close()

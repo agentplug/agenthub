@@ -12,12 +12,14 @@ logger = logging.getLogger(__name__)
 class FrameworkSolveHandler:
     """Handles framework-level solve using LLM method selection."""
 
-    def __init__(self, agent_wrapper):
+    def __init__(self, agent_wrapper: Any) -> None:
         """Initialize framework solve handler."""
         self.agent_wrapper = agent_wrapper
         self.llm_decision_engine = LLMDecisionEngine()
 
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Execute framework-level solve using LLM method selection."""
         start_time = time.time()
 
@@ -101,7 +103,7 @@ class FrameworkSolveHandler:
 
     def _get_method_metadata(self) -> list[dict[str, Any]]:
         """Get metadata for all available methods."""
-        methods = []
+        methods: list[dict[str, Any]] = []
 
         for method_name in self.agent_wrapper.agent_info.methods:
             try:

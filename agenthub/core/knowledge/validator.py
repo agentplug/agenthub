@@ -16,15 +16,15 @@ class ValidationResult:
 class KnowledgeValidator:
     """Validates knowledge content for agents."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize knowledge validator."""
         self.max_knowledge_length = 10000  # 10KB limit
         self.min_knowledge_length = 10  # Minimum meaningful content
 
     def validate_knowledge(self, knowledge_text: str) -> ValidationResult:
         """Validate knowledge text."""
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         if not knowledge_text:
             errors.append("Knowledge text cannot be empty")
@@ -70,10 +70,10 @@ class KnowledgeValidator:
         text_lower = text.lower()
         return any(pattern in text_lower for pattern in suspicious_patterns)
 
-    def validate_metadata(self, metadata: dict[str, Any]) -> ValidationResult:
+    def validate_metadata(self, metadata: dict[Any, Any]) -> ValidationResult:
         """Validate knowledge metadata."""
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         # Check for required fields
         if "source" not in metadata:

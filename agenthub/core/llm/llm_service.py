@@ -6,6 +6,7 @@ Supports multiple providers with consistent API and JSON response handling.
 """
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -28,7 +29,9 @@ class CoreLLMService:
     support.
     """
 
-    def __init__(self, aisuite_client=None, model="openai:gpt-3.5-turbo"):
+    def __init__(
+        self, aisuite_client: Any = None, model: str = "openai:gpt-3.5-turbo"
+    ) -> None:
         """
         Initialize Core LLM Service
 
@@ -38,14 +41,14 @@ class CoreLLMService:
         """
         self.client = aisuite_client or self._initialize_aisuite()
         self.model = model
-        self.cache = {}
+        self.cache: dict[str, Any] = {}
 
     def generate(
         self,
         input_data: str | list[dict],
         system_prompt: str | None = None,
         return_json: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Adaptive LLM generation using AISuite
@@ -78,7 +81,7 @@ class CoreLLMService:
                 response = self.client.chat.completions.create(
                     model=self.model, messages=messages, **request_kwargs
                 )
-                return response.choices[0].message.content
+                return str(response.choices[0].message.content)
 
             elif isinstance(input_data, list):
                 # Messages - organize into context and focus on current
@@ -89,7 +92,7 @@ class CoreLLMService:
                 response = self.client.chat.completions.create(
                     model=self.model, messages=messages, **request_kwargs
                 )
-                return response.choices[0].message.content
+                return str(response.choices[0].message.content)
             else:
                 raise ValueError("input_data must be string or list")
         except Exception as e:
@@ -171,7 +174,7 @@ class CoreLLMService:
             formatted_prompt, system_prompt=system_prompt, return_json=return_json
         )
 
-    def _initialize_aisuite(self):
+    def _initialize_aisuite(self) -> Any:
         """
         Initialize AISuite client
 

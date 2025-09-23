@@ -12,7 +12,7 @@ from agenthub.github.repository_cloner import RepositoryCloner
 
 
 @click.group()
-def agent_backup():
+def agent_backup() -> None:
     """Agent backup and restore commands."""
     pass
 
@@ -23,7 +23,7 @@ def agent_backup():
 @click.option(
     "--include-env", is_flag=True, help="Include virtual environment in backup"
 )
-def backup_agent(agent_name: str, backup_path: str | None, include_env: bool):
+def backup_agent(agent_name: str, backup_path: str | None, include_env: bool) -> None:
     """Create a backup of an installed agent."""
     try:
         cloner = RepositoryCloner()
@@ -32,7 +32,11 @@ def backup_agent(agent_name: str, backup_path: str | None, include_env: bool):
             rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")
             return
 
-        agent_path = Path(cloner.get_agent_path(agent_name))
+        agent_path_str = cloner.get_agent_path(agent_name)
+        if not agent_path_str:
+            rprint(f"❌ [red]Could not get path for agent '{agent_name}'[/red]")
+            return
+        agent_path = Path(agent_path_str)
 
         # Create backup directory
         backup_dir = (
@@ -42,18 +46,18 @@ def backup_agent(agent_name: str, backup_path: str | None, include_env: bool):
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         backup_name = f"{agent_name.replace('/', '_')}_{timestamp}"
-        backup_path = backup_dir / backup_name
+        final_backup_path = backup_dir / backup_name
 
         rprint(f"💾 [cyan]Creating backup: {backup_name}[/cyan]")
 
         # Copy agent directory
         shutil.copytree(
             agent_path,
-            backup_path,
+            final_backup_path,
             ignore=shutil.ignore_patterns(".venv") if not include_env else None,
         )
 
-        rprint(f"✅ [green]Backup created: {backup_path}[/green]")
+        rprint(f"✅ [green]Backup created: {final_backup_path}[/green]")
 
     except Exception as e:
         rprint(f"❌ [red]Backup error: {e}[/red]")
@@ -62,13 +66,13 @@ def backup_agent(agent_name: str, backup_path: str | None, include_env: bool):
 @agent_backup.command("restore")
 @click.argument("backup_path", type=click.Path(exists=True))
 @click.option("--agent-name", help="Override agent name for restore")
-def restore_agent(backup_path: str, agent_name: str | None):
+def restore_agent(backup_path: str, agent_name: str | None) -> None:
     """Restore an agent from backup."""
     try:
-        backup_path = Path(backup_path)
+        backup_path_obj = Path(backup_path)
 
-        if not backup_path.exists():
-            rprint(f"❌ [red]Backup not found: {backup_path}[/red]")
+        if not backup_path_obj.exists():
+            rprint(f"❌ [red]Backup not found: {backup_path_obj}[/red]")
             return
 
         # Determine agent name
@@ -76,7 +80,7 @@ def restore_agent(backup_path: str, agent_name: str | None):
             target_name = agent_name
         else:
             # Extract from backup directory name
-            backup_name = backup_path.name
+            backup_name = backup_path_obj.name
             if "_" in backup_name and backup_name.count("_") >= 1:
                 target_name = backup_name.rsplit("_", 1)[0].replace("_", "/")
             else:

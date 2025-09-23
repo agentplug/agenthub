@@ -15,14 +15,16 @@ logger = logging.getLogger(__name__)
 class SolveEngine:
     """Orchestrates intelligent solve functionality."""
 
-    def __init__(self, agent_wrapper):
+    def __init__(self, agent_wrapper: Any) -> None:
         """Initialize solve engine."""
         self.agent_wrapper = agent_wrapper
         self.custom_handler = CustomSolveHandler(agent_wrapper)
         self.framework_handler = FrameworkSolveHandler(agent_wrapper)
-        self._custom_solve_agent = None
+        self._custom_solve_agent: AgentSolveInterface | None = None
 
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """
         Intelligently solve a user query by selecting and executing the most
         appropriate method.
@@ -95,7 +97,7 @@ class SolveEngine:
             logger.debug(f"Could not load custom solve agent: {e}")
             return None
 
-    def _load_agent_module(self):
+    def _load_agent_module(self) -> Any:
         """Load the agent module dynamically."""
         try:
             # This is a simplified approach - in practice, you'd need more robust

@@ -5,6 +5,7 @@ import logging
 import subprocess
 import time
 from pathlib import Path
+from typing import Any
 
 from agenthub.core.agents.dynamic_executor import DynamicAgentExecutor
 from agenthub.runtime.environment_manager import EnvironmentManager
@@ -20,7 +21,7 @@ class ProcessManager:
         timeout: int = 300,
         use_dynamic_execution: bool = True,
         monitoring: bool = False,
-    ):
+    ) -> None:
         """
         Initialize the process manager.
 
@@ -36,6 +37,11 @@ class ProcessManager:
             DynamicAgentExecutor() if use_dynamic_execution else None
         )
         self.monitoring = monitoring
+        # Initialize monitoring components as None initially
+        self.core_llm: Any = None
+        self.llm_analyzer: Any = None
+        self.log_streamer: Any = None
+        self.terminal_display: Any = None
 
         # Initialize monitoring components if enabled
         if self.monitoring:
@@ -53,12 +59,7 @@ class ProcessManager:
             except ImportError as e:
                 logger.warning(f"Monitoring components not available: {e}")
                 self.monitoring = False
-        else:
-            # Initialize monitoring components as None when monitoring is disabled
-            self.core_llm = None
-            self.llm_analyzer = None
-            self.log_streamer = None
-            self.terminal_display = None
+        # Monitoring components are already initialized as None above
 
     def set_monitoring(self, enabled: bool) -> None:
         """Enable or disable monitoring dynamically."""
@@ -80,6 +81,7 @@ class ProcessManager:
                 self.monitoring = False
         elif not enabled and self.monitoring:
             self.monitoring = False
+            # Reset monitoring components to None
             self.core_llm = None
             self.llm_analyzer = None
             self.log_streamer = None
@@ -90,10 +92,10 @@ class ProcessManager:
         self,
         agent_path: str,
         method: str,
-        parameters: dict,
-        manifest: dict = None,
-        tool_context: dict = None,
-    ) -> dict:
+        parameters: dict[str, Any],
+        manifest: dict[str, Any] | None = None,
+        tool_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Execute an agent method in an isolated subprocess.
 
@@ -147,8 +149,14 @@ class ProcessManager:
             )
 
     def _execute_without_monitoring(
-        self, agent_path, method, parameters, tool_context, agent_script, agent_dir
-    ):
+        self,
+        agent_path: str,
+        method: str,
+        parameters: dict[str, Any],
+        tool_context: dict[str, Any] | None,
+        agent_script: Path,
+        agent_dir: Path,
+    ) -> dict[str, Any]:
         """Execute agent without monitoring (original subprocess execution)."""
         # Prepare execution data with tool context if available
         execution_data = {"method": method, "parameters": parameters}
@@ -180,8 +188,15 @@ class ProcessManager:
             if result.returncode == 0:
                 try:
                     parsed_result = json.loads(result.stdout)
-                    parsed_result["execution_time"] = execution_time
-                    return parsed_result
+                    if isinstance(parsed_result, dict):
+                        parsed_result["execution_time"] = execution_time
+                        return parsed_result
+                    else:
+                        return {
+                            "error": "Agent returned non-dictionary result",
+                            "raw_output": result.stdout,
+                            "execution_time": execution_time,
+                        }
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse agent output: {result.stdout}")
                     return {
@@ -210,8 +225,14 @@ class ProcessManager:
             return {"error": f"Unexpected execution error: {e}"}
 
     def _execute_with_monitoring(
-        self, agent_path, method, parameters, tool_context, agent_script, agent_dir
-    ):
+        self,
+        agent_path: str,
+        method: str,
+        parameters: dict[str, Any],
+        tool_context: dict[str, Any] | None,
+        agent_script: Path,
+        agent_dir: Path,
+    ) -> dict[str, Any]:
         """Execute agent with real-time monitoring."""
         execution_data = self._prepare_execution_data(method, parameters, tool_context)
 
@@ -233,14 +254,21 @@ class ProcessManager:
             logger.error(f"Unexpected error in monitored execution: {e}")
             return self._create_error_result(f"Unexpected execution error: {e}")
 
-    def _prepare_execution_data(self, method, parameters, tool_context):
+    def _prepare_execution_data(
+        self,
+        method: str,
+        parameters: dict[str, Any],
+        tool_context: dict[str, Any] | None,
+    ) -> dict[str, Any]:
         """Prepare execution data with tool context."""
         execution_data = {"method": method, "parameters": parameters}
         if tool_context:
             execution_data["tool_context"] = tool_context
         return execution_data
 
-    def _prepare_monitoring_command(self, agent_path, agent_script, execution_data):
+    def _prepare_monitoring_command(
+        self, agent_path: str, agent_script: Path, execution_data: dict[str, Any]
+    ) -> list[str]:
         """Prepare command for monitored execution."""
         try:
             python_executable = self.environment_manager.get_python_executable(
@@ -256,7 +284,7 @@ class ProcessManager:
         logger.info(f"Starting monitored execution: {' '.join(command)}")
         return command
 
-    def _start_monitoring_session(self, command, agent_dir):
+    def _start_monitoring_session(self, command: list[str], agent_dir: Path) -> float:
         """Start the monitoring session with log streaming and terminal display."""
         # Clear logs from previous executions to prevent accumulation
         self.log_streamer.clear_logs()
@@ -264,9 +292,9 @@ class ProcessManager:
         self.terminal_display.start_display()
         return time.time()
 
-    def _monitor_execution(self, start_time):
+    def _monitor_execution(self, start_time: float) -> tuple[int, float]:
         """Monitor the execution with periodic log analysis."""
-        last_analysis_time = 0
+        last_analysis_time = 0.0
         analysis_interval = 2.0  # Analyze logs every 2 seconds
 
         while not self.log_streamer.is_complete():
@@ -291,7 +319,9 @@ class ProcessManager:
         execution_time = time.time() - start_time
         return return_code, execution_time
 
-    def _finalize_monitoring(self, execution_time, return_code):
+    def _finalize_monitoring(
+        self, execution_time: float, return_code: int
+    ) -> tuple[list[str], Any]:
         """Finalize monitoring session and get final analysis."""
         final_logs = self.log_streamer.get_logs()
         final_analysis = self.llm_analyzer.analyze(final_logs)
@@ -308,15 +338,21 @@ class ProcessManager:
         return final_logs, final_analysis
 
     def _parse_monitoring_result(
-        self, return_code, execution_time, final_logs, final_analysis
-    ):
+        self,
+        return_code: int,
+        execution_time: float,
+        final_logs: list[str],
+        final_analysis: Any,
+    ) -> dict[str, Any]:
         """Parse the monitoring result and return appropriate response."""
         if return_code == 0:
             return self._parse_successful_result(final_logs, execution_time)
         else:
             return self._parse_failed_result(final_analysis, execution_time)
 
-    def _parse_successful_result(self, final_logs, execution_time):
+    def _parse_successful_result(
+        self, final_logs: list[str], execution_time: float
+    ) -> dict[str, Any]:
         """Parse result from successful execution."""
         try:
             stdout_lines = [line for line in final_logs if "[STDOUT]" in line]
@@ -327,8 +363,14 @@ class ProcessManager:
 
                 # The agent already returns the correct structure, add execution_time
                 # to match non-monitoring format
-                parsed_result["execution_time"] = execution_time
-                return parsed_result
+                if isinstance(parsed_result, dict):
+                    parsed_result["execution_time"] = execution_time
+                    return parsed_result
+                else:
+                    return self._create_parse_error_result(
+                        ValueError("Agent returned non-dictionary result"),
+                        execution_time,
+                    )
             else:
                 return self._create_success_result(execution_time)
 
@@ -336,7 +378,7 @@ class ProcessManager:
             logger.error(f"Failed to parse agent output: {e}")
             return self._create_parse_error_result(e, execution_time)
 
-    def _extract_result_text(self, stdout_lines):
+    def _extract_result_text(self, stdout_lines: list[str]) -> str:
         """Extract and combine result text from stdout lines."""
         result_text = ""
         for line in stdout_lines:
@@ -348,7 +390,9 @@ class ProcessManager:
         logger.debug(f"Attempting to parse JSON: {result_text[:200]}...")
         return result_text
 
-    def _parse_failed_result(self, final_analysis, execution_time):
+    def _parse_failed_result(
+        self, final_analysis: Any, execution_time: float
+    ) -> dict[str, Any]:
         """Parse result from failed execution."""
         error_msg = "Agent execution failed"
         if final_analysis.errors:
@@ -361,7 +405,7 @@ class ProcessManager:
             "execution_time": execution_time,
         }
 
-    def _create_success_result(self, execution_time):
+    def _create_success_result(self, execution_time: float) -> dict[str, Any]:
         """Create a simple success result structure."""
         return {
             "status": "completed",
@@ -370,7 +414,9 @@ class ProcessManager:
             "execution_time": execution_time,
         }
 
-    def _create_parse_error_result(self, error, execution_time):
+    def _create_parse_error_result(
+        self, error: Exception, execution_time: float
+    ) -> dict[str, Any]:
         """Create an error result for JSON parsing failures."""
         return {
             "status": "error",
@@ -379,7 +425,7 @@ class ProcessManager:
             "execution_time": execution_time,
         }
 
-    def _create_error_result(self, error_msg):
+    def _create_error_result(self, error_msg: str) -> dict[str, Any]:
         """Create a generic error result."""
         return {
             "status": "error",

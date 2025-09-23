@@ -47,7 +47,7 @@ class GitNotAvailableError(CloneError):
 class RepositoryCloner:
     """Clone GitHub repositories containing agents."""
 
-    def __init__(self, base_storage_path: str | None = None):
+    def __init__(self, base_storage_path: str | None = None) -> None:
         """
         Initialize the repository cloner.
 
@@ -404,7 +404,7 @@ class RepositoryCloner:
         Returns:
             Dict[str, str]: Mapping of agent names to their local paths
         """
-        cloned_agents = {}
+        cloned_agents: dict[str, str] = {}
 
         if not self.base_storage_path.exists():
             return cloned_agents

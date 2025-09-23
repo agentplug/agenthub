@@ -23,11 +23,11 @@ class AgentWrapper:
     def __init__(
         self,
         agent_info: dict,
-        tool_registry=None,
-        agent_id: str = None,
-        assigned_tools: list[str] = None,
-        runtime=None,
-    ):
+        tool_registry: Any = None,
+        agent_id: str | None = None,
+        assigned_tools: list[str] | None = None,
+        runtime: Any = None,
+    ) -> None:
         """
         Initialize the enhanced agent wrapper with Phase 3 features.
 
@@ -118,7 +118,7 @@ class AgentWrapper:
 
         return self.interface_validator.get_method_info(self.interface, method_name)
 
-    def __getattr__(self, method_name: str):
+    def __getattr__(self, method_name: str) -> Any:
         """
         Magic method to enable direct method calls on the wrapper.
 
@@ -178,7 +178,7 @@ class AgentWrapper:
 
             raise AttributeError(error_msg)
 
-        def method_caller(*args, **kwargs):
+        def method_caller(*args: Any, **kwargs: Any) -> Any:
             """Execute the agent method with provided arguments."""
             # Get method information from the agent's interface
             try:
@@ -295,7 +295,7 @@ class AgentWrapper:
 
     def _validate_required_parameters(
         self, method_name: str, kwargs: dict, interface_params: dict
-    ):
+    ) -> None:
         """
         Validate that all required parameters are provided.
 
@@ -349,7 +349,7 @@ class AgentWrapper:
         }
 
     # Simplified tool execution using unified tool manager
-    def execute_tool(self, tool_name: str, *args, **kwargs) -> Any:
+    def execute_tool(self, tool_name: str, *args: Any, **kwargs: Any) -> Any:
         """Execute a tool with access control (simplified)."""
         if not self.tool_registry:
             raise ValueError("No tool registry available")
@@ -709,7 +709,9 @@ class AgentWrapper:
                 raise ValueError(f"Built-in tool '{tool_name}' is disabled")
 
             # Validate parameters
-            errors = self.tool_manager.validate_tool_parameters(tool_name, parameters)
+            errors = self.tool_manager.validate_builtin_tool_parameters(
+                tool_name, parameters
+            )
             if errors:
                 raise ValueError(
                     f"Tool parameter validation failed: {'; '.join(errors)}"
@@ -726,7 +728,7 @@ class AgentWrapper:
             return self.execute_tool(tool_name, **parameters)
 
         else:
-            available_builtin = self.tool_manager.get_available_tools()
+            available_builtin = self.tool_manager.get_available_builtin_tools()
             available_external = self.assigned_tools
             all_available = available_builtin + available_external
             raise ValueError(
@@ -761,7 +763,7 @@ class AgentWrapper:
     # Phase 3.2: Intelligent solve() method
 
     def solve(
-        self, query: str, context: dict[str, Any] | None = None, **kwargs
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
     ) -> SolveResult:
         """
         Intelligently solve a user query by selecting and executing the most
@@ -831,14 +833,14 @@ class AgentWrapper:
             logger.debug(f"Could not load custom solve agent: {e}")
             return None
 
-    def _load_agent_module(self):
+    def _load_agent_module(self) -> Any:
         """Load the agent module (simplified implementation)."""
         # This is a placeholder - in practice, you'd need to implement
         # proper module loading based on the agent path
         return None
 
     def _execute_custom_solve(
-        self, query: str, context: dict[str, Any] | None = None, **kwargs
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
     ) -> SolveResult:
         """Execute custom solve method if available."""
         start_time = time.time()
@@ -848,7 +850,10 @@ class AgentWrapper:
             full_context = self._prepare_solve_context(context)
 
             # Execute custom solve method
-            result = self._custom_solve_agent.solve(query, full_context, **kwargs)
+            if self._custom_solve_agent:
+                result = self._custom_solve_agent.solve(query, full_context, **kwargs)
+            else:
+                raise RuntimeError("No custom solve agent available")
 
             execution_time = time.time() - start_time
 
@@ -861,7 +866,7 @@ class AgentWrapper:
             return {"error": str(e), "execution_time": execution_time}
 
     def _execute_framework_solve(
-        self, query: str, context: dict[str, Any] | None = None, **kwargs
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
     ) -> SolveResult:
         """Execute framework-level solve using LLM method selection."""
         start_time = time.time()
@@ -980,17 +985,28 @@ class AgentWrapper:
 class CustomSolveWrapper(AgentSolveInterface):
     """Wrapper for agents with custom solve methods."""
 
-    def __init__(self, agent_instance):
+    def __init__(self, agent_instance: Any) -> None:
         self.agent_instance = agent_instance
 
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Delegate to the agent's custom solve method."""
         return self.agent_instance.solve(query, context, **kwargs)
 
     def get_solve_capabilities(self) -> dict[str, Any]:
         """Get solve capabilities from the wrapped agent."""
         if hasattr(self.agent_instance, "get_solve_capabilities"):
-            return self.agent_instance.get_solve_capabilities()
+            result = self.agent_instance.get_solve_capabilities()
+            return (
+                result
+                if isinstance(result, dict)
+                else {
+                    "has_custom_solve": True,
+                    "description": "Custom solve method (wrapped)",
+                    "version": "1.0.0",
+                }
+            )
         return {
             "has_custom_solve": True,
             "description": "Custom solve method (wrapped)",

@@ -19,7 +19,7 @@ class ValidationResult:
 class InstallationValidator:
     """Validates installation commands and configuration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize installation validator."""
         self.supported_commands = [
             "uv",
@@ -45,8 +45,8 @@ class InstallationValidator:
 
     def validate_installation_commands(self, commands: list[str]) -> ValidationResult:
         """Validate installation commands."""
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         if not commands:
             errors.append("At least one installation command is required")
@@ -62,8 +62,8 @@ class InstallationValidator:
 
     def validate_validation_commands(self, commands: list[str]) -> ValidationResult:
         """Validate validation commands."""
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         for i, command in enumerate(commands):
             command_errors, command_warnings = self._validate_single_command(command, i)
@@ -77,8 +77,8 @@ class InstallationValidator:
         self, command: str, index: int
     ) -> tuple[list[str], list[str]]:
         """Validate a single command."""
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         if not command.strip():
             errors.append(f"Command {index + 1} is empty")
@@ -130,8 +130,8 @@ class InstallationValidator:
 
     def validate_agent_config(self, config: dict[str, Any]) -> ValidationResult:
         """Validate agent configuration for installation."""
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         # Check for installation section
         if "installation" not in config:

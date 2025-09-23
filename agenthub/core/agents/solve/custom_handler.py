@@ -11,15 +11,19 @@ logger = logging.getLogger(__name__)
 class CustomSolveHandler:
     """Handles agents with custom solve implementations."""
 
-    def __init__(self, agent_wrapper):
+    def __init__(self, agent_wrapper: Any) -> None:
         """Initialize custom solve handler."""
         self.agent_wrapper = agent_wrapper
 
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Execute custom solve method."""
         try:
             # Get the custom solve agent
-            custom_agent = self.agent_wrapper.solve_engine._custom_solve_agent
+            custom_agent = getattr(
+                self.agent_wrapper.solve_engine, "_custom_solve_agent", None
+            )
             if not custom_agent:
                 raise RuntimeError("No custom solve agent available")
 
@@ -61,9 +65,20 @@ class CustomSolveHandler:
 
     def get_solve_capabilities(self) -> dict[str, Any]:
         """Get solve capabilities from the custom agent."""
-        custom_agent = self.agent_wrapper.solve_engine._custom_solve_agent
+        custom_agent = getattr(
+            self.agent_wrapper.solve_engine, "_custom_solve_agent", None
+        )
         if custom_agent and hasattr(custom_agent, "get_solve_capabilities"):
-            return custom_agent.get_solve_capabilities()
+            capabilities = custom_agent.get_solve_capabilities()
+            return (
+                capabilities
+                if isinstance(capabilities, dict)
+                else {
+                    "has_custom_solve": True,
+                    "description": "Custom solve method implementation",
+                    "version": "1.0.0",
+                }
+            )
         return {
             "has_custom_solve": True,
             "description": "Custom solve method implementation",
@@ -74,18 +89,30 @@ class CustomSolveHandler:
 class CustomSolveWrapper(AgentSolveInterface):
     """Wrapper for agents with custom solve methods."""
 
-    def __init__(self, agent_instance):
+    def __init__(self, agent_instance: Any) -> None:
         """Initialize wrapper."""
         self.agent_instance = agent_instance
 
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Delegate to the agent's custom solve method."""
-        return self.agent_instance.solve(query, context, **kwargs)
+        result = self.agent_instance.solve(query, context, **kwargs)
+        return result
 
     def get_solve_capabilities(self) -> dict[str, Any]:
         """Get solve capabilities from the wrapped agent."""
         if hasattr(self.agent_instance, "get_solve_capabilities"):
-            return self.agent_instance.get_solve_capabilities()
+            capabilities = self.agent_instance.get_solve_capabilities()
+            return (
+                capabilities
+                if isinstance(capabilities, dict)
+                else {
+                    "has_custom_solve": True,
+                    "description": "Custom solve method (wrapped)",
+                    "version": "1.0.0",
+                }
+            )
         return {
             "has_custom_solve": True,
             "description": "Custom solve method (wrapped)",

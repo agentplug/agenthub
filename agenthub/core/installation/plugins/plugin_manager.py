@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class PluginManager:
     """Manages installation method plugins."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize plugin manager."""
         self.plugins: dict[str, BaseInstallationPlugin] = {}
         self._register_default_plugins()
@@ -67,7 +67,7 @@ class PluginManager:
 class UVInstallationPlugin(BaseInstallationPlugin):
     """Plugin for UV installation commands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("uv", "UV package manager plugin")
 
     def can_handle(self, command: str) -> bool:
@@ -97,7 +97,7 @@ class UVInstallationPlugin(BaseInstallationPlugin):
 class PipInstallationPlugin(BaseInstallationPlugin):
     """Plugin for pip installation commands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("pip", "Pip package manager plugin")
 
     def can_handle(self, command: str) -> bool:
@@ -125,7 +125,7 @@ class PipInstallationPlugin(BaseInstallationPlugin):
 class MakeInstallationPlugin(BaseInstallationPlugin):
     """Plugin for Make installation commands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("make", "Make build system plugin")
 
     def can_handle(self, command: str) -> bool:
@@ -153,7 +153,7 @@ class MakeInstallationPlugin(BaseInstallationPlugin):
 class NPMInstallationPlugin(BaseInstallationPlugin):
     """Plugin for NPM installation commands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("npm", "NPM package manager plugin")
 
     def can_handle(self, command: str) -> bool:

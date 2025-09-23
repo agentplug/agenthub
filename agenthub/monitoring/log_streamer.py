@@ -8,6 +8,7 @@ for non-blocking execution and immediate log availability.
 import subprocess
 import threading
 import time
+from typing import Any
 
 
 class LogStreamer:
@@ -18,7 +19,7 @@ class LogStreamer:
     providing buffered access to logs for analysis and display.
     """
 
-    def __init__(self, buffer_size: int = 1000):
+    def __init__(self, buffer_size: int = 1000) -> None:
         """
         Initialize Log Streamer
 
@@ -26,16 +27,16 @@ class LogStreamer:
             buffer_size: Maximum number of log lines to keep in buffer
         """
         self.buffer_size = buffer_size
-        self.logs = []
-        self.process = None
-        self.stdout_thread = None
-        self.stderr_thread = None
+        self.logs: list[str] = []
+        self.process: subprocess.Popen[str] | None = None
+        self.stdout_thread: threading.Thread | None = None
+        self.stderr_thread: threading.Thread | None = None
         self.is_running = False
         self._lock = threading.Lock()
 
     def start_streaming(
         self, command: list[str], cwd: str | None = None
-    ) -> subprocess.Popen:
+    ) -> subprocess.Popen[str]:
         """
         Start streaming logs from subprocess execution
 
@@ -78,7 +79,7 @@ class LogStreamer:
 
         return self.process
 
-    def _stream_output(self, pipe, stream_type: str):
+    def _stream_output(self, pipe: Any, stream_type: str) -> None:
         """
         Stream output from subprocess pipe in real-time
 
@@ -157,7 +158,7 @@ class LogStreamer:
         finally:
             self.is_running = False
 
-    def stop_streaming(self):
+    def stop_streaming(self) -> None:
         """Stop log streaming and cleanup resources"""
         if self.process and self.is_running:
             self.process.terminate()
@@ -174,7 +175,7 @@ class LogStreamer:
         if self.stderr_thread and self.stderr_thread.is_alive():
             self.stderr_thread.join(timeout=1)
 
-    def clear_logs(self):
+    def clear_logs(self) -> None:
         """Clear all captured logs to prevent accumulation between calls"""
         with self._lock:
             self.logs.clear()

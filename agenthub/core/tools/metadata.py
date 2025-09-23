@@ -17,7 +17,7 @@ class ToolMetadata:
     return_type: str | None = None
     examples: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize derived fields after object creation."""
         if self.parameters is None and self.function is not None:
             self.parameters = self._extract_parameters()
@@ -36,6 +36,8 @@ class ToolMetadata:
         """Extract parameter information from function signature."""
         import inspect
 
+        if self.function is None:
+            return {}
         sig = inspect.signature(self.function)
         parameters = {}
 
@@ -60,6 +62,8 @@ class ToolMetadata:
         """Extract return type from function signature."""
         import inspect
 
+        if self.function is None:
+            return "Any"
         sig = inspect.signature(self.function)
         return_type = sig.return_annotation
 
@@ -67,9 +71,10 @@ class ToolMetadata:
             return "Any"
 
         if hasattr(return_type, "__name__"):
-            return return_type.__name__
+            name = return_type.__name__
+            return str(name) if name is not None else "Any"
 
-        return str(return_type)
+        return str(return_type) if return_type is not None else "Any"
 
     def _generate_examples(self) -> list[str]:
         """Generate usage examples for the tool."""

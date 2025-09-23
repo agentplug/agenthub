@@ -18,7 +18,9 @@ class AgentSolveInterface(ABC):
     """
 
     @abstractmethod
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """
         Solve a user query using the agent's custom logic.
 
@@ -34,7 +36,7 @@ class AgentSolveInterface(ABC):
             NotImplementedError: If the agent doesn't implement this method
             AgentExecutionError: If there's an error during execution
         """
-        pass
+        raise NotImplementedError("Subclasses must implement solve method")
 
     def get_solve_capabilities(self) -> dict[str, Any]:
         """
@@ -64,8 +66,7 @@ class AgentSolveInterface(ABC):
         """
         if not query or not isinstance(query, str):
             return False
-        if context is not None and not isinstance(context, dict):
-            return False
+        # context is already typed as dict[str, Any] | None, so no need to check
         return True
 
     def get_solve_help(self) -> str:

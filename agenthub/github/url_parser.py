@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class URLParser:
     """Parse and validate agent names and construct GitHub URLs."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the URL parser with validation patterns."""
         # Agent name pattern: developer/agent-name
         # Allows alphanumeric characters, hyphens, and underscores

@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class AgentRuntime:
     """Coordinates agent execution and provides unified interface."""
 
-    def __init__(self, storage=None):
+    def __init__(self, storage: Any = None) -> None:
         """
         Initialize the agent runtime.
 

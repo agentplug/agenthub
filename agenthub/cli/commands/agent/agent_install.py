@@ -1,7 +1,5 @@
 """CLI commands for agent installation and removal."""
 
-from pathlib import Path
-
 import click
 from rich import print as rprint
 from rich.console import Console
@@ -15,7 +13,7 @@ console = Console()
 
 
 @click.group()
-def agent_install():
+def agent_install() -> None:
     """Agent installation and removal commands."""
     pass
 
@@ -39,7 +37,7 @@ def agent_install():
 )
 def install_agent(
     agent_name: str, setup_environment: bool, base_path: str | None, force: bool
-):
+) -> None:
     """Install an agent from GitHub."""
     try:
         # Validate agent name format
@@ -48,9 +46,7 @@ def install_agent(
             return
 
         # Check if already installed
-        cloner = RepositoryCloner(
-            base_storage_path=Path(base_path) if base_path else None
-        )
+        cloner = RepositoryCloner(base_storage_path=base_path)
         if cloner.is_agent_cloned(agent_name) and not force:
             if not Confirm.ask(
                 f"Agent '{agent_name}' is already installed. Reinstall?"
@@ -59,7 +55,7 @@ def install_agent(
 
         # Initialize installer
         installer = AutoInstaller(
-            base_storage_path=Path(base_path) if base_path else None,
+            base_storage_path=base_path,
             setup_environment=setup_environment,
         )
 
@@ -83,11 +79,23 @@ def install_agent(
             rprint(f"📁 Location: {result.local_path}")
             rprint(f"⏱️  Time: {result.installation_time_seconds:.2f}s")
 
-            if result.environment_result and result.environment_result.success:
-                rprint(f"🌍 Environment: {result.environment_result.venv_path}")
+            if (
+                result.environment_result
+                and hasattr(result.environment_result, "success")
+                and result.environment_result.success
+            ):
+                venv_path = getattr(result.environment_result, "venv_path", "N/A")
+                rprint(f"🌍 Environment: {venv_path}")
 
-            if result.dependency_result and result.dependency_result.success:
-                package_count = len(result.dependency_result.installed_packages)
+            if (
+                result.dependency_result
+                and hasattr(result.dependency_result, "success")
+                and result.dependency_result.success
+            ):
+                installed_packages = getattr(
+                    result.dependency_result, "installed_packages", []
+                )
+                package_count = len(installed_packages)
                 rprint(f"📦 Dependencies: {package_count} packages installed")
 
             # Show next steps
@@ -116,12 +124,10 @@ def install_agent(
     help="Custom base storage path for agents",
 )
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def remove_agent(agent_name: str, base_path: str | None, force: bool):
+def remove_agent(agent_name: str, base_path: str | None, force: bool) -> None:
     """Remove an installed agent."""
     try:
-        cloner = RepositoryCloner(
-            base_storage_path=Path(base_path) if base_path else None
-        )
+        cloner = RepositoryCloner(base_storage_path=base_path)
 
         if not cloner.is_agent_cloned(agent_name):
             rprint(f"❌ [red]Agent '{agent_name}' not found[/red]")

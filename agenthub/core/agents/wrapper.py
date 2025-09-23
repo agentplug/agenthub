@@ -5,7 +5,6 @@ from typing import Any
 
 from ..knowledge import KnowledgeManager
 from ..mcp.agent_tool_manager import AgentToolManager
-from ..tools.exceptions import AgentExecutionError
 from .agent_info import AgentInfo
 from .method_executor import MethodExecutor
 from .solve import SolveEngine
@@ -20,11 +19,11 @@ class AgentWrapper:
     def __init__(
         self,
         agent_info: dict,
-        tool_registry=None,
-        agent_id: str = None,
-        assigned_tools: list[str] = None,
-        runtime=None,
-    ):
+        tool_registry: Any = None,
+        agent_id: str | None = None,
+        assigned_tools: list[str] | None = None,
+        runtime: Any = None,
+    ) -> None:
         """
         Initialize the simplified agent wrapper.
 
@@ -64,7 +63,9 @@ class AgentWrapper:
         self.interface_validator = InterfaceValidator()
 
     # Core delegation methods
-    def solve(self, query: str, context: dict[str, Any] | None = None, **kwargs) -> Any:
+    def solve(
+        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Delegate to solve engine."""
         return self.solve_engine.solve(query, context, **kwargs)
 
@@ -197,7 +198,7 @@ class AgentWrapper:
         """Validate parameters for a built-in tool."""
         return self.tool_manager.validate_builtin_tool_parameters(tool_name, parameters)
 
-    def execute_tool(self, tool_name: str, *args, **kwargs) -> Any:
+    def execute_tool(self, tool_name: str, *args: Any, **kwargs: Any) -> Any:
         """Execute a tool."""
         # Map args and kwargs to parameters
         parameters = {}
@@ -286,7 +287,7 @@ class AgentWrapper:
         return self.agent_info.__repr__()
 
     # Magic method for dynamic method calls
-    def __getattr__(self, method_name: str):
+    def __getattr__(self, method_name: str) -> Any:
         """
         Magic method to enable direct method calls on the wrapper.
 
@@ -316,7 +317,7 @@ class AgentWrapper:
                 f"Available methods: {available_methods}"
             )
 
-        def method_wrapper(*args, **kwargs):
+        def method_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper function for dynamic method calls."""
             # Map args and kwargs to parameters using MethodExecutor logic
             parameters = {}
