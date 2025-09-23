@@ -142,7 +142,8 @@ class AgentWrapper:
     def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
         """Get tool metadata."""
         if self.tool_registry:
-            return self.tool_registry.get_tool_metadata(tool_name)
+            metadata = self.tool_registry.get_tool_metadata(tool_name)
+            return metadata if isinstance(metadata, dict) else None
         return None
 
     def can_access_tool(self, tool_name: str) -> bool:

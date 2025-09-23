@@ -850,11 +850,11 @@ class AgentWrapper:
             full_context = self._prepare_solve_context(context)
 
             # Execute custom solve method
-            if self._custom_solve_agent:
-                result = self._custom_solve_agent.solve(query, full_context, **kwargs)
-            else:
+            if not self._custom_solve_agent:
                 raise RuntimeError("No custom solve agent available")
 
+            # This code is reachable because the raise above is conditional
+            result = self._custom_solve_agent.solve(query, full_context, **kwargs)  # type: ignore[unreachable]
             execution_time = time.time() - start_time
 
             # Return the actual result in the same format as direct method calls
