@@ -83,11 +83,15 @@ class Result(Generic[T]):
         if self.is_err():
             error_msg = self.error.message if self.error else "Unknown error"
             raise RuntimeError(f"Called unwrap() on error result: {error_msg}")
+        if self.value is None:
+            raise RuntimeError("Called unwrap() on result with None value")
         return self.value
 
     def unwrap_or(self, default: T) -> T:
         """Get the value or return a default if result is an error."""
-        return self.value if self.is_ok() else default
+        if self.is_ok() and self.value is not None:
+            return self.value
+        return default
 
     def to_dict(self) -> dict:
         """Convert result to dictionary."""
