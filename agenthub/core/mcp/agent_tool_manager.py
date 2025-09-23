@@ -412,7 +412,7 @@ class AgentToolManager:
             "all_available": self.get_all_available_tools(agent_id),
         }
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the MCP client connection."""
         if self.client:
             await self.client.close()

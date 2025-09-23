@@ -13,7 +13,7 @@ from agenthub.core.tools import get_tool_registry
 class ToolInjector:
     """Injects tool metadata into agent contexts."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the tool injector."""
         self.tool_manager = get_tool_manager()
         self.tool_registry = get_tool_registry()

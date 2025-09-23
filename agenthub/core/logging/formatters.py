@@ -31,7 +31,7 @@ class ColorfulFormatter(logging.Formatter):
         "CRITICAL": COLORS["RED"] + COLORS["BOLD"],
     }
 
-    def __init__(self, fmt: str = None, enable_colors: bool = True):
+    def __init__(self, fmt: str | None = None, enable_colors: bool = True):
         """Initialize colorful formatter.
 
         Args:

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class AsyncToolExecutor:
     """Async tool executor with proper resource management and monitoring."""
 
-    def __init__(self, agent_id: str):
+    def __init__(self, agent_id: str) -> None:
         """Initialize async tool executor.
 
         Args:
@@ -207,7 +207,7 @@ def get_async_tool_executor(agent_id: str) -> AsyncToolExecutor:
     return _async_executors[agent_id]
 
 
-async def cleanup_async_executors():
+async def cleanup_async_executors() -> None:
     """Cleanup all async tool executors."""
     global _async_executors
     _async_executors.clear()

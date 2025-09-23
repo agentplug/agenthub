@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class MCPConnectionPool:
     """Connection pool for MCP clients to reduce connection overhead."""
 
-    def __init__(self, max_connections: int = 5, max_idle_time: int = 300):
+    def __init__(self, max_connections: int = 5, max_idle_time: int = 300) -> None:
         """Initialize connection pool.
 
         Args:
@@ -44,7 +44,7 @@ class MCPConnectionPool:
         logger.debug("Created new MCP connection")
         return client
 
-    async def _cleanup_idle_connections(self):
+    async def _cleanup_idle_connections(self) -> None:
         """Clean up idle connections."""
         while True:
             try:
@@ -63,7 +63,7 @@ class MCPConnectionPool:
             except Exception as e:
                 logger.error(f"Error in connection cleanup: {e}")
 
-    async def _close_connection(self, connection: ClientSession):
+    async def _close_connection(self, connection: ClientSession) -> None:
         """Close a specific connection."""
         try:
             await connection.close()
@@ -107,7 +107,7 @@ class MCPConnectionPool:
                     # Pool is full, close the connection
                     await self._close_connection(connection)
 
-    async def close_all(self):
+    async def close_all(self) -> None:
         """Close all connections in the pool."""
         async with self._lock:
             for connection in self._connections.copy():
@@ -119,7 +119,7 @@ class MCPConnectionPool:
         if self._cleanup_task and not self._cleanup_task.done():
             self._cleanup_task.cancel()
 
-    def start_cleanup_task(self):
+    def start_cleanup_task(self) -> None:
         """Start the cleanup task."""
         if not self._cleanup_task or self._cleanup_task.done():
             self._cleanup_task = asyncio.create_task(self._cleanup_idle_connections())
@@ -138,7 +138,7 @@ def get_connection_pool() -> MCPConnectionPool:
     return _connection_pool
 
 
-async def cleanup_connection_pool():
+async def cleanup_connection_pool() -> None:
     """Cleanup the global connection pool."""
     global _connection_pool
     if _connection_pool:
