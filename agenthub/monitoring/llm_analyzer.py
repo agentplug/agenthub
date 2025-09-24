@@ -6,9 +6,21 @@ structured insights about progress, errors, and suggestions.
 """
 
 import json
+from dataclasses import dataclass
 from typing import Any
 
-from agenthub.core.llm.llm_service import CoreLLMService, LogAnalysis
+from agenthub.core.llm.llm_service import CoreLLMService
+
+
+@dataclass
+class LogAnalysis:
+    """Data class for log analysis results in monitoring."""
+
+    summary: str
+    progress: int
+    status: str
+    errors: list[str]
+    suggestions: list[str]
 
 
 class LLMAnalyzer:
