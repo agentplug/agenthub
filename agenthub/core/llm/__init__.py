@@ -5,6 +5,7 @@ This module provides a unified interface for LLM operations across the system.
 It uses AISuite to support multiple LLM providers with a consistent API.
 """
 
+from .client_manager import ClientManager
 from .llm_decision_maker import DecisionResult, LLMDecisionMaker, StructuredDataResult
 from .llm_service import (
     CoreLLMService,
@@ -12,15 +13,19 @@ from .llm_service import (
     get_shared_llm_service,
     reset_shared_llm_service,
 )
-from .parameter_processor import ParameterProcessor
+from .model_config import ModelConfig, ModelInfo
+from .model_detector import ModelDetector
 
 __all__ = [
+    "ClientManager",
     "CoreLLMService",
-    "LogAnalysis",
-    "LLMDecisionMaker",
     "DecisionResult",
+    "LLMDecisionMaker",
+    "LogAnalysis",
+    "ModelConfig",
+    "ModelDetector",
+    "ModelInfo",
     "StructuredDataResult",
-    "ParameterProcessor",
     "get_shared_llm_service",
     "reset_shared_llm_service",
 ]
