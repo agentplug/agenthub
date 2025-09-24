@@ -632,4 +632,160 @@ offline_document_retrieval/
 └── ...
 ```
 
+## **Document Addition Solutions**
+
+### **1. Programmatic API (Best for Developers)**
+
+```python
+class DocumentIndexAPI:
+    def add_file(self, file_path: str, metadata: dict = None) -> str:
+        """Add single file with full control."""
+        content = self._extract_content(file_path)
+        return self.storage.add_document(file_path, content, metadata)
+    
+    def add_directory(self, directory_path: str, recursive: bool = True) -> dict:
+        """Add all files from directory."""
+        results = {"successful": [], "failed": [], "skipped": []}
+        for file_path in Path(directory_path).glob("**/*" if recursive else "*"):
+            if file_path.is_file():
+                try:
+                    doc_id = self.add_file(str(file_path))
+                    results["successful"].append({"file": str(file_path), "doc_id": doc_id})
+                except Exception as e:
+                    results["failed"].append({"file": str(file_path), "error": str(e)})
+        return results
+    
+    def add_from_url(self, url: str, metadata: dict = None) -> str:
+        """Add document from URL."""
+        response = requests.get(url)
+        temp_path = self._save_temp_file(response.content, url)
+        try:
+            return self.add_file(temp_path, metadata)
+        finally:
+            Path(temp_path).unlink()
+```
+
+**Benefits:**
+- Full programmatic control
+- Robust error handling and logging
+- Supports files, directories, and URLs
+- Easy integration with other systems
+
+### **2. Smart Auto-Discovery (Best for End Users)**
+
+```python
+class SmartDocumentDiscovery:
+    def __init__(self, storage):
+        self.storage = storage
+        self.watched_directories = []
+        self.supported_extensions = ['.pdf', '.docx', '.txt', '.md', '.html']
+    
+    def setup_auto_discovery(self):
+        """Set up intelligent document discovery."""
+        # Watch common document directories
+        common_dirs = [
+            Path.home() / "Documents",
+            Path.home() / "Downloads", 
+            Path.cwd() / "documents"
+        ]
+        
+        for directory in common_dirs:
+            if directory.exists():
+                self.watch_directory(directory)
+    
+    def watch_directory(self, directory: Path):
+        """Watch directory for new files."""
+        from watchdog.observers import Observer
+        from watchdog.events import FileSystemEventHandler
+        
+        class DocumentHandler(FileSystemEventHandler):
+            def on_created(self, event):
+                if not event.is_directory:
+                    self._process_new_file(event.src_path)
+        
+        observer = Observer()
+        observer.schedule(DocumentHandler(), str(directory), recursive=True)
+        observer.start()
+    
+    def _process_new_file(self, file_path: str):
+        """Process newly created file."""
+        file_path = Path(file_path)
+        if self._should_index_file(file_path):
+            try:
+                doc_id = self.storage.add_document(
+                    str(file_path),
+                    self._extract_content(file_path),
+                    self._generate_metadata(file_path)
+                )
+                print(f"✅ Auto-indexed: {file_path.name}")
+            except Exception as e:
+                print(f"❌ Failed to index {file_path.name}: {e}")
+```
+
+**Benefits:**
+- Zero configuration required
+- Automatic file detection and indexing
+- Smart filtering (only relevant files)
+- Continuous monitoring
+
+### **3. Batch Processing (Best for Bulk Operations)**
+
+```python
+class BatchDocumentProcessor:
+    def process_batch_file(self, batch_file: str):
+        """Process YAML batch file with document specifications."""
+        with open(batch_file, 'r') as f:
+            batch_config = yaml.safe_load(f)
+        
+        results = {"total": 0, "successful": 0, "failed": 0, "skipped": 0}
+        
+        for item in batch_config['documents']:
+            results['total'] += 1
+            try:
+                if 'file' in item:
+                    self._add_file(item['file'], item.get('metadata', {}))
+                elif 'directory' in item:
+                    self._add_directory(item['directory'], item.get('recursive', True))
+                elif 'url' in item:
+                    self._add_from_url(item['url'], item.get('metadata', {}))
+                results['successful'] += 1
+            except Exception as e:
+                results['failed'] += 1
+                print(f"❌ Failed to process {item}: {e}")
+        
+        return results
+```
+
+**Batch Configuration Example:**
+```yaml
+documents:
+  - file: "path/to/document.pdf"
+    metadata:
+      title: "Document Title"
+      author: "Author Name"
+      tags: ["tag1", "tag2"]
+  - directory: "path/to/documents"
+    recursive: true
+    metadata:
+      project: "Project Name"
+      tags: ["project", "docs"]
+  - url: "https://example.com/document.pdf"
+    metadata:
+      title: "Online Document"
+      source: "web"
+```
+
+**Benefits:**
+- Process many documents at once
+- YAML-based configuration
+- Mix different source types
+- Resumable operations
+
+### **Implementation Strategy**
+
+**Phase 1: Core API** - Implement programmatic API for developers
+**Phase 2: Auto-Discovery** - Add smart file watching for end users  
+**Phase 3: Batch Processing** - Add bulk operations for large collections
+**Phase 4: CLI Interface** - Add command-line tools for immediate use
+
 This design provides a focused, agent-friendly document retrieval tool that complements other MCP tools while maintaining clear boundaries and responsibilities.
