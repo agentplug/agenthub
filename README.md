@@ -372,28 +372,6 @@ review = coding_agent.review_code("def hello(): print('world')")
 print(review["result"])
 ```
 
-### 🤖 LLM Service Usage
-
-```python
-from agenthub.core.llm.llm_service import CoreLLMService
-
-# Auto-detect best model
-service = CoreLLMService()
-print(f"Using model: {service.get_current_model()}")
-
-# Generate responses
-response = service.generate("Explain quantum computing")
-print(response)
-
-# JSON responses
-json_response = service.generate(
-    "List 3 programming languages",
-    return_json=True,
-    temperature=0.3
-)
-print(json_response)
-```
-
 ## 🎯 Available Agents
 
 | Agent | Description | Universal Solve | Direct Methods |
