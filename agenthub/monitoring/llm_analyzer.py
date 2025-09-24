@@ -51,8 +51,10 @@ class LLMAnalyzer:
             "errors, and providing actionable insights."
         )
 
-        response = self.core_llm.analyze_text(
-            log_text, self.log_analysis_prompt, system_prompt, return_json=True
+        response = self.core_llm.generate(
+            self.log_analysis_prompt.format(text=log_text),
+            system_prompt=system_prompt,
+            return_json=True,
         )
         return self._parse_log_analysis_response(response)
 
