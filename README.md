@@ -221,9 +221,9 @@ json_response = service.generate(messages, return_json=True)
 ```
 
 **Supported Models:**
-- **🏠 Local**: Ollama (gpt-oss, llama, gemma, qwen, etc.)
+- **🏠 Local**: Ollama (preferred) + LM Studio (fallback) - gpt-oss, qwen, deepseek, llama, gemma, etc.
 - **☁️ Cloud**: OpenAI, Anthropic, Google, DeepSeek, Mistral, Groq, and more
-- **🎯 Auto-Detection**: Prioritizes best models for agentic tasks
+- **🎯 Auto-Detection**: Prioritizes best models for agentic tasks with intelligent fallback
 
 ### 💻 CLI Commands
 
@@ -417,6 +417,18 @@ for model in models:
 4. **☁️ Cloud**: OpenAI, Anthropic, Google - when local models unavailable
 
 ### 📊 Comprehensive Logging
+**Model Priority System:**
+1. **🥇 Qwen & DeepSeek**: 60 points (highest priority for reasoning)
+2. **🥈 GPT-OSS**: 50 points (OpenAI's open-weight models)
+3. **🥉 General**: Llama, Gemma, Mistral (reliable baseline)
+4. **🏆 Platform Bonus**: Ollama gets +5 points (preferred platform)
+5. **📏 Latest Types**: Treated as 8B equivalent (40 points)
+
+**Detection Priority:**
+1. **Ollama** (preferred) - Check first, use if available
+2. **LM Studio** (fallback) - Use if Ollama not running
+3. **Cloud Models** - Use if no local models available
+
 AgentHub provides detailed logging for debugging and monitoring:
 
 ```bash
