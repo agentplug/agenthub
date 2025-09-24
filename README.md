@@ -18,6 +18,19 @@
 
 Transform weeks of AI agent integration into **one line of code**. AgentHub makes powerful AI agents as easy to use as installing a Python package.
 
+### 🎯 **Core Abilities**
+
+AgentHub revolutionizes how you work with AI agents:
+
+- **🧠 Universal Intelligence**: `agent.solve()` - AI automatically selects the best method for any query
+- **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
+- **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
+- **🛠️ Custom Tools**: Create and inject tools with `@tool` decorator and `run_resources()`
+- **🔒 Isolated Environments**: No dependency conflicts between agents
+- **⚡ Auto-Installation**: Agents install automatically when needed
+- **🎯 CLI Interface**: Full command-line management and execution
+- **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
+
 ### Before AgentHub
 ```python
 # Traditional approach: 2-4 weeks setup
@@ -41,15 +54,15 @@ code = coding_agent.generate_code("neural network class")
 
 ## ✨ Key Features
 
-- **🏪 Agent Marketplace**: Discover and install agents from GitHub
-- **🔌 One-Line Integration**: `ah.load_agent("user/agent")`
-- **🧠 Universal Solve Method**: `agent.solve()` - AI automatically selects the best method
-- **🤖 Intelligent LLM Service**: Auto-detects best available models (local + cloud)
-- **🛠️ Custom Tools**: Create and inject tools with `@tool` decorator
-- **🔒 Isolated Environments**: No dependency conflicts
+- **🧠 Universal Solve Method**: `agent.solve()` - AI automatically selects the best method for any query
+- **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
+- **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
+- **🛠️ Custom Tools**: Create and inject tools with `@tool` decorator and `run_resources()`
+- **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
-- **🎯 CLI Interface**: Full command-line management
-- **📊 Comprehensive Logging**: Full visibility into model selection and execution
+- **🎯 CLI Interface**: Full command-line management and execution
+- **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
+- **🤖 Intelligent LLM Service**: Auto-detects best available models (local + cloud)
 
 ## 🚀 Quick Start
 
@@ -80,7 +93,7 @@ print(result["result"])
 # • Virtual environment created
 # • Dependencies installed
 # • Agent validated and ready
-# • Best LLM model auto-detected (local Ollama or cloud)
+# • Best LLM model auto-detected
 # • AI selects optimal method for your query
 ```
 
@@ -107,6 +120,85 @@ data_analysis = analysis_agent.solve("Process sales_data.csv")  # → analyze_da
 # ✅ No need to know specific method names - just describe what you want!
 ```
 
+### 🛠️ Custom Tools & Extensions
+
+AgentHub makes it easy to extend agents with custom tools:
+
+```python
+from agenthub.core.tools import tool, run_resources
+
+# Create custom tools with @tool decorator
+@tool(name="web_search", description="Search the web for information")
+def web_search(query: str) -> str:
+    """Search the web for information."""
+    # Your custom implementation
+    return f"Search results for: {query}"
+
+@tool(name="database_query", description="Execute SQL query on database")
+def database_query(sql: str) -> dict:
+    """Execute SQL query on database."""
+    # Your custom implementation
+    return {"results": "..."}
+
+# Start the tool server - this makes tools available to agents
+if __name__ == "__main__":
+    print("🚀 Starting tool server...")
+    run_resources()  # This starts the MCP server
+```
+
+**Using Tools with Agents:**
+```python
+import agenthub as ah
+
+# Load agent with external tools (tools are now available after run_resources())
+coding_agent = ah.load_agent(
+    "agentplug/coding-agent",
+    external_tools=["web_search", "database_query"]  # Connect to your custom tools
+)
+result = coding_agent.solve("Search for React best practices and create a component")
+# ✅ Agent can now use your custom web_search tool!
+```
+
+### 🔗 Complete Tool Workflow Example
+
+Here's the complete workflow for using custom tools with agents:
+
+```python
+# 1. Define and start tools (run this first)
+from agenthub.core.tools import tool, run_resources
+
+@tool(name="web_search", description="Search the web for information")
+def web_search(query: str) -> str:
+    return f"Search results for: {query}"
+
+if __name__ == "__main__":
+    run_resources()  # Start MCP server
+
+# 2. Use tools with agents (run this after starting tools)
+import agenthub as ah
+
+coding_agent = ah.load_agent(
+    "agentplug/coding-agent",
+    external_tools=["web_search"]  # Connect to your custom tool
+)
+
+result = coding_agent.solve("Search for Python best practices and create a function")
+# ✅ Agent can now use your web_search tool!
+```
+
+### 🔒 Isolated Environments
+
+Each agent runs in its own isolated environment:
+
+```python
+# No dependency conflicts between agents
+coding_agent = ah.load_agent("agentplug/coding-agent")      # Uses Python 3.11
+data_agent = ah.load_agent("agentplug/data-agent")          # Uses Python 3.12
+ml_agent = ah.load_agent("agentplug/ml-agent")             # Uses different packages
+
+# All agents work independently without conflicts
+```
+
 ### 🤖 Intelligent LLM Service
 
 AgentHub automatically detects and uses the best available LLM model:
@@ -114,7 +206,7 @@ AgentHub automatically detects and uses the best available LLM model:
 ```python
 from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
 
-# 🎯 Auto-detect best available model (local Ollama or cloud)
+# 🎯 Auto-detect best available model
 service = CoreLLMService()
 print(f"Selected model: {service.get_current_model()}")
 
@@ -131,7 +223,7 @@ json_response = service.generate(messages, return_json=True)
 **Supported Models:**
 - **🏠 Local**: Ollama (gpt-oss, llama, gemma, qwen, etc.)
 - **☁️ Cloud**: OpenAI, Anthropic, Google, DeepSeek, Mistral, Groq, and more
-- **🎯 Auto-Detection**: Prioritizes gpt-oss models for agentic tasks
+- **🎯 Auto-Detection**: Prioritizes best models for agentic tasks
 
 ### 💻 CLI Commands
 
