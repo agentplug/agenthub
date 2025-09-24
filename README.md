@@ -245,9 +245,6 @@ ml_agent = ah.load_agent("agentplug/ml-agent")             # Uses different pack
 ### 💻 CLI Commands
 
 ```bash
-# List all agents
-agenthub list
-
 # Get agent information
 agenthub info agentplug/scientific-paper-analyzer
 
