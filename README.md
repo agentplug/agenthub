@@ -62,15 +62,20 @@ Create complex systems by composing pre-built agents (research, analysis, data a
 ```python
 import agenthub as ah
 
-# 1) Load pre-built agents from the marketplace
-research = ah.load_agent("agentplug/research-agent")
-analysis = ah.load_agent("agentplug/analysis-agent")
+# 1) Load pre-built agents from the marketplace (customize via load params)
+research = ah.load_agent(
+    "agentplug/research-agent",
+    external_tools=["web_search"],            # attach your tools
+    knowledge=["knowledge/base/"]             # attach your knowledge sources
+)
+
+analysis = ah.load_agent(
+    "agentplug/analysis-agent",
+    knowledge=["knowledge/base/"]
+)
+
 planner  = ah.load_agent("agentplug/planning-agent")
 qc       = ah.load_agent("agentplug/quality-control-agent")
-
-# 2) (Optional) Customize by adding your tools and knowledge
-# research.add_tools([web_search])
-# analysis.add_knowledge(path="knowledge/base/")
 
 # 3) Compose into a Team
 #    Team API preview — designed for simple, high-level orchestration
@@ -86,7 +91,7 @@ print(result["result"])  # Unified output
 Flow to build:
 
 - **Pick agents**: research, analysis, data access, planning, quality control, ...
-- **Customize**: add custom tools (`@tool`) and attach domain knowledge (PDFs, docs, DBs)
+- **Customize**: pass `external_tools=[...]` and `knowledge=[...]` to `ah.load_agent(...)`
 - **Compose**: add agents into a `Team()`
 - **Solve**: call `Team().solve(goal)` to run the entire multi-agent pipeline
 
