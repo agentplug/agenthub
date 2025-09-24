@@ -20,8 +20,6 @@ class ModelDetector:
 
     def __init__(self):
         """Initialize the model detector."""
-        self.cache = {}
-        self._ollama_url_cache = None
 
     def detect_best_model(self) -> str:
         """
@@ -129,33 +127,28 @@ class ModelDetector:
         return None
 
     def _detect_ollama_url(self) -> str:
-        """Detect Ollama API URL."""
-        if self._ollama_url_cache:
-            return self._ollama_url_cache
-
+        """Detect Ollama API URL by checking availability each time."""
         # Check environment variable first
         env_url = os.getenv("OLLAMA_API_URL")
         if env_url:
-            self._ollama_url_cache = env_url
             return env_url
 
-        # Try common URLs
+        # Try common URLs and check availability each time
         for url in ModelConfig.OLLAMA_URLS:
             if self._check_ollama_available(url):
-                self._ollama_url_cache = url
                 return url
 
         # Fallback to default
         return ModelConfig.OLLAMA_URLS[0]
 
     def _detect_lmstudio_url(self) -> str:
-        """Detect LM Studio API URL."""
+        """Detect LM Studio API URL by checking availability each time."""
         # Check environment variable first
         env_url = os.getenv("LMSTUDIO_API_URL")
         if env_url:
             return env_url
 
-        # Try common URLs
+        # Try common URLs and check availability each time
         for url in ModelConfig.LMSTUDIO_URLS:
             if self._check_lmstudio_available(url):
                 return url
