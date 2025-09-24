@@ -43,10 +43,13 @@ code = coding_agent.generate_code("neural network class")
 
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")`
+- **🧠 Universal Solve Method**: `agent.solve()` - AI automatically selects the best method
+- **🤖 Intelligent LLM Service**: Auto-detects best available models (local + cloud)
 - **🛠️ Custom Tools**: Create and inject tools with `@tool` decorator
 - **🔒 Isolated Environments**: No dependency conflicts
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management
+- **📊 Comprehensive Logging**: Full visibility into model selection and execution
 
 ## 🚀 Quick Start
 
@@ -66,58 +69,69 @@ agenthub --version
 import agenthub as ah
 
 # 🪄 One line to load any agent
-paper_analyzer = ah.load_agent("agentplug/scientific-paper-analyzer")
+coding_agent = ah.load_agent("agentplug/coding-agent")
 
-# 📄 Use the agent immediately
-result = paper_analyzer.analyze_paper("research_paper.pdf")
-print(f"📊 Summary: {result['summary'][:200]}...")
+# 🧠 Universal solve method - AI automatically selects the best approach
+result = coding_agent.solve("Create a Python function that calculates compound interest")
+print(result["result"])
 
 # ✅ Magic happens automatically:
 # • GitHub repository cloned
 # • Virtual environment created
 # • Dependencies installed
 # • Agent validated and ready
+# • Best LLM model auto-detected (local Ollama or cloud)
+# • AI selects optimal method for your query
 ```
 
-### 🛠️ Using Custom Tools
+### 🧠 Universal Solve Method
 
-Create powerful agents with your own tools:
-
-```python
-from agentplug.core.tools import tool, run_resources
-
-@tool(name="web_search", description="Search the web for information")
-def web_search(query: str, max_results: int = 10) -> list:
-    """Search the web and return results."""
-    # Your search implementation here
-    return [f"Result {i+1} for '{query}'" for i in range(min(max_results, 3))]
-
-@tool(name="data_analyzer", description="Analyze data patterns")
-def data_analyzer(data: list, analysis_type: str = "basic") -> dict:
-    """Analyze data and return insights."""
-    return {
-        "type": analysis_type,
-        "count": len(data),
-        "insights": f"Analyzed {len(data)} items"
-    }
-
-# 🚀 Start the tool server
-if __name__ == "__main__":
-    print("🔧 Starting tool server...")
-    run_resources()  # Starts MCP server for tool execution
-```
+The `agent.solve()` method is AgentHub's breakthrough feature - AI automatically selects the best method for your query:
 
 ```python
-# 🤖 Use tools with agents (run in separate process/terminal)
 import agenthub as ah
 
-# Load agent with custom tools
-agent = ah.load_agent("agentplug/analysis-agent", tools=["web_search", "data_analyzer"])
+# Load any agent
+coding_agent = ah.load_agent("agentplug/coding-agent")
+analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
-# Agent's AI decides when and how to use tools
-result = agent.analyze("What are the latest AI trends?")
-# Agent automatically uses web_search and data_analyzer as needed!
+# 🧠 AI automatically selects the best method for each query
+code = coding_agent.solve("Create a neural network class")  # → generate_code()
+review = coding_agent.solve("Review this code: def hello(): print('world')")  # → review_code()
+explanation = coding_agent.solve("Explain what this function does")  # → explain_code()
+
+# 📊 Analysis agent automatically chooses the right approach
+insights = analysis_agent.solve("Analyze this customer feedback: 'Great app!'")  # → analyze_text()
+data_analysis = analysis_agent.solve("Process sales_data.csv")  # → analyze_data()
+
+# ✅ No need to know specific method names - just describe what you want!
 ```
+
+### 🤖 Intelligent LLM Service
+
+AgentHub automatically detects and uses the best available LLM model:
+
+```python
+from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
+
+# 🎯 Auto-detect best available model (local Ollama or cloud)
+service = CoreLLMService()
+print(f"Selected model: {service.get_current_model()}")
+
+# 🏠 Use shared instance (recommended for multiple components)
+service = get_shared_llm_service()
+
+# ⚙️ Configure parameters
+response = service.generate("Hello, world!", temperature=0.7, max_tokens=200)
+
+# 📋 JSON responses
+json_response = service.generate(messages, return_json=True)
+```
+
+**Supported Models:**
+- **🏠 Local**: Ollama (gpt-oss, llama, gemma, qwen, etc.)
+- **☁️ Cloud**: OpenAI, Anthropic, Google, DeepSeek, Mistral, Groq, and more
+- **🎯 Auto-Detection**: Prioritizes gpt-oss models for agentic tasks
 
 ### 💻 CLI Commands
 
@@ -211,54 +225,120 @@ code = agent.generate_code("React component")
 
 ## 📚 Examples
 
-### Code Generation Agent
+### 🧠 Universal Solve Method (Recommended)
+```python
+import agenthub as ah
+
+# Load agents
+coding_agent = ah.load_agent("agentplug/coding-agent")
+analysis_agent = ah.load_agent("agentplug/analysis-agent")
+
+# 🎯 AI automatically selects the best method for each query
+code = coding_agent.solve("Create a React component for data table")
+print(code["result"])
+
+review = coding_agent.solve("Review this code: def hello(): print('world')")
+print(review["result"])
+
+insights = analysis_agent.solve("Analyze this customer feedback: 'Great app!'")
+print(insights["result"])
+```
+
+### 🛠️ Direct Method Calls
 ```python
 import agenthub as ah
 
 # Load coding agent
 coding_agent = ah.load_agent("agentplug/coding-agent")
 
-# Generate code
+# Direct method calls (when you know the specific method)
 code = coding_agent.generate_code("React component for data table")
-print(code)
+print(code["result"])
 
-# Review existing code
 review = coding_agent.review_code("def hello(): print('world')")
-print(review)
+print(review["result"])
 ```
 
-### Data Analysis Agent
+### 🤖 LLM Service Usage
 ```python
-import agenthub as ah
+from agenthub.core.llm.llm_service import CoreLLMService
 
-# Load analysis agent with tools
-data_agent = ah.load_agent("agentplug/analysis-agent", tools=["data_analyzer", "web_search"])
+# Auto-detect best model
+service = CoreLLMService()
+print(f"Using model: {service.get_current_model()}")
 
-# Analyze data
-insights = data_agent.analyze("sales_data.csv")
-print(insights)
-```
+# Generate responses
+response = service.generate("Explain quantum computing")
+print(response)
 
-### Scientific Paper Analyzer
-```python
-import agenthub as ah
-
-# Load paper analyzer
-paper_agent = ah.load_agent("agentplug/scientific-paper-analyzer")
-
-# Analyze research paper
-result = paper_agent.analyze_paper("research.pdf")
-print(f"Summary: {result['summary']}")
-print(f"Key findings: {result['key_findings']}")
+# JSON responses
+json_response = service.generate(
+    "List 3 programming languages",
+    return_json=True,
+    temperature=0.3
+)
+print(json_response)
 ```
 
 ## 🎯 Available Agents
 
-| Agent | Description | Usage |
-|-------|-------------|-------|
-| `agentplug/coding-agent` | Generate and review code | `ah.load_agent("agentplug/coding-agent")` |
-| `agentplug/analysis-agent` | Data analysis and insights | `ah.load_agent("agentplug/analysis-agent")` |
-| `agentplug/scientific-paper-analyzer` | Analyze research papers | `ah.load_agent("agentplug/scientific-paper-analyzer")` |
+| Agent | Description | Universal Solve | Direct Methods |
+|-------|-------------|-----------------|-----------------|
+| `agentplug/coding-agent` | Generate and review code | `agent.solve("Create a function...")` | `generate_code()`, `review_code()`, `explain_code()` |
+| `agentplug/analysis-agent` | Data analysis and insights | `agent.solve("Analyze this data...")` | `analyze_text()`, `analyze_data()` |
+| `agentplug/scientific-paper-analyzer` | Analyze research papers | `agent.solve("Analyze this paper...")` | `analyze_paper()` |
+
+### 🧠 Universal Solve Method Benefits
+- **🎯 No Method Learning**: Just describe what you want
+- **🤖 AI Method Selection**: Automatically chooses the best approach
+- **📝 Natural Language**: Use plain English queries
+- **🔄 Consistent Interface**: Same pattern across all agents
+
+## 🤖 Advanced Features
+
+### 🧠 Intelligent LLM Service
+AgentHub includes a comprehensive LLM service that automatically handles model selection:
+
+```python
+from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
+
+# 🎯 Auto-detection prioritizes the best models
+service = CoreLLMService()  # Auto-detects: gpt-oss > deepseek > gemma > llama
+
+# 🏠 Shared instance prevents duplicate model detection
+service = get_shared_llm_service()
+
+# 📊 Model information and scoring
+info = service.get_model_info()
+print(f"Model: {info.name}, Score: {info.score}, Local: {info.is_local}")
+
+# 📋 List all available models
+models = service.list_available_models()
+for model in models:
+    print(f"{model.name} ({model.provider}) - Score: {model.score}")
+```
+
+**Model Priority System:**
+1. **🥇 gpt-oss**: OpenAI's open-weight models (120B, 20B) - highest priority
+2. **🥈 DeepSeek**: Reasoning models (70B, 32B) - excellent for complex tasks
+3. **🥉 General**: Gemma, Llama, Qwen - reliable general purpose
+4. **☁️ Cloud**: OpenAI, Anthropic, Google - when local models unavailable
+
+### 📊 Comprehensive Logging
+AgentHub provides detailed logging for debugging and monitoring:
+
+```bash
+# Enable debug logging to see model selection process
+export AGENTHUB_LOG_LEVEL=DEBUG
+python your_script.py
+
+# Example output:
+# 🔍 Auto-detected Ollama URL: http://localhost:11434
+# 🔍 Evaluating 4 models: gpt-oss:120b, gpt-oss:20b, llama3:latest, gemma:latest
+# 🏆 Best model selected: gpt-oss:120b
+# 🤖 Local model detected: ollama:gpt-oss:120b (from 4 available models)
+# 🎯 Selected model: ollama:gpt-oss:120b
+```
 
 ## 🤝 Contributing
 
