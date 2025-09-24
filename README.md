@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**The "App Store for AI Agents"** - Discover, install, and use AI agents with one-line simplicity
+**The "App Store for AI Agents"** - Discover, compose, and use AI agents with one-line simplicity
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -22,10 +22,11 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub make
 
 AgentHub revolutionizes how you work with AI agents:
 
-- **🧠 Universal Intelligence**: `agent.solve()` - AI automatically selects the best method for any query
+- **🧩 Compose Multi-Agent Systems**: Build a `Team()` by plugging together pre-built or custom agents
+- **🧠 Universal Intelligence**: `agent.solve()` and `Team().solve()` for high-level, goal-driven execution
+- **🔧 Customize Agents**: Add custom tools and domain knowledge to any agent
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
-- **🛠️ Custom Tools**: Create and inject tools with `@tool` decorator and `run_resources()`
 - **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
@@ -54,12 +55,47 @@ coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
 
+## 🧩 Build Multi-Agent Teams (High-Level Flow)
+
+Create complex systems by composing pre-built agents (research, analysis, data access, planning, quality control, ...) and your custom agents into a `Team()`.
+
+```python
+import agenthub as ah
+
+# 1) Load pre-built agents from the marketplace
+research = ah.load_agent("agentplug/research-agent")
+analysis = ah.load_agent("agentplug/analysis-agent")
+planner  = ah.load_agent("agentplug/planning-agent")
+qc       = ah.load_agent("agentplug/quality-control-agent")
+
+# 2) (Optional) Customize by adding your tools and knowledge
+# research.add_tools([web_search])
+# analysis.add_knowledge(path="knowledge/base/")
+
+# 3) Compose into a Team
+#    Team API preview — designed for simple, high-level orchestration
+from agenthub import Team  # Coming soon
+
+team = Team(name="ResearchPipeline", agents=[planner, research, analysis, qc])
+
+# 4) High-level goal, single entry point
+result = team.solve("Analyze the latest LLM papers and produce actionable insights")
+print(result["result"])  # Unified output
+```
+
+Flow to build:
+- **Pick agents**: research, analysis, data access, planning, quality control, ...
+- **Customize**: add custom tools (`@tool`) and attach domain knowledge (PDFs, docs, DBs)
+- **Compose**: add agents into a `Team()`
+- **Solve**: call `Team().solve(goal)` to run the entire multi-agent pipeline
+
 ## ✨ Key Features
 
-- **🧠 Universal Solve Method**: `agent.solve()` - AI automatically selects the best method for any query
+- **🧩 Team Composition (High-Level Logic)**: Create a `Team()` and plug agents together to build complex systems
+- **🧠 Universal Solve Method**: `agent.solve()` and `Team().solve()` - describe goals, not steps
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
-- **🛠️ Custom Tools**: Create and inject tools with `@tool` decorator and `run_resources()`
+- **🛠️ Custom Tools & Knowledge**: Create tools with `@tool`, connect via `run_resources()`, and attach domain knowledge
 - **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
@@ -99,7 +135,7 @@ print(result["result"])
 
 ### 🧠 Universal Solve Method
 
-The `agent.solve()` method is AgentHub's breakthrough feature - AI automatically selects the best method for your query:
+The `agent.solve()` and upcoming `Team().solve()` are AgentHub's breakthrough capabilities — describe a goal in natural language and let the system choose the best approach:
 
 ```python
 import agenthub as ah
