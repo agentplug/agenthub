@@ -21,30 +21,27 @@ Create a **specialized offline document retrieval tool** that focuses exclusivel
 - **Get Metadata**: Extract document properties and information
 - **Get Snippets**: Return relevant text excerpts with context
 
-### **2. Document Format Support** (Focused List)
+### **2. Document Format Support**
 - **Text Documents**: TXT, MD, RST, AsciiDoc
 - **Office Documents**: DOCX, XLSX, PPTX, ODT
 - **PDFs**: Text extraction and metadata
 - **Web Archives**: HTML, MHTML (offline web pages)
-- **Structured Data**: JSON, XML, YAML (as documents)
-- **Code Files**: Source code (as text documents)
+- **Structured Data**: JSON, XML, YAML
+- **Code Files**: Python, JavaScript, Java, C++
 
-### **3. Search Capabilities** (Document-Focused)
+### **3. Search Capabilities**
 - **Content Search**: Full-text search within documents
 - **Metadata Search**: Search by file properties, dates, authors
-- **Semantic Search**: Find conceptually similar documents
-- **Hybrid Search**: Combine content and metadata search
-- **Filtered Search**: Filter by document type, size, date range
-- **Fuzzy Search**: Handle typos in document content
+- **Smart Filtering**: Filter by document type, size, date range
+- **Relevance Scoring**: Rank results by relevance to query
 
 ### **4. Agent-Friendly Interface**
-- **Simple Queries**: Natural language document requests
-- **Structured Responses**: Consistent JSON output format
-- **Error Handling**: Graceful failure with helpful messages
-- **Batch Operations**: Handle multiple document requests
-- **Context Preservation**: Maintain document relationships
+- **Natural Language**: Accept conversational queries
+- **Consistent Responses**: Structured JSON output format
+- **Smart Suggestions**: Helpful guidance for better results
+- **Error Recovery**: Graceful failure with actionable messages
 
-## **Excluded Functionality** (Delegated to Other Tools)
+## **Excluded Functionality**
 
 ### **❌ Not Included**
 - **Code Execution**: Handled by Code Generation tool
@@ -53,7 +50,6 @@ Create a **specialized offline document retrieval tool** that focuses exclusivel
 - **External APIs**: Handled by External Resources tool
 - **Document Processing**: Focus on retrieval, not analysis
 - **Content Generation**: Focus on finding, not creating
-- **Real-time Data**: Focus on static documents only
 
 ## **Core MCP Tool Function**
 
@@ -308,47 +304,18 @@ def _process_query(query: str) -> dict:
     """Process and normalize the search query."""
     normalized_query = query.lower().strip()
     key_terms = _extract_key_terms(normalized_query)
-    query_type = _detect_query_type(normalized_query)
-    filters = _extract_filters(normalized_query)
     
     return {
         "original": query,
         "normalized": normalized_query,
-        "key_terms": key_terms,
-        "type": query_type,  # "question", "keyword", "phrase", "boolean"
-        "filters": filters
+        "key_terms": key_terms
     }
 ```
 
-#### **Search Strategy Selection**
-```python
-def _select_search_strategy(processed_query: dict) -> str:
-    """Select the best search strategy based on query characteristics."""
-    query_type = processed_query["type"]
-    key_terms = processed_query["key_terms"]
-    
-    # For questions, use semantic search
-    if query_type == "question":
-        return "semantic"
-    
-    # For short keyword queries, use keyword search
-    elif query_type == "keyword" and len(key_terms) <= 2:
-        return "keyword"
-    
-    # For complex queries, use hybrid approach
-    elif len(key_terms) > 3 or query_type == "phrase":
-        return "hybrid"
-    
-    # Default to semantic search
-    else:
-        return "semantic"
-```
-
-#### **Search Implementations**
-- **Semantic Search**: Uses vector embeddings for conceptual similarity
+#### **Search Strategy**
 - **Keyword Search**: Traditional full-text search with term matching
-- **Hybrid Search**: Combines semantic and keyword approaches
-- **Fallback Search**: Simple text matching when other methods fail
+- **Relevance Scoring**: Rank results by title, content, and metadata matches
+- **Smart Filtering**: Filter by document type, size, and date
 
 ### **3. Suggestion Generation**
 
@@ -357,45 +324,34 @@ The tool generates intelligent suggestions to guide agent behavior:
 ```python
 def _generate_suggestions(query: str, results: list) -> list:
     """Generate helpful suggestions based on search results."""
-    suggestions = []
-    
     if len(results) == 0:
-        suggestions.extend([
-            "Try broader search terms (e.g., 'AI' instead of 'artificial intelligence')",
-            "Use 'list' operation to see available documents",
-            "Check if documents are properly indexed"
-        ])
+        return [
+            "Try broader search terms",
+            "Use 'list' operation to see available documents"
+        ]
     elif len(results) == 1:
-        suggestions.extend([
-            "Use 'get' operation with document ID to retrieve full content",
-            "Try related search terms for more results"
-        ])
+        return ["Use 'get' operation to retrieve full content"]
     elif len(results) > 5:
-        suggestions.extend([
-            "Use more specific search terms to narrow results",
-            "Add filters like document type or date range"
-        ])
+        return ["Try more specific search terms to narrow results"]
     
-    return suggestions
+    return []
 ```
 
-### **4. Storage Strategy (MVP: JSON-Based)**
+### **4. Storage Strategy (JSON-Based)**
 
-#### **A. MVP Storage Architecture**
-For the initial implementation, we use a simple JSON-based storage approach:
-
+#### **Storage Architecture**
 ```
 data/
-├── documents.json          # Main document metadata
-├── search_index.json       # Search terms → document IDs mapping
+├── documents.json          # Document metadata
+├── search_index.json       # Search term mappings
 └── documents/              # Document files
     ├── doc_001_example.txt
     └── doc_002_ai_trends.pdf
 ```
 
-#### **B. JSON File Structure**
+#### **JSON File Structure**
 
-**documents.json** - Contains all document metadata:
+**documents.json** - Document metadata:
 ```json
 {
   "documents": {
@@ -404,171 +360,61 @@ data/
       "title": "AI Trends 2024",
       "file_path": "./data/documents/doc_001_ai_trends.pdf",
       "file_type": ".pdf",
-      "file_size": 1024000,
-      "created_at": "2024-01-15T10:30:00Z",
-      "modified_at": "2024-01-15T10:30:00Z",
       "summary": "Comprehensive analysis of AI trends...",
       "author": "John Doe",
-      "tags": ["AI", "trends", "2024"],
-      "metadata": {"pages": 25, "language": "en"}
+      "tags": ["AI", "trends", "2024"]
     }
-  },
-  "metadata": {
-    "total_documents": 1,
-    "last_updated": "2024-01-15T10:30:00Z",
-    "version": "1.0"
   }
 }
 ```
 
-**search_index.json** - Contains search term mappings:
+**search_index.json** - Search term mappings:
 ```json
 {
   "index": {
     "ai": ["doc_001"],
     "trends": ["doc_001"],
-    "2024": ["doc_001"],
-    "comprehensive": ["doc_001"],
-    "analysis": ["doc_001"]
-  },
-  "metadata": {
-    "last_indexed": "2024-01-15T10:30:00Z",
-    "total_terms": 5
+    "2024": ["doc_001"]
   }
 }
 ```
 
-#### **C. Storage Operations**
-
-**Document Addition Process:**
-1. Extract text content from document
-2. Generate unique document ID
-3. Copy file to `documents/` directory
-4. Store metadata in `documents.json`
-5. Update search index in `search_index.json`
-
-**Search Process:**
-1. Extract search terms from query
-2. Look up terms in `search_index.json`
-3. Get matching document IDs
-4. Fetch full details from `documents.json`
-5. Calculate relevance scores and rank results
-
-#### **D. Benefits of JSON Approach**
-- **No Database**: Pure file-based, no SQLite or external DB
-- **Human Readable**: All data in JSON, easy to inspect and debug
-- **Portable**: Just copy the data directory
-- **Simple**: No database setup or configuration
-- **Version Control Friendly**: JSON files can be tracked in git
+#### **Benefits of JSON Approach**
+- **No Database**: Pure file-based storage
+- **Human Readable**: Easy to inspect and debug
+- **Portable**: Copy directory to move everything
+- **Simple**: No setup or configuration required
 - **Fast Development**: Can be built in minutes
 
-#### **E. Future Storage Enhancements**
-The JSON-based approach serves as the MVP foundation. Future versions will support:
-- **SQLite Database**: For better performance and ACID compliance
-- **Vector Embeddings**: FAISS index for semantic search
-- **Advanced Caching**: Redis for high-performance scenarios
-- **Distributed Storage**: For enterprise deployments
-- **Encryption**: For sensitive document collections
+## **Performance Requirements**
 
-### **5. Performance Optimization (MVP)**
-- **Simple Indexing**: Basic term-based search index
-- **File-based Caching**: Store frequently accessed data in memory
-- **Lazy Loading**: Load document content only when needed
-- **Batch Operations**: Process multiple documents efficiently
+### **Response Time**
+- **Typical Queries**: < 500ms
+- **Large Collections**: < 2 seconds for 10,000+ documents
+- **Indexing Speed**: 100+ documents per minute
 
-## **Non-Functional Requirements**
-
-### **Performance**
-- **Response Time**: < 500ms for typical queries
-- **Indexing Speed**: 1000+ documents per minute
-- **Memory Efficiency**: Optimized for local resource constraints
-- **Storage Efficiency**: Compressed indices and embeddings
-
-### **Privacy & Security**
-- **Zero Network**: No external API calls or data transmission
-- **Local Processing**: All computation happens locally
-- **Data Encryption**: Optional local encryption of indices
-- **Access Control**: File system permissions integration
-- **Audit Logging**: Local activity tracking
+### **Resource Usage**
+- **Memory**: < 100MB for typical usage
+- **Storage**: ~1MB per 100 documents
+- **CPU**: Minimal impact during operation
 
 ### **Reliability**
-- **Offline Resilience**: Works without internet connection
+- **Offline Operation**: Works without internet connection
 - **Data Integrity**: Consistent local storage
-- **Backup Support**: Integration with local backup systems
-- **Error Recovery**: Graceful handling of corrupted documents
-
-## **Quality Metrics**
-
-### **1. Retrieval Quality**
-- **Precision@K**: Accuracy of top-K results
-- **Recall@K**: Coverage of relevant documents
-- **Query Response Time**: < 500ms for typical queries
-- **Indexing Speed**: 1000+ documents per minute
-
-### **2. Agent Usability**
-- **Query Success Rate**: 95%+ successful queries
-- **Error Recovery**: Helpful error messages and suggestions
-- **Response Consistency**: Uniform response format
-- **Document Coverage**: 99%+ of supported formats indexed
-
-### **3. System Performance**
-- **Memory Usage**: RAM consumption during operation
-- **Storage Efficiency**: Index size vs. document collection size
-- **Query Throughput**: Queries per second
-- **Error Rate**: Failed requests percentage
-
-## **Success Criteria**
-
-### **Phase 1: MVP**
-- Support 5 document formats (PDF, DOCX, TXT, MD, HTML)
-- Basic full-text and metadata search
-- < 500ms response time
-- 10,000+ document collection support
-
-### **Phase 2: Enhanced**
-- Support 10+ document formats
-- Semantic search capabilities
-- Advanced filtering and ranking
-- Real-time indexing
-
-### **Phase 3: Advanced**
-- Multi-language support
-- Document relationship mapping
-- Advanced caching strategies
-- Enterprise features
-
-## **Deployment Considerations**
-
-### **Local Installation**
-- **Standalone Binary**: Single executable with all dependencies
-- **Python Package**: pip installable with local dependencies
-- **Docker Container**: Containerized deployment option
-- **System Integration**: Native OS integration where possible
-
-### **Resource Requirements**
-- **Minimum**: 4GB RAM, 2GB storage, 2 CPU cores
-- **Recommended**: 8GB RAM, 10GB storage, 4 CPU cores
-- **Storage**: 1GB per 10,000 documents (approximate)
-- **Memory**: 2GB base + 0.1GB per 1000 documents
+- **Error Recovery**: Graceful handling of file errors
 
 ## **Implementation Notes**
 
-### **Technology Stack (MVP)**
+### **Technology Stack**
 - **Python**: Primary implementation language
 - **JSON**: Data storage and serialization
 - **File System**: Document storage and organization
-- **PyPDF2/pdfplumber**: PDF processing (optional)
-- **python-docx**: Office document processing (optional)
-- **beautifulsoup4**: HTML processing (optional)
+- **Optional**: PyPDF2, python-docx, beautifulsoup4 for document processing
 
-### **Key Dependencies (MVP)**
+### **Key Dependencies**
 ```
-# Core dependencies (required)
-json>=2.0.9  # Built-in Python module
-pathlib>=1.0.1  # Built-in Python module
-hashlib>=1.0  # Built-in Python module
-re>=2.2.1  # Built-in Python module
-datetime>=1.0  # Built-in Python module
+# Core (built-in Python modules)
+json, pathlib, hashlib, re, datetime
 
 # Optional document processing
 PyPDF2>=3.0.0  # For PDF files
@@ -576,109 +422,40 @@ python-docx>=0.8.11  # For DOCX files
 beautifulsoup4>=4.11.0  # For HTML files
 ```
 
-### **Future Technology Stack**
-- **FAISS**: Vector similarity search
-- **Whoosh**: Full-text search engine
-- **SQLite**: Metadata and configuration storage
-- **sentence-transformers**: Local embedding generation
-- **Redis**: High-performance caching
-
-### **File Structure (MVP)**
+### **File Structure**
 ```
 offline_document_retrieval/
 ├── src/
 │   ├── document_retrieval/
-│   │   ├── __init__.py
 │   │   ├── storage/
-│   │   │   ├── __init__.py
-│   │   │   ├── json_storage.py      # JSON-based storage implementation
-│   │   │   └── document_processor.py # Document text extraction
+│   │   │   ├── json_storage.py      # JSON storage
+│   │   │   └── document_processor.py # Text extraction
 │   │   ├── mcp/
-│   │   │   ├── __init__.py
-│   │   │   └── tools.py             # MCP tool implementation
+│   │   │   └── tools.py             # MCP tool
 │   │   └── utils/
-│   │       ├── __init__.py
-│   │       ├── search.py            # Search and ranking logic
-│   │       └── helpers.py           # Utility functions
-├── data/                            # Runtime data directory
-│   ├── documents.json               # Document metadata
+│   │       ├── search.py            # Search logic
+│   │       └── helpers.py           # Utilities
+├── data/                            # Runtime data
+│   ├── documents.json               # Metadata
 │   ├── search_index.json            # Search index
 │   └── documents/                   # Document files
-│       ├── doc_001_example.txt
-│       └── doc_002_ai_trends.pdf
-├── tests/
-├── docs/
-├── requirements.txt
-└── setup.py
+└── requirements.txt
 ```
 
-### **Future File Structure**
-```
-offline_document_retrieval/
-├── src/
-│   ├── document_retrieval/
-│   │   ├── storage/
-│   │   │   ├── json_storage.py      # MVP implementation
-│   │   │   ├── sqlite_storage.py    # Future: SQLite implementation
-│   │   │   ├── vector_storage.py    # Future: Vector search
-│   │   │   └── cache_storage.py     # Future: Redis caching
-│   │   ├── search/
-│   │   │   ├── text_search.py       # Text-based search
-│   │   │   ├── semantic_search.py   # Future: Semantic search
-│   │   │   └── hybrid_search.py     # Future: Hybrid search
-│   │   └── mcp/
-│   │       └── tools.py
-├── data/
-└── ...
-```
+## **Smart File Watching for Document Addition**
 
-## **Document Addition Solutions**
+### **How Smart File Watching Works**
 
-### **1. Programmatic API (Best for Developers)**
+The document retrieval tool uses intelligent file system monitoring to automatically discover and index new documents without user intervention.
 
-```python
-class DocumentIndexAPI:
-    def add_file(self, file_path: str, metadata: dict = None) -> str:
-        """Add single file with full control."""
-        content = self._extract_content(file_path)
-        return self.storage.add_document(file_path, content, metadata)
-    
-    def add_directory(self, directory_path: str, recursive: bool = True) -> dict:
-        """Add all files from directory."""
-        results = {"successful": [], "failed": [], "skipped": []}
-        for file_path in Path(directory_path).glob("**/*" if recursive else "*"):
-            if file_path.is_file():
-                try:
-                    doc_id = self.add_file(str(file_path))
-                    results["successful"].append({"file": str(file_path), "doc_id": doc_id})
-                except Exception as e:
-                    results["failed"].append({"file": str(file_path), "error": str(e)})
-        return results
-    
-    def add_from_url(self, url: str, metadata: dict = None) -> str:
-        """Add document from URL."""
-        response = requests.get(url)
-        temp_path = self._save_temp_file(response.content, url)
-        try:
-            return self.add_file(temp_path, metadata)
-        finally:
-            Path(temp_path).unlink()
-```
-
-**Benefits:**
-- Full programmatic control
-- Robust error handling and logging
-- Supports files, directories, and URLs
-- Easy integration with other systems
-
-### **2. Smart Auto-Discovery (Best for End Users)**
+#### **1. Automatic Directory Monitoring**
 
 ```python
 class SmartDocumentDiscovery:
     def __init__(self, storage):
         self.storage = storage
+        self.supported_extensions = ['.pdf', '.docx', '.txt', '.md', '.html', '.json']
         self.watched_directories = []
-        self.supported_extensions = ['.pdf', '.docx', '.txt', '.md', '.html']
     
     def setup_auto_discovery(self):
         """Set up intelligent document discovery."""
@@ -694,98 +471,121 @@ class SmartDocumentDiscovery:
                 self.watch_directory(directory)
     
     def watch_directory(self, directory: Path):
-        """Watch directory for new files."""
+        """Watch directory for new files using file system events."""
         from watchdog.observers import Observer
         from watchdog.events import FileSystemEventHandler
         
         class DocumentHandler(FileSystemEventHandler):
+            def __init__(self, discovery):
+                self.discovery = discovery
+            
             def on_created(self, event):
                 if not event.is_directory:
-                    self._process_new_file(event.src_path)
+                    self.discovery._process_new_file(event.src_path)
+            
+            def on_modified(self, event):
+                if not event.is_directory:
+                    self.discovery._process_modified_file(event.src_path)
         
+        handler = DocumentHandler(self)
         observer = Observer()
-        observer.schedule(DocumentHandler(), str(directory), recursive=True)
+        observer.schedule(handler, str(directory), recursive=True)
         observer.start()
-    
-    def _process_new_file(self, file_path: str):
-        """Process newly created file."""
-        file_path = Path(file_path)
-        if self._should_index_file(file_path):
-            try:
-                doc_id = self.storage.add_document(
-                    str(file_path),
-                    self._extract_content(file_path),
-                    self._generate_metadata(file_path)
-                )
-                print(f"✅ Auto-indexed: {file_path.name}")
-            except Exception as e:
-                print(f"❌ Failed to index {file_path.name}: {e}")
+        
+        self.watched_directories.append({
+            'path': directory,
+            'observer': observer
+        })
 ```
 
-**Benefits:**
-- Zero configuration required
-- Automatic file detection and indexing
-- Smart filtering (only relevant files)
-- Continuous monitoring
-
-### **3. Batch Processing (Best for Bulk Operations)**
+#### **2. Intelligent File Processing**
 
 ```python
-class BatchDocumentProcessor:
-    def process_batch_file(self, batch_file: str):
-        """Process YAML batch file with document specifications."""
-        with open(batch_file, 'r') as f:
-            batch_config = yaml.safe_load(f)
+def _process_new_file(self, file_path: str):
+    """Process newly created file with smart filtering."""
+    file_path = Path(file_path)
+    
+    # Wait for file to be fully written
+    self._wait_for_file_complete(file_path)
+    
+    # Check if file should be indexed
+    if not self._should_index_file(file_path):
+        return
+    
+    try:
+        # Extract content and metadata
+        content = self._extract_content(file_path)
+        metadata = self._generate_metadata(file_path)
         
-        results = {"total": 0, "successful": 0, "failed": 0, "skipped": 0}
+        # Add to storage
+        doc_id = self.storage.add_document(
+            str(file_path),
+            content,
+            metadata
+        )
         
-        for item in batch_config['documents']:
-            results['total'] += 1
-            try:
-                if 'file' in item:
-                    self._add_file(item['file'], item.get('metadata', {}))
-                elif 'directory' in item:
-                    self._add_directory(item['directory'], item.get('recursive', True))
-                elif 'url' in item:
-                    self._add_from_url(item['url'], item.get('metadata', {}))
-                results['successful'] += 1
-            except Exception as e:
-                results['failed'] += 1
-                print(f"❌ Failed to process {item}: {e}")
+        print(f"✅ Auto-indexed: {file_path.name}")
         
-        return results
+    except Exception as e:
+        print(f"❌ Failed to index {file_path.name}: {e}")
+
+def _should_index_file(self, file_path: Path) -> bool:
+    """Smart filtering to determine if file should be indexed."""
+    # Check file extension
+    if file_path.suffix.lower() not in self.supported_extensions:
+        return False
+    
+    # Check file size (skip very large files)
+    if file_path.stat().st_size > 100 * 1024 * 1024:  # 100MB
+        return False
+    
+    # Check if file is already indexed
+    if self._is_already_indexed(file_path):
+        return False
+    
+    # Check file age (skip very old files)
+    file_age = time.time() - file_path.stat().st_mtime
+    if file_age > 365 * 24 * 3600:  # 1 year
+        return False
+    
+    return True
 ```
 
-**Batch Configuration Example:**
-```yaml
-documents:
-  - file: "path/to/document.pdf"
-    metadata:
-      title: "Document Title"
-      author: "Author Name"
-      tags: ["tag1", "tag2"]
-  - directory: "path/to/documents"
-    recursive: true
-    metadata:
-      project: "Project Name"
-      tags: ["project", "docs"]
-  - url: "https://example.com/document.pdf"
-    metadata:
-      title: "Online Document"
-      source: "web"
+#### **3. Real-Time Document Discovery Process**
+
+```
+1. File System Event → New file detected
+2. File Validation → Check extension, size, age
+3. Content Extraction → Extract text from document
+4. Metadata Generation → Auto-generate title, tags, etc.
+5. Storage Update → Add to JSON storage and search index
+6. User Notification → Show success/failure message
 ```
 
-**Benefits:**
-- Process many documents at once
-- YAML-based configuration
-- Mix different source types
-- Resumable operations
+#### **4. Benefits of Smart File Watching**
 
-### **Implementation Strategy**
+- **Zero Configuration**: Works out of the box
+- **Automatic Discovery**: No manual file addition needed
+- **Smart Filtering**: Only indexes relevant documents
+- **Real-Time Updates**: Documents available immediately
+- **Continuous Monitoring**: Always up to date
+- **User-Friendly**: No technical knowledge required
 
-**Phase 1: Core API** - Implement programmatic API for developers
-**Phase 2: Auto-Discovery** - Add smart file watching for end users  
-**Phase 3: Batch Processing** - Add bulk operations for large collections
-**Phase 4: CLI Interface** - Add command-line tools for immediate use
+#### **5. Supported File Types**
+
+- **Documents**: PDF, DOCX, TXT, MD, HTML
+- **Data Files**: JSON, XML, YAML
+- **Code Files**: Python, JavaScript, Java, C++
+- **Excluded**: Images, videos, executables, system files
+
+#### **6. User Experience**
+
+Users simply:
+1. **Save documents** to watched directories (Documents, Downloads, etc.)
+2. **Documents are automatically indexed** within seconds
+3. **Search immediately** using the document_retrieval tool
+4. **No setup or configuration** required
+
+This approach provides the best user experience by eliminating the need for manual document management while maintaining intelligent filtering and processing.
 
 This design provides a focused, agent-friendly document retrieval tool that complements other MCP tools while maintaining clear boundaries and responsibilities.
