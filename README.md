@@ -62,7 +62,6 @@ code = coding_agent.generate_code("neural network class")
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
 - **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
-- **🤖 Intelligent LLM Service**: Auto-detects best available models (local + cloud)
 
 ## 🚀 Quick Start
 
@@ -93,7 +92,6 @@ print(result["result"])
 # • Virtual environment created
 # • Dependencies installed
 # • Agent validated and ready
-# • Best LLM model auto-detected
 # • AI selects optimal method for your query
 ```
 
@@ -199,31 +197,6 @@ ml_agent = ah.load_agent("agentplug/ml-agent")             # Uses different pack
 # All agents work independently without conflicts
 ```
 
-### 🤖 Intelligent LLM Service
-
-AgentHub automatically detects and uses the best available LLM model:
-
-```python
-from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
-
-# 🎯 Auto-detect best available model
-service = CoreLLMService()
-print(f"Selected model: {service.get_current_model()}")
-
-# 🏠 Use shared instance (recommended for multiple components)
-service = get_shared_llm_service()
-
-# ⚙️ Configure parameters
-response = service.generate("Hello, world!", temperature=0.7, max_tokens=200)
-
-# 📋 JSON responses
-json_response = service.generate(messages, return_json=True)
-```
-
-**Supported Models:**
-- **🏠 Local**: Ollama (preferred) + LM Studio (fallback) - gpt-oss, qwen, deepseek, llama, gemma, etc.
-- **☁️ Cloud**: OpenAI, Anthropic, Google, DeepSeek, Mistral, Groq, and more
-- **🎯 Auto-Detection**: Prioritizes best models for agentic tasks with intelligent fallback
 
 ### 💻 CLI Commands
 
@@ -388,8 +361,8 @@ print(json_response)
 
 ## 🤖 Advanced Features
 
-### 🧠 Intelligent LLM Service
-AgentHub includes a comprehensive LLM service that automatically handles model selection:
+### 🧠 LLM Backend (Implementation Detail)
+AgentHub includes an LLM service that automatically handles model selection behind the scenes. Most users don't need to interact with this directly:
 
 ```python
 from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
