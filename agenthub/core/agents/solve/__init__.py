@@ -1,23 +1,24 @@
-"""Solve module for intelligent agent method selection.
+"""
+Solve Module for AgentHub
 
-This module provides:
-- SolveEngine: Main orchestrator for solve functionality
-- AgentSolveInterface: Interface for custom solve methods
-- SolveResult: Standardized result format
-- CustomSolveHandler: Handles agents with custom solve methods
-- FrameworkSolveHandler: Handles framework-level solve using LLM
+This module provides solve-specific functionality for agent method selection
+and parameter extraction using generalized LLM components.
 """
 
 from .custom_handler import CustomSolveHandler
 from .engine import SolveEngine
 from .framework_handler import FrameworkSolveHandler
 from .interface import AgentSolveInterface
+from .method_selector import AgentMethodSelector
+from .parameter_extractor import AgentParameterExtractor
 from .result import SolveResult
 
 __all__ = [
-    "SolveEngine",
     "AgentSolveInterface",
-    "SolveResult",
     "CustomSolveHandler",
     "FrameworkSolveHandler",
+    "AgentMethodSelector",
+    "AgentParameterExtractor",
+    "SolveEngine",
+    "SolveResult",
 ]
