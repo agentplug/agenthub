@@ -372,14 +372,6 @@ review = coding_agent.review_code("def hello(): print('world')")
 print(review["result"])
 ```
 
-## 🎯 Available Agents
-
-| Agent | Description | Universal Solve | Direct Methods |
-|-------|-------------|-----------------|-----------------|
-| `agentplug/coding-agent` | Generate and review code | `agent.solve("Create a function...")` | `generate_code()`, `review_code()`, `explain_code()` |
-| `agentplug/analysis-agent` | Data analysis and insights | `agent.solve("Analyze this data...")` | `analyze_text()`, `analyze_data()` |
-| `agentplug/scientific-paper-analyzer` | Analyze research papers | `agent.solve("Analyze this paper...")` | `analyze_paper()` |
-
 ### 🧠 Universal Solve Method Benefits
 
 - **🎯 No Method Learning**: Just describe what you want
