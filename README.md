@@ -32,6 +32,7 @@ AgentHub revolutionizes how you work with AI agents:
 - **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
 
 ### Before AgentHub
+
 ```python
 # Traditional approach: 2-4 weeks setup
 # 1. Find agent on GitHub
@@ -45,6 +46,7 @@ AgentHub revolutionizes how you work with AI agents:
 ```
 
 ### With AgentHub
+
 ```python
 # One line, 30 seconds
 import agenthub as ah
@@ -145,6 +147,7 @@ if __name__ == "__main__":
 ```
 
 **Using Tools with Agents:**
+
 ```python
 import agenthub as ah
 
@@ -197,7 +200,6 @@ ml_agent = ah.load_agent("agentplug/ml-agent")             # Uses different pack
 # All agents work independently without conflicts
 ```
 
-
 ### 💻 CLI Commands
 
 ```bash
@@ -240,6 +242,7 @@ cd my-coding-agent/
 ```
 
 Create `agent.py`:
+
 ```python
 class CodingAgent:
     def __init__(self):
@@ -255,6 +258,7 @@ class CodingAgent:
 ```
 
 Create `agent.yaml`:
+
 ```yaml
 name: coding-agent
 version: 1.0.0
@@ -279,7 +283,7 @@ git remote add origin https://github.com/your-username/my-coding-agent.git
 git push -u origin main
 ```
 
-### 4. Share with the World!
+### 4. Share with the World
 
 ```python
 # Anyone can now use your agent:
@@ -291,6 +295,7 @@ code = agent.generate_code("React component")
 ## 📚 Examples
 
 ### 🧠 Universal Solve Method (Recommended)
+
 ```python
 import agenthub as ah
 
@@ -310,6 +315,7 @@ print(insights["result"])
 ```
 
 ### 🛠️ Direct Method Calls
+
 ```python
 import agenthub as ah
 
@@ -325,6 +331,7 @@ print(review["result"])
 ```
 
 ### 🤖 LLM Service Usage
+
 ```python
 from agenthub.core.llm.llm_service import CoreLLMService
 
@@ -354,6 +361,7 @@ print(json_response)
 | `agentplug/scientific-paper-analyzer` | Analyze research papers | `agent.solve("Analyze this paper...")` | `analyze_paper()` |
 
 ### 🧠 Universal Solve Method Benefits
+
 - **🎯 No Method Learning**: Just describe what you want
 - **🤖 AI Method Selection**: Automatically chooses the best approach
 - **📝 Natural Language**: Use plain English queries
@@ -362,13 +370,14 @@ print(json_response)
 ## 🤖 Advanced Features
 
 ### 🧠 LLM Backend (Implementation Detail)
+
 AgentHub includes an LLM service that automatically handles model selection behind the scenes. Most users don't need to interact with this directly:
 
 ```python
 from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
 
-# 🎯 Auto-detection prioritizes the best models
-service = CoreLLMService()  # Auto-detects: gpt-oss > deepseek > gemma > llama
+# 🎯 Local-first model selection (Ollama > LM Studio > cloud)
+service = CoreLLMService()  # Prefers local models; falls back to cloud if none available
 
 # 🏠 Shared instance prevents duplicate model detection
 service = get_shared_llm_service()
@@ -381,40 +390,6 @@ print(f"Model: {info.name}, Score: {info.score}, Local: {info.is_local}")
 models = service.list_available_models()
 for model in models:
     print(f"{model.name} ({model.provider}) - Score: {model.score}")
-```
-
-**Model Priority System:**
-1. **🥇 gpt-oss**: OpenAI's open-weight models (120B, 20B) - highest priority
-2. **🥈 DeepSeek**: Reasoning models (70B, 32B) - excellent for complex tasks
-3. **🥉 General**: Gemma, Llama, Qwen - reliable general purpose
-4. **☁️ Cloud**: OpenAI, Anthropic, Google - when local models unavailable
-
-### 📊 Comprehensive Logging
-**Model Priority System:**
-1. **🥇 Qwen & DeepSeek**: 60 points (highest priority for reasoning)
-2. **🥈 GPT-OSS**: 50 points (OpenAI's open-weight models)
-3. **🥉 General**: Llama, Gemma, Mistral (reliable baseline)
-4. **🏆 Platform Bonus**: Ollama gets +5 points (preferred platform)
-5. **📏 Latest Types**: Treated as 8B equivalent (40 points)
-
-**Detection Priority:**
-1. **Ollama** (preferred) - Check first, use if available
-2. **LM Studio** (fallback) - Use if Ollama not running
-3. **Cloud Models** - Use if no local models available
-
-AgentHub provides detailed logging for debugging and monitoring:
-
-```bash
-# Enable debug logging to see model selection process
-export AGENTHUB_LOG_LEVEL=DEBUG
-python your_script.py
-
-# Example output:
-# 🔍 Auto-detected Ollama URL: http://localhost:11434
-# 🔍 Evaluating 4 models: gpt-oss:120b, gpt-oss:20b, llama3:latest, gemma:latest
-# 🏆 Best model selected: gpt-oss:120b
-# 🤖 Local model detected: ollama:gpt-oss:120b (from 4 available models)
-# 🎯 Selected model: ollama:gpt-oss:120b
 ```
 
 ## 🤝 Contributing
