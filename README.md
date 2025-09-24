@@ -84,6 +84,7 @@ print(result["result"])  # Unified output
 ```
 
 Flow to build:
+
 - **Pick agents**: research, analysis, data access, planning, quality control, ...
 - **Customize**: add custom tools (`@tool`) and attach domain knowledge (PDFs, docs, DBs)
 - **Compose**: add agents into a `Team()`
@@ -404,29 +405,6 @@ print(json_response)
 - **🔄 Consistent Interface**: Same pattern across all agents
 
 ## 🤖 Advanced Features
-
-### 🧠 LLM Backend (Implementation Detail)
-
-AgentHub includes an LLM service that automatically handles model selection behind the scenes. Most users don't need to interact with this directly:
-
-```python
-from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
-
-# 🎯 Local-first model selection (Ollama > LM Studio > cloud)
-service = CoreLLMService()  # Prefers local models; falls back to cloud if none available
-
-# 🏠 Shared instance prevents duplicate model detection
-service = get_shared_llm_service()
-
-# 📊 Model information and scoring
-info = service.get_model_info()
-print(f"Model: {info.name}, Score: {info.score}, Local: {info.is_local}")
-
-# 📋 List all available models
-models = service.list_available_models()
-for model in models:
-    print(f"{model.name} ({model.provider}) - Score: {model.score}")
-```
 
 ## 🤝 Contributing
 
