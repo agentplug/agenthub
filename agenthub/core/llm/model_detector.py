@@ -27,20 +27,22 @@ class ModelDetector:
         """
         Detect the best available model across all providers.
 
+        Priority: Local models (Ollama > LM Studio) > Cloud models
+
         Returns:
             Model identifier string (e.g., "ollama:gpt-oss:20b")
         """
-        # Try cloud models first (if API keys available)
-        cloud_model = self._detect_cloud_model()
-        if cloud_model:
-            logger.info(f"🎯 Selected cloud model: {cloud_model}")
-            return cloud_model
-
-        # Fallback to local models
+        # Try local models first (Ollama preferred over LM Studio)
         local_model = self._detect_running_local_model()
         if local_model:
-            logger.info(f"🎯 Selected local model: {local_model}")
+            logger.info("🎯 Selected local model: %s", local_model)
             return local_model
+
+        # Fallback to cloud models
+        cloud_model = self._detect_cloud_model()
+        if cloud_model:
+            logger.info("🎯 Selected cloud model: %s", cloud_model)
+            return cloud_model
 
         # Final fallback
         logger.warning("No suitable model found, using fallback")
@@ -51,62 +53,79 @@ class ModelDetector:
         for provider, models in ModelConfig.CLOUD_MODELS.items():
             api_key = os.getenv(f"{provider.upper()}_API_KEY")
             if api_key:
-                logger.info(f"🔑 Found {provider} API key")
+                logger.info("🔑 Found %s API key", provider)
                 return f"{provider}:{models[0]}"
         return None
 
     def _detect_running_local_model(self) -> str | None:
         """Detect running local models (Ollama preferred, LM Studio fallback)."""
+        logger.debug("🔍 Detecting local models...")
+
         # Try Ollama first
+        logger.debug("Checking Ollama...")
         ollama_model = self._detect_ollama_model()
         if ollama_model:
             return ollama_model
 
         # Fallback to LM Studio
+        logger.debug("Checking LM Studio...")
         lmstudio_model = self._detect_lmstudio_model()
         if lmstudio_model:
             return lmstudio_model
 
+        logger.debug("❌ No local models detected (checked Ollama and LM Studio)")
         return None
 
     def _detect_ollama_model(self) -> str | None:
         """Detect available Ollama models."""
         url = self._detect_ollama_url()
+        logger.debug("Attempting Ollama detection at: %s", url)
+
         if not self._check_ollama_available(url):
+            logger.debug("❌ Ollama not reachable at %s", url)
             return None
 
         available_models = self._get_ollama_models(url)
         if not available_models:
+            logger.debug("❌ No Ollama models found (service running but no models)")
             return None
 
         best_model = self._select_best_ollama_model(available_models)
         if best_model:
             logger.info(
-                f"🤖 Ollama model detected: ollama:{best_model} "
-                f"(from {len(available_models)} available models)"
+                "🤖 Ollama model detected: ollama:%s (from %d available models)",
+                best_model,
+                len(available_models),
             )
             return f"ollama:{best_model}"
 
+        logger.debug("❌ No suitable Ollama models found after scoring")
         return None
 
     def _detect_lmstudio_model(self) -> str | None:
         """Detect available LM Studio models."""
         url = self._detect_lmstudio_url()
+        logger.debug("Attempting LM Studio detection at: %s", url)
+
         if not self._check_lmstudio_available(url):
+            logger.debug("❌ LM Studio not reachable at %s", url)
             return None
 
         available_models = self._get_lmstudio_models(url)
         if not available_models:
+            logger.debug("❌ No LM Studio models found (service running but no models)")
             return None
 
-        best_model = self._select_best_model(available_models, is_lmstudio=True)
+        best_model = self._select_best_model(available_models)
         if best_model:
             logger.info(
-                f"🤖 LM Studio model detected: lmstudio:{best_model} "
-                f"(from {len(available_models)} available models)"
+                "🤖 LM Studio model detected: lmstudio:%s (from %d available models)",
+                best_model,
+                len(available_models),
             )
             return f"lmstudio:{best_model}"
 
+        logger.debug("❌ No suitable LM Studio models found after scoring")
         return None
 
     def _detect_ollama_url(self) -> str:
@@ -129,12 +148,37 @@ class ModelDetector:
         # Fallback to default
         return ModelConfig.OLLAMA_URLS[0]
 
+    def _detect_lmstudio_url(self) -> str:
+        """Detect LM Studio API URL."""
+        # Check environment variable first
+        env_url = os.getenv("LMSTUDIO_API_URL")
+        if env_url:
+            return env_url
+
+        # Try common URLs
+        for url in ModelConfig.LMSTUDIO_URLS:
+            if self._check_lmstudio_available(url):
+                return url
+
+        # Fallback to default
+        return ModelConfig.LMSTUDIO_URLS[0]
+
     def _check_ollama_available(self, url: str) -> bool:
         """Check if Ollama is running at the given URL."""
         try:
             response = httpx.get(f"{url}/api/tags", timeout=5)
-            return response.status_code == 200
-        except Exception:
+            is_available = response.status_code == 200
+            if is_available:
+                logger.debug("✅ Ollama available at %s", url)
+            else:
+                logger.debug(
+                    "❌ Ollama not available at %s (status: %s)",
+                    url,
+                    response.status_code,
+                )
+            return is_available
+        except Exception as e:
+            logger.debug("❌ Ollama connection failed at %s: %s", url, e)
             return False
 
     def _get_ollama_models(self, url: str) -> list[dict]:
@@ -145,15 +189,25 @@ class ModelDetector:
                 data = response.json()
                 return data.get("models", [])
         except Exception as e:
-            logger.debug(f"Failed to get Ollama models: {e}")
+            logger.debug("Failed to get Ollama models: %s", e)
         return []
 
     def _check_lmstudio_available(self, url: str) -> bool:
         """Check if LM Studio is running at the given URL."""
         try:
             response = httpx.get(f"{url}/models", timeout=5)
-            return response.status_code == 200
-        except Exception:
+            is_available = response.status_code == 200
+            if is_available:
+                logger.debug("✅ LM Studio available at %s", url)
+            else:
+                logger.debug(
+                    "❌ LM Studio not available at %s (status: %s)",
+                    url,
+                    response.status_code,
+                )
+            return is_available
+        except Exception as e:
+            logger.debug("❌ LM Studio connection failed at %s: %s", url, e)
             return False
 
     def _get_lmstudio_models(self, url: str) -> list[str]:
@@ -169,7 +223,7 @@ class ModelDetector:
                         models.append(model_id)
                 return models
         except Exception as e:
-            logger.debug(f"Failed to get LM Studio models: {e}")
+            logger.debug("Failed to get LM Studio models: %s", e)
         return []
 
     def _select_best_ollama_model(self, available_models: list[dict]) -> str:
@@ -187,9 +241,7 @@ class ModelDetector:
         # Score and select best
         return self._score_and_select_best(model_names)
 
-    def _select_best_model(
-        self, available_models: list[str], is_lmstudio: bool = False
-    ) -> str:
+    def _select_best_model(self, available_models: list[str]) -> str:
         """Select the best model from available models."""
         if not available_models:
             return ""
@@ -212,15 +264,17 @@ class ModelDetector:
         # Sort by score (highest first)
         scored_models.sort(key=lambda x: x[1], reverse=True)
 
-        best_model, best_score = scored_models[0]
+        best_model, _ = scored_models[0]
         logger.info(
-            f"🔍 Evaluating {len(model_names)} models: {', '.join(model_names)}"
+            "🔍 Evaluating %d models: %s",
+            len(model_names),
+            ", ".join(model_names),
         )
-        logger.info(f"🏆 Best model selected: {best_model}")
+        logger.info("🏆 Best model selected: %s", best_model)
 
         # Log scores for debugging
         for model, score in scored_models[:3]:  # Top 3
-            logger.debug(f"📊 {model}: {score} points")
+            logger.debug("📊 %s: %d points", model, score)
 
         return best_model
 
