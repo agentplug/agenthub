@@ -381,7 +381,14 @@ print(review["result"])
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how to get started:
+We welcome contributions! You can:
+
+- Build and contribute new tools (via `@tool` and `run_resources()`)
+- Create new pre-built agents (publishable GitHub repos with `agent.yaml`)
+- Enhance existing agents (add methods, improve prompts, optimize flows)
+- Improve documentation and examples
+
+Here's how to get started:
 
 ### 🚀 Development Setup
 
@@ -404,6 +411,9 @@ git checkout -b feature/your-feature
 
 ### 🎯 Ways to Contribute
 
+- **🧰 Tools**: Add new tools or improve existing ones
+- **🤖 Pre-built Agents**: Create and share agents for common tasks
+- **🚀 Enhancements**: Optimize agent methods, prompts, and pipelines
 - **🐛 Bug Reports**: [Open an Issue](https://github.com/agentplug/agenthub/issues)
 - **📖 Documentation**: Improve guides and examples
 - **🔧 Code**: Fix bugs, add features
