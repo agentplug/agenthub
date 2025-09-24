@@ -1,21 +1,23 @@
-"""Handles framework-level solve using LLM decision engine."""
+"""Handles framework-level solve using solve-specific components."""
 
 import logging
 import time
 from typing import Any
 
-from ...llm.llm_decision_engine import LLMDecisionEngine
+from .method_selector import AgentMethodSelector
+from .parameter_extractor import AgentParameterExtractor
 
 logger = logging.getLogger(__name__)
 
 
 class FrameworkSolveHandler:
-    """Handles framework-level solve using LLM method selection."""
+    """Handles framework-level solve using solve-specific components."""
 
     def __init__(self, agent_wrapper: Any) -> None:
         """Initialize framework solve handler."""
         self.agent_wrapper = agent_wrapper
-        self.llm_decision_engine = LLMDecisionEngine()
+        self.method_selector = AgentMethodSelector()
+        self.parameter_extractor = AgentParameterExtractor()
 
     def solve(
         self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
@@ -36,8 +38,8 @@ class FrameworkSolveHandler:
                     "execution_time": time.time() - start_time,
                 }
 
-            # Use LLM to select method
-            method_name, confidence, reasoning = self.llm_decision_engine.select_method(
+            # Use method selector to select method
+            method_name, confidence, reasoning = self.method_selector.select_method(
                 query, agent_methods, full_context
             )
 
@@ -56,7 +58,7 @@ class FrameworkSolveHandler:
                 extracted_params,
                 param_confidence,
                 param_reasoning,
-            ) = self.llm_decision_engine.extract_parameters(
+            ) = self.parameter_extractor.extract_parameters(
                 query, method_name, method_parameters, full_context
             )
 
