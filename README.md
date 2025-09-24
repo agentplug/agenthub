@@ -16,7 +16,13 @@
 
 ## 🚀 What is AgentHub?
 
-Transform weeks of AI agent integration into **one line of code**. AgentHub makes powerful AI agents as easy to use as installing a Python package.
+Transform weeks of AI agent integration into **one line of code**. AgentHub makes powerful AI agents as easy to use as installing a Python package — and lets you compose them into robust multi-agent Teams.
+
+### 🗺️ At a Glance
+
+- What you do: Install agents, customize with tools/knowledge, and compose a Team to solve complex goals
+- What you get: High-level `agent.solve()` and `Team().solve()` APIs, isolation, auto-install, and monitoring
+- Who it's for: Developers and builders who want pragmatic, composable AI systems without boilerplate
 
 ### 🎯 **Core Abilities**
 
@@ -141,7 +147,7 @@ print(result["result"])
 
 ### 🧠 Universal Solve Method
 
-The `agent.solve()` and upcoming `Team().solve()` are AgentHub's breakthrough capabilities — describe a goal in natural language and let the system choose the best approach:
+Describe your goal in natural language — `agent.solve()` (and soon `Team().solve()`) selects the best internal method and executes the steps:
 
 ```python
 import agenthub as ah
