@@ -379,8 +379,6 @@ print(review["result"])
 - **📝 Natural Language**: Use plain English queries
 - **🔄 Consistent Interface**: Same pattern across all agents
 
-## 🤖 Advanced Features
-
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to get started:
