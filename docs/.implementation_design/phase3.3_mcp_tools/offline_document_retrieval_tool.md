@@ -379,17 +379,102 @@ def _generate_suggestions(query: str, results: list) -> list:
     return suggestions
 ```
 
-### **4. Storage Strategy**
-- **SQLite Database**: Metadata, indices, configuration
-- **FAISS Index**: Vector embeddings for semantic search
-- **Whoosh Index**: Full-text search index
-- **File System**: Original documents and extracted content
+### **4. Storage Strategy (MVP: JSON-Based)**
 
-### **5. Performance Optimization**
-- **Incremental Indexing**: Only re-index changed documents
-- **Smart Caching**: Cache frequently accessed documents
+#### **A. MVP Storage Architecture**
+For the initial implementation, we use a simple JSON-based storage approach:
+
+```
+data/
+├── documents.json          # Main document metadata
+├── search_index.json       # Search terms → document IDs mapping
+└── documents/              # Document files
+    ├── doc_001_example.txt
+    └── doc_002_ai_trends.pdf
+```
+
+#### **B. JSON File Structure**
+
+**documents.json** - Contains all document metadata:
+```json
+{
+  "documents": {
+    "doc_001": {
+      "id": "doc_001",
+      "title": "AI Trends 2024",
+      "file_path": "./data/documents/doc_001_ai_trends.pdf",
+      "file_type": ".pdf",
+      "file_size": 1024000,
+      "created_at": "2024-01-15T10:30:00Z",
+      "modified_at": "2024-01-15T10:30:00Z",
+      "summary": "Comprehensive analysis of AI trends...",
+      "author": "John Doe",
+      "tags": ["AI", "trends", "2024"],
+      "metadata": {"pages": 25, "language": "en"}
+    }
+  },
+  "metadata": {
+    "total_documents": 1,
+    "last_updated": "2024-01-15T10:30:00Z",
+    "version": "1.0"
+  }
+}
+```
+
+**search_index.json** - Contains search term mappings:
+```json
+{
+  "index": {
+    "ai": ["doc_001"],
+    "trends": ["doc_001"],
+    "2024": ["doc_001"],
+    "comprehensive": ["doc_001"],
+    "analysis": ["doc_001"]
+  },
+  "metadata": {
+    "last_indexed": "2024-01-15T10:30:00Z",
+    "total_terms": 5
+  }
+}
+```
+
+#### **C. Storage Operations**
+
+**Document Addition Process:**
+1. Extract text content from document
+2. Generate unique document ID
+3. Copy file to `documents/` directory
+4. Store metadata in `documents.json`
+5. Update search index in `search_index.json`
+
+**Search Process:**
+1. Extract search terms from query
+2. Look up terms in `search_index.json`
+3. Get matching document IDs
+4. Fetch full details from `documents.json`
+5. Calculate relevance scores and rank results
+
+#### **D. Benefits of JSON Approach**
+- **No Database**: Pure file-based, no SQLite or external DB
+- **Human Readable**: All data in JSON, easy to inspect and debug
+- **Portable**: Just copy the data directory
+- **Simple**: No database setup or configuration
+- **Version Control Friendly**: JSON files can be tracked in git
+- **Fast Development**: Can be built in minutes
+
+#### **E. Future Storage Enhancements**
+The JSON-based approach serves as the MVP foundation. Future versions will support:
+- **SQLite Database**: For better performance and ACID compliance
+- **Vector Embeddings**: FAISS index for semantic search
+- **Advanced Caching**: Redis for high-performance scenarios
+- **Distributed Storage**: For enterprise deployments
+- **Encryption**: For sensitive document collections
+
+### **5. Performance Optimization (MVP)**
+- **Simple Indexing**: Basic term-based search index
+- **File-based Caching**: Store frequently accessed data in memory
 - **Lazy Loading**: Load document content only when needed
-- **Parallel Processing**: Process multiple documents simultaneously
+- **Batch Operations**: Process multiple documents efficiently
 
 ## **Non-Functional Requirements**
 
@@ -468,48 +553,83 @@ def _generate_suggestions(query: str, results: list) -> list:
 
 ## **Implementation Notes**
 
-### **Technology Stack**
+### **Technology Stack (MVP)**
 - **Python**: Primary implementation language
+- **JSON**: Data storage and serialization
+- **File System**: Document storage and organization
+- **PyPDF2/pdfplumber**: PDF processing (optional)
+- **python-docx**: Office document processing (optional)
+- **beautifulsoup4**: HTML processing (optional)
+
+### **Key Dependencies (MVP)**
+```
+# Core dependencies (required)
+json>=2.0.9  # Built-in Python module
+pathlib>=1.0.1  # Built-in Python module
+hashlib>=1.0  # Built-in Python module
+re>=2.2.1  # Built-in Python module
+datetime>=1.0  # Built-in Python module
+
+# Optional document processing
+PyPDF2>=3.0.0  # For PDF files
+python-docx>=0.8.11  # For DOCX files
+beautifulsoup4>=4.11.0  # For HTML files
+```
+
+### **Future Technology Stack**
 - **FAISS**: Vector similarity search
 - **Whoosh**: Full-text search engine
 - **SQLite**: Metadata and configuration storage
 - **sentence-transformers**: Local embedding generation
-- **PyPDF2/pdfplumber**: PDF processing
-- **python-docx**: Office document processing
+- **Redis**: High-performance caching
 
-### **Key Dependencies**
-```
-sentence-transformers>=2.2.0
-faiss-cpu>=1.7.4
-whoosh>=2.7.4
-PyPDF2>=3.0.0
-python-docx>=0.8.11
-beautifulsoup4>=4.11.0
-python-magic>=0.4.27
-```
-
-### **File Structure**
+### **File Structure (MVP)**
 ```
 offline_document_retrieval/
 ├── src/
 │   ├── document_retrieval/
 │   │   ├── __init__.py
-│   │   ├── core/
-│   │   │   ├── scanner.py
-│   │   │   ├── extractor.py
-│   │   │   ├── indexer.py
-│   │   │   └── searcher.py
+│   │   ├── storage/
+│   │   │   ├── __init__.py
+│   │   │   ├── json_storage.py      # JSON-based storage implementation
+│   │   │   └── document_processor.py # Document text extraction
 │   │   ├── mcp/
 │   │   │   ├── __init__.py
-│   │   │   └── tools.py
+│   │   │   └── tools.py             # MCP tool implementation
 │   │   └── utils/
 │   │       ├── __init__.py
-│   │       ├── formats.py
-│   │       └── cache.py
+│   │       ├── search.py            # Search and ranking logic
+│   │       └── helpers.py           # Utility functions
+├── data/                            # Runtime data directory
+│   ├── documents.json               # Document metadata
+│   ├── search_index.json            # Search index
+│   └── documents/                   # Document files
+│       ├── doc_001_example.txt
+│       └── doc_002_ai_trends.pdf
 ├── tests/
 ├── docs/
 ├── requirements.txt
 └── setup.py
+```
+
+### **Future File Structure**
+```
+offline_document_retrieval/
+├── src/
+│   ├── document_retrieval/
+│   │   ├── storage/
+│   │   │   ├── json_storage.py      # MVP implementation
+│   │   │   ├── sqlite_storage.py    # Future: SQLite implementation
+│   │   │   ├── vector_storage.py    # Future: Vector search
+│   │   │   └── cache_storage.py     # Future: Redis caching
+│   │   ├── search/
+│   │   │   ├── text_search.py       # Text-based search
+│   │   │   ├── semantic_search.py   # Future: Semantic search
+│   │   │   └── hybrid_search.py     # Future: Hybrid search
+│   │   └── mcp/
+│   │       └── tools.py
+├── data/
+└── ...
 ```
 
 This design provides a focused, agent-friendly document retrieval tool that complements other MCP tools while maintaining clear boundaries and responsibilities.
