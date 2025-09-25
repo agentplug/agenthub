@@ -30,7 +30,7 @@ class ToolRegistryProtocol(Protocol):
 class ToolManagerProtocol(Protocol):
     """Protocol for tool manager."""
 
-    def assign_tools_to_agent(self, agent_id: str, tool_names: list[str]) -> None:
+    def assign_tools_to_agent(self, agent_id: str, tool_names: list[str]) -> list[str]:
         """Assign tools to agent."""
         ...
 
@@ -46,6 +46,31 @@ class ToolManagerProtocol(Protocol):
         self, tool_name: str, parameters: dict[str, Any]
     ) -> list[str]:
         """Validate built-in tool parameters."""
+        ...
+
+    def has_tool_access(self, agent_id: str, tool_name: str) -> bool:
+        """Check if agent has access to tool."""
+        ...
+
+    def disable_builtin_tools(self, tool_names: list[str]) -> None:
+        """Disable built-in tools."""
+        ...
+
+    def enable_builtin_tools(self, tool_names: list[str]) -> None:
+        """Enable built-in tools."""
+        ...
+
+    def is_builtin_tool_required(self, tool_name: str) -> bool:
+        """Check if built-in tool is required."""
+        ...
+
+    def get_tool_summary(self, agent_id: str) -> dict[str, Any]:
+        """Get tool summary."""
+        ...
+
+    @property
+    def builtin_tools(self) -> dict[str, Any]:
+        """Get built-in tools."""
         ...
 
 

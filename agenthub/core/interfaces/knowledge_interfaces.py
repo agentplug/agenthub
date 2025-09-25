@@ -23,6 +23,10 @@ class KnowledgeManagerProtocol(Protocol):
         """Get knowledge metadata."""
         ...
 
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata (alias for get_knowledge_metadata)."""
+        ...
+
     def is_knowledge_available(self) -> bool:
         """Check if knowledge is available."""
         ...

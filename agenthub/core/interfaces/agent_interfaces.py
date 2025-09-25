@@ -57,6 +57,7 @@ class AgentWrapperProtocol(Protocol):
     agent_info: AgentInfoProtocol
     method_executor: MethodExecutorProtocol
     solve_engine: SolveEngineProtocol
+    runtime: Any
 
     def solve(
         self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
@@ -74,4 +75,20 @@ class AgentWrapperProtocol(Protocol):
 
     def get_method_info(self, method_name: str) -> dict[str, Any]:
         """Get method information."""
+        ...
+
+    def get_all_available_tools(self) -> list[str]:
+        """Get all available tools."""
+        ...
+
+    def get_tool_context_json(self) -> str:
+        """Get tool context as JSON."""
+        ...
+
+    def is_knowledge_available(self) -> bool:
+        """Check if knowledge is available."""
+        ...
+
+    def get_knowledge(self) -> str:
+        """Get injected knowledge."""
         ...

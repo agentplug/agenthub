@@ -4,6 +4,8 @@ This module provides a modular architecture organized into:
 - agents/: Agent lifecycle management, loading, and execution
 - runtime/: Runtime management and component coordination
 - common/: Shared utilities, types, and exceptions
+- interfaces/: Protocol definitions to break circular dependencies
+- di/: Dependency injection container
 """
 
 # Import from agents package
@@ -16,6 +18,18 @@ from .agents import (
     ManifestParser,
     ManifestValidationError,
     MethodExecutor,
+)
+
+# Import interfaces
+from .interfaces import (
+    AgentInfoProtocol,
+    AgentWrapperProtocol,
+    KnowledgeManagerProtocol,
+    LLMServiceProtocol,
+    MethodExecutorProtocol,
+    SolveEngineProtocol,
+    ToolManagerProtocol,
+    ToolRegistryProtocol,
 )
 
 # Import from llm package
@@ -68,6 +82,15 @@ __all__ = [
     "ManifestParser",
     "ManifestValidationError",
     "MethodExecutor",
+    # Interfaces
+    "AgentInfoProtocol",
+    "AgentWrapperProtocol",
+    "KnowledgeManagerProtocol",
+    "LLMServiceProtocol",
+    "MethodExecutorProtocol",
+    "SolveEngineProtocol",
+    "ToolManagerProtocol",
+    "ToolRegistryProtocol",
     # Tool components
     "ToolRegistry",
     "tool",
