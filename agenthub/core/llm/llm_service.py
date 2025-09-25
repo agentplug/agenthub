@@ -202,7 +202,8 @@ class CoreLLMService:
             LogAnalysis object with results
         """
         prompt = (
-            f"Analyze the following {analysis_type} text and provide insights:\n\n{text}"
+            f"Analyze the following {analysis_type} text and provide insights:\n\n"
+            f"{text}"
         )
 
         response = self.generate(prompt)
