@@ -156,6 +156,23 @@ class FrameworkSolveHandler:
         logger.info(f"   Available methods: {[m['name'] for m in agent_methods]}")
         logger.info(f"   LLM Response: {response}")
 
+        # Handle fallback response when LLM is unavailable
+        if response == "AISuite not available":
+            logger.warning("LLM service unavailable, using fallback method selection")
+            # Use first available method as fallback
+            if agent_methods:
+                fallback_method = agent_methods[0]["name"]
+                return (
+                    fallback_method,
+                    {},
+                    0.5,  # Low confidence for fallback
+                    0.5,
+                    "Fallback selection due to LLM unavailability",
+                    "No parameters extracted due to LLM unavailability",
+                )
+            else:
+                return "", {}, 0.0, 0.0, "No methods available", "No methods available"
+
         # Parse the JSON response
         import json
 
@@ -208,7 +225,8 @@ class FrameworkSolveHandler:
                 f"   Parameters: {list(method.get('parameters', {}).keys())}\n"
             )
 
-        return f"""You are an intelligent agent method selection and parameter extraction assistant.
+        return f"""You are an intelligent agent method selection
+and parameter extraction assistant.
 Your task is to analyze a user query and:
 1. Select the most appropriate method from the available options
 2. Extract the required parameters for that method
