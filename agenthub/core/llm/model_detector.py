@@ -160,7 +160,7 @@ class ModelDetector:
         """Check if Ollama is running at the given URL."""
         try:
             response = httpx.get(f"{url}/api/tags", timeout=5)
-            is_available = response.status_code == 200
+            is_available: bool = response.status_code == 200
             if is_available:
                 logger.debug("✅ Ollama available at %s", url)
             else:
@@ -190,7 +190,7 @@ class ModelDetector:
         """Check if LM Studio is running at the given URL."""
         try:
             response = httpx.get(f"{url}/models", timeout=5)
-            is_available = response.status_code == 200
+            is_available: bool = response.status_code == 200
             if is_available:
                 logger.debug("✅ LM Studio available at %s", url)
             else:
