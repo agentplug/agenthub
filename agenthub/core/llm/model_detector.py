@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ModelDetector:
     """Handles model detection and scoring for optimal model selection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the model detector."""
 
     def detect_best_model(self) -> str:
@@ -180,7 +180,8 @@ class ModelDetector:
             response = httpx.get(f"{url}/api/tags", timeout=10)
             if response.status_code == 200:
                 data = response.json()
-                return data.get("models", [])
+                models = data.get("models", [])
+                return models if isinstance(models, list) else []
         except Exception as e:
             logger.debug("Failed to get Ollama models: %s", e)
         return []

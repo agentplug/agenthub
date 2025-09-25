@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class ClientManager:
     """Manages AISuite client initialization for different providers."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the client manager."""
         pass
 

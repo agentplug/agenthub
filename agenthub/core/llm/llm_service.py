@@ -59,7 +59,7 @@ class CoreLLMService:
         """
         self.model_detector = ModelDetector()
         self.client_manager = ClientManager()
-        self.cache = {}
+        self.cache: dict[str, Any] = {}
         self._model_info: ModelInfo | None = None
 
         # Determine model to use
