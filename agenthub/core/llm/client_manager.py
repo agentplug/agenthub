@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class ClientManager:
     """Manages AISuite client initialization for different providers."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the client manager."""
         pass
 
@@ -30,7 +30,7 @@ class ClientManager:
             Initialized AISuite client
         """
         try:
-            import aisuite as ai
+            import aisuite as ai  # type: ignore[import-untyped]
         except ImportError:
             logger.warning("AISuite not available, using fallback")
             return None

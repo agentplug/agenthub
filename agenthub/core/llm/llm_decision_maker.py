@@ -376,7 +376,9 @@ Expected Schema:
 
         for match in matches:
             try:
-                return json.loads(match)
+                result = json.loads(match)
+                if isinstance(result, dict):
+                    return result
             except json.JSONDecodeError:
                 continue
 
@@ -386,7 +388,9 @@ Expected Schema:
 
         for match in array_matches:
             try:
-                return json.loads(match)
+                result = json.loads(match)
+                if isinstance(result, dict):
+                    return result
             except json.JSONDecodeError:
                 continue
 

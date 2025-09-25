@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ModelDetector:
     """Handles model detection and scoring for optimal model selection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the model detector."""
 
     def detect_best_model(self) -> str:
@@ -160,7 +160,7 @@ class ModelDetector:
         """Check if Ollama is running at the given URL."""
         try:
             response = httpx.get(f"{url}/api/tags", timeout=5)
-            is_available = response.status_code == 200
+            is_available: bool = response.status_code == 200
             if is_available:
                 logger.debug("✅ Ollama available at %s", url)
             else:
@@ -180,7 +180,8 @@ class ModelDetector:
             response = httpx.get(f"{url}/api/tags", timeout=10)
             if response.status_code == 200:
                 data = response.json()
-                return data.get("models", [])
+                models = data.get("models", [])
+                return models if isinstance(models, list) else []
         except Exception as e:
             logger.debug("Failed to get Ollama models: %s", e)
         return []
@@ -189,7 +190,7 @@ class ModelDetector:
         """Check if LM Studio is running at the given URL."""
         try:
             response = httpx.get(f"{url}/models", timeout=5)
-            is_available = response.status_code == 200
+            is_available: bool = response.status_code == 200
             if is_available:
                 logger.debug("✅ LM Studio available at %s", url)
             else:
