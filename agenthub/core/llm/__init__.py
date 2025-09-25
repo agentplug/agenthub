@@ -9,7 +9,6 @@ from .client_manager import ClientManager
 from .llm_decision_maker import DecisionResult, LLMDecisionMaker, StructuredDataResult
 from .llm_service import (
     CoreLLMService,
-    LogAnalysis,
     get_shared_llm_service,
     reset_shared_llm_service,
 )
@@ -21,7 +20,6 @@ __all__ = [
     "CoreLLMService",
     "DecisionResult",
     "LLMDecisionMaker",
-    "LogAnalysis",
     "ModelConfig",
     "ModelDetector",
     "ModelInfo",

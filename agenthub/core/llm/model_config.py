@@ -26,7 +26,7 @@ class ModelConfig:
 
     # Cloud model providers and their models
     CLOUD_MODELS = {
-        "openai": ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+        "openai": ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini", "gpt-3.5-turbo"],
         "anthropic": ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022"],
         "google": ["gemini-1.5-pro", "gemini-1.5-flash"],
         "deepseek": ["deepseek-chat", "deepseek-coder"],

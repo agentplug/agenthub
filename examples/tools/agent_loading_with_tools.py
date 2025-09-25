@@ -126,7 +126,7 @@ def example_6_web_search_agent():
     print("\n📋 Example 6: Web Search Agent")
     agent = ah.load_agent(
         "agentplug/analysis-agent",
-        external_tools=["web_search", "add", "subtract", "multiply", "divide"]
+        external_tools=["web_search", "add", "subtract", "multiply", "divide"],
     )
     question = "Who is the US President 2025?"
     print(f"📄 Input: {question}")
@@ -157,21 +157,21 @@ if __name__ == "__main__":
     print("=" * 50)
     print("Each example will pause for you to review the results.")
 
-    # # Run examples with pauses
-    # example_1_basic_agent()
-    # wait_for_key("Press Enter to continue to Example 2...")
+    # Run examples with pauses
+    example_1_basic_agent()
+    wait_for_key("Press Enter to continue to Example 2...")
 
-    # example_2_agent_with_single_tool()
-    # wait_for_key("Press Enter to continue to Example 3...")
+    example_2_agent_with_single_tool()
+    wait_for_key("Press Enter to continue to Example 3...")
 
-    # example_3_agent_with_multiple_tools()
-    # wait_for_key("Press Enter to continue to Example 4...")
+    example_3_agent_with_multiple_tools()
+    wait_for_key("Press Enter to continue to Example 4...")
 
-    # example_4_math_focused_agent()
-    # wait_for_key("Press Enter to continue to Example 5...")
+    example_4_math_focused_agent()
+    wait_for_key("Press Enter to continue to Example 5...")
 
-    # example_5_compare_numbers_agent()
-    # wait_for_key("Press Enter to continue to Example 6...")
+    example_5_compare_numbers_agent()
+    wait_for_key("Press Enter to continue to Example 6...")
 
     example_6_web_search_agent()
     wait_for_key("Press Enter to finish...")

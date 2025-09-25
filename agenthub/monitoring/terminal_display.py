@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-from agenthub.monitoring.llm_analyzer import LogAnalysis
+from agenthub.core.llm.model_config import LogAnalysis
 
 
 class TerminalDisplay:
@@ -89,8 +89,8 @@ class TerminalDisplay:
         # Render status section
         self._render_status()
 
-        # Render suggestions if any
-        if self.current_analysis and self.current_analysis.suggestions:
+        # Render recommendations if any
+        if self.current_analysis and self.current_analysis.recommendations:
             self._render_suggestions()
 
         # Render footer
@@ -142,10 +142,12 @@ class TerminalDisplay:
 
     def _render_suggestions(self) -> None:
         """Render suggestions section"""
-        print("💡 Suggestions:")
+        print("💡 Recommendations:")
         if self.current_analysis:
-            for i, suggestion in enumerate(self.current_analysis.suggestions, 1):
-                print(f"   {i}. {suggestion}")
+            for i, recommendation in enumerate(
+                self.current_analysis.recommendations, 1
+            ):
+                print(f"   {i}. {recommendation}")
         print()
 
     def _render_footer(self) -> None:
@@ -208,10 +210,10 @@ class TerminalDisplay:
                 print(f"   {i}. {insight}")
             print()
 
-        if analysis.suggestions:
-            print("💡 Suggestions:")
-            for i, suggestion in enumerate(analysis.suggestions, 1):
-                print(f"   {i}. {suggestion}")
+        if analysis.recommendations:
+            print("💡 Recommendations:")
+            for i, recommendation in enumerate(analysis.recommendations, 1):
+                print(f"   {i}. {recommendation}")
             print()
 
         print("=" * 80)

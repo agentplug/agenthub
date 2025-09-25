@@ -33,7 +33,7 @@ from .interfaces import (
 )
 
 # Import from llm package
-from .llm import CoreLLMService, LogAnalysis
+from .llm import CoreLLMService
 
 # Import from mcp package
 from .mcp import (
@@ -113,7 +113,6 @@ __all__ = [
     "get_tool_injector",
     # LLM components (new)
     "CoreLLMService",
-    "LogAnalysis",
     # Unified exceptions
     "AgentHubError",
     "ValidationError",
