@@ -10,7 +10,7 @@
 
 ## 📋 **Summary**
 
-This document outlines the design and implementation of a document retrieval tool for AgentHub that leverages LlamaIndex, FAISS, and modern LLMs to provide efficient document search and question-answering capabilities. The tool supports two return formats: **`chunks`** (raw chunks with metadata) and **`answer`** (synthesized answers), with persistent indexing for optimal performance.
+This document outlines the design and implementation of a document retrieval tool for AgentHub that leverages LlamaIndex's optimized vector store and modern LLMs to provide efficient document search and question-answering capabilities. The tool supports two return formats: **`chunks`** (raw chunks with metadata) and **`answer`** (synthesized answers), with persistent indexing and intelligent LLM-based reranking for optimal performance.
 
 ### **Key Features**
 - **Persistent Indexing**: Collections are built once and reused for all queries
@@ -18,6 +18,9 @@ This document outlines the design and implementation of a document retrieval too
 - **AgentHub Integration**: Seamless integration with AgentHub's tool system
 - **Scalable Architecture**: Supports large document collections efficiently
 - **Flexible Document Support**: Handles PDF, TXT, MD, DOCX, and HTML files
+- **LLM-Based Reranking**: Intelligent reranking using modern LLMs for improved relevance
+- **Optimized Performance**: LlamaIndex-only approach for maximum efficiency
+- **Smart Caching**: Document processing cache to avoid reprocessing
 
 ### **Architecture Overview**
 
@@ -25,31 +28,33 @@ This document outlines the design and implementation of a document retrieval too
 graph TB
     subgraph "Collection Building (One-Time)"
         A[Documents Directory] --> B[build_collections.py]
-        B --> C[LlamaIndex Processing]
-        C --> D[FAISS Index Creation]
-        D --> E[Persistent Storage]
+        B --> C[LlamaIndex SimpleDirectoryReader]
+        C --> D[Document Processing & Caching]
+        D --> E[LlamaIndex VectorStoreIndex]
+        E --> F[Persistent Storage]
     end
     
     subgraph "Tool Execution (Fast Queries)"
-        F[User Query] --> G[document_retrieval Tool]
-        G --> H[Load Pre-built Index]
-        H --> I[FAISS Search]
-        I --> J{Return Format}
-        J -->|chunks| K[Return Raw Chunks]
-        J -->|answer| L[Synthesize Answers]
-        L --> M[Return Synthesized Answers]
+        G[User Query] --> H[document_retrieval Tool]
+        H --> I[Load Pre-built Index]
+        I --> J[LlamaIndex Similarity Search]
+        J --> K[LLM-Based Reranking]
+        K --> L{Return Format}
+        L -->|chunks| M[Return Reranked Chunks]
+        L -->|answer| N[Synthesize Answers]
+        N --> O[Return Synthesized Answers]
     end
     
     subgraph "AgentHub Integration"
-        N[Agent Load] --> O[external_tools Parameter]
-        O --> P[Tool Context Injection]
-        P --> Q[Agent Execution]
-        Q --> G
+        P[Agent Load] --> Q[external_tools Parameter]
+        Q --> R[Tool Context Injection]
+        R --> S[Agent Execution]
+        S --> H
     end
     
-    E -.-> H
-    K --> R[Response to User]
-    M --> R
+    F -.-> I
+    M --> T[Response to User]
+    O --> T
 ```
 
 ## 🏗️ **Tool Architecture**
@@ -59,7 +64,7 @@ graph TB
 ```python
 @tool(
     name="document_retrieval",
-    description="Retrieve relevant documents from a collection using RAG",
+    description="Retrieve relevant documents from a collection using RAG with LLM-based reranking",
     namespace="rag"
 )
 def document_retrieval(
@@ -68,10 +73,12 @@ def document_retrieval(
     top_k: int = 5,
     return_format: str = "chunks",  # "chunks" or "answer"
     similarity_threshold: float = 0.7,
+    enable_reranking: bool = True,
+    rerank_model: str = None,
     **kwargs
 ) -> dict:
     """
-    Retrieve relevant documents from a pre-indexed collection.
+    Retrieve relevant documents from a pre-indexed collection with intelligent reranking.
     
     Args:
         query: The search query
@@ -79,6 +86,8 @@ def document_retrieval(
         top_k: Number of top relevant chunks to retrieve
         return_format: "chunks" (raw chunks) or "answer" (synthesized answers)
         similarity_threshold: Minimum similarity score for chunks
+        enable_reranking: Whether to use LLM-based reranking (default: True)
+        rerank_model: Model to use for reranking (default: from environment)
         **kwargs: Additional parameters
     
     Returns:
@@ -91,49 +100,83 @@ def document_retrieval(
 #### **A. Collection Manager**
 
 ```python
+# NOTE: This is a design template showing the key patterns and structure.
+# Some methods contain placeholder implementations that need to be completed
+# based on your specific LLM provider and requirements.
+
+import os
+import json
+import asyncio
+import time
+import re
+from pathlib import Path
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+from dataclasses import dataclass
+
+from llama_index.core import (
+    SimpleDirectoryReader,
+    StorageContext,
+    VectorStoreIndex,
+    load_index_from_storage,
+    Document,
+)
+
+@dataclass
+class CollectionInfo:
+    """Information about a document collection"""
+    id: str
+    document_count: int
+    created_at: datetime
+    chunk_size: int
+    chunk_overlap: int
+    documents_path: str
+
 class CollectionManager:
-    """Manages persistent document collections and their FAISS indices"""
+    """Manages persistent document collections and their LlamaIndex indices"""
     
     def __init__(self, storage_path: str = "~/.agenthub/collections"):
         self.storage_path = Path(storage_path).expanduser()
         self.storage_path.mkdir(parents=True, exist_ok=True)
         self.collections = {}  # collection_id -> CollectionInfo
-        self.indices = {}      # collection_id -> FAISSIndex
+        self.indices = {}      # collection_id -> VectorStoreIndex
+        self.cache_file = self.storage_path / "processed_documents.json"
     
     def create_collection(
         self, 
         collection_id: str, 
-        documents: list[Document],
+        documents_path: str,
         chunk_size: int = 512,
-        chunk_overlap: int = 50
+        chunk_overlap: int = 50,
+        file_extensions: list = None
     ) -> str:
         """Create and persist a new collection (ONE-TIME OPERATION)"""
         
         print(f"🔨 Building index for collection '{collection_id}'...")
-        print(f"   📄 Processing {len(documents)} documents...")
+        print(f"   📄 Processing documents from: {documents_path}")
         
-        # 1. Process documents with LlamaIndex (ONE-TIME)
-        chunks = self._process_documents_with_llamaindex(
-            documents, chunk_size, chunk_overlap
+        # 1. Load documents with caching (ONE-TIME)
+        documents = self._load_documents_with_cache(
+            documents_path, file_extensions
         )
-        print(f"   ✂️  Created {len(chunks)} chunks")
+        print(f"   📄 Loaded {len(documents)} documents")
         
-        # 2. Create FAISS index (ONE-TIME)
-        index = self._create_faiss_index(chunks)
-        print(f"   🗂️  Built FAISS index with {index.ntotal} vectors")
+        # 2. Create LlamaIndex VectorStoreIndex (ONE-TIME)
+        index = VectorStoreIndex.from_documents(documents)
+        print(f"   🗂️  Built LlamaIndex with {len(documents)} documents")
         
         # 3. Persist everything to disk (ONE-TIME)
         collection_info = CollectionInfo(
             id=collection_id,
-            chunk_count=len(chunks),
+            document_count=len(documents),
             created_at=datetime.now(),
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            embedding_dim=index.d
+            documents_path=documents_path
         )
         
-        # Save to disk
-        self._persist_collection(collection_id, collection_info, index, chunks)
+        # Save to disk using LlamaIndex's built-in persistence
+        self._persist_collection(collection_id, collection_info, index)
         print(f"   💾 Saved collection to {self.storage_path / collection_id}")
         
         # Load into memory for immediate use
@@ -142,6 +185,96 @@ class CollectionManager:
         
         print(f"✅ Collection '{collection_id}' ready for queries!")
         return collection_id
+    
+    def _load_documents_with_cache(self, documents_path: str, file_extensions: list = None):
+        """Load documents with smart caching to avoid reprocessing"""
+        if file_extensions is None:
+            file_extensions = [".pdf", ".txt", ".md", ".docx", ".html", ".csv", ".json", ".xml", ".pptx", ".xlsx", ".xls", ".doc"]
+        
+        # Check if we have cached processed documents
+        cache_file = self.storage_path / f"{Path(documents_path).name}_processed_documents.json"
+        if cache_file.exists():
+            print(f"   📋 Loading documents from cache: {cache_file}")
+            with open(cache_file, "r", encoding="utf-8") as file:
+                cached_docs = json.load(file)
+            return [Document(text=doc["text"], metadata=doc["metadata"]) for doc in cached_docs]
+        
+        # Process documents with LlamaIndex SimpleDirectoryReader
+        print(f"   🔄 Processing documents from directory: {documents_path}")
+        documents = SimpleDirectoryReader(
+            documents_path,
+            recursive=True,
+            required_exts=file_extensions,
+            encoding="utf-8"
+        ).load_data(show_progress=True, num_workers=1)
+        
+        # Cache processed documents
+        processed_docs = [{"text": doc.text, "metadata": doc.metadata} for doc in documents]
+        print(f"   💾 Saving processed documents to cache: {cache_file}")
+        with open(cache_file, "w", encoding="utf-8") as file:
+            json.dump(processed_docs, file, indent=4)
+        
+        return documents
+    
+    def load_collection(self, collection_id: str) -> CollectionInfo:
+        """Load a collection from storage"""
+        if collection_id in self.collections:
+            return self.collections[collection_id]
+        
+        collection_path = self.storage_path / collection_id
+        if not collection_path.exists():
+            raise CollectionNotFoundError(f"Collection '{collection_id}' not found")
+        
+        # Load collection info
+        info_file = collection_path / "collection_info.json"
+        with open(info_file, 'r') as f:
+            info_data = json.load(f)
+        
+        collection_info = CollectionInfo(**info_data)
+        
+        # Load LlamaIndex from storage
+        try:
+            storage_context = StorageContext.from_defaults(
+                persist_dir=str(collection_path / "storage")
+            )
+            index = load_index_from_storage(storage_context)
+            
+            # Cache in memory
+            self.collections[collection_id] = collection_info
+            self.indices[collection_id] = index
+            
+            return collection_info
+        except Exception as e:
+            raise RetrievalError(f"Failed to load collection '{collection_id}': {e}")
+    
+    def _persist_collection(self, collection_id: str, collection_info: CollectionInfo, index: VectorStoreIndex):
+        """Persist collection to disk"""
+        collection_path = self.storage_path / collection_id
+        collection_path.mkdir(exist_ok=True)
+        
+        # Save collection info
+        info_file = collection_path / "collection_info.json"
+        with open(info_file, 'w') as f:
+            json.dump({
+                "id": collection_info.id,
+                "document_count": collection_info.document_count,
+                "created_at": collection_info.created_at.isoformat(),
+                "chunk_size": collection_info.chunk_size,
+                "chunk_overlap": collection_info.chunk_overlap,
+                "documents_path": collection_info.documents_path
+            }, f, indent=2)
+        
+        # Persist LlamaIndex
+        storage_path = collection_path / "storage"
+        index.storage_context.persist(persist_dir=str(storage_path))
+
+class CollectionNotFoundError(Exception):
+    """Collection not found error"""
+    pass
+
+class RetrievalError(Exception):
+    """Error during retrieval process"""
+    pass
 ```
 
 #### **B. Persistent Storage Structure**
@@ -150,19 +283,22 @@ class CollectionManager:
 ~/.agenthub/collections/
 ├── company_docs/
 │   ├── collection_info.json      # Metadata
-│   ├── faiss_index.bin          # FAISS index (binary)
-│   ├── chunks.json              # Chunk data
-│   └── embeddings.npy           # Embeddings cache
+│   ├── storage/                  # LlamaIndex storage directory
+│   │   ├── docstore.json
+│   │   ├── index_store.json
+│   │   ├── vector_store.json
+│   │   └── metadata.json
+│   └── company_docs_processed_documents.json  # Document cache
 ├── research_papers/
 │   ├── collection_info.json
-│   ├── faiss_index.bin
-│   ├── chunks.json
-│   └── embeddings.npy
+│   ├── storage/
+│   │   └── ...
+│   └── research_papers_processed_documents.json
 └── legal_docs/
     ├── collection_info.json
-    ├── faiss_index.bin
-    ├── chunks.json
-    └── embeddings.npy
+    ├── storage/
+    │   └── ...
+    └── legal_docs_processed_documents.json
 ```
 
 ### **3. Flexible Return Format System**
@@ -171,64 +307,206 @@ class CollectionManager:
 
 ```python
 class DocumentRetrievalEngine:
-    """Main retrieval engine with flexible return formats"""
+    """Main retrieval engine with flexible return formats and LLM-based reranking"""
     
     def __init__(self, collection_manager: CollectionManager):
         self.collection_manager = collection_manager
-        self.embedding_model = self._setup_embeddings()
         self.synthesis_llm = self._setup_synthesis_llm()  # Small, fast LLM
+        self.rerank_llm = self._setup_rerank_llm()  # LLM for reranking
+        self.request_timeout_sec = 20
     
-    def retrieve(
+    async def retrieve(
         self, 
         query: str, 
         collection_id: str, 
         top_k: int = 5,
         return_format: str = "chunks",
-        similarity_threshold: float = 0.7
+        similarity_threshold: float = 0.7,
+        enable_reranking: bool = True
     ) -> dict:
-        """Main retrieval method"""
+        """Main retrieval method with optional LLM-based reranking"""
         
         # 1. Load collection (if not already loaded)
         collection = self.collection_manager.load_collection(collection_id)
+        index = self.collection_manager.indices[collection_id]
         
-        # 2. Embed query
-        query_embedding = self.embedding_model.embed_query(query)
+        # 2. LlamaIndex similarity search
+        retriever = index.as_retriever(similarity_top_k=top_k)
+        nodes = retriever.retrieve(query)
+        chunks = [{"text": node.text, "metadata": node.metadata, "score": getattr(node, 'score', 0.0)} for node in nodes]
         
-        # 3. FAISS similarity search
-        chunks = self._search_faiss(collection_id, query_embedding, top_k, similarity_threshold)
+        # 3. Apply similarity threshold filter
+        chunks = [chunk for chunk in chunks if chunk["score"] >= similarity_threshold]
+        
+        # 4. Optional LLM-based reranking
+        if enable_reranking and chunks:
+            chunk_texts = [chunk["text"] for chunk in chunks]
+            reranked_texts = await self._rerank_results(query, chunk_texts)
+            
+            # Reorder chunks based on reranking
+            reranked_chunks = []
+            for text in reranked_texts:
+                for chunk in chunks:
+                    if chunk["text"] == text:
+                        reranked_chunks.append(chunk)
+                        break
+            chunks = reranked_chunks
         
         if return_format == "chunks":
             return self._format_chunks_response(query, collection_id, chunks)
         elif return_format == "answer":
-            synthesized_answers = self._synthesize_answers(query, chunks)
+            synthesized_answers = await self._synthesize_answers(query, chunks)
             return self._format_answer_response(query, collection_id, chunks, synthesized_answers)
         else:
             raise ValueError(f"Invalid return_format: {return_format}. Must be 'chunks' or 'answer'")
     
-    def _synthesize_answers(self, query: str, chunks: list[Chunk]) -> list[dict]:
+    async def _rerank_results(self, query: str, results: list[str]) -> list[str]:
+        """Rerank retrieved passages by relevance using an LLM"""
+        if not results:
+            return results
+
+        # Key pattern from refactored_storage.py: Progressive timeout handling
+        # If LLM calls timeout, progressively reduce the number of passages
+        # This prevents infinite loops and improves reliability
+        
+        start_time = time.time()
+        current_results = results.copy()
+        max_retries = 5
+        
+        for attempt in range(max_retries):
+            try:
+                # Create ranking prompt with passage indices
+                passages = "\n\n".join([
+                    f"{i}: {text}" for i, text in enumerate(current_results)
+                ])
+                
+                ranking_prompt = self._build_ranking_prompt(query, passages)
+                
+                # Call LLM with timeout
+                response = await asyncio.wait_for(
+                    self._call_rerank_llm(ranking_prompt),
+                    timeout=self.request_timeout_sec
+                )
+                
+                # Parse response and return ranked results
+                ranked_indices = self._parse_ranking_response(response, len(current_results))
+                if ranked_indices:
+                    return [current_results[i] for i in ranked_indices if i < len(current_results)]
+                
+            except asyncio.TimeoutError:
+                # Progressive fallback: reduce passages on timeout
+                if len(current_results) > 5:
+                    current_results = current_results[:-5]
+                    print(f"Timeout on attempt {attempt + 1}, reducing to {len(current_results)} passages")
+                else:
+                    break
+            except Exception as e:
+                print(f"LLM call failed on attempt {attempt + 1}: {e}")
+                if attempt == max_retries - 1:
+                    break
+
+        # Fallback: return original results if all attempts fail
+        print(f"Reranking failed after {max_retries} attempts, returning original order")
+        return results
+
+    def _build_ranking_prompt(self, query: str, passages: str) -> str:
+        """Build the ranking prompt for the LLM"""
+        return f"""
+        You are a strict ranking engine. Given a user query and a list of 
+        passages labeled with numeric IDs, return ONLY a JSON array of the 
+        IDs sorted from most relevant to least relevant.
+        
+        Query: {query}
+        
+        Passages:
+        {passages}
+        
+        Return format: [2, 0, 1]
+        """
+
+    def _parse_ranking_response(self, response: str, max_index: int) -> list[int]:
+        """Parse LLM response to extract ranked indices"""
+        try:
+            # Extract JSON array from response
+            import re
+            json_match = re.search(r'\[[\d\s,]+\]', response)
+            if not json_match:
+                return []
+            
+            indices = json.loads(json_match.group())
+            return [idx for idx in indices if 0 <= idx < max_index]
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            return []
+
+    async def _call_rerank_llm(self, prompt: str) -> str:
+        """Call the reranking LLM asynchronously"""
+        # Key pattern from refactored_storage.py: Use asyncio.to_thread for sync clients
+        def _sync_call():
+            # This would be implemented based on your chosen LLM provider
+            # Example for aisuite (as used in refactored_storage.py):
+            # return self.rerank_llm.generate(prompt)
+            # Example for OpenAI:
+            # return self.rerank_llm.chat.completions.create(...)
+            pass
+        
+        return await asyncio.to_thread(_sync_call)
+
+    async def _synthesize_answers(self, query: str, chunks: list[dict]) -> list[dict]:
         """Generate synthesized answers for each chunk using small LLM"""
         synthesized_answers = []
         
         for i, chunk in enumerate(chunks):
-            # Use small, fast LLM for synthesis
+            # Key pattern from refactored_storage.py: Simple, focused prompts
             synthesis_prompt = f"""
-            Given this query: "{query}"
-            And this document chunk: "{chunk.text}"
+            Query: "{query}"
+            Document chunk: "{chunk['text']}"
             
-            Provide a brief, focused answer (1-2 sentences) that addresses the query using information from this chunk.
-            If the chunk doesn't contain relevant information, respond with "Not relevant".
+            Provide a brief answer (1-2 sentences) that addresses the query using this chunk.
+            If not relevant, respond with "Not relevant".
             """
             
-            answer = self.synthesis_llm.generate(synthesis_prompt)
+            answer = await self._call_synthesis_llm(synthesis_prompt)
             
             synthesized_answers.append({
                 "chunk_index": i,
                 "answer": answer,
-                "relevance_score": chunk.score,
-                "source_metadata": chunk.metadata
+                "relevance_score": chunk.get("score", 0.0),
+                "source_metadata": chunk.get("metadata", {})
             })
         
         return synthesized_answers
+
+    async def _call_synthesis_llm(self, prompt: str) -> str:
+        """Call the synthesis LLM asynchronously"""
+        # Key pattern from refactored_storage.py: Async wrapper for sync clients
+        def _sync_call():
+            # Implementation depends on chosen LLM provider
+            # This would call your actual LLM client
+            pass
+        
+        return await asyncio.to_thread(_sync_call)
+    
+    def _setup_synthesis_llm(self):
+        """Setup synthesis LLM client"""
+        # Key pattern from refactored_storage.py: Environment-based model selection
+        model = (
+            os.getenv("SYNTHESIS_MODEL") 
+            or os.getenv("AISUITE_MODEL") 
+            or "openai:gpt-3.5-turbo"
+        )
+        # Return configured LLM client
+        pass
+    
+    def _setup_rerank_llm(self):
+        """Setup reranking LLM client"""
+        # Key pattern from refactored_storage.py: Environment-based model selection
+        model = (
+            os.getenv("RERANK_MODEL") 
+            or os.getenv("AISUITE_MODEL") 
+            or "openai:gpt-4o"
+        )
+        # Return configured LLM client
+        pass
 ```
 
 #### **B. Chunks Return Format**
@@ -749,6 +1027,84 @@ class LLMGenerationError(DocumentRetrievalError):
     pass
 ```
 
+## 🔧 **LLM Integration Strategy**
+
+### **Key Patterns Inspired by refactored_storage.py**
+
+The design incorporates proven patterns from `refactored_storage.py` without copying code directly:
+
+#### **1. Progressive Timeout Handling**
+- **Pattern**: If LLM calls timeout, progressively reduce the number of passages
+- **Benefit**: Prevents infinite loops and improves reliability
+- **Implementation**: Reduce passage count by 5 on each timeout until manageable
+
+#### **2. Environment-Based Model Selection**
+- **Pattern**: Use environment variables for model configuration with fallbacks
+- **Benefit**: Flexible deployment across different environments
+- **Implementation**: `RERANK_MODEL` → `AISUITE_MODEL` → `openai:gpt-4o`
+
+#### **3. Async Wrapper for Sync Clients**
+- **Pattern**: Use `asyncio.to_thread()` to wrap synchronous LLM clients
+- **Benefit**: Non-blocking operations without changing client libraries
+- **Implementation**: Wrap sync LLM calls in async functions
+
+#### **4. Smart Document Caching**
+- **Pattern**: Cache processed documents to avoid reprocessing
+- **Benefit**: Significant performance improvement on subsequent runs
+- **Implementation**: JSON cache with document text and metadata
+
+#### **5. Robust Error Handling**
+- **Pattern**: Comprehensive retry logic with graceful degradation
+- **Benefit**: System continues working even when LLM calls fail
+- **Implementation**: Multiple retry attempts with fallback to original order
+
+### **Inspired by refactored_storage.py Approach**
+
+The design incorporates the proven LLM integration patterns from `refactored_storage.py`:
+
+#### **1. Unified LLM Client**
+```python
+class LLMClient:
+    """Unified LLM client supporting multiple providers"""
+    
+    def __init__(self, model: str = None, request_timeout_sec: int = 20):
+        self.model = (
+            model
+            or os.getenv("RERANK_MODEL")
+            or os.getenv("AISUITE_MODEL")
+            or "openai:gpt-4o"
+        )
+        self.request_timeout_sec = request_timeout_sec
+        self._ai_client = self._setup_client()
+    
+    def _setup_client(self):
+        """Setup LLM client based on model preference"""
+        if "aisuite" in self.model:
+            import aisuite as ai
+            return ai.Client()
+        elif "openai" in self.model:
+            from openai import OpenAI
+            return OpenAI()
+        # Add more providers as needed
+    
+    async def call_llm(self, messages: list[dict]) -> dict:
+        """Unified LLM calling interface"""
+        # Implementation handles different providers
+        pass
+```
+
+#### **2. Robust Error Handling**
+- **Timeout Management**: Configurable request timeouts with progressive fallback
+- **Retry Logic**: Automatic retries with exponential backoff
+- **Graceful Degradation**: Falls back to original order if LLM fails
+- **Provider Flexibility**: Works with multiple LLM providers
+
+#### **3. Performance Optimizations**
+- **Async Operations**: Non-blocking LLM calls using `asyncio.to_thread`
+- **Progressive Limiting**: Reduces passage count on timeouts
+- **Smart Caching**: Avoids reprocessing documents
+- **Batch Processing**: Efficient handling of multiple operations
+
 ## 📝 **Dependencies**
 
 ### **Required Packages**
@@ -756,32 +1112,36 @@ class LLMGenerationError(DocumentRetrievalError):
 # Core dependencies
 agenthub>=0.1.0
 llamaindex>=0.9.0
-faiss-cpu>=1.7.4  # or faiss-gpu for GPU support
-sentence-transformers>=2.2.0
 
-# Document processing
-PyPDF2>=3.0.0
-python-docx>=0.8.11
-beautifulsoup4>=4.12.0
+# Document processing (handled by LlamaIndex)
+# LlamaIndex includes support for most file types out of the box
 
-# LLM integration
+# LLM integration (choose one or more)
+aisuite>=0.1.0  # Recommended for unified LLM access
 openai>=1.0.0
 anthropic>=0.7.0
 
-# Optional: For specific file types
+# Optional: For specific file types not supported by LlamaIndex
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+beautifulsoup4>=4.12.0
 pypdf>=3.0.0
 python-pptx>=0.6.0
 ```
 
 ## 🎯 **Key Benefits**
 
-1. **Efficient Querying**: Pre-built indices enable fast document retrieval
+1. **Efficient Querying**: Pre-built LlamaIndex indices enable fast document retrieval
 2. **Flexible Return Formats**: Users can choose between raw chunks or synthesized answers
-3. **Scalable Architecture**: Supports large document collections
+3. **Scalable Architecture**: Supports large document collections with LlamaIndex optimization
 4. **AgentHub Integration**: Seamless integration with AgentHub's tool system
 5. **Persistent Storage**: Collections survive restarts and can be shared
 6. **User Choice**: `chunks` or `answer` return format per query based on user needs
 7. **Production Ready**: Robust error handling and performance optimizations
 8. **Modular Design**: Clean separation between core infrastructure and tool implementations
+9. **LLM-Based Reranking**: Intelligent reranking improves relevance of results
+10. **Smart Caching**: Document processing cache prevents unnecessary reprocessing
+11. **Optimized Performance**: LlamaIndex-only approach for maximum efficiency
+12. **Async Support**: Non-blocking LLM operations for better performance
 
-This design provides a comprehensive, production-ready document retrieval tool that leverages LlamaIndex, FAISS, and modern LLMs while integrating seamlessly with AgentHub's tool architecture.
+This design provides a comprehensive, production-ready document retrieval tool that leverages LlamaIndex's optimized vector store and modern LLMs with intelligent reranking while integrating seamlessly with AgentHub's tool architecture.
