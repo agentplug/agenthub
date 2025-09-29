@@ -99,7 +99,7 @@ def _extract_pdf_text(pdf_content: bytes, title: str, url: str) -> dict:
             page_text = page.extract_text()
             text_content += page_text + "\n"
 
-        # Limit to first 1000 characters for snippet
+        # Create snippet from first 1000 characters
         snippet = (
             text_content[:1000] + "..." if len(text_content) > 1000 else text_content
         )
@@ -107,29 +107,34 @@ def _extract_pdf_text(pdf_content: bytes, title: str, url: str) -> dict:
         return {
             "title": title,
             "url": url,
+            "content": text_content,
             "snippet": snippet,
             "file_type": "PDF",
             "pages": len(pdf_reader.pages),
         }
     except ImportError:
+        error_msg = "PDF file detected but PyPDF2 not available. Install with: pip install PyPDF2"  # noqa: E501
         return {
             "title": title,
             "url": url,
-            "snippet": "PDF file detected but PyPDF2 not available. Install with: pip install PyPDF2",  # noqa: E501
+            "content": error_msg,
+            "snippet": error_msg,
             "file_type": "PDF",
         }
     except Exception as pdf_error:
+        error_msg = f"Error extracting PDF text: {pdf_error}"
         return {
             "title": title,
             "url": url,
-            "snippet": f"Error extracting PDF text: {pdf_error}",
+            "content": error_msg,
+            "snippet": error_msg,
             "file_type": "PDF",
         }
 
 
 def _extract_html_text(html: str, title: str, url: str) -> dict:
     """
-    Extract text from HTML content.
+    Extract text from HTML content with improved text extraction.
 
     Args:
         html: HTML content as string
@@ -142,17 +147,80 @@ def _extract_html_text(html: str, title: str, url: str) -> dict:
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
-    # crude text extraction: first 2 paragraphs
-    paragraphs = [p.get_text() for p in soup.find_all("p")]
-    snippet = " ".join(paragraphs[:2])  # Limit to first 2 paragraphs
+
+    # Remove script and style elements
+    for script in soup(["script", "style", "nav", "header", "footer", "aside"]):
+        script.decompose()
+
+    # Try multiple extraction strategies
+    text_content = ""
+
+    # Strategy 1: Look for main content areas
+    main_content = (
+        soup.find("main") or soup.find("article") or soup.find("div", class_="content")
+    )
+    if main_content:
+        text_content = main_content.get_text(separator=" ", strip=True)
+
+    # Strategy 2: If no main content, try paragraphs
+    if not text_content or len(text_content.strip()) < 50:
+        paragraphs = [p.get_text(strip=True) for p in soup.find_all("p")]
+        text_content = " ".join(paragraphs)
+
+    # Strategy 3: If still no content, try divs with text
+    if not text_content or len(text_content.strip()) < 50:
+        divs = [
+            div.get_text(strip=True)
+            for div in soup.find_all("div")
+            if div.get_text(strip=True)
+        ]
+        text_content = " ".join(divs[:5])  # Take first 5 divs
+
+    # Strategy 4: Last resort - get all text
+    if not text_content or len(text_content.strip()) < 50:
+        text_content = soup.get_text(separator=" ", strip=True)
+
+    # Clean up the text
+    text_content = " ".join(text_content.split())  # Remove extra whitespace
+
+    # Create snippet from first 500 characters
+    snippet = text_content[:500] + "..." if len(text_content) > 500 else text_content
 
     return {
         "title": title,
         "url": url,
-        "snippet": (
-            snippet[:500] + "..." if len(snippet) > 500 else snippet
-        ),  # Limit snippet length
+        "content": text_content,
+        "snippet": snippet,
     }
+
+
+def _filter_empty_content(results: list) -> list:
+    """
+    Filter out results with empty or minimal content.
+
+    Args:
+        results: List of results with content
+
+    Returns:
+        List of results with meaningful content
+    """
+    filtered_results = []
+    for result in results:
+        content = result.get("content", "")
+        snippet = result.get("snippet", "")
+
+        # Keep results that have meaningful content
+        if (content and len(content.strip()) > 50) or (
+            snippet and len(snippet.strip()) > 20
+        ):
+            filtered_results.append(result)
+        else:
+            print(
+                f"[TOOL] Filtering out result with empty content: "
+                f"{result.get('title', 'No title')}"
+            )
+
+    return filtered_results
 
 
 def _fetch_content_from_urls(search_results: list) -> list:
@@ -188,7 +256,13 @@ def _fetch_content_from_urls(search_results: list) -> list:
                     html = await response.text()
                     return _extract_html_text(html, title, url)
         except Exception as e:
-            return {"title": title, "url": url, "snippet": f"Error fetching page: {e}"}
+            error_msg = f"Error fetching page: {e}"
+            return {
+                "title": title,
+                "url": url,
+                "content": error_msg,
+                "snippet": error_msg,
+            }
 
     async def process_all_urls():
         """Process all URLs concurrently"""
@@ -204,10 +278,12 @@ def _fetch_content_from_urls(search_results: list) -> list:
                     # Handle results without URLs
                     def create_no_url_result(result_title):
                         async def no_url_result():
+                            no_url_msg = "No URL available"
                             return {
                                 "title": result_title,
                                 "url": "",
-                                "snippet": "No URL available",
+                                "content": no_url_msg,
+                                "snippet": no_url_msg,
                             }
 
                         return no_url_result
@@ -221,11 +297,13 @@ def _fetch_content_from_urls(search_results: list) -> list:
             processed_results = []
             for result in results:
                 if isinstance(result, Exception):
+                    error_msg = f"Error processing result: {result}"
                     processed_results.append(
                         {
                             "title": "Error",
                             "url": "",
-                            "snippet": f"Error processing result: {result}",
+                            "content": error_msg,
+                            "snippet": error_msg,
                         }
                     )
                 else:
@@ -289,7 +367,7 @@ def _get_additional_results(
         ddg = DDGS()
 
         # Use the same rewritten query but with more results
-        additional_results = list(ddg.text(rewritten_query, max_results=15))
+        additional_results = list(ddg.text(rewritten_query, max_results=20))
 
         # Add unique results that aren't in exclude_urls or existing_results
         existing_urls = {r.get("href", "") for r in existing_results}
@@ -308,34 +386,58 @@ def _get_additional_results(
 
 def _fetch_search_results(rewritten_query: str, exclude_urls: list) -> list:
     """
-    Fetch and filter search results from DuckDuckGo.
+    Fetch and filter search results from DuckDuckGo to ensure 10 non-empty results.
 
     Args:
         rewritten_query: The rewritten search query
         exclude_urls: List of URLs to exclude
 
     Returns:
-        List of filtered search results
+        List of filtered search results (aiming for 10+ results)
     """
     from ddgs import DDGS
 
     ddg = DDGS()
 
-    # Get more results initially to account for filtering
-    initial_results = list(ddg.text(rewritten_query, max_results=10))
+    # Get more results initially to account for filtering and empty content
+    initial_results = list(ddg.text(rewritten_query, max_results=20))
 
     # Filter out excluded URLs
     search_results = _filter_search_results(initial_results, exclude_urls)
 
     # If we don't have enough results after filtering, try to get more
-    if len(search_results) < 5:
+    if len(search_results) < 10:
         print(
             f"[TOOL] Only {len(search_results)} results after filtering, "
-            "fetching more..."
+            "fetching more to reach 10+ results..."
         )
         search_results = _get_additional_results(
             rewritten_query, exclude_urls, search_results
         )
+
+    # If still not enough, try with a simplified query
+    if len(search_results) < 10:
+        print("[TOOL] Still not enough results, trying simplified query...")
+        words = rewritten_query.split()
+        simplified_query = " ".join(words[:5])  # Take first 5 words
+        try:
+            additional_results = list(ddg.text(simplified_query, max_results=15))
+            additional_filtered = _filter_search_results(
+                additional_results, exclude_urls
+            )
+
+            # Add unique results
+            existing_urls = {r.get("href", "") for r in search_results}
+            for result in additional_filtered:
+                url = result.get("href", "")
+                if url not in existing_urls and url not in exclude_urls:
+                    search_results.append(result)
+                    if (
+                        len(search_results) >= 15
+                    ):  # Get extra to account for empty content
+                        break
+        except Exception as e:
+            print(f"[TOOL] Simplified query failed: {e}")
 
     print(f"[TOOL] Final search results count: {len(search_results)}")
     return search_results
@@ -374,6 +476,9 @@ Guidelines:
 5. Use intitle: for specific topics
 6. Keep the query focused and relevant
 7. Don't over-optimize - keep it natural
+8. IMPORTANT: If the query contains specific dates, times, or years,
+   preserve them exactly in the rewritten query
+9. For time-sensitive queries, include the specific time period
 
 Original query: {query}
 
@@ -420,6 +525,7 @@ def web_search(query: str, exclude_urls: list = None) -> dict:
         # Initialize exclude_urls if not provided
         if exclude_urls is None:
             exclude_urls = []
+        print(f"[TOOL] Excluding URLs: {exclude_urls}")
 
         # Automatically rewrite the query using AI
         rewritten_query = query_rewriter(query)
@@ -445,11 +551,39 @@ def web_search(query: str, exclude_urls: list = None) -> dict:
         # Fetch content from URLs
         results = _fetch_content_from_urls(search_results)
 
+        # Filter out results with empty content
+        filtered_results = _filter_empty_content(results)
+
+        # If we don't have enough results with content, try to get more
+        if len(filtered_results) < 10 and len(search_results) > len(filtered_results):
+            print(
+                f"[TOOL] Only {len(filtered_results)} results with content, "
+                "trying to get more..."
+            )
+            # Get more search results and try again
+            more_search_results = _fetch_search_results(rewritten_query, exclude_urls)
+            if len(more_search_results) > len(search_results):
+                additional_results = _fetch_content_from_urls(
+                    more_search_results[len(search_results) :]
+                )
+                additional_filtered = _filter_empty_content(additional_results)
+
+                # Add unique results
+                existing_urls = {r.get("url", "") for r in filtered_results}
+                for result in additional_filtered:
+                    if result.get("url", "") not in existing_urls:
+                        filtered_results.append(result)
+                        if len(filtered_results) >= 10:
+                            break
+
+        # Limit to 10 results
+        final_results = filtered_results[:10]
+
         return {
             "original_query": query,
             "rewritten_query": rewritten_query,
             "excluded_urls": exclude_urls or [],
-            "results": results,
+            "results": final_results,
         }
     except ImportError:
         return {
