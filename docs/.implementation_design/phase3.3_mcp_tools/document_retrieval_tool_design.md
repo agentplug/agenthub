@@ -2,8 +2,8 @@
 
 **Document Type**: Implementation Design  
 **Author**: AI Assistant  
-**Date Created**: 2025-06-28  
-**Last Updated**: 2025-06-28  
+**Date Created**: 2025-09-28  
+**Last Updated**: 2025-09-28  
 **Status**: Design Specification  
 **Level**: L3 - Implementation Level  
 **Audience**: Developers, Implementation Team  
@@ -61,6 +61,13 @@ graph TB
 
 ### **1. Tool Interface Design**
 
+**Purpose**: Defines the main tool interface that agents will call for document retrieval. This is the entry point that integrates with AgentHub's tool system.
+
+**Code Flow**: 
+1. Agent calls this function with a query and collection ID
+2. Function delegates to DocumentRetrievalEngine for actual processing
+3. Returns structured response based on chosen format (chunks or answers)
+
 ```python
 @tool(
     name="document_retrieval",
@@ -98,6 +105,14 @@ def document_retrieval(
 ### **2. Collection Management System**
 
 #### **A. Collection Manager**
+
+**Purpose**: Manages document collections and their persistent LlamaIndex storage. Handles the one-time collection building process and provides fast access to pre-built indices.
+
+**Code Flow**:
+1. **Initialization**: Sets up storage paths and in-memory caches
+2. **Collection Creation**: Processes documents → creates LlamaIndex → persists to disk
+3. **Collection Loading**: Loads pre-built collections from disk into memory
+4. **Caching**: Maintains both disk persistence and memory caching for performance
 
 ```python
 # NOTE: This is a design template showing the key patterns and structure.
@@ -142,6 +157,9 @@ class CollectionManager:
         self.indices = {}      # collection_id -> VectorStoreIndex
         self.cache_file = self.storage_path / "processed_documents.json"
     
+    # Collection Creation Method
+    # Purpose: One-time operation to build and persist document collections
+    # Flow: Load docs → Create LlamaIndex → Save metadata → Cache in memory
     def create_collection(
         self, 
         collection_id: str, 
@@ -186,6 +204,9 @@ class CollectionManager:
         print(f"✅ Collection '{collection_id}' ready for queries!")
         return collection_id
     
+    # Document Loading with Smart Caching
+    # Purpose: Load documents efficiently with caching to avoid reprocessing
+    # Flow: Check cache → Load from cache OR process with LlamaIndex → Save cache
     def _load_documents_with_cache(self, documents_path: str, file_extensions: list = None):
         """Load documents with smart caching to avoid reprocessing"""
         if file_extensions is None:
@@ -216,6 +237,9 @@ class CollectionManager:
         
         return documents
     
+    # Collection Loading from Storage
+    # Purpose: Load pre-built collections from disk into memory for fast access
+    # Flow: Check memory cache → Load from disk → Parse metadata → Load LlamaIndex → Cache
     def load_collection(self, collection_id: str) -> CollectionInfo:
         """Load a collection from storage"""
         if collection_id in self.collections:
@@ -247,6 +271,9 @@ class CollectionManager:
         except Exception as e:
             raise RetrievalError(f"Failed to load collection '{collection_id}': {e}")
     
+    # Collection Persistence to Disk
+    # Purpose: Save collection metadata and LlamaIndex to disk for persistence
+    # Flow: Create directory → Save metadata JSON → Persist LlamaIndex storage
     def _persist_collection(self, collection_id: str, collection_info: CollectionInfo, index: VectorStoreIndex):
         """Persist collection to disk"""
         collection_path = self.storage_path / collection_id
@@ -305,6 +332,14 @@ class RetrievalError(Exception):
 
 #### **A. Document Retrieval Engine**
 
+**Purpose**: Main retrieval engine that handles document search, LLM-based reranking, and response formatting. This is the core component that processes queries and returns results.
+
+**Code Flow**:
+1. **Query Processing**: Load collection → Perform LlamaIndex similarity search
+2. **Optional Reranking**: Use LLM to rerank results by relevance
+3. **Response Formatting**: Return either raw chunks or synthesized answers
+4. **Error Handling**: Graceful fallbacks if LLM operations fail
+
 ```python
 class DocumentRetrievalEngine:
     """Main retrieval engine with flexible return formats and LLM-based reranking"""
@@ -315,6 +350,9 @@ class DocumentRetrievalEngine:
         self.rerank_llm = self._setup_rerank_llm()  # LLM for reranking
         self.request_timeout_sec = 20
     
+    # Main Retrieval Method
+    # Purpose: Core method that processes queries and returns formatted results
+    # Flow: Load collection → LlamaIndex search → Apply threshold → Optional reranking → Format response
     async def retrieve(
         self, 
         query: str, 
@@ -360,6 +398,9 @@ class DocumentRetrievalEngine:
         else:
             raise ValueError(f"Invalid return_format: {return_format}. Must be 'chunks' or 'answer'")
     
+    # LLM-Based Reranking with Progressive Timeout Handling
+    # Purpose: Intelligently rerank search results using LLM with robust error handling
+    # Flow: Create ranking prompt → Call LLM with timeout → Parse response → Handle failures gracefully
     async def _rerank_results(self, query: str, results: list[str]) -> list[str]:
         """Rerank retrieved passages by relevance using an LLM"""
         if not results:
@@ -409,6 +450,9 @@ class DocumentRetrievalEngine:
         print(f"Reranking failed after {max_retries} attempts, returning original order")
         return results
 
+    # Ranking Prompt Builder
+    # Purpose: Create structured prompts for LLM-based ranking
+    # Flow: Format query and passages → Create clear instructions → Return prompt string
     def _build_ranking_prompt(self, query: str, passages: str) -> str:
         """Build the ranking prompt for the LLM"""
         return f"""
@@ -438,6 +482,26 @@ class DocumentRetrievalEngine:
         except (json.JSONDecodeError, ValueError, AttributeError):
             return []
 
+    # LLM Response Parser
+    # Purpose: Extract ranked indices from LLM response with robust parsing
+    # Flow: Search for JSON pattern → Parse indices → Validate bounds → Return list
+    def _parse_ranking_response(self, response: str, max_index: int) -> list[int]:
+        """Parse LLM response to extract ranked indices"""
+        try:
+            # Extract JSON array from response
+            import re
+            json_match = re.search(r'\[[\d\s,]+\]', response)
+            if not json_match:
+                return []
+            
+            indices = json.loads(json_match.group())
+            return [idx for idx in indices if 0 <= idx < max_index]
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            return []
+
+    # Async LLM Call Wrapper
+    # Purpose: Call reranking LLM asynchronously using asyncio.to_thread pattern
+    # Flow: Wrap sync LLM call → Execute in thread pool → Return response
     async def _call_rerank_llm(self, prompt: str) -> str:
         """Call the reranking LLM asynchronously"""
         # Key pattern from refactored_storage.py: Use asyncio.to_thread for sync clients
@@ -451,6 +515,9 @@ class DocumentRetrievalEngine:
         
         return await asyncio.to_thread(_sync_call)
 
+    # Answer Synthesis for Answer Format
+    # Purpose: Generate synthesized answers for each chunk using a small, fast LLM
+    # Flow: For each chunk → Create synthesis prompt → Call LLM → Format response
     async def _synthesize_answers(self, query: str, chunks: list[dict]) -> list[dict]:
         """Generate synthesized answers for each chunk using small LLM"""
         synthesized_answers = []
@@ -476,6 +543,9 @@ class DocumentRetrievalEngine:
         
         return synthesized_answers
 
+    # Synthesis LLM Call Wrapper
+    # Purpose: Call synthesis LLM asynchronously for answer generation
+    # Flow: Wrap sync LLM call → Execute in thread pool → Return answer text
     async def _call_synthesis_llm(self, prompt: str) -> str:
         """Call the synthesis LLM asynchronously"""
         # Key pattern from refactored_storage.py: Async wrapper for sync clients
@@ -486,6 +556,9 @@ class DocumentRetrievalEngine:
         
         return await asyncio.to_thread(_sync_call)
     
+    # LLM Client Setup Methods
+    # Purpose: Configure LLM clients based on environment variables with fallbacks
+    # Flow: Check env vars → Select model → Initialize client → Return configured client
     def _setup_synthesis_llm(self):
         """Setup synthesis LLM client"""
         # Key pattern from refactored_storage.py: Environment-based model selection
@@ -511,8 +584,12 @@ class DocumentRetrievalEngine:
 
 #### **B. Chunks Return Format**
 
+**Purpose**: Format response when user requests raw chunks. Returns the actual document chunks with metadata and similarity scores.
+
+**Code Flow**: Take chunks → Format with metadata → Add query info → Return structured response
+
 ```python
-def _format_chunks_response(self, query: str, collection_id: str, chunks: list[Chunk]) -> dict:
+def _format_chunks_response(self, query: str, collection_id: str, chunks: list[dict]) -> dict:
     """Format response for chunks return format"""
     return {
         "chunks": [
@@ -535,8 +612,12 @@ def _format_chunks_response(self, query: str, collection_id: str, chunks: list[C
 
 #### **C. Answer Return Format**
 
+**Purpose**: Format response when user requests synthesized answers. Returns both the original chunks and LLM-generated answers.
+
+**Code Flow**: Take chunks + synthesized answers → Format both → Add metadata → Return comprehensive response
+
 ```python
-def _format_answer_response(self, query: str, collection_id: str, chunks: list[Chunk], synthesized_answers: list[dict]) -> dict:
+def _format_answer_response(self, query: str, collection_id: str, chunks: list[dict], synthesized_answers: list[dict]) -> dict:
     """Format response for answer return format"""
     return {
         "answers": synthesized_answers,
@@ -609,6 +690,10 @@ agenthub/
 
 ### **1. Standalone Index Builder Script**
 
+**Purpose**: Command-line tool for building document collections. This is a one-time operation that processes documents and creates persistent indices.
+
+**Code Flow**: Parse arguments → Load documents → Create collection → Save to disk → Report success
+
 ```python
 #!/usr/bin/env python3
 """
@@ -620,6 +705,9 @@ import argparse
 from pathlib import Path
 from agenthub.core.tools import CollectionManager
 
+# Document Directory Scanner
+# Purpose: Recursively scan directory for supported document types
+# Flow: Scan directory → Filter by extensions → Load each document → Return list
 def load_documents_from_directory(directory_path: str, file_extensions: list[str] = None):
     """Load documents from a directory"""
     if file_extensions is None:
@@ -640,6 +728,9 @@ def load_documents_from_directory(directory_path: str, file_extensions: list[str
     print(f"✅ Loaded {len(documents)} documents")
     return documents
 
+# Document Type Router
+# Purpose: Route documents to appropriate loader based on file extension
+# Flow: Check file extension → Call specific loader → Return document object
 def load_document(file_path: Path):
     """Load a single document based on its type"""
     if file_path.suffix.lower() == ".pdf":
@@ -652,6 +743,9 @@ def load_document(file_path: Path):
     else:
         return load_text_document(file_path)  # Default to text
 
+# PDF Document Loader
+# Purpose: Extract text content from PDF files using PyPDF2
+# Flow: Open PDF → Extract text from all pages → Return document object
 def load_pdf_document(file_path: Path):
     """Load PDF document"""
     try:
@@ -673,6 +767,9 @@ def load_pdf_document(file_path: Path):
         print(f"⚠️  PyPDF2 not installed, treating {file_path} as text")
         return load_text_document(file_path)
 
+# Text Document Loader
+# Purpose: Load plain text files with UTF-8 encoding
+# Flow: Open file → Read content → Return document object with metadata
 def load_text_document(file_path: Path):
     """Load text document"""
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -684,6 +781,9 @@ def load_text_document(file_path: Path):
             }
         }
 
+# Markdown Document Loader
+# Purpose: Load markdown files preserving formatting
+# Flow: Open file → Read content → Return document object with markdown metadata
 def load_markdown_document(file_path: Path):
     """Load markdown document"""
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -695,6 +795,9 @@ def load_markdown_document(file_path: Path):
             }
         }
 
+# Main Collection Builder Function
+# Purpose: Parse command line arguments and orchestrate collection building
+# Flow: Parse args → Load documents → Create collection → Report results
 def main():
     parser = argparse.ArgumentParser(description="Build document collections for retrieval")
     parser.add_argument("--dir", required=True, help="Directory containing documents")
@@ -765,6 +868,10 @@ python build_collections.py --dir /path/to/legal_docs --collection-id legal_docs
 
 ### **1. Document Retrieval Server**
 
+**Purpose**: MCP server that exposes the document retrieval tool to AgentHub agents. Handles tool registration and collection management.
+
+**Code Flow**: Initialize collections → Register tool → Start MCP server → Handle tool calls
+
 ```python
 # document_retrieval_server.py
 from agenthub.core.tools import tool, run_resources, CollectionManager
@@ -779,6 +886,9 @@ COLLECTIONS = {
     "legal_docs": "/path/to/legal_documents"
 }
 
+# Collection Initialization Function
+# Purpose: Ensure all required collections are built before starting the server
+# Flow: Check each collection → Build if missing → Report status
 def ensure_collections_exist():
     """Ensure all collections are built"""
     for collection_id, doc_path in COLLECTIONS.items():
@@ -793,6 +903,9 @@ def ensure_collections_exist():
 # Build collections on startup
 ensure_collections_exist()
 
+# Tool Registration
+# Purpose: Register the document retrieval tool with AgentHub's MCP system
+# Flow: Define tool function → Register with @tool decorator → Handle agent calls
 @tool(name="document_retrieval", description="Retrieve documents from collections")
 def document_retrieval(query: str, collection_id: str, return_format: str = "chunks", **kwargs):
     """Tool implementation"""
@@ -806,6 +919,10 @@ if __name__ == "__main__":
 ## 🤖 **AgentHub Integration**
 
 ### **1. Agent Usage**
+
+**Purpose**: Shows how agents can use the document retrieval tool. Demonstrates the integration between AgentHub agents and external tools.
+
+**Code Flow**: Load agent with tools → Agent automatically receives tool context → Agent can call tools during execution
 
 ```python
 # Load agent with the tool
@@ -826,6 +943,10 @@ result = agent.analyze_text(
 ```
 
 ### **2. Tool Context Injection**
+
+**Purpose**: Shows the structure of tool context that gets automatically injected into agents. This enables agents to understand available tools and how to use them.
+
+**Code Flow**: AgentHub creates tool context → Injects into agent → Agent receives tool descriptions and examples
 
 The tool context is automatically injected into the agent:
 
@@ -1009,6 +1130,10 @@ result = agent.analyze_text(
 
 ### **3. Error Handling**
 
+**Purpose**: Defines custom exception classes for different types of errors in the document retrieval system. Provides clear error categorization and handling.
+
+**Code Flow**: Define base exception → Create specific exception types → Handle errors gracefully → Provide meaningful error messages
+
 ```python
 class DocumentRetrievalError(Exception):
     """Base exception for document retrieval errors"""
@@ -1027,87 +1152,14 @@ class LLMGenerationError(DocumentRetrievalError):
     pass
 ```
 
-## 🔧 **LLM Integration Strategy**
-
-### **Key Patterns Inspired by refactored_storage.py**
-
-The design incorporates proven patterns from `refactored_storage.py` without copying code directly:
-
-#### **1. Progressive Timeout Handling**
-- **Pattern**: If LLM calls timeout, progressively reduce the number of passages
-- **Benefit**: Prevents infinite loops and improves reliability
-- **Implementation**: Reduce passage count by 5 on each timeout until manageable
-
-#### **2. Environment-Based Model Selection**
-- **Pattern**: Use environment variables for model configuration with fallbacks
-- **Benefit**: Flexible deployment across different environments
-- **Implementation**: `RERANK_MODEL` → `AISUITE_MODEL` → `openai:gpt-4o`
-
-#### **3. Async Wrapper for Sync Clients**
-- **Pattern**: Use `asyncio.to_thread()` to wrap synchronous LLM clients
-- **Benefit**: Non-blocking operations without changing client libraries
-- **Implementation**: Wrap sync LLM calls in async functions
-
-#### **4. Smart Document Caching**
-- **Pattern**: Cache processed documents to avoid reprocessing
-- **Benefit**: Significant performance improvement on subsequent runs
-- **Implementation**: JSON cache with document text and metadata
-
-#### **5. Robust Error Handling**
-- **Pattern**: Comprehensive retry logic with graceful degradation
-- **Benefit**: System continues working even when LLM calls fail
-- **Implementation**: Multiple retry attempts with fallback to original order
-
-### **Inspired by refactored_storage.py Approach**
-
-The design incorporates the proven LLM integration patterns from `refactored_storage.py`:
-
-#### **1. Unified LLM Client**
-```python
-class LLMClient:
-    """Unified LLM client supporting multiple providers"""
-    
-    def __init__(self, model: str = None, request_timeout_sec: int = 20):
-        self.model = (
-            model
-            or os.getenv("RERANK_MODEL")
-            or os.getenv("AISUITE_MODEL")
-            or "openai:gpt-4o"
-        )
-        self.request_timeout_sec = request_timeout_sec
-        self._ai_client = self._setup_client()
-    
-    def _setup_client(self):
-        """Setup LLM client based on model preference"""
-        if "aisuite" in self.model:
-            import aisuite as ai
-            return ai.Client()
-        elif "openai" in self.model:
-            from openai import OpenAI
-            return OpenAI()
-        # Add more providers as needed
-    
-    async def call_llm(self, messages: list[dict]) -> dict:
-        """Unified LLM calling interface"""
-        # Implementation handles different providers
-        pass
-```
-
-#### **2. Robust Error Handling**
-- **Timeout Management**: Configurable request timeouts with progressive fallback
-- **Retry Logic**: Automatic retries with exponential backoff
-- **Graceful Degradation**: Falls back to original order if LLM fails
-- **Provider Flexibility**: Works with multiple LLM providers
-
-#### **3. Performance Optimizations**
-- **Async Operations**: Non-blocking LLM calls using `asyncio.to_thread`
-- **Progressive Limiting**: Reduces passage count on timeouts
-- **Smart Caching**: Avoids reprocessing documents
-- **Batch Processing**: Efficient handling of multiple operations
-
 ## 📝 **Dependencies**
 
 ### **Required Packages**
+
+**Purpose**: Lists all required dependencies for the document retrieval tool. Shows the simplified dependency structure using LlamaIndex-only approach.
+
+**Code Flow**: Core dependencies → LLM providers → Optional document processors
+
 ```python
 # Core dependencies
 agenthub>=0.1.0
