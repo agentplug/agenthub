@@ -74,9 +74,90 @@ def _load_model_name() -> str:
         return "openai:gpt-4o-mini"
 
 
+def _extract_pdf_text(pdf_content: bytes, title: str, url: str) -> dict:
+    """
+    Extract text from PDF content.
+
+    Args:
+        pdf_content: PDF file content as bytes
+        title: Document title
+        url: Document URL
+
+    Returns:
+        Dictionary with extracted text and metadata
+    """
+    try:
+        import io
+
+        import PyPDF2
+
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
+        text_content = ""
+
+        # Extract text from all pages
+        for page in pdf_reader.pages:
+            page_text = page.extract_text()
+            text_content += page_text + "\n"
+
+        # Limit to first 1000 characters for snippet
+        snippet = (
+            text_content[:1000] + "..." if len(text_content) > 1000 else text_content
+        )
+
+        return {
+            "title": title,
+            "url": url,
+            "snippet": snippet,
+            "file_type": "PDF",
+            "pages": len(pdf_reader.pages),
+        }
+    except ImportError:
+        return {
+            "title": title,
+            "url": url,
+            "snippet": "PDF file detected but PyPDF2 not available. Install with: pip install PyPDF2",  # noqa: E501
+            "file_type": "PDF",
+        }
+    except Exception as pdf_error:
+        return {
+            "title": title,
+            "url": url,
+            "snippet": f"Error extracting PDF text: {pdf_error}",
+            "file_type": "PDF",
+        }
+
+
+def _extract_html_text(html: str, title: str, url: str) -> dict:
+    """
+    Extract text from HTML content.
+
+    Args:
+        html: HTML content as string
+        title: Page title
+        url: Page URL
+
+    Returns:
+        Dictionary with extracted text
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    # crude text extraction: first 2 paragraphs
+    paragraphs = [p.get_text() for p in soup.find_all("p")]
+    snippet = " ".join(paragraphs[:2])  # Limit to first 2 paragraphs
+
+    return {
+        "title": title,
+        "url": url,
+        "snippet": (
+            snippet[:500] + "..." if len(snippet) > 500 else snippet
+        ),  # Limit snippet length
+    }
+
+
 def _fetch_content_from_urls(search_results: list) -> list:
     """
-    Fetch content from URLs asynchronously.
+    Fetch content from URLs asynchronously with proper event loop handling.
 
     Args:
         search_results: List of search results with URLs
@@ -85,10 +166,8 @@ def _fetch_content_from_urls(search_results: list) -> list:
         List of results with fetched content
     """
     import asyncio
-    from concurrent.futures import ThreadPoolExecutor
 
     import aiohttp
-    from bs4 import BeautifulSoup
 
     async def fetch_snippet_async(session, url, title):
         """Fetch page content asynchronously"""
@@ -96,18 +175,18 @@ def _fetch_content_from_urls(search_results: list) -> list:
             async with session.get(
                 url, timeout=aiohttp.ClientTimeout(total=10)
             ) as response:
-                html = await response.text()
-                soup = BeautifulSoup(html, "html.parser")
-                # crude text extraction: first 2 paragraphs
-                paragraphs = [p.get_text() for p in soup.find_all("p")]
-                snippet = " ".join(paragraphs[:2])  # Limit to first 2 paragraphs
-                return {
-                    "title": title,
-                    "url": url,
-                    "snippet": (
-                        snippet[:500] + "..." if len(snippet) > 500 else snippet
-                    ),  # Limit snippet length
-                }
+                content_type = response.headers.get("content-type", "").lower()
+
+                # Check if it's a PDF file
+                if "application/pdf" in content_type or url.lower().endswith(".pdf"):
+                    print(f"[TOOL] Processing PDF file: {title}")
+                    # Get PDF content as bytes
+                    pdf_content = await response.read()
+                    return _extract_pdf_text(pdf_content, title, url)
+                else:
+                    # Handle regular HTML content
+                    html = await response.text()
+                    return _extract_html_text(html, title, url)
         except Exception as e:
             return {"title": title, "url": url, "snippet": f"Error fetching page: {e}"}
 
@@ -154,19 +233,19 @@ def _fetch_content_from_urls(search_results: list) -> list:
 
             return processed_results
 
-    # Run the async function in a thread pool to avoid blocking
-    def run_async():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(process_all_urls())
-        finally:
-            loop.close()
+    # Use the current event loop if available, otherwise create a new one
+    try:
+        # Try to get the current event loop
+        asyncio.get_running_loop()
+        # If we're in an async context, we need to run in a thread
+        import concurrent.futures
 
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        results = executor.submit(run_async).result()
-
-    return results
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(asyncio.run, process_all_urls())
+            return future.result()
+    except RuntimeError:
+        # No event loop running, we can create one
+        return asyncio.run(process_all_urls())
 
 
 def _filter_search_results(results: list, exclude_urls: list) -> list:
@@ -263,7 +342,7 @@ def _fetch_search_results(rewritten_query: str, exclude_urls: list) -> list:
 
 
 def query_rewriter(query: str) -> str:
-    """Rewrite query for better search results, with fallback to original query."""
+    """Rewrite query for better search results using DuckDuckGo search operators."""
     try:
         from agenthub.core.llm.llm_service import get_shared_llm_service
 
@@ -273,23 +352,33 @@ def query_rewriter(query: str) -> str:
         print(f"[TOOL] Using model: {model_name}")
 
         prompt = f"""
-DDGS search operators
+You are a search query optimization expert. Rewrite the given query to use
+DuckDuckGo search operators for better results.
 
-Query example	Result
-cats dogs	Results about cats or dogs
-"cats and dogs"	Results for exact term "cats and dogs". If no results are
-		found, related results are shown.
-cats -dogs	Fewer dogs in results
-cats +dogs	More dogs in results
-dogs site:example.com	Pages about dogs from example.com
-cats -site:example.com	Pages about cats, excluding example.com
-intitle:dogs	Page title includes the word "dogs"
-inurl:cats	Page url includes the word "cats"
-Above is some examples of best practices to write query for search.
+DuckDuckGo Search Operators:
+- "exact phrase" - Search for exact phrase
+- term1 term2 - Results about term1 OR term2
+- term1 +term2 - Results with both term1 AND term2
+- term1 -term2 - Results with term1 but NOT term2
+- site:domain.com - Search only within specific domain
+- -site:domain.com - Exclude specific domain
+- intitle:keyword - Page title contains keyword
+- inurl:keyword - URL contains keyword
+- filetype:pdf - Search for specific file types (pdf, doc, xls, ppt, html)
 
-This is the query you need to rewrite: {query}
-Query must be similar with appropriate suggested operators.
-Just return the rewritten query, no other text.
+Guidelines:
+1. Use quotes for exact phrases when important
+2. Use + to require important terms
+3. Use - to exclude irrelevant terms
+4. Use site: for authoritative sources (gov, edu, org)
+5. Use intitle: for specific topics
+6. Keep the query focused and relevant
+7. Don't over-optimize - keep it natural
+
+Original query: {query}
+
+Rewrite this query using appropriate DuckDuckGo operators. Return only the
+optimized query, no explanations.
         """
 
         response = llm_service.generate(
@@ -302,7 +391,11 @@ Just return the rewritten query, no other text.
             print("[TOOL] LLM service unavailable, using original query")
             return query
 
-        return response
+        # Clean up the response
+        rewritten_query = response.strip().strip('"').strip("'")
+        print(f"[TOOL] Query rewritten: '{query}' -> '{rewritten_query}'")
+        return rewritten_query
+
     except Exception as e:
         print(f"[TOOL] Query rewriter failed ({e}), using original query")
         return query
@@ -337,6 +430,17 @@ def web_search(query: str, exclude_urls: list = None) -> dict:
 
         # Fetch and filter search results
         search_results = _fetch_search_results(rewritten_query, exclude_urls)
+
+        # Check if we got any search results
+        if not search_results:
+            return {
+                "original_query": query,
+                "rewritten_query": rewritten_query,
+                "excluded_urls": exclude_urls or [],
+                "error": "No search results found",
+                "message": "The search query did not return any results. Try using different keywords or a simpler query.",  # noqa: E501
+                "results": [],
+            }
 
         # Fetch content from URLs
         results = _fetch_content_from_urls(search_results)
