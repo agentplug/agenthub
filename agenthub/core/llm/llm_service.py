@@ -1,53 +1,87 @@
 """
-Core LLM Service for AgentHub
+Comprehensive LLM Service for AgentHub
 
-Provides a unified interface for LLM operations using AISuite.
-Supports multiple providers with consistent API and JSON response handling.
+A unified, reusable LLM service that provides:
+- Automatic model detection and selection
+- Multi-provider support (cloud + local)
+- Standardized API for all agents
+- Intelligent model scoring and fallbacks
+- Comprehensive logging and debugging
+
+Usage:
+    from agenthub.core.llm.llm_service import CoreLLMService, get_shared_llm_service
+
+    # Auto-detect best available model (creates new instance)
+    service = CoreLLMService()
+
+    # Use shared instance (recommended to avoid duplicate model detection logs)
+    service = get_shared_llm_service()
+
+    # Use specific model
+    service = CoreLLMService(model="ollama:gpt-oss:120b")
+
+    # Generate responses
+    response = service.generate("Hello, world!")
 """
 
-from dataclasses import dataclass
+import logging
 from typing import Any
 
+from .client_manager import ClientManager
+from .model_config import LogAnalysis, ModelInfo
+from .model_detector import ModelDetector
 
-@dataclass
-class LogAnalysis:
-    """Structured log analysis result"""
+logger = logging.getLogger(__name__)
 
-    summary: str
-    progress: int
-    status: str
-    errors: list[str]
-    suggestions: list[str]
+# Global shared instance
+_shared_llm_service: "CoreLLMService | None" = None
 
 
 class CoreLLMService:
     """
-    Core LLM service using AISuite for unified LLM operations.
+    Comprehensive LLM service providing unified access to multiple LLM providers.
 
-    Provides adaptive generation that handles both single prompts and
-    conversations, with proper system prompt management and JSON response
-    support.
+    Features:
+    - Automatic model detection and selection
+    - Multi-provider support (Ollama, LM Studio, cloud providers)
+    - Intelligent model scoring and fallbacks
+    - Shared instance management
+    - Comprehensive logging and debugging
     """
 
-    def __init__(
-        self, aisuite_client: Any = None, model: str = "openai:gpt-3.5-turbo"
-    ) -> None:
+    def __init__(self, model: str | None = None, auto_detect: bool = True):
         """
-        Initialize Core LLM Service
+        Initialize the LLM service.
 
         Args:
-            aisuite_client: Optional AISuite client instance
-            model: Model identifier in format "provider:model-name"
+            model: Specific model to use (e.g., "ollama:gpt-oss:20b")
+            auto_detect: Whether to auto-detect the best model if none specified
         """
-        self.client = aisuite_client or self._initialize_aisuite()
-        self.model = model
+        self.model_detector = ModelDetector()
+        self.client_manager = ClientManager()
         self.cache: dict[str, Any] = {}
+        self._model_info: ModelInfo | None = None
+
+        # Determine model to use
+        if model:
+            self.model = model
+            logger.info(f"🎯 Using specified model: {model}")
+        elif auto_detect:
+            self.model = self.model_detector.detect_best_model()
+            logger.info(f"🎯 Selected model: {self.model}")
+        else:
+            self.model = "fallback"
+            logger.info("🎯 Using fallback model")
+
+        # Initialize client
+        self.client = self.client_manager.initialize_client(self.model)
 
     def generate(
         self,
         input_data: str | list[dict],
         system_prompt: str | None = None,
         return_json: bool = False,
+        temperature: float = 0.0,
         **kwargs: Any,
     ) -> str:
         """
@@ -57,7 +91,9 @@ class CoreLLMService:
             input_data: Either a string (single prompt) or list of messages
             system_prompt: Optional system prompt to define AI behavior
             return_json: If True, request JSON response from AISuite
-            **kwargs: Additional parameters for AISuite
+            temperature: Controls randomness (0.0 = deterministic, 1.0 = creative).
+                        Default: 0.0 (deterministic responses)
+            **kwargs: Additional parameters for AISuite (excluding temperature)
 
         Returns:
             Generated text response from LLM
@@ -68,8 +104,30 @@ class CoreLLMService:
         try:
             # Prepare request parameters
             request_kwargs = kwargs.copy()
+
+            # Handle JSON response format for different providers
             if return_json:
-                request_kwargs["response_format"] = {"type": "json_object"}
+                if self.is_local_model():
+                    # For local models (Ollama/LM Studio), ask for JSON in prompt
+                    # instead of response_format
+                    if isinstance(input_data, str):
+                        input_data = (
+                            f"{input_data}\n\nPlease respond with valid JSON only, "
+                            "no additional text."
+                        )
+                    elif isinstance(input_data, list):
+                        # Add JSON instruction to the last user message
+                        if input_data and input_data[-1].get("role") == "user":
+                            input_data[-1]["content"] += (
+                                "\n\nPlease respond with valid JSON only, "
+                                "no additional text."
+                            )
+                else:
+                    # For cloud models, use response_format
+                    request_kwargs["response_format"] = {"type": "json_object"}
+
+            # Set temperature parameter (default: 0.0 for deterministic responses)
+            request_kwargs["temperature"] = temperature
 
             if isinstance(input_data, str):
                 # Single prompt - convert to messages format
@@ -79,9 +137,17 @@ class CoreLLMService:
                 messages.append({"role": "user", "content": input_data})
 
                 response = self.client.chat.completions.create(
-                    model=self.model, messages=messages, **request_kwargs
+                    model=self.client_manager.get_actual_model_name(self.model),
+                    messages=messages,
+                    **request_kwargs,
                 )
-                return str(response.choices[0].message.content)
+                logger.debug(f"Response type: {type(response)}")
+                logger.debug(f"Response: {response}")
+                if hasattr(response, "choices") and response.choices:
+                    return str(response.choices[0].message.content)
+                else:
+                    logger.error(f"Invalid response format: {response}")
+                    return self._fallback_response()
 
             elif isinstance(input_data, list):
                 # Messages - organize into context and focus on current
@@ -90,110 +156,130 @@ class CoreLLMService:
                 )
 
                 response = self.client.chat.completions.create(
-                    model=self.model, messages=messages, **request_kwargs
+                    model=self.client_manager.get_actual_model_name(self.model),
+                    messages=messages,
+                    **request_kwargs,
                 )
-                return str(response.choices[0].message.content)
+                logger.debug(f"Response type: {type(response)}")
+                logger.debug(f"Response: {response}")
+                if hasattr(response, "choices") and response.choices:
+                    return str(response.choices[0].message.content)
+                else:
+                    logger.error(f"Invalid response format: {response}")
+                    return self._fallback_response()
             else:
                 raise ValueError("input_data must be string or list")
         except Exception as e:
-            print(f"AISuite generation failed: {e}")
+            logger.error(f"AISuite generation failed: {e}")
             return self._fallback_response()
 
     def _organize_messages_to_aisuite_format(
         self, messages: list[dict], system_prompt: str | None = None
     ) -> list[dict]:
-        """
-        Convert conversation messages to AISuite messages format with context
-        management
-
-        Args:
-            messages: List of conversation messages
-            system_prompt: Optional system prompt to add
-
-        Returns:
-            Formatted messages list for AISuite
-        """
-        if not messages:
-            return []
-
-        # Separate context (previous messages) from current message
-        context_messages = messages[:-1] if len(messages) > 1 else []
-        current_message = messages[-1]
-
-        # Build messages list for AISuite
-        aisuite_messages = []
+        """Organize messages for AISuite format."""
+        organized_messages = []
 
         # Add system prompt if provided
         if system_prompt:
-            aisuite_messages.append({"role": "system", "content": system_prompt})
+            organized_messages.append({"role": "system", "content": system_prompt})
 
-        # Add context messages (limit to last 3-4 to avoid overwhelming)
-        if context_messages:
-            recent_messages = (
-                context_messages[-3:] if len(context_messages) > 3 else context_messages
-            )
-            for msg in recent_messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-                # Truncate long messages
-                if len(content) > 200:
-                    content = content[:200] + "..."
-                aisuite_messages.append({"role": role, "content": content})
+        # Add user messages
+        for message in messages:
+            if message.get("role") in ["user", "assistant", "system"]:
+                organized_messages.append(message)
 
-        # Add current message
-        current_content = current_message.get("content", "")
-        current_role = current_message.get("role", "user")
-        aisuite_messages.append({"role": current_role, "content": current_content})
+        return organized_messages
 
-        return aisuite_messages
-
-    def analyze_text(
-        self,
-        text: str,
-        prompt_template: str,
-        system_prompt: str | None = None,
-        return_json: bool = False,
-    ) -> str:
+    def analyze_text(self, text: str, analysis_type: str = "general") -> LogAnalysis:
         """
-        Analyze any text content using AISuite with custom prompt template
+        Analyze text using LLM for insights and recommendations.
 
         Args:
-            text: Text content to analyze
-            prompt_template: Prompt template with {text} placeholder
-            system_prompt: Optional system prompt for analysis
-            return_json: If True, request JSON response
+            text: Text to analyze
+            analysis_type: Type of analysis to perform
 
         Returns:
-            Analysis result from LLM
+            LogAnalysis object with results
         """
-        if not text:
-            return self._fallback_response()
-
-        formatted_prompt = prompt_template.format(text=text)
-        return self.generate(
-            formatted_prompt, system_prompt=system_prompt, return_json=return_json
+        prompt = (
+            f"Analyze the following {analysis_type} text and provide insights:\n\n"
+            f"{text}"
         )
 
-    def _initialize_aisuite(self) -> Any:
-        """
-        Initialize AISuite client
+        response = self.generate(prompt)
 
-        Returns:
-            AISuite client instance or None if not available
-        """
-        try:
-            import aisuite as ai  # type: ignore[import-untyped]
+        # Parse response into LogAnalysis format
+        return LogAnalysis(
+            summary=response[:200] + "..." if len(response) > 200 else response,
+            key_insights=[response],
+            recommendations=["Review the analysis above"],
+            confidence=0.8,
+        )
 
-            return ai.Client()
-        except ImportError:
-            print("Warning: AISuite not available, using fallback")
-            return None
+    def get_model_info(self) -> ModelInfo:
+        """Get information about the current model."""
+        if not self._model_info:
+            self._model_info = self._create_model_info()
+        return self._model_info
+
+    def _create_model_info(self) -> ModelInfo:
+        """Create ModelInfo object for the current model."""
+        return self.model_detector.create_model_info(
+            self.model, is_local=self.is_local_model()
+        )
+
+    def list_available_models(self) -> list[ModelInfo]:
+        """List all available models with their information."""
+        # This would require implementing model listing for each provider
+        # For now, return current model info
+        return [self.get_model_info()]
+
+    def get_current_model(self) -> str:
+        """Get the current model identifier."""
+        return self.model
+
+    def is_local_model(self) -> bool:
+        """Check if the current model is a local model."""
+        return self.model.startswith(("ollama:", "lmstudio:"))
 
     def _fallback_response(self) -> str:
-        """
-        Fallback response when AISuite is not available
-
-        Returns:
-            Fallback response string
-        """
+        """Provide fallback response when LLM is unavailable."""
         return "AISuite not available"
+
+
+# =============================================================================
+# SHARED INSTANCE MANAGEMENT
+# =============================================================================
+
+
+def get_shared_llm_service(
+    model: str | None = None, auto_detect: bool = True
+) -> CoreLLMService:
+    """
+    Get or create a shared LLM service instance.
+
+    This prevents duplicate model detection and reduces initialization overhead.
+
+    Args:
+        model: Specific model to use
+        auto_detect: Whether to auto-detect model
+
+    Returns:
+        Shared CoreLLMService instance
+    """
+    global _shared_llm_service
+
+    if _shared_llm_service is None:
+        logger.debug("Created shared CoreLLMService instance")
+        _shared_llm_service = CoreLLMService(model=model, auto_detect=auto_detect)
+    else:
+        logger.debug("Reusing shared CoreLLMService instance")
+
+    return _shared_llm_service
+
+
+def reset_shared_llm_service() -> None:
+    """Reset the shared LLM service instance."""
+    global _shared_llm_service
+    _shared_llm_service = None
+    logger.debug("Reset shared CoreLLMService instance")

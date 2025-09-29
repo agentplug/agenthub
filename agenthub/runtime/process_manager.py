@@ -46,12 +46,12 @@ class ProcessManager:
         # Initialize monitoring components if enabled
         if self.monitoring:
             try:
-                from agenthub.core.llm.llm_service import CoreLLMService
+                from agenthub.core.llm.llm_service import get_shared_llm_service
                 from agenthub.monitoring.llm_analyzer import LLMAnalyzer
                 from agenthub.monitoring.log_streamer import LogStreamer
                 from agenthub.monitoring.terminal_display import TerminalDisplay
 
-                self.core_llm = CoreLLMService()
+                self.core_llm = get_shared_llm_service()
                 self.llm_analyzer = LLMAnalyzer(self.core_llm)
                 self.log_streamer = LogStreamer()
                 self.terminal_display = TerminalDisplay()
@@ -65,12 +65,12 @@ class ProcessManager:
         """Enable or disable monitoring dynamically."""
         if enabled and not self.monitoring:
             try:
-                from agenthub.core.llm.llm_service import CoreLLMService
+                from agenthub.core.llm.llm_service import get_shared_llm_service
                 from agenthub.monitoring.llm_analyzer import LLMAnalyzer
                 from agenthub.monitoring.log_streamer import LogStreamer
                 from agenthub.monitoring.terminal_display import TerminalDisplay
 
-                self.core_llm = CoreLLMService()
+                self.core_llm = get_shared_llm_service()
                 self.llm_analyzer = LLMAnalyzer(self.core_llm)
                 self.log_streamer = LogStreamer()
                 self.terminal_display = TerminalDisplay()

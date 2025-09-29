@@ -89,12 +89,8 @@ class TerminalDisplay:
         # Render status section
         self._render_status()
 
-        # Render errors if any
-        if self.current_analysis and self.current_analysis.errors:
-            self._render_errors()
-
-        # Render suggestions if any
-        if self.current_analysis and self.current_analysis.suggestions:
+        # Render recommendations if any
+        if self.current_analysis and self.current_analysis.recommendations:
             self._render_suggestions()
 
         # Render footer
@@ -115,8 +111,8 @@ class TerminalDisplay:
     def _render_progress(self) -> None:
         """Render status section without misleading progress bar"""
         if self.current_analysis:
-            status_emoji = self._get_status_emoji(self.current_analysis.status)
-            status = self.current_analysis.status
+            status_emoji = "✅"
+            status = "completed"
         else:
             status_emoji = "🔄"
             status = "unknown"
@@ -138,18 +134,20 @@ class TerminalDisplay:
 
     def _render_errors(self) -> None:
         """Render errors section"""
-        print("❌ Errors Detected:")
+        print("📊 Key Insights:")
         if self.current_analysis:
-            for i, error in enumerate(self.current_analysis.errors, 1):
-                print(f"   {i}. {error}")
+            for i, insight in enumerate(self.current_analysis.key_insights, 1):
+                print(f"   {i}. {insight}")
         print()
 
     def _render_suggestions(self) -> None:
         """Render suggestions section"""
-        print("💡 Suggestions:")
+        print("💡 Recommendations:")
         if self.current_analysis:
-            for i, suggestion in enumerate(self.current_analysis.suggestions, 1):
-                print(f"   {i}. {suggestion}")
+            for i, recommendation in enumerate(
+                self.current_analysis.recommendations, 1
+            ):
+                print(f"   {i}. {recommendation}")
         print()
 
     def _render_footer(self) -> None:
@@ -206,16 +204,16 @@ class TerminalDisplay:
         print()
 
         # Final analysis
-        if analysis.errors:
-            print("❌ Errors Found:")
-            for i, error in enumerate(analysis.errors, 1):
-                print(f"   {i}. {error}")
+        if analysis.key_insights:
+            print("📊 Key Insights:")
+            for i, insight in enumerate(analysis.key_insights, 1):
+                print(f"   {i}. {insight}")
             print()
 
-        if analysis.suggestions:
+        if analysis.recommendations:
             print("💡 Recommendations:")
-            for i, suggestion in enumerate(analysis.suggestions, 1):
-                print(f"   {i}. {suggestion}")
+            for i, recommendation in enumerate(analysis.recommendations, 1):
+                print(f"   {i}. {recommendation}")
             print()
 
         print("=" * 80)
