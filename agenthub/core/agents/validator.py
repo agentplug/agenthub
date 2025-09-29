@@ -77,9 +77,9 @@ class InterfaceValidator:
         # Validate optional parameters section
         if "parameters" in method_def:
             parameters = method_def["parameters"]
-            if not isinstance(parameters, dict):
+            if parameters is not None and not isinstance(parameters, dict):
                 raise InterfaceValidationError(
-                    f"Method '{method_name}' parameters must be a dictionary"
+                    f"Method '{method_name}' parameters must be a dictionary or null"
                 )
 
         # Validate optional returns section
