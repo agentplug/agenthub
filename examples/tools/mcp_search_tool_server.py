@@ -526,6 +526,7 @@ def web_search(query: str, exclude_urls: list = None) -> dict:
         if exclude_urls is None:
             exclude_urls = []
         print(f"[TOOL] Excluding URLs: {exclude_urls}")
+        print(f"Number of excluded URLs: {len(exclude_urls)}")
 
         # Automatically rewrite the query using AI
         rewritten_query = query_rewriter(query)
