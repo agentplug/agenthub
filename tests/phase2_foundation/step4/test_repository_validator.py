@@ -29,10 +29,10 @@ class TestRepositoryValidator:
     def test_initialization(self):
         """Test RepositoryValidator initialization."""
         assert self.validator is not None
-        assert hasattr(self.validator, "REQUIRED_FILES")
+        assert hasattr(self.validator, "BASE_REQUIRED_FILES")
         assert hasattr(self.validator, "RECOMMENDED_FILES")
-        assert "agent.py" in self.validator.REQUIRED_FILES
-        assert "agent.yaml" in self.validator.REQUIRED_FILES
+        assert "agent.yaml" in self.validator.BASE_REQUIRED_FILES
+        assert hasattr(self.validator, "_get_required_files")
 
     def test_validate_repository_path_not_exists(self):
         """Test validation of non-existent repository path."""
@@ -41,7 +41,8 @@ class TestRepositoryValidator:
 
         assert not result.is_valid
         assert result.local_path == non_existent_path
-        assert len(result.missing_files) == len(self.validator.REQUIRED_FILES)
+        # Should return BASE_REQUIRED_FILES since path doesn't exist
+        assert len(result.missing_files) == len(self.validator.BASE_REQUIRED_FILES)
         assert "Repository path does not exist" in result.validation_errors[0]
 
     def test_validate_repository_path_not_directory(self):
@@ -60,9 +61,11 @@ class TestRepositoryValidator:
         result = self.validator.validate_repository(str(self.test_repo_path))
 
         assert not result.is_valid
-        assert len(result.missing_files) == len(self.validator.REQUIRED_FILES)
-        assert "agent.py" in result.missing_files
+        # Should have agent.yaml (base required) and agent.py (dynamically added)
+        expected_files = self.validator._get_required_files(self.test_repo_path)
+        assert len(result.missing_files) == len(expected_files)
         assert "agent.yaml" in result.missing_files
+        assert "agent.py" in result.missing_files
         # requirements.txt and README.md are recommended, not required
 
     def test_validate_repository_with_all_required_files(self):
