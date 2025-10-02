@@ -89,9 +89,9 @@ def _extract_pdf_text(pdf_content: bytes, title: str, url: str) -> dict:
     try:
         import io
 
-        import PyPDF2
+        from pypdf import PdfReader
 
-        pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
+        pdf_reader = PdfReader(io.BytesIO(pdf_content))
         text_content = ""
 
         # Extract text from all pages
