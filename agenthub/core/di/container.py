@@ -40,14 +40,14 @@ class DIContainer:
         """Get service instance."""
         # Check if singleton exists
         if interface in self._services:
-            return self._services[interface]
+            return self._services[interface]  # type: ignore[no-any-return]
 
         # Check if factory exists
         if interface in self._factories:
             instance = self._factories[interface]()
             # Cache as singleton
             self._services[interface] = instance
-            return instance
+            return instance  # type: ignore[no-any-return]
 
         raise ValueError(f"No service registered for {interface}")
 

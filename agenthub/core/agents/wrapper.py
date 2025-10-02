@@ -70,7 +70,7 @@ class AgentWrapper:
             # Import here to avoid circular dependency
             from ..mcp.agent_tool_manager import AgentToolManager
 
-            self.tool_manager = AgentToolManager(agent_info.get("manifest", {}))  # type: ignore[assignment]
+            self.tool_manager = AgentToolManager(agent_info.get("manifest", {}))
 
         # Backward compatibility properties
         self.agent_id = agent_id or self.agent_info.agent_id

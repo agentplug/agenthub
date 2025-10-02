@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from ..knowledge import KnowledgeManager
-from ..llm.llm_decision_engine import LLMDecisionEngine  # type: ignore[import-untyped]
+from ..llm.llm_decision_maker import LLMDecisionMaker
 from ..mcp.agent_tool_manager import AgentToolManager
 from ..tools.exceptions import AgentExecutionError
 from .solve.interface import AgentSolveInterface
@@ -68,7 +68,7 @@ class AgentWrapper:
         self.knowledge_manager = KnowledgeManager()
 
         # Phase 3.2: Initialize solve() components
-        self.llm_decision_engine = LLMDecisionEngine()
+        self.llm_decision_engine = LLMDecisionMaker()
         self._custom_solve_agent: AgentSolveInterface | None = None
 
     def assign_tools(self, tool_names: list[str]) -> None:
@@ -913,7 +913,7 @@ class AgentWrapper:
                 )
 
             # Use LLM to select method
-            method_name, confidence, reasoning = self.llm_decision_engine.select_method(
+            method_name, confidence, reasoning = self.llm_decision_engine.select_method(  # type: ignore[attr-defined]
                 query, agent_methods, full_context
             )
 
@@ -933,7 +933,7 @@ class AgentWrapper:
 
             # Extract parameters from query
             extracted_params, param_confidence, param_reasoning = (
-                self.llm_decision_engine.extract_parameters(
+                self.llm_decision_engine.extract_parameters(  # type: ignore[attr-defined]
                     query, method_name, method_parameters, full_context
                 )
             )
