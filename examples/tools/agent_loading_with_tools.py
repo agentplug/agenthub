@@ -127,7 +127,6 @@ def example_6_web_search_agent():
     agent = ah.load_agent(
         "agentplug/analysis-agent",
         external_tools=["web_search", "add", "subtract", "multiply", "divide"],
-        monitoring=True,
     )
     question = "Who is the US President 2025?"
     print(f"📄 Input: {question}")
@@ -145,7 +144,12 @@ def example_6_web_search_agent():
 
 def wait_for_key(message="Press Enter to continue to next example..."):
     """Wait for user input before continuing"""
-    input(f"\n⏸️  {message}")
+    try:
+        input(f"\n⏸️  {message}")
+    except EOFError:
+        # Handle non-interactive environments (like CI/CD, automated testing)
+        print(f"\n⏸️  {message} (skipped in non-interactive environment)")
+        pass
 
 
 if __name__ == "__main__":

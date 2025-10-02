@@ -28,7 +28,7 @@ import logging
 from typing import Any
 
 from .client_manager import ClientManager
-from .model_config import LogAnalysis, ModelInfo
+from .model_config import ModelInfo
 from .model_detector import ModelDetector
 
 logger = logging.getLogger(__name__)
@@ -189,32 +189,6 @@ class CoreLLMService:
                 organized_messages.append(message)
 
         return organized_messages
-
-    def analyze_text(self, text: str, analysis_type: str = "general") -> LogAnalysis:
-        """
-        Analyze text using LLM for insights and recommendations.
-
-        Args:
-            text: Text to analyze
-            analysis_type: Type of analysis to perform
-
-        Returns:
-            LogAnalysis object with results
-        """
-        prompt = (
-            f"Analyze the following {analysis_type} text and provide insights:\n\n"
-            f"{text}"
-        )
-
-        response = self.generate(prompt)
-
-        # Parse response into LogAnalysis format
-        return LogAnalysis(
-            summary=response[:200] + "..." if len(response) > 200 else response,
-            key_insights=[response],
-            recommendations=["Review the analysis above"],
-            confidence=0.8,
-        )
 
     def get_model_info(self) -> ModelInfo:
         """Get information about the current model."""

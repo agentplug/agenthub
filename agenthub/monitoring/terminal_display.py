@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-from agenthub.core.llm.llm_service import LogAnalysis
+from agenthub.core.llm.model_config import LogAnalysis
 
 
 class TerminalDisplay:
