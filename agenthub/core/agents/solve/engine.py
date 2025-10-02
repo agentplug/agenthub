@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Any
 
-# from ..agent_info import AgentInfo  # Avoid circular import
+from ...interfaces import AgentWrapperProtocol
 from .custom_handler import CustomSolveHandler
 from .framework_handler import FrameworkSolveHandler
 from .interface import AgentSolveInterface
@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 class SolveEngine:
     """Orchestrates intelligent solve functionality."""
 
-    def __init__(self, agent_wrapper: Any) -> None:
+    def __init__(
+        self, agent_wrapper: AgentWrapperProtocol, llm_service: Any = None
+    ) -> None:
         """Initialize solve engine."""
         self.agent_wrapper = agent_wrapper
         self.custom_handler = CustomSolveHandler(agent_wrapper)
-        self.framework_handler = FrameworkSolveHandler(agent_wrapper)
+        self.framework_handler = FrameworkSolveHandler(agent_wrapper, llm_service)
         self._custom_solve_agent: AgentSolveInterface | None = None
 
     def solve(

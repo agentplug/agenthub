@@ -40,9 +40,8 @@ class FileValidationResult:
 class RepositoryValidator:
     """Validates agent repository structure and requirements."""
 
-    # Required files for AgentHub compatibility
-    REQUIRED_FILES = [
-        "agent.py",  # Main agent implementation
+    # Base required files for AgentHub compatibility
+    BASE_REQUIRED_FILES = [
         "agent.yaml",  # Interface definition and configuration
     ]
 
@@ -58,6 +57,53 @@ class RepositoryValidator:
     def __init__(self) -> None:
         """Initialize the repository validator."""
         self.logger = logger
+
+    def _get_required_files(self, repo_path: Path) -> list[str]:
+        """
+        Get the required files based on agent configuration.
+
+        Args:
+            repo_path: Path to the repository
+
+        Returns:
+            List of required file names
+        """
+        required_files = self.BASE_REQUIRED_FILES.copy()
+
+        # Check agent.yaml or agent.yml to determine script file requirement
+        agent_yaml_path = repo_path / "agent.yaml"
+        agent_yml_path = repo_path / "agent.yml"
+
+        agent_config_path = None
+        if agent_yaml_path.exists():
+            agent_config_path = agent_yaml_path
+        elif agent_yml_path.exists():
+            agent_config_path = agent_yml_path
+
+        if agent_config_path:
+            try:
+                import yaml
+
+                with open(agent_config_path) as f:
+                    agent_config = yaml.safe_load(f)
+
+                if agent_config and "dana_version" in agent_config:
+                    required_files.append("agent.na")
+                    self.logger.info("Dana agent detected - requiring agent.na")
+                else:
+                    required_files.append("agent.py")
+                    self.logger.info("Python agent detected - requiring agent.py")
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to parse agent.yaml: {e}, defaulting to agent.py"
+                )
+                required_files.append("agent.py")
+        else:
+            # Default to agent.py if no agent.yaml
+            required_files.append("agent.py")
+            self.logger.info("No agent.yaml found - defaulting to agent.py")
+
+        return required_files
 
     def validate_repository(self, local_path: str) -> ValidationResult:
         """
@@ -83,7 +129,7 @@ class RepositoryValidator:
             return ValidationResult(
                 is_valid=False,
                 local_path=local_path,
-                missing_files=self.REQUIRED_FILES,
+                missing_files=self.BASE_REQUIRED_FILES,
                 validation_errors=[f"Repository path does not exist: {local_path}"],
                 warnings=[],
                 validation_time=time.time() - start_time,
@@ -94,19 +140,47 @@ class RepositoryValidator:
             return ValidationResult(
                 is_valid=False,
                 local_path=local_path,
-                missing_files=self.REQUIRED_FILES,
+                missing_files=self.BASE_REQUIRED_FILES,
                 validation_errors=[f"Path is not a directory: {local_path}"],
                 warnings=[],
                 validation_time=time.time() - start_time,
                 repository_info={},
             )
 
+        # Get dynamic required files based on agent configuration
+        required_files = self._get_required_files(repo_path)
+
         # Validate required files
         missing_files = []
         validation_errors = []
         warnings = []
 
-        for required_file in self.REQUIRED_FILES:
+        # Special handling for agent config files (agent.yaml or agent.yml)
+        agent_config_found = False
+        for config_file in ["agent.yaml", "agent.yml"]:
+            config_path = repo_path / config_file
+            if config_path.exists():
+                agent_config_found = True
+                file_result = self._validate_file(config_path)
+                if not file_result.is_file:
+                    validation_errors.append(
+                        f"Required file is not a file: {config_file}"
+                    )
+                elif not file_result.is_readable:
+                    validation_errors.append(
+                        f"Required file is not readable: {config_file}"
+                    )
+                break
+
+        if not agent_config_found:
+            missing_files.append("agent.yaml")
+            validation_errors.append("Required file missing: agent.yaml (or agent.yml)")
+
+        # Validate other required files
+        for required_file in required_files:
+            if required_file in ["agent.yaml", "agent.yml"]:
+                continue  # Already handled above
+
             file_path = repo_path / required_file
             file_result = self._validate_file(file_path)
 

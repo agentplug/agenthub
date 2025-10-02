@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Any
 
-# Removed: method_selector and parameter_extractor are now combined into single LLM call
+from ...interfaces import AgentWrapperProtocol, LLMServiceProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +12,14 @@ logger = logging.getLogger(__name__)
 class FrameworkSolveHandler:
     """Handles framework-level solve using solve-specific components."""
 
-    def __init__(self, agent_wrapper: Any) -> None:
+    def __init__(
+        self,
+        agent_wrapper: AgentWrapperProtocol,
+        llm_service: LLMServiceProtocol | None = None,
+    ) -> None:
         """Initialize framework solve handler."""
         self.agent_wrapper = agent_wrapper
-        # Removed: method_selector and parameter_extractor are now combined
+        self.llm_service = llm_service
 
     def solve(
         self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
@@ -136,13 +140,16 @@ class FrameworkSolveHandler:
             Tuple of (method_name, extracted_params, method_confidence,
                      param_confidence, method_reasoning, param_reasoning)
         """
-        from ...llm.llm_service import get_shared_llm_service
-
         # Create a combined prompt for both tasks
         combined_prompt = self._create_combined_prompt(query, agent_methods)
 
         # Use LLM service directly for combined extraction
-        llm_service = get_shared_llm_service()
+        if self.llm_service is None:
+            from ...llm.llm_service import get_shared_llm_service
+
+            llm_service = get_shared_llm_service()
+        else:
+            llm_service = self.llm_service  # type: ignore[assignment]
 
         # Create the full prompt with user query
         full_prompt = f'{combined_prompt}\n\nUser Query: "{query}"'

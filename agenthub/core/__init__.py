@@ -4,6 +4,8 @@ This module provides a modular architecture organized into:
 - agents/: Agent lifecycle management, loading, and execution
 - runtime/: Runtime management and component coordination
 - common/: Shared utilities, types, and exceptions
+- interfaces/: Protocol definitions to break circular dependencies
+- di/: Dependency injection container
 """
 
 # Import from agents package
@@ -18,8 +20,20 @@ from .agents import (
     MethodExecutor,
 )
 
+# Import interfaces
+from .interfaces import (
+    AgentInfoProtocol,
+    AgentWrapperProtocol,
+    KnowledgeManagerProtocol,
+    LLMServiceProtocol,
+    MethodExecutorProtocol,
+    SolveEngineProtocol,
+    ToolManagerProtocol,
+    ToolRegistryProtocol,
+)
+
 # Import from llm package
-from .llm import CoreLLMService, LogAnalysis
+from .llm import CoreLLMService
 
 # Import from mcp package
 from .mcp import (
@@ -68,6 +82,15 @@ __all__ = [
     "ManifestParser",
     "ManifestValidationError",
     "MethodExecutor",
+    # Interfaces
+    "AgentInfoProtocol",
+    "AgentWrapperProtocol",
+    "KnowledgeManagerProtocol",
+    "LLMServiceProtocol",
+    "MethodExecutorProtocol",
+    "SolveEngineProtocol",
+    "ToolManagerProtocol",
+    "ToolRegistryProtocol",
     # Tool components
     "ToolRegistry",
     "tool",
@@ -90,7 +113,6 @@ __all__ = [
     "get_tool_injector",
     # LLM components (new)
     "CoreLLMService",
-    "LogAnalysis",
     # Unified exceptions
     "AgentHubError",
     "ValidationError",
