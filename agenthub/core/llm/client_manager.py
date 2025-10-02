@@ -30,7 +30,7 @@ class ClientManager:
             Initialized AISuite client
         """
         try:
-            import aisuite as ai  # type: ignore[import-untyped]
+            import aisuite as ai
         except ImportError:
             logger.warning("AISuite not available, using fallback")
             return None
