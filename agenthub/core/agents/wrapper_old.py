@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from ..knowledge import KnowledgeManager
-from ..llm.llm_decision_engine import LLMDecisionEngine  # type: ignore[import-untyped]
+from ..llm.llm_decision_engine import LLMDecisionEngine
 from ..mcp.agent_tool_manager import AgentToolManager
 from ..tools.exceptions import AgentExecutionError
 from .solve.interface import AgentSolveInterface
