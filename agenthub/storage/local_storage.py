@@ -131,6 +131,7 @@ class LocalStorage:
     def _is_valid_agent_directory(self, agent_path: Path) -> bool:
         """
         Check if a directory contains a valid agent.
+        Supports both Python and Dana agents based on configuration.
 
         Args:
             agent_path: Path to the agent directory
@@ -138,11 +139,47 @@ class LocalStorage:
         Returns:
             True if the directory contains required agent files
         """
-        required_files = ["agent.yaml", "agent.py"]
+        # Check for agent config file (agent.yaml or agent.yml)
+        agent_yaml_exists = (agent_path / "agent.yaml").exists()
+        agent_yml_exists = (agent_path / "agent.yml").exists()
 
-        for required_file in required_files:
-            if not (agent_path / required_file).exists():
-                logger.debug(f"Missing required file {required_file} in {agent_path}")
+        if not agent_yaml_exists and not agent_yml_exists:
+            logger.debug(f"Missing required config file in {agent_path}")
+            return False
+
+        # Determine config file path
+        config_path = (
+            agent_path / "agent.yaml" if agent_yaml_exists else agent_path / "agent.yml"
+        )
+
+        # Check agent configuration to determine script file requirement
+        try:
+            import yaml
+
+            with open(config_path) as f:
+                agent_config = yaml.safe_load(f)
+
+            if agent_config and "dana_version" in agent_config:
+                # For Dana agents, require agent.na
+                if not (agent_path / "agent.na").exists():
+                    logger.debug(
+                        f"Missing required file agent.na (Dana agent) in {agent_path}"
+                    )
+                    return False
+            else:
+                # For Python agents or default, require agent.py
+                if not (agent_path / "agent.py").exists():
+                    logger.debug(
+                        f"Missing required file agent.py (Python agent) in {agent_path}"
+                    )
+                    return False
+        except Exception as e:
+            logger.debug(f"Error reading agent config from {config_path}: {e}")
+            # Default to requiring agent.py if config can't be read
+            if not (agent_path / "agent.py").exists():
+                logger.debug(
+                    f"Missing required file agent.py (fallback) in {agent_path}"
+                )
                 return False
 
         return True
@@ -157,7 +194,11 @@ class LocalStorage:
         Returns:
             Agent version string if available, None otherwise
         """
+        # Check for both agent.yaml and agent.yml
         manifest_path = agent_path / "agent.yaml"
+        if not manifest_path.exists():
+            manifest_path = agent_path / "agent.yml"
+
         if not manifest_path.exists():
             return None
 
