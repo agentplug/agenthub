@@ -288,6 +288,7 @@ class ProcessManager:
                     "research_agent.core.research.source_processing",
                     "research_agent.core.research.parallel_executor",
                     "research_agent.core.research.llm_processor",
+                    "research_agent.core.research.workflows",
                     "research_agent.core.tools.agenthub_mcp_client",
                 ]
 
