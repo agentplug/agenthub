@@ -219,12 +219,12 @@ optimized query, no explanations.
 
         def _get_ddgs() -> Any:
             try:
-                from duckduckgo_search import DDGS
+                from duckduckgo_search import DDGS  # type: ignore[import-not-found]
 
                 return DDGS
             except ImportError:
                 try:
-                    from ddgs import DDGS  # type: ignore[assignment]
+                    from ddgs import DDGS  # type: ignore[import-not-found,assignment]
 
                     return DDGS
                 except ImportError:
