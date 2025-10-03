@@ -123,7 +123,9 @@ class ContentFetcher:
             "snippet": no_url_msg,
         }
     
-    def _fetch_content_sync(self, search_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _fetch_content_sync(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Fallback synchronous content fetching"""
         results = []
         for r in search_results:

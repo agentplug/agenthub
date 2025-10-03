@@ -6,17 +6,17 @@ from typing import Any
 
 class ResultFilter:
     """Filters and validates search results"""
-    
+
     def __init__(self, config: Any) -> None:
         self.config = config
-    
+
     def filter_empty_content(self, results: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Filter out results with empty or minimal content.
-        
+
         Args:
             results: List of results with content
-            
+
         Returns:
             List of results with meaningful content
         """
@@ -35,25 +35,25 @@ class ResultFilter:
                     f"[TOOL] Filtering out result with empty content: "
                     f"{result.get('title', 'No title')}"
                 )
-        
+
         return filtered_results
-    
+
     def filter_search_results(
         self, results: list[dict[str, Any]], exclude_urls: list[str]
     ) -> list[dict[str, Any]]:
         """
         Filter out excluded URLs from search results.
-        
+
         Args:
             results: List of search results from DuckDuckGo
             exclude_urls: List of URLs to exclude
-            
+
         Returns:
             List of filtered results
         """
         if not exclude_urls:
             return results
-            
+
         filtered_results = []
         for result in results:
             url = result.get("href", "")
