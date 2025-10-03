@@ -367,7 +367,7 @@ class ProcessManager:
                         logger.debug("📡 No event loop found, starting in background")
                         import threading
 
-                        def run_server_in_thread():
+                        def run_server_in_thread() -> None:
                             """Run WebSocket server in dedicated thread."""
                             loop = asyncio.new_event_loop()
                             asyncio.set_event_loop(loop)

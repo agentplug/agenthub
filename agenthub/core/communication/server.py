@@ -409,7 +409,7 @@ class CommunicationServer:
         # Get agent's WebSocket connection
         client = session.get("client")
         if not client or client not in self.clients:
-            logger.warning(f"Agent client not connected: {agent_id}")
+            logger.debug(f"Agent client not connected: {agent_id}")
             return False
 
         # Send message
