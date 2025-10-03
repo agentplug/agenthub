@@ -168,7 +168,7 @@ class ProcessManager:
 
     def _stream_agent_logs(
         self, process: subprocess.Popen, agent_path: str, method: str
-    ) -> None:
+    ) -> tuple[list[str], list[str]]:
         """
         Stream agent subprocess logs in real-time via WebSocket.
 
@@ -176,15 +176,24 @@ class ProcessManager:
             process: The subprocess running the agent
             agent_path: Path to the agent
             method: Method being executed
+
+        Returns:
+            tuple: (stdout_lines, stderr_lines) collected during streaming
         """
         if not self.communication_server or not self.communication_server.is_running:
-            return
+            return ([], [])
+
+        stdout_lines: list[str] = []
+        stderr_lines: list[str] = []
 
         def stream_stdout() -> None:
             """Stream stdout logs."""
             try:
                 for line in iter(process.stdout.readline, ""):
                     if line:
+                        # Collect output for final result
+                        stdout_lines.append(line)
+
                         # Send log message via WebSocket
                         log_message = {
                             "type": "agent_log",
@@ -214,6 +223,9 @@ class ProcessManager:
             try:
                 for line in iter(process.stderr.readline, ""):
                     if line:
+                        # Collect output for final result
+                        stderr_lines.append(line)
+
                         # Send log message via WebSocket
                         log_message = {
                             "type": "agent_log",
@@ -239,14 +251,20 @@ class ProcessManager:
             except Exception as e:
                 logger.debug(f"Error streaming stderr: {e}")
 
-        # Start log streaming threads
-        stdout_thread = threading.Thread(target=stream_stdout, daemon=True)
-        stderr_thread = threading.Thread(target=stream_stderr, daemon=True)
+        # Start log streaming threads (not daemon - we need to wait for them)
+        stdout_thread = threading.Thread(target=stream_stdout)
+        stderr_thread = threading.Thread(target=stream_stderr)
 
         stdout_thread.start()
         stderr_thread.start()
 
         logger.info(f"📡 Started real-time log streaming for {agent_path}.{method}")
+
+        # Wait for threads to complete reading
+        stdout_thread.join()
+        stderr_thread.join()
+
+        return (stdout_lines, stderr_lines)
 
     def _is_noise_log(self, log_line: str) -> bool:
         """
@@ -554,16 +572,19 @@ class ProcessManager:
                     universal_newlines=True,
                 )
 
-                # Start log streaming
-                self._stream_agent_logs(process, agent_path, method)
+                # Start log streaming and collect output
+                stdout_lines, stderr_lines = self._stream_agent_logs(
+                    process, agent_path, method
+                )
 
                 # Wait for process to complete
                 try:
                     process.wait(timeout=self.timeout)
                     execution_time = time.time() - start_time
 
-                    # Get final output for result parsing
-                    stdout, stderr = process.communicate()
+                    # Use collected output from streaming
+                    stdout = "".join(stdout_lines)
+                    stderr = "".join(stderr_lines)
                     result = subprocess.CompletedProcess(
                         process.args, process.returncode, stdout, stderr
                     )
