@@ -213,8 +213,12 @@ class ProcessManager:
                         # Clean display - only show non-empty, meaningful logs
                         stripped = line.strip()
                         if stripped and not self._is_noise_log(stripped):
-                            agent_name = agent_path.split("/")[-1]
-                            logger.info(f"🤖 {agent_name}: {stripped}")
+                            # Extract message: "LEVEL:logger:message" -> "message"
+                            parts = stripped.split(":", 2)
+                            message = parts[2] if len(parts) > 2 else stripped
+                            if message:
+                                agent_name = agent_path.split("/")[-1]
+                                logger.info(f"🤖 {agent_name}: {message}")
             except Exception as e:
                 logger.debug(f"Error streaming stdout: {e}")
 
@@ -245,9 +249,12 @@ class ProcessManager:
                         # Clean display - filter noise and show only important logs
                         stripped = line.strip()
                         if stripped and not self._is_noise_log(stripped):
-                            agent_name = agent_path.split("/")[-1]
-                            # Show as INFO for cleaner output
-                            logger.info(f"🤖 {agent_name}: {stripped}")
+                            # Extract message: "LEVEL:logger:message" -> "message"
+                            parts = stripped.split(":", 2)
+                            message = parts[2] if len(parts) > 2 else stripped
+                            if message:
+                                agent_name = agent_path.split("/")[-1]
+                                logger.info(f"🤖 {agent_name}: {message}")
             except Exception as e:
                 logger.debug(f"Error streaming stderr: {e}")
 
@@ -276,59 +283,34 @@ class ProcessManager:
         Returns:
             bool: True if this is noise, False if it should be displayed
         """
-        # Extract logger name from Python logging format (before first ":")
-        # Format: "LEVEL:logger.name:actual message"
+        # Filter by logger name (Python logging format: "LEVEL:logger.name:message")
         if ":" in log_line:
-            parts = log_line.split(":", 2)  # Split max 2 times
+            parts = log_line.split(":", 2)
             if len(parts) >= 2:
                 logger_name = parts[1].strip()
 
-                # Filter research agent internal loggers
-                research_agent_internals = [
-                    "research_agent.core.research.source_processing",
-                    "research_agent.core.research.parallel_executor",
-                    "research_agent.core.research.llm_processor",
-                    "research_agent.core.research.workflows",
+                # Filter internal research agent loggers
+                internals = [
+                    "research_agent.core.research",
                     "research_agent.core.tools.agenthub_mcp_client",
                 ]
 
-                for internal in research_agent_internals:
+                for internal in internals:
                     if logger_name.startswith(internal):
                         return True
 
-        # General noise patterns
-        noise_patterns = [
-            # Stack traces and file paths
+        # Filter common noise patterns
+        noise = [
             'File "/',
-            "line ",
             "Traceback",
-            "noqa:",
-            "^^^^^",
-            "return ",
-            "pydantic",
-            "ValidationError",
-            "For further information visit",
-            "https://errors.pydantic",
-            # HTTP library debug logs
-            "HTTP Request:",
-            "HTTP/1.1",
-            "httpx:",
-            "httpcore:",
-            # Common debug prefixes
             "DEBUG:",
             "ERROR:",
-            # MCP and library internals
-            "mcp.client",
-            ".model_validate",
-            "__pydantic_validator__",
-            "MCP session initialized",
-            "Using SSE URL:",
-            "MCP libraries available",
-            # Empty or whitespace only
-            r"^\s*$",
+            "HTTP Request:",
+            "httpx:",
+            "pydantic",
         ]
 
-        for pattern in noise_patterns:
+        for pattern in noise:
             if pattern in log_line:
                 return True
         return False
