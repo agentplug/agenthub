@@ -46,12 +46,12 @@ class ProcessManager:
         # Initialize monitoring components if enabled
         if self.monitoring:
             try:
-                from agenthub.core.llm.llm_service import CoreLLMService
+                from agenthub.core.llm.llm_service import get_shared_llm_service
                 from agenthub.monitoring.llm_analyzer import LLMAnalyzer
                 from agenthub.monitoring.log_streamer import LogStreamer
                 from agenthub.monitoring.terminal_display import TerminalDisplay
 
-                self.core_llm = CoreLLMService()
+                self.core_llm = get_shared_llm_service()
                 self.llm_analyzer = LLMAnalyzer(self.core_llm)
                 self.log_streamer = LogStreamer()
                 self.terminal_display = TerminalDisplay()
@@ -65,12 +65,12 @@ class ProcessManager:
         """Enable or disable monitoring dynamically."""
         if enabled and not self.monitoring:
             try:
-                from agenthub.core.llm.llm_service import CoreLLMService
+                from agenthub.core.llm.llm_service import get_shared_llm_service
                 from agenthub.monitoring.llm_analyzer import LLMAnalyzer
                 from agenthub.monitoring.log_streamer import LogStreamer
                 from agenthub.monitoring.terminal_display import TerminalDisplay
 
-                self.core_llm = CoreLLMService()
+                self.core_llm = get_shared_llm_service()
                 self.llm_analyzer = LLMAnalyzer(self.core_llm)
                 self.log_streamer = LogStreamer()
                 self.terminal_display = TerminalDisplay()
@@ -119,7 +119,8 @@ class ProcessManager:
         if not agent_dir.exists():
             raise ValueError(f"Agent directory does not exist: {agent_path}")
 
-        agent_script = agent_dir / "agent.py"
+        # Determine agent script based on configuration
+        agent_script = self._get_agent_script(agent_path)
         if not agent_script.exists():
             raise ValueError(f"Agent script not found: {agent_script}")
 
@@ -168,6 +169,19 @@ class ProcessManager:
             python_executable = self.environment_manager.get_python_executable(
                 agent_path
             )
+
+            # Check if this is a Dana script being executed with Python
+            if agent_script.suffix == ".na" and "python" in python_executable.lower():
+                return {
+                    "error": "Dana agent execution not supported",
+                    "message": (
+                        "Dana script cannot be executed with Python. "
+                        "Dana runtime is required but not available in venv."
+                    ),
+                    "suggestion": (
+                        "Install Dana runtime or use a Python-based agent instead."
+                    ),
+                }
 
             # Execute agent in subprocess
             start_time = time.time()
@@ -449,11 +463,36 @@ class ProcessManager:
         """
         agent_dir = Path(agent_path)
 
-        required_files = ["agent.py", "agent.yaml"]
-        for file_name in required_files:
-            if not (agent_dir / file_name).exists():
-                logger.debug(f"Missing required file: {file_name}")
+        # Check agent configuration to determine required files
+        agent_config = self.environment_manager._get_agent_config(agent_path)
+
+        # Always require agent.yaml or agent.yml
+        agent_yaml_exists = (agent_dir / "agent.yaml").exists()
+        agent_yml_exists = (agent_dir / "agent.yml").exists()
+
+        if not agent_yaml_exists and not agent_yml_exists:
+            logger.debug("Missing required file: agent.yaml (or agent.yml)")
+            return False
+
+        # Check for agent script file (either agent.py or agent.na)
+        agent_py_exists = (agent_dir / "agent.py").exists()
+        agent_na_exists = (agent_dir / "agent.na").exists()
+
+        if agent_config and "dana_version" in agent_config:
+            # For Dana agents, require agent.na
+            if not agent_na_exists:
+                logger.debug("Missing required file: agent.na (Dana agent)")
                 return False
+        else:
+            # For Python agents or default, require agent.py
+            if not agent_py_exists:
+                logger.debug("Missing required file: agent.py (Python agent)")
+                return False
+
+        # Ensure only one agent script file exists
+        if agent_py_exists and agent_na_exists:
+            logger.debug("Both agent.py and agent.na found - only one should exist")
+            return False
 
         # Check virtual environment only if required
         if require_venv:
@@ -470,3 +509,30 @@ class ProcessManager:
                 return False
 
         return True
+
+    def _get_agent_script(self, agent_path: str) -> Path:
+        """
+        Get the agent script path based on agent configuration.
+        Supports both agent.py (Python) and agent.na (Dana).
+
+        Args:
+            agent_path: Path to the agent directory
+
+        Returns:
+            Path to the agent script file
+        """
+        agent_dir = Path(agent_path)
+
+        # Check agent configuration to determine script type
+        agent_config = self.environment_manager._get_agent_config(agent_path)
+
+        if agent_config and "dana_version" in agent_config:
+            # Use Dana script
+            agent_script = agent_dir / "agent.na"
+            logger.info(f"Using Dana script for agent: {agent_path}")
+        else:
+            # Default to Python script
+            agent_script = agent_dir / "agent.py"
+            logger.info(f"Using Python script for agent: {agent_path}")
+
+        return agent_script

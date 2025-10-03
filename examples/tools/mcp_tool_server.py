@@ -157,13 +157,16 @@ def process_text(text: str, operation: str = "uppercase") -> str:
 
 
 def query_rewriter(query: str) -> str:
-    import aisuite as ai
+    """Rewrite query for better search results, with fallback to original query."""
+    try:
+        from agenthub.core.llm.llm_service import get_shared_llm_service
 
-    client = ai.Client()
-    config = get_config()
-    model_name = _load_model_name()
-    print(f"[TOOL] Using model: {model_name}")
-    prompt = f"""
+        llm_service = get_shared_llm_service()
+        config = get_config()
+        model_name = _load_model_name()
+        print(f"[TOOL] Using model: {model_name}")
+
+        prompt = f"""
 DDGS search operators
 
 Query example	Result
@@ -181,14 +184,22 @@ Above is some examples of best practices to write query for search.
 This is the query you need to rewrite: {query}
 Query must be similar with appropriate suggested operators.
 Just return the rewritten query, no other text.
-    """
-    messages = [{"role": "user", "content": prompt}]
-    response = client.chat.completions.create(
-        model=_load_model_name(),
-        messages=messages,
-        temperature=config.llm_temperature,
-    )
-    return response.choices[0].message.content
+        """
+
+        response = llm_service.generate(
+            input_data=prompt,
+            temperature=config.llm_temperature,
+        )
+
+        # Check if we got a fallback response and return original query instead
+        if response == "AISuite not available" or not response.strip():
+            print("[TOOL] LLM service unavailable, using original query")
+            return query
+
+        return response
+    except Exception as e:
+        print(f"[TOOL] Query rewriter failed ({e}), using original query")
+        return query
 
 
 @tool(
@@ -205,23 +216,34 @@ def web_search(query: str) -> list:
     Returns:
         list: A list of dictionaries with 'title', 'url', and 'snippet' for each result.
     """
-    query = query_rewriter(query)
-    print(f"[TOOL] Performing web search for: '{query}' (max_results=5)")
     try:
+        # query = query_rewriter(query)
+        print(f"[TOOL] Performing web search for: '{query}' (max_results=5)")
+
         import asyncio
         from concurrent.futures import ThreadPoolExecutor
 
         import aiohttp
         from bs4 import BeautifulSoup
         from ddgs import DDGS
-    except ImportError as e:
-        raise ImportError(
-            "Required packages 'ddgs', 'beautifulsoup4', and 'aiohttp' "
-            "are not installed."
-        ) from e
 
-    ddg = DDGS()
-    search_results = list(ddg.text(query, max_results=5))
+        ddg = DDGS()
+        search_results = list(ddg.text(query, max_results=5))
+    except ImportError:
+        return [
+            {
+                "error": "DuckDuckGo search not available",
+                "message": "Please install 'ddgs' package: pip install duckduckgo-search",  # noqa: E501
+            }
+        ]
+    except Exception as e:
+        return [
+            {
+                "error": "Web search failed",
+                "message": f"Search error: {str(e)}",
+                "original_query": query,
+            }
+        ]
 
     async def fetch_snippet_async(session, url, title):
         """Fetch page content asynchronously"""

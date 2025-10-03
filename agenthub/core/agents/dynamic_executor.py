@@ -45,9 +45,18 @@ class DynamicAgentExecutor:
             DynamicExecutionError: If execution fails
         """
         try:
+            # Check if this is a Dana agent - dynamic execution only works for Python
+            agent_config = self._get_agent_config(agent_path)
+            if agent_config and "dana_version" in agent_config:
+                raise DynamicExecutionError(
+                    "Dynamic execution not supported for Dana agents. "
+                    "Use subprocess execution instead."
+                )
+
             # Clear cache to prevent state pollution between calls
             # This ensures each call gets a fresh agent class load
-            cache_key = str(Path(agent_path) / "agent.py")
+            agent_script = self._get_agent_script(agent_path)
+            cache_key = str(agent_script)
             if cache_key in self.loaded_agents:
                 del self.loaded_agents[cache_key]
 
@@ -81,9 +90,68 @@ class DynamicAgentExecutor:
             logger.error(f"Dynamic execution failed: {e}")
             return {"error": str(e)}
 
+    def _get_agent_script(self, agent_path: str) -> Path:
+        """
+        Get the agent script path based on agent configuration.
+        Supports both agent.py (Python) and agent.na (Dana).
+
+        Args:
+            agent_path: Path to the agent directory
+
+        Returns:
+            Path to the agent script file
+        """
+        agent_dir = Path(agent_path)
+
+        # Check agent configuration to determine script type
+        agent_config = self._get_agent_config(agent_path)
+
+        if agent_config and "dana_version" in agent_config:
+            # Use Dana script
+            agent_script = agent_dir / "agent.na"
+            logger.info(f"Using Dana script for dynamic execution: {agent_path}")
+        else:
+            # Default to Python script
+            agent_script = agent_dir / "agent.py"
+            logger.info(f"Using Python script for dynamic execution: {agent_path}")
+
+        return agent_script
+
+    def _get_agent_config(self, agent_path: str) -> dict[str, Any] | None:
+        """
+        Get agent configuration from agent.yaml or agent.yml file.
+
+        Args:
+            agent_path: Path to the agent directory
+
+        Returns:
+            Agent configuration dictionary or None if not found
+        """
+        agent_yaml_path = Path(agent_path) / "agent.yaml"
+        agent_yml_path = Path(agent_path) / "agent.yml"
+
+        config_path = None
+        if agent_yaml_path.exists():
+            config_path = agent_yaml_path
+        elif agent_yml_path.exists():
+            config_path = agent_yml_path
+
+        if not config_path:
+            return None
+
+        try:
+            import yaml
+
+            with open(config_path) as f:
+                return yaml.safe_load(f)  # type: ignore[no-any-return]
+        except Exception as e:
+            logger.warning(f"Failed to parse agent config: {e}")
+            return None
+
     def _load_agent_class(self, agent_path: str) -> type:
         """
-        Load agent class dynamically from agent.py file.
+        Load agent class dynamically from agent script file.
+        Supports both agent.py (Python) and agent.na (Dana).
 
         Args:
             agent_path: Path to the agent directory
@@ -94,8 +162,7 @@ class DynamicAgentExecutor:
         Raises:
             DynamicExecutionError: If loading fails
         """
-        agent_dir = Path(agent_path)
-        agent_script = agent_dir / "agent.py"
+        agent_script = self._get_agent_script(agent_path)
 
         if not agent_script.exists():
             raise DynamicExecutionError(f"Agent script not found: {agent_script}")

@@ -56,8 +56,11 @@ class AgentLoader:
             raise AgentLoadError(f"Invalid agent structure: {agent_path}")
 
         try:
-            # Parse manifest
+            # Parse manifest (check for both agent.yaml and agent.yml)
             manifest_file = agent_dir / "agent.yaml"
+            if not manifest_file.exists():
+                manifest_file = agent_dir / "agent.yml"
+
             manifest = self.manifest_parser.parse_manifest(str(manifest_file))
 
             # Validate interface
@@ -123,6 +126,7 @@ class AgentLoader:
     ) -> bool:
         """
         Validate that an agent has the required structure.
+        Supports both Python and Dana agents based on configuration.
 
         Args:
             agent_path: Path to the agent directory
@@ -133,12 +137,36 @@ class AgentLoader:
         """
         agent_dir = Path(agent_path)
 
-        # Check required files
-        required_files = ["agent.py", "agent.yaml"]
-        for file_name in required_files:
-            if not (agent_dir / file_name).exists():
-                logger.debug(f"Missing required file: {file_name}")
+        # Check agent configuration to determine required files
+        agent_config = self._get_agent_config(agent_path)
+
+        # Always require agent.yaml or agent.yml
+        agent_yaml_exists = (agent_dir / "agent.yaml").exists()
+        agent_yml_exists = (agent_dir / "agent.yml").exists()
+
+        if not agent_yaml_exists and not agent_yml_exists:
+            logger.debug("Missing required file: agent.yaml (or agent.yml)")
+            return False
+
+        # Check for agent script file (either agent.py or agent.na)
+        agent_py_exists = (agent_dir / "agent.py").exists()
+        agent_na_exists = (agent_dir / "agent.na").exists()
+
+        if agent_config and "dana_version" in agent_config:
+            # For Dana agents, require agent.na
+            if not agent_na_exists:
+                logger.debug("Missing required file: agent.na (Dana agent)")
                 return False
+        else:
+            # For Python agents or default, require agent.py
+            if not agent_py_exists:
+                logger.debug("Missing required file: agent.py (Python agent)")
+                return False
+
+        # Ensure only one agent script file exists
+        if agent_py_exists and agent_na_exists:
+            logger.debug("Both agent.py and agent.na found - only one should exist")
+            return False
 
         # Check virtual environment only if required
         if require_venv:
@@ -147,19 +175,58 @@ class AgentLoader:
                 logger.debug(f"Missing virtual environment: {venv_path}")
                 return False
 
-            # Check if Python executable exists in venv
+            # Check if executable exists in venv (Python or Dana)
             import sys
 
-            if sys.platform == "win32":
-                python_executable = venv_path / "Scripts" / "python.exe"
+            if agent_config and "dana_version" in agent_config:
+                # Check for Dana executable
+                if sys.platform == "win32":
+                    executable = venv_path / "Scripts" / "dana.exe"
+                else:
+                    executable = venv_path / "bin" / "dana"
             else:
-                python_executable = venv_path / "bin" / "python"
+                # Check for Python executable
+                if sys.platform == "win32":
+                    executable = venv_path / "Scripts" / "python.exe"
+                else:
+                    executable = venv_path / "bin" / "python"
 
-            if not python_executable.exists():
-                logger.debug(f"Python executable not found: {python_executable}")
+            if not executable.exists():
+                logger.debug(f"Executable not found: {executable}")
                 return False
 
         return True
+
+    def _get_agent_config(self, agent_path: str) -> dict[str, Any] | None:
+        """
+        Get agent configuration from agent.yaml or agent.yml file.
+
+        Args:
+            agent_path: Path to the agent directory
+
+        Returns:
+            Agent configuration dictionary or None if not found
+        """
+        agent_yaml_path = Path(agent_path) / "agent.yaml"
+        agent_yml_path = Path(agent_path) / "agent.yml"
+
+        config_path = None
+        if agent_yaml_path.exists():
+            config_path = agent_yaml_path
+        elif agent_yml_path.exists():
+            config_path = agent_yml_path
+
+        if not config_path:
+            return None
+
+        try:
+            import yaml
+
+            with open(config_path) as f:
+                return yaml.safe_load(f)  # type: ignore[no-any-return]
+        except Exception as e:
+            logger.warning(f"Failed to parse agent config: {e}")
+            return None
 
     def discover_agents(self) -> list[dict]:
         """
@@ -200,8 +267,10 @@ class AgentLoader:
         agent_path = str(self.storage.get_agent_path(namespace, agent_name))
 
         try:
-            # Just parse manifest without full validation
+            # Just parse manifest without full validation (check for both yaml and yml)
             manifest_file = Path(agent_path) / "agent.yaml"
+            if not manifest_file.exists():
+                manifest_file = Path(agent_path) / "agent.yml"
             manifest = self.manifest_parser.parse_manifest(str(manifest_file))
 
             return {

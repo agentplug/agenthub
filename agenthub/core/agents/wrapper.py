@@ -3,8 +3,10 @@
 import logging
 from typing import Any
 
-from ..knowledge import KnowledgeManager
-from ..mcp.agent_tool_manager import AgentToolManager
+from ..interfaces import (
+    KnowledgeManagerProtocol,
+    ToolManagerProtocol,
+)
 from .agent_info import AgentInfo
 from .method_executor import MethodExecutor
 from .solve import SolveEngine
@@ -23,6 +25,8 @@ class AgentWrapper:
         agent_id: str | None = None,
         assigned_tools: list[str] | None = None,
         runtime: Any = None,
+        knowledge_manager: KnowledgeManagerProtocol | None = None,
+        tool_manager: ToolManagerProtocol | None = None,
     ) -> None:
         """
         Initialize the simplified agent wrapper.
@@ -33,15 +37,40 @@ class AgentWrapper:
             agent_id: Unique identifier for this agent
             assigned_tools: List of external tools assigned to this agent
             runtime: Optional runtime for executing methods
+            knowledge_manager: Optional knowledge manager (injected)
+            tool_manager: Optional tool manager (injected)
         """
         # Core components
         self.agent_info = AgentInfo(agent_info)
         self.method_executor = MethodExecutor(self)
-        self.solve_engine = SolveEngine(self)
 
-        # Existing managers (no duplication)
-        self.tool_manager = AgentToolManager(agent_info.get("manifest", {}))
-        self.knowledge_manager = KnowledgeManager()
+        # Get LLM service for solve engine
+        llm_service = None
+        try:
+            from ..llm import get_shared_llm_service
+
+            llm_service = get_shared_llm_service()
+        except ImportError:
+            pass  # LLM service not available
+
+        self.solve_engine = SolveEngine(self, llm_service)  # type: ignore[arg-type]
+
+        # Use dependency injection or create defaults
+        if knowledge_manager is not None:
+            self.knowledge_manager = knowledge_manager
+        else:
+            # Import here to avoid circular dependency
+            from ..knowledge import KnowledgeManager
+
+            self.knowledge_manager = KnowledgeManager()  # type: ignore[assignment]
+
+        if tool_manager is not None:
+            self.tool_manager = tool_manager
+        else:
+            # Import here to avoid circular dependency
+            from ..mcp.agent_tool_manager import AgentToolManager
+
+            self.tool_manager = AgentToolManager(agent_info.get("manifest", {}))
 
         # Backward compatibility properties
         self.agent_id = agent_id or self.agent_info.agent_id

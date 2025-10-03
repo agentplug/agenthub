@@ -26,7 +26,7 @@ def main():
 
     insights = analysis_agent.analyze_text(feedback)
     print("\n📊 Customer Feedback Analysis:")
-    print(insights)
+    print(insights["result"])
 
 
 if __name__ == "__main__":

@@ -6,9 +6,21 @@ structured insights about progress, errors, and suggestions.
 """
 
 import json
+from dataclasses import dataclass
 from typing import Any
 
-from agenthub.core.llm.llm_service import CoreLLMService, LogAnalysis
+from agenthub.core.llm.llm_service import CoreLLMService
+
+
+@dataclass
+class LogAnalysis:
+    """Data class for log analysis results in monitoring."""
+
+    summary: str
+    progress: int
+    status: str
+    errors: list[str]
+    suggestions: list[str]
 
 
 class LLMAnalyzer:
@@ -51,8 +63,10 @@ class LLMAnalyzer:
             "errors, and providing actionable insights."
         )
 
-        response = self.core_llm.analyze_text(
-            log_text, self.log_analysis_prompt, system_prompt, return_json=True
+        response = self.core_llm.generate(
+            self.log_analysis_prompt.format(text=log_text),
+            system_prompt=system_prompt,
+            return_json=True,
         )
         return self._parse_log_analysis_response(response)
 

@@ -7,7 +7,7 @@ packages = ["agenthub"]
 
 [project]
 name = "agenthub-sdk"
-version = "0.1.3"
+version = "0.1.4"
 description = "AgentHub - The App Store for AI Agents"
 readme = "README.md"
 license = { text = "MIT" }
