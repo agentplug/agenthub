@@ -201,11 +201,13 @@ class ProcessManager:
                                 agent_path, log_message
                             )
 
-                        logger.info(
-                            f"📝 Agent stdout [{agent_path}.{method}]: {line.strip()}"
-                        )
+                        # Clean display - only show non-empty, meaningful logs
+                        stripped = line.strip()
+                        if stripped and not self._is_noise_log(stripped):
+                            agent_name = agent_path.split("/")[-1]
+                            logger.info(f"🤖 {agent_name}: {stripped}")
             except Exception as e:
-                logger.warning(f"Error streaming stdout: {e}")
+                logger.debug(f"Error streaming stdout: {e}")
 
         def stream_stderr() -> None:
             """Stream stderr logs."""
@@ -228,11 +230,14 @@ class ProcessManager:
                                 agent_path, log_message
                             )
 
-                        logger.warning(
-                            f"⚠️ Agent stderr [{agent_path}.{method}]: {line.strip()}"
-                        )
+                        # Clean display - filter noise and show only important logs
+                        stripped = line.strip()
+                        if stripped and not self._is_noise_log(stripped):
+                            agent_name = agent_path.split("/")[-1]
+                            # Show as INFO for cleaner output
+                            logger.info(f"🤖 {agent_name}: {stripped}")
             except Exception as e:
-                logger.warning(f"Error streaming stderr: {e}")
+                logger.debug(f"Error streaming stderr: {e}")
 
         # Start log streaming threads
         stdout_thread = threading.Thread(target=stream_stdout, daemon=True)
@@ -242,6 +247,37 @@ class ProcessManager:
         stderr_thread.start()
 
         logger.info(f"📡 Started real-time log streaming for {agent_path}.{method}")
+
+    def _is_noise_log(self, log_line: str) -> bool:
+        """
+        Check if a log line is noise that should be filtered out.
+
+        Args:
+            log_line: The log line to check
+
+        Returns:
+            bool: True if this is noise, False if it should be displayed
+        """
+        noise_patterns = [
+            # Stack traces and file paths
+            'File "/',
+            "line ",
+            "Traceback",
+            # HTTP library debug logs
+            "HTTP Request:",
+            "HTTP/1.1",
+            "httpx:",
+            "httpcore:",
+            # Common debug prefixes
+            "DEBUG:",
+            # Empty or whitespace only
+            r"^\s*$",
+        ]
+
+        for pattern in noise_patterns:
+            if pattern in log_line:
+                return True
+        return False
 
     def set_realtime_communication(self, enabled: bool) -> None:
         """Enable or disable real-time communication dynamically."""
