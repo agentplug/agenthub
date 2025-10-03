@@ -300,6 +300,10 @@ class ProcessManager:
             "mcp.client",
             ".model_validate",
             "__pydantic_validator__",
+            "Attempting MCP tool call:",
+            "MCP session initialized",
+            "Using SSE URL:",
+            "MCP libraries available",
             # Empty or whitespace only
             r"^\s*$",
         ]
