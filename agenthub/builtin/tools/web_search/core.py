@@ -216,7 +216,7 @@ optimized query, no explanations.
         """
         # Import DDGS from available package
         from typing import Any
-        
+
         DDGS: Any = None
         try:
             from duckduckgo_search import DDGS
