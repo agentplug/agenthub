@@ -195,9 +195,11 @@ class ProcessManager:
                             "timestamp": time.time(),
                         }
 
-                        # Broadcast to all connected clients
-                        if hasattr(self.communication_server, "broadcast_message"):
-                            self.communication_server.broadcast_message(log_message)
+                        # Send log message only to this agent's session (not broadcast)
+                        if hasattr(self.communication_server, "send_to_agent_sync"):
+                            self.communication_server.send_to_agent_sync(
+                                agent_path, log_message
+                            )
 
                         logger.info(
                             f"📝 Agent stdout [{agent_path}.{method}]: {line.strip()}"
@@ -220,9 +222,11 @@ class ProcessManager:
                             "timestamp": time.time(),
                         }
 
-                        # Broadcast to all connected clients
-                        if hasattr(self.communication_server, "broadcast_message"):
-                            self.communication_server.broadcast_message(log_message)
+                        # Send log message only to this agent's session (not broadcast)
+                        if hasattr(self.communication_server, "send_to_agent_sync"):
+                            self.communication_server.send_to_agent_sync(
+                                agent_path, log_message
+                            )
 
                         logger.warning(
                             f"⚠️ Agent stderr [{agent_path}.{method}]: {line.strip()}"
@@ -238,47 +242,6 @@ class ProcessManager:
         stderr_thread.start()
 
         logger.info(f"📡 Started real-time log streaming for {agent_path}.{method}")
-
-    def start_websocket_server(self) -> bool:
-        """
-        Start the WebSocket server in the main thread.
-
-        Returns:
-            bool: True if server started successfully, False otherwise
-        """
-        if not self.communication_server:
-            logger.warning("No communication server available")
-            return False
-
-        if self.communication_server.is_running:
-            logger.info("WebSocket server already running")
-            return True
-
-        try:
-            import asyncio
-            import threading
-
-            # Only start in main thread
-            if threading.current_thread() is not threading.main_thread():
-                logger.warning("Cannot start WebSocket server from sub-thread")
-                return False
-
-            # Start the server
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Schedule the server start
-                asyncio.create_task(self._ensure_communication_server())
-                logger.info("🚀 WebSocket server start scheduled")
-            else:
-                # Run the server start
-                loop.run_until_complete(self._ensure_communication_server())
-                logger.info("🚀 WebSocket server started")
-
-            return self.communication_server.is_running
-
-        except Exception as e:
-            logger.error(f"Failed to start WebSocket server: {e}")
-            return False
 
     def set_realtime_communication(self, enabled: bool) -> None:
         """Enable or disable real-time communication dynamically."""
@@ -375,28 +338,17 @@ class ProcessManager:
         # Register agent session if communication server is available
         session_registered = False
         if self.communication_server:
-            # Try to ensure server is running (handle threading properly)
+            # Try to ensure server is running
             import asyncio
-            import threading
 
             try:
-                # Check if we're in the main thread
-                if threading.current_thread() is threading.main_thread():
-                    # We're in the main thread, can start server directly
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # Schedule the server start
-                        asyncio.create_task(self._ensure_communication_server())
-                    else:
-                        # Run the server start
-                        loop.run_until_complete(self._ensure_communication_server())
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Schedule the server start
+                    asyncio.create_task(self._ensure_communication_server())
                 else:
-                    # We're in a sub-thread, check if server is already running
-                    # If not, we'll fall back to stdout/stderr
-                    if not self.communication_server.is_running:
-                        logger.debug(
-                            "WebSocket server not running in sub-thread, using fallback"
-                        )
+                    # Run the server start
+                    loop.run_until_complete(self._ensure_communication_server())
             except Exception as e:
                 logger.warning(f"Failed to start communication server: {e}")
 

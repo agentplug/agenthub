@@ -408,6 +408,34 @@ class CommunicationServer:
         except Exception as e:
             logger.warning(f"Failed to broadcast message: {e}")
 
+    def send_to_agent_sync(self, agent_id: str, message: dict[str, Any]) -> bool:
+        """
+        Synchronous wrapper for send_to_agent method.
+
+        Args:
+            agent_id: Target agent identifier
+            message: Message to send
+
+        Returns:
+            bool: True if message sent successfully
+        """
+        if not self.is_running:
+            return False
+
+        try:
+            # Create a task to run the async send_to_agent
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is running, schedule the send
+                asyncio.create_task(self.send_to_agent(agent_id, message))
+                return True
+            else:
+                # If no loop is running, run it
+                return loop.run_until_complete(self.send_to_agent(agent_id, message))
+        except Exception as e:
+            logger.warning(f"Failed to send message to agent {agent_id}: {e}")
+            return False
+
     def register_agent_session(
         self, agent_id: str, session_data: dict[str, Any]
     ) -> None:

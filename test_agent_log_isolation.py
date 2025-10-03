@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test script to demonstrate multi-agent real-time log sharing via WebSocket."""
+"""Test script to verify agent log isolation."""
 
 import logging
 import tempfile
@@ -12,10 +12,12 @@ from agenthub.runtime.process_manager import ProcessManager
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
-def test_multi_agent_log_sharing():
-    """Test if multiple agents can see each other's logs in real-time."""
+def test_agent_log_isolation():
+    """Test that agents do NOT see each other's logs (proper isolation)."""
     print("=" * 70)
-    print("🧪 TESTING MULTI-AGENT REAL-TIME LOG SHARING")
+    print("🧪 TESTING AGENT LOG ISOLATION")
+    print("=" * 70)
+    print("🎯 Goal: Verify agents do NOT see each other's logs")
     print("=" * 70)
 
     # Create ProcessManager with communication enabled
@@ -26,17 +28,17 @@ def test_multi_agent_log_sharing():
     print("\n📊 Current communication status:")
     manager.log_communication_status()
 
-    print("\n2️⃣ Creating two agents that will run simultaneously...")
+    print("\n2️⃣ Creating two agents with distinct log messages...")
 
     with (
         tempfile.TemporaryDirectory() as temp_dir1,
         tempfile.TemporaryDirectory() as temp_dir2,
     ):
-        # Create Agent 1
+        # Create Agent 1 - Secret Agent
         agent1_path = temp_dir1
         agent1_dir = Path(agent1_path)
         agent1_yaml = agent1_dir / "agent.yaml"
-        agent1_yaml.write_text("name: agent-1\nversion: 1.0.0")
+        agent1_yaml.write_text("name: secret-agent\nversion: 1.0.0")
 
         agent1_py = agent1_dir / "agent.py"
         agent1_py.write_text(
@@ -46,15 +48,16 @@ import sys
 import time
 
 class Agent:
-    def work_method(self, task_name):
-        print(f"🤖 Agent 1: Starting task '{task_name}'")
+    def secret_method(self, task_name):
+        print(f"🔐 SECRET: Starting confidential task '{task_name}'")
+        print(f"🔐 SECRET: Accessing classified data...")
 
         for i in range(3):
-            print(f"🤖 Agent 1: Working on step {i+1}/3 for '{task_name}'")
-            time.sleep(1)  # Simulate work
+            print(f"🔐 SECRET: Processing classified step {i+1}/3")
+            time.sleep(1)
 
-        print(f"🤖 Agent 1: Completed task '{task_name}'")
-        return {"result": f"Agent 1 completed {task_name}", "status": "success"}
+        print(f"🔐 SECRET: Completed confidential task '{task_name}'")
+        return {"result": f"Secret agent completed {task_name}", "status": "success"}
 
 if __name__ == "__main__":
     data = json.loads(sys.argv[1])
@@ -70,11 +73,11 @@ if __name__ == "__main__":
 """
         )
 
-        # Create Agent 2
+        # Create Agent 2 - Public Agent
         agent2_path = temp_dir2
         agent2_dir = Path(agent2_path)
         agent2_yaml = agent2_dir / "agent.yaml"
-        agent2_yaml.write_text("name: agent-2\nversion: 1.0.0")
+        agent2_yaml.write_text("name: public-agent\nversion: 1.0.0")
 
         agent2_py = agent2_dir / "agent.py"
         agent2_py.write_text(
@@ -84,15 +87,16 @@ import sys
 import time
 
 class Agent:
-    def work_method(self, task_name):
-        print(f"🚀 Agent 2: Starting task '{task_name}'")
+    def public_method(self, task_name):
+        print(f"🌍 PUBLIC: Starting public task '{task_name}'")
+        print(f"🌍 PUBLIC: Accessing public data...")
 
         for i in range(3):
-            print(f"🚀 Agent 2: Working on step {i+1}/3 for '{task_name}'")
-            time.sleep(1.2)  # Slightly different timing
+            print(f"🌍 PUBLIC: Processing public step {i+1}/3")
+            time.sleep(1.2)
 
-        print(f"🚀 Agent 2: Completed task '{task_name}'")
-        return {"result": f"Agent 2 completed {task_name}", "status": "success"}
+        print(f"🌍 PUBLIC: Completed public task '{task_name}'")
+        return {"result": f"Public agent completed {task_name}", "status": "success"}
 
 if __name__ == "__main__":
     data = json.loads(sys.argv[1])
@@ -109,15 +113,17 @@ if __name__ == "__main__":
         )
 
         print("\n3️⃣ Executing both agents simultaneously...")
-        print("📡 Watch for interleaved log messages from both agents:")
+        print("📡 Watch for isolated log messages:")
+        print("   🔐 SECRET messages should only appear for Secret Agent")
+        print("   🌍 PUBLIC messages should only appear for Public Agent")
         print("-" * 50)
 
         try:
             import threading
             import unittest.mock
 
-            def run_agent1():
-                """Run Agent 1 in a separate thread."""
+            def run_secret_agent():
+                """Run Secret Agent in a separate thread."""
                 with unittest.mock.patch.object(
                     manager.environment_manager,
                     "get_python_executable",
@@ -125,13 +131,13 @@ if __name__ == "__main__":
                 ):
                     result1 = manager.execute_agent(
                         agent_path=agent1_path,
-                        method="work_method",
-                        parameters={"task_name": "Data Processing"},
+                        method="secret_method",
+                        parameters={"task_name": "Classified Operation"},
                     )
-                    print(f"\n✅ Agent 1 Result: {result1['result']['result']}")
+                    print(f"\n✅ Secret Agent Result: {result1['result']['result']}")
 
-            def run_agent2():
-                """Run Agent 2 in a separate thread."""
+            def run_public_agent():
+                """Run Public Agent in a separate thread."""
                 with unittest.mock.patch.object(
                     manager.environment_manager,
                     "get_python_executable",
@@ -139,14 +145,14 @@ if __name__ == "__main__":
                 ):
                     result2 = manager.execute_agent(
                         agent_path=agent2_path,
-                        method="work_method",
-                        parameters={"task_name": "Image Analysis"},
+                        method="public_method",
+                        parameters={"task_name": "Public Service"},
                     )
-                    print(f"\n✅ Agent 2 Result: {result2['result']['result']}")
+                    print(f"\n✅ Public Agent Result: {result2['result']['result']}")
 
             # Start both agents in separate threads
-            thread1 = threading.Thread(target=run_agent1)
-            thread2 = threading.Thread(target=run_agent2)
+            thread1 = threading.Thread(target=run_secret_agent)
+            thread2 = threading.Thread(target=run_public_agent)
 
             thread1.start()
             time.sleep(0.5)  # Small delay to see interleaving
@@ -158,16 +164,18 @@ if __name__ == "__main__":
 
             print("-" * 50)
             print("\n🎯 Analysis:")
-            print("If you see interleaved messages from both agents above,")
-            print("it means they can see each other's logs in real-time!")
+            print("✅ GOOD: If you see 🔐 SECRET messages only for Secret Agent")
+            print("✅ GOOD: If you see 🌍 PUBLIC messages only for Public Agent")
+            print("❌ BAD: If Secret Agent sees PUBLIC messages or vice versa")
+            print("\n🔒 This ensures proper log isolation and security!")
 
         except Exception as e:
             print(f"\n❌ Test failed: {e}")
 
     print("\n" + "=" * 70)
-    print("🎉 MULTI-AGENT LOG SHARING TEST COMPLETE")
+    print("🎉 AGENT LOG ISOLATION TEST COMPLETE")
     print("=" * 70)
 
 
 if __name__ == "__main__":
-    test_multi_agent_log_sharing()
+    test_agent_log_isolation()
