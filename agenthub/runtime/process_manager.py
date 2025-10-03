@@ -276,6 +276,26 @@ class ProcessManager:
         Returns:
             bool: True if this is noise, False if it should be displayed
         """
+        # Extract logger name from Python logging format (before first ":")
+        # Format: "LEVEL:logger.name:actual message"
+        if ":" in log_line:
+            parts = log_line.split(":", 2)  # Split max 2 times
+            if len(parts) >= 2:
+                logger_name = parts[1].strip()
+
+                # Filter research agent internal loggers
+                research_agent_internals = [
+                    "research_agent.core.research.source_processing",
+                    "research_agent.core.research.parallel_executor",
+                    "research_agent.core.research.llm_processor",
+                    "research_agent.core.tools.agenthub_mcp_client",
+                ]
+
+                for internal in research_agent_internals:
+                    if logger_name.startswith(internal):
+                        return True
+
+        # General noise patterns
         noise_patterns = [
             # Stack traces and file paths
             'File "/',
@@ -300,16 +320,9 @@ class ProcessManager:
             "mcp.client",
             ".model_validate",
             "__pydantic_validator__",
-            "Attempting MCP tool call:",
             "MCP session initialized",
             "Using SSE URL:",
             "MCP libraries available",
-            # Research agent internals
-            "content_extractor",
-            "source_processing",
-            "parallel_executor",
-            "llm_processor",
-            "INFO:research_agent.core",
             # Empty or whitespace only
             r"^\s*$",
         ]
