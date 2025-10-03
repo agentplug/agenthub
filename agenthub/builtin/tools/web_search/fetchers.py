@@ -10,18 +10,20 @@ from .extractors import ContentExtractor
 
 class ContentFetcher:
     """Handles async content fetching from URLs"""
-    
+
     def __init__(self, config: Any) -> None:
         self.config = config
         self.content_extractor = ContentExtractor()
-    
-    def fetch_content_from_urls(self, search_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+
+    def fetch_content_from_urls(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Fetch content from URLs asynchronously with proper event loop handling.
-        
+
         Args:
             search_results: List of search results with URLs
-            
+
         Returns:
             List of results with fetched content
         """
@@ -32,15 +34,17 @@ class ContentFetcher:
             # If we're in an async context, we need to run in a thread
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(
-                    asyncio.run, 
+                    asyncio.run,
                     self._process_all_urls(search_results)
                 )
                 return future.result()
         except RuntimeError:
             # No event loop running, we can create one
             return asyncio.run(self._process_all_urls(search_results))
-    
-    async def _process_all_urls(self, search_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+
+    async def _process_all_urls(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Process all URLs concurrently"""
         try:
             import aiohttp
@@ -48,7 +52,7 @@ class ContentFetcher:
             # Fallback to synchronous processing if aiohttp not available
             print("[TOOL] aiohttp not available, using synchronous fetching")
             return self._fetch_content_sync(search_results)
-        
+
         async with aiohttp.ClientSession() as session:
             tasks = []
             for r in search_results:
@@ -60,10 +64,10 @@ class ContentFetcher:
                 else:
                     # Handle results without URLs
                     tasks.append(self._create_no_url_result(title))
-            
+
             # Execute all requests concurrently
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             # Handle any exceptions
             processed_results: list[dict[str, Any]] = []
             for result in results:
@@ -77,19 +81,21 @@ class ContentFetcher:
                     })
                 elif isinstance(result, dict):
                     processed_results.append(result)
-            
+
             return processed_results
-    
-    async def _fetch_snippet_async(self, session: Any, url: str, title: str) -> dict[str, Any]:
+
+    async def _fetch_snippet_async(
+        self, session: Any, url: str, title: str
+    ) -> dict[str, Any]:
         """Fetch page content asynchronously"""
         try:
             import aiohttp
-            
+
             async with session.get(
                 url, timeout=aiohttp.ClientTimeout(total=self.config.timeout)
             ) as response:
                 content_type = response.headers.get("content-type", "").lower()
-                
+
                 # Check if it's a PDF file
                 if "application/pdf" in content_type or url.lower().endswith(".pdf"):
                     print(f"[TOOL] Processing PDF file: {title}")
@@ -112,7 +118,7 @@ class ContentFetcher:
                 "content": error_msg,
                 "snippet": error_msg,
             }
-    
+
     async def _create_no_url_result(self, title: str) -> dict[str, str]:
         """Create result for entries without URLs"""
         no_url_msg = "No URL available"
@@ -122,8 +128,10 @@ class ContentFetcher:
             "content": no_url_msg,
             "snippet": no_url_msg,
         }
-    
-    def _fetch_content_sync(self, search_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+
+    def _fetch_content_sync(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Fallback synchronous content fetching"""
         results = []
         for r in search_results:
