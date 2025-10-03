@@ -214,11 +214,15 @@ optimized query, no explanations.
         Returns:
             List of filtered search results
         """
+        # Import DDGS from available package
+        from typing import Any
+        
+        DDGS: Any = None
         try:
             from duckduckgo_search import DDGS
         except ImportError:
             try:
-                from ddgs import DDGS  # type: ignore[assignment]
+                from ddgs import DDGS
             except ImportError:
                 raise ImportError("DuckDuckGo search not available") from None
 
