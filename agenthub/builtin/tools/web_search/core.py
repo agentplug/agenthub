@@ -216,7 +216,7 @@ optimized query, no explanations.
         """
         # Import DDGS from available package
         from typing import Any
-        
+
         def _get_ddgs() -> Any:
             try:
                 from duckduckgo_search import DDGS
@@ -227,7 +227,7 @@ optimized query, no explanations.
                     return DDGS
                 except ImportError:
                     raise ImportError("DuckDuckGo search not available") from None
-        
+
         DDGS = _get_ddgs()
 
         ddg = DDGS()
