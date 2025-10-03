@@ -363,9 +363,24 @@ class ProcessManager:
                             )
                             loop.run_until_complete(self._ensure_communication_server())
                     except RuntimeError:
-                        # No event loop at all, create a new one
-                        logger.debug("📡 No event loop found, creating new one")
-                        asyncio.run(self._ensure_communication_server())
+                        # No event loop at all, start server in background thread
+                        logger.debug("📡 No event loop found, starting in background")
+                        import threading
+
+                        def run_server_in_thread():
+                            """Run WebSocket server in dedicated thread."""
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            loop.run_until_complete(self._ensure_communication_server())
+                            # Keep loop running for server tasks
+                            loop.run_forever()
+
+                        server_thread = threading.Thread(
+                            target=run_server_in_thread, daemon=True
+                        )
+                        server_thread.start()
+                        # Give server time to start
+                        time.sleep(1)
             except Exception as e:
                 logger.warning(f"Failed to start communication server: {e}")
 
