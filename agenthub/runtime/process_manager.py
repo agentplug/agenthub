@@ -304,6 +304,11 @@ class ProcessManager:
             "MCP session initialized",
             "Using SSE URL:",
             "MCP libraries available",
+            # Research agent internals
+            "content_extractor:",
+            "source_processing.",
+            "parallel_executor:",
+            "llm_processor:",
             # Empty or whitespace only
             r"^\s*$",
         ]
