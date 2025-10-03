@@ -245,3 +245,13 @@ conversation.md
 agentplug/
 create_pr.py
 brainstorming.mdexamples/getting_started/clean_return_agent.py
+
+# Local test files
+test_agent_log_isolation.py
+test_communication_logging.py
+test_multi_agent_log_sharing.py
+test_realtime_log_streaming.py
+test_websocket_startup.py
+run_research_agent.sh
+examples/getting_started/clean_return_agent.py
+brainstorming.md
