@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from collections.abc import Callable
+from queue import Queue
 from typing import Any, Optional
 
 try:
@@ -102,6 +103,10 @@ class CommunicationServer:
         self.startup_failed = False
         self.failure_reason = None
 
+        # Thread-safe message queue for log streaming from threads
+        self.message_queue: Queue = Queue()
+        self.queue_processor_task: asyncio.Task | None = None
+
         self._initialized = True
 
         logger.info(f"CommunicationServer initialized on {self.host}:{self.port}")
@@ -150,6 +155,11 @@ class CommunicationServer:
                 self.is_running = True
                 self.startup_failed = False
 
+                # Start queue processor for thread-safe message handling
+                self.queue_processor_task = asyncio.create_task(
+                    self._process_message_queue()
+                )
+
                 logger.info(
                     f"✅ CommunicationServer started on ws://{self.host}:{self.port}"
                 )
@@ -184,6 +194,15 @@ class CommunicationServer:
                 if self.message_router:
                     await self.message_router.stop()
 
+                # Stop queue processor
+                if self.queue_processor_task:
+                    self.queue_processor_task.cancel()
+                    try:
+                        await self.queue_processor_task
+                    except asyncio.CancelledError:
+                        pass
+                    self.queue_processor_task = None
+
                 # Close all client connections
                 if self.clients:
                     await asyncio.gather(
@@ -203,6 +222,35 @@ class CommunicationServer:
 
             except Exception as e:
                 logger.error(f"Error stopping CommunicationServer: {e}")
+
+    async def _process_message_queue(self) -> None:
+        """Process messages from the thread-safe queue."""
+        while self.is_running:
+            try:
+                # Wait for messages with a timeout to allow checking is_running
+                try:
+                    message_data = self.message_queue.get(timeout=0.1)
+                except Exception:
+                    # Timeout - continue loop to check is_running
+                    continue
+
+                # Process the message
+                message_type = message_data.get("type")
+                if message_type == "send_to_agent":
+                    agent_id = message_data.get("agent_id")
+                    message = message_data.get("message")
+                    if agent_id and message:
+                        await self.send_to_agent(agent_id, message)
+                elif message_type == "broadcast":
+                    message = message_data.get("message")
+                    if message:
+                        await self.broadcast(message)
+
+                # Mark task as done
+                self.message_queue.task_done()
+
+            except Exception as e:
+                logger.warning(f"Error processing queue message: {e}")
 
     async def _handle_client(
         self, websocket: WebSocketServerProtocol, path: str
@@ -388,7 +436,7 @@ class CommunicationServer:
 
     def broadcast_message(self, message: dict[str, Any]) -> None:
         """
-        Synchronous wrapper for broadcast method.
+        Synchronous wrapper for broadcast method using thread-safe queue.
 
         Args:
             message: Message to broadcast
@@ -397,43 +445,33 @@ class CommunicationServer:
             return
 
         try:
-            # Create a task to run the async broadcast
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is running, schedule the broadcast
-                asyncio.create_task(self.broadcast(message))
-            else:
-                # If no loop is running, run it
-                loop.run_until_complete(self.broadcast(message))
+            # Add message to queue for processing by main event loop
+            self.message_queue.put({"type": "broadcast", "message": message})
         except Exception as e:
-            logger.warning(f"Failed to broadcast message: {e}")
+            logger.warning(f"Failed to queue broadcast message: {e}")
 
     def send_to_agent_sync(self, agent_id: str, message: dict[str, Any]) -> bool:
         """
-        Synchronous wrapper for send_to_agent method.
+        Synchronous wrapper for send_to_agent method using thread-safe queue.
 
         Args:
             agent_id: Target agent identifier
             message: Message to send
 
         Returns:
-            bool: True if message sent successfully
+            bool: True if message queued successfully
         """
         if not self.is_running:
             return False
 
         try:
-            # Create a task to run the async send_to_agent
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is running, schedule the send
-                asyncio.create_task(self.send_to_agent(agent_id, message))
-                return True
-            else:
-                # If no loop is running, run it
-                return loop.run_until_complete(self.send_to_agent(agent_id, message))
+            # Add message to queue for processing by main event loop
+            self.message_queue.put(
+                {"type": "send_to_agent", "agent_id": agent_id, "message": message}
+            )
+            return True
         except Exception as e:
-            logger.warning(f"Failed to send message to agent {agent_id}: {e}")
+            logger.warning(f"Failed to queue message for agent {agent_id}: {e}")
             return False
 
     def register_agent_session(
