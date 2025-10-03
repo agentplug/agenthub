@@ -69,6 +69,8 @@ dependencies = [
     "asyncio-throttle>=1.0.0",
     "pytest-asyncio>=1.2.0",
     "psutil>=6.0.0",
+    # Real-time communication (Phase 3.4)
+    "websockets>=12.0",
 ]
 
 [project.urls]
