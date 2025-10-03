@@ -37,3 +37,6 @@ cryptography>=42.0.0
 
 # Async & concurrency
 asyncio-throttle>=1.0.0
+
+# Real-time communication (Phase 3.4)
+websockets>=12.0
