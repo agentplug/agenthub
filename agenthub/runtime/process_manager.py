@@ -70,7 +70,12 @@ class ProcessManager:
 
         # Try to initialize communication server if enabled
         if self.realtime_communication:
+            logger.info("🔄 Initializing real-time communication server...")
             self._try_start_communication_server()
+        else:
+            logger.info(
+                "📝 Real-time communication disabled - will use stdin/stdout fallback"
+            )
 
     def set_monitoring(self, enabled: bool) -> None:
         """Enable or disable monitoring dynamically."""
@@ -105,6 +110,8 @@ class ProcessManager:
             # Check if WebSocket dependencies are available
             import websockets  # noqa: F401
 
+            logger.debug("✅ WebSocket library available")
+
             # Import communication server
             from agenthub.core.communication import get_communication_server
 
@@ -112,13 +119,16 @@ class ProcessManager:
             self.communication_server = get_communication_server()
 
             # Server will be started on first use (lazy initialization)
-            logger.info("Communication server initialized (will start on first use)")
+            logger.info("✅ Communication server initialized (lazy start)")
+            logger.info(f"   📡 WebSocket port: {self.communication_server.port}")
 
         except ImportError as e:
-            logger.info(f"WebSocket not available: {e}. Falling back to stdin/stdout")
+            logger.warning(f"❌ WebSocket library not available: {e}")
+            logger.info("📝 Falling back to stdin/stdout communication")
             self.realtime_communication = False
         except Exception as e:
-            logger.warning(f"Failed to initialize communication server: {e}")
+            logger.error(f"❌ Failed to initialize communication server: {e}")
+            logger.info("📝 Falling back to stdin/stdout communication")
             self.realtime_communication = False
 
     async def _ensure_communication_server(self) -> bool:
@@ -129,28 +139,44 @@ class ProcessManager:
             bool: True if server available, False if fallback needed
         """
         if not self.realtime_communication:
+            logger.debug("📝 Real-time communication disabled - using fallback")
             return False
 
         if self.communication_server is None:
+            logger.debug("📝 Communication server not initialized - using fallback")
             return False
 
         # Try to start server if not running
         if not self.communication_server.is_running:
+            logger.info("🚀 Starting WebSocket communication server...")
             success = await self.communication_server.start()
             if not success:
-                logger.warning("Communication server unavailable, using fallback")
+                logger.warning(
+                    "❌ Communication server failed to start - using fallback"
+                )
                 return False
+            logger.info(
+                f"✅ WebSocket server started on port {self.communication_server.port}"
+            )
+        else:
+            logger.debug(
+                f"✅ WebSocket server running on port {self.communication_server.port}"
+            )
 
         return True
 
     def set_realtime_communication(self, enabled: bool) -> None:
         """Enable or disable real-time communication dynamically."""
         if enabled and not self.realtime_communication:
+            logger.info("🔄 Enabling real-time communication...")
             self._try_start_communication_server()
             if self.communication_server is not None:
                 self.realtime_communication = True
-                logger.info("Real-time communication enabled")
+                logger.info("✅ Real-time communication enabled")
+            else:
+                logger.warning("❌ Failed to enable real-time communication")
         elif not enabled and self.realtime_communication:
+            logger.info("🔄 Disabling real-time communication...")
             self.realtime_communication = False
             # Stop server if running
             if self.communication_server and self.communication_server.is_running:
@@ -158,9 +184,12 @@ class ProcessManager:
 
                 try:
                     asyncio.create_task(self.communication_server.stop())
+                    logger.info("🛑 WebSocket server stopped")
                 except Exception as e:
-                    logger.warning(f"Error stopping communication server: {e}")
-            logger.info("Real-time communication disabled")
+                    logger.warning(f"❌ Error stopping communication server: {e}")
+            logger.info(
+                "📝 Real-time communication disabled - using stdin/stdout fallback"
+            )
 
     def get_communication_status(self) -> dict[str, Any]:
         """Get communication server status."""
@@ -177,6 +206,20 @@ class ProcessManager:
             "host": self.communication_server.host,
             "active_sessions": len(self.communication_server.agent_sessions),
         }
+
+    def log_communication_status(self) -> None:
+        """Log the current communication status for debugging."""
+        status = self.get_communication_status()
+
+        if status["enabled"]:
+            logger.info("📡 COMMUNICATION STATUS: WebSocket Real-time Communication")
+            logger.info(f"   ✅ Server running: {status['server_running']}")
+            logger.info(f"   🌐 Host: {status['host']}")
+            logger.info(f"   🔌 Port: {status['port']}")
+            logger.info(f"   👥 Active sessions: {status['active_sessions']}")
+        else:
+            logger.info("📝 COMMUNICATION STATUS: stdin/stdout Fallback")
+            logger.info(f"   ❌ Reason: {status['reason']}")
 
     def execute_agent(
         self,
@@ -217,11 +260,16 @@ class ProcessManager:
         # Register agent session if communication server is available
         session_registered = False
         if self.communication_server and self.communication_server.is_running:
+            logger.info(f"📡 Registering WebSocket session: {agent_path}.{method}")
             self.communication_server.register_agent_session(
                 agent_path,
                 {"method": method, "parameters": parameters, "start_time": time.time()},
             )
             session_registered = True
+        else:
+            logger.info(
+                f"📝 Using stdin/stdout fallback for agent: {agent_path}.{method}"
+            )
 
         try:
             # Try dynamic execution first if enabled
@@ -236,6 +284,9 @@ class ProcessManager:
 
                     # Update session status
                     if session_registered:
+                        logger.info(
+                            f"✅ Agent completed - unregistering session: {agent_path}"
+                        )
                         self.communication_server.unregister_agent_session(agent_path)
 
                     return result
@@ -266,6 +317,7 @@ class ProcessManager:
 
             # Update session status
             if session_registered:
+                logger.info(f"✅ Agent completed - unregistering session: {agent_path}")
                 self.communication_server.unregister_agent_session(agent_path)
 
             return result
@@ -273,6 +325,7 @@ class ProcessManager:
         except Exception:
             # Update session status on error
             if session_registered:
+                logger.warning(f"❌ Agent failed - unregistering session: {agent_path}")
                 self.communication_server.unregister_agent_session(agent_path)
             raise
 
