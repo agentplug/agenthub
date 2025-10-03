@@ -224,7 +224,7 @@ optimized query, no explanations.
                 return DDGS
             except ImportError:
                 try:
-                    from ddgs import DDGS  # type: ignore[import-not-found,assignment]
+                    from ddgs import DDGS  # type: ignore[assignment]
 
                     return DDGS
                 except ImportError:
