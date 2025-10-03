@@ -215,7 +215,7 @@ optimized query, no explanations.
             List of filtered search results
         """
 
-        from ddgs import DDGS  # type: ignore[import-not-found,assignment]
+        from ddgs import DDGS
 
         ddg = DDGS()
 
