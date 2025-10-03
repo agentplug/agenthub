@@ -21,6 +21,7 @@ class ProcessManager:
         timeout: int = 300,
         use_dynamic_execution: bool = True,
         monitoring: bool = False,
+        realtime_communication: bool = True,
     ) -> None:
         """
         Initialize the process manager.
@@ -29,6 +30,8 @@ class ProcessManager:
             timeout: Maximum execution time in seconds
             use_dynamic_execution: Whether to use dynamic execution (default: True)
             monitoring: Whether to enable real-time monitoring (default: False)
+            realtime_communication: Whether to enable WebSocket communication
+                (default: True)
         """
         self.timeout = timeout
         self.environment_manager = EnvironmentManager()
@@ -42,6 +45,11 @@ class ProcessManager:
         self.llm_analyzer: Any = None
         self.log_streamer: Any = None
         self.terminal_display: Any = None
+
+        # Real-time communication
+        self.realtime_communication = realtime_communication
+        self.communication_server: Any = None
+        self._server_started = False
 
         # Initialize monitoring components if enabled
         if self.monitoring:
@@ -59,7 +67,10 @@ class ProcessManager:
             except ImportError as e:
                 logger.warning(f"Monitoring components not available: {e}")
                 self.monitoring = False
-        # Monitoring components are already initialized as None above
+
+        # Try to initialize communication server if enabled
+        if self.realtime_communication:
+            self._try_start_communication_server()
 
     def set_monitoring(self, enabled: bool) -> None:
         """Enable or disable monitoring dynamically."""
@@ -87,6 +98,85 @@ class ProcessManager:
             self.log_streamer = None
             self.terminal_display = None
             logger.info("Real-time monitoring disabled")
+
+    def _try_start_communication_server(self) -> None:
+        """Try to start communication server with graceful fallback."""
+        try:
+            # Check if WebSocket dependencies are available
+            import websockets  # noqa: F401
+
+            # Import communication server
+            from agenthub.core.communication import get_communication_server
+
+            # Create server instance
+            self.communication_server = get_communication_server()
+
+            # Server will be started on first use (lazy initialization)
+            logger.info("Communication server initialized (will start on first use)")
+
+        except ImportError as e:
+            logger.info(f"WebSocket not available: {e}. Falling back to stdin/stdout")
+            self.realtime_communication = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize communication server: {e}")
+            self.realtime_communication = False
+
+    async def _ensure_communication_server(self) -> bool:
+        """
+        Ensure communication server is running.
+
+        Returns:
+            bool: True if server available, False if fallback needed
+        """
+        if not self.realtime_communication:
+            return False
+
+        if self.communication_server is None:
+            return False
+
+        # Try to start server if not running
+        if not self.communication_server.is_running:
+            success = await self.communication_server.start()
+            if not success:
+                logger.warning("Communication server unavailable, using fallback")
+                return False
+
+        return True
+
+    def set_realtime_communication(self, enabled: bool) -> None:
+        """Enable or disable real-time communication dynamically."""
+        if enabled and not self.realtime_communication:
+            self._try_start_communication_server()
+            if self.communication_server is not None:
+                self.realtime_communication = True
+                logger.info("Real-time communication enabled")
+        elif not enabled and self.realtime_communication:
+            self.realtime_communication = False
+            # Stop server if running
+            if self.communication_server and self.communication_server.is_running:
+                import asyncio
+
+                try:
+                    asyncio.create_task(self.communication_server.stop())
+                except Exception as e:
+                    logger.warning(f"Error stopping communication server: {e}")
+            logger.info("Real-time communication disabled")
+
+    def get_communication_status(self) -> dict[str, Any]:
+        """Get communication server status."""
+        if not self.realtime_communication:
+            return {"enabled": False, "reason": "disabled"}
+
+        if self.communication_server is None:
+            return {"enabled": False, "reason": "not_initialized"}
+
+        return {
+            "enabled": True,
+            "server_running": self.communication_server.is_running,
+            "port": self.communication_server.port,
+            "host": self.communication_server.host,
+            "active_sessions": len(self.communication_server.agent_sessions),
+        }
 
     def execute_agent(
         self,
@@ -124,30 +214,67 @@ class ProcessManager:
         if not agent_script.exists():
             raise ValueError(f"Agent script not found: {agent_script}")
 
-        # Try dynamic execution first if enabled
-        if self.use_dynamic_execution and self.dynamic_executor:
-            try:
-                start_time = time.time()
-                result = self.dynamic_executor.execute_agent_method(
-                    agent_path, method, parameters, manifest
+        # Register agent session if communication server is available
+        session_registered = False
+        if self.communication_server and self.communication_server.is_running:
+            self.communication_server.register_agent_session(
+                agent_path,
+                {"method": method, "parameters": parameters, "start_time": time.time()},
+            )
+            session_registered = True
+
+        try:
+            # Try dynamic execution first if enabled
+            if self.use_dynamic_execution and self.dynamic_executor:
+                try:
+                    start_time = time.time()
+                    result = self.dynamic_executor.execute_agent_method(
+                        agent_path, method, parameters, manifest
+                    )
+                    execution_time = time.time() - start_time
+                    result["execution_time"] = execution_time
+
+                    # Update session status
+                    if session_registered:
+                        self.communication_server.unregister_agent_session(agent_path)
+
+                    return result
+                except Exception as e:
+                    logger.warning(
+                        f"Dynamic execution failed, falling back to subprocess: {e}"
+                    )
+
+            # Choose execution method based on monitoring setting
+            if self.monitoring:
+                result = self._execute_with_monitoring(
+                    agent_path,
+                    method,
+                    parameters,
+                    tool_context,
+                    agent_script,
+                    agent_dir,
                 )
-                execution_time = time.time() - start_time
-                result["execution_time"] = execution_time
-                return result
-            except Exception as e:
-                logger.warning(
-                    f"Dynamic execution failed, falling back to subprocess: {e}"
+            else:
+                result = self._execute_without_monitoring(
+                    agent_path,
+                    method,
+                    parameters,
+                    tool_context,
+                    agent_script,
+                    agent_dir,
                 )
 
-        # Choose execution method based on monitoring setting
-        if self.monitoring:
-            return self._execute_with_monitoring(
-                agent_path, method, parameters, tool_context, agent_script, agent_dir
-            )
-        else:
-            return self._execute_without_monitoring(
-                agent_path, method, parameters, tool_context, agent_script, agent_dir
-            )
+            # Update session status
+            if session_registered:
+                self.communication_server.unregister_agent_session(agent_path)
+
+            return result
+
+        except Exception:
+            # Update session status on error
+            if session_registered:
+                self.communication_server.unregister_agent_session(agent_path)
+            raise
 
     def _execute_without_monitoring(
         self,
