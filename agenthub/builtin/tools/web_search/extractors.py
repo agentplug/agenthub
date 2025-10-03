@@ -1,6 +1,7 @@
 """
 Content extraction utilities for different file types
 """
+
 import io
 from typing import Any
 
@@ -128,9 +129,7 @@ class HTMLExtractor:
 
             # Create snippet from first 500 characters
             snippet = (
-                text_content[:500] + "..."
-                if len(text_content) > 500
-                else text_content
+                text_content[:500] + "..." if len(text_content) > 500 else text_content
             )
 
             return {
@@ -186,6 +185,5 @@ class ContentExtractor:
             return self.pdf_extractor.extract(content, title, url)
         else:
             # Convert bytes to string for HTML processing
-            html_content = content.decode('utf-8', errors='ignore')
+            html_content = content.decode("utf-8", errors="ignore")
             return self.html_extractor.extract(html_content, title, url)
-

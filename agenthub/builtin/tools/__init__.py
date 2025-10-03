@@ -7,4 +7,3 @@ and more.
 Available Tools:
 - web_search: Web search with AI-powered query rewriting
 """
-

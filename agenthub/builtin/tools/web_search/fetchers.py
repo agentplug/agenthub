@@ -1,6 +1,7 @@
 """
 Async URL fetching and content retrieval
 """
+
 import asyncio
 import concurrent.futures
 from typing import Any
@@ -34,8 +35,7 @@ class ContentFetcher:
             # If we're in an async context, we need to run in a thread
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(
-                    asyncio.run,
-                    self._process_all_urls(search_results)
+                    asyncio.run, self._process_all_urls(search_results)
                 )
                 return future.result()
         except RuntimeError:
@@ -73,12 +73,14 @@ class ContentFetcher:
             for result in results:
                 if isinstance(result, Exception):
                     error_msg = f"Error processing result: {result}"
-                    processed_results.append({
-                        "title": "Error",
-                        "url": "",
-                        "content": error_msg,
-                        "snippet": error_msg,
-                    })
+                    processed_results.append(
+                        {
+                            "title": "Error",
+                            "url": "",
+                            "content": error_msg,
+                            "snippet": error_msg,
+                        }
+                    )
                 elif isinstance(result, dict):
                     processed_results.append(result)
 
@@ -140,6 +142,7 @@ class ContentFetcher:
             if url:
                 try:
                     import requests  # type: ignore[import-untyped]
+
                     response = requests.get(url, timeout=self.config.timeout)
                     content_type = response.headers.get("content-type", "").lower()
                     content = response.content
@@ -149,19 +152,22 @@ class ContentFetcher:
                     results.append(result)
                 except Exception as e:
                     error_msg = f"Error fetching page: {e}"
-                    results.append({
-                        "title": title,
-                        "url": url,
-                        "content": error_msg,
-                        "snippet": error_msg,
-                    })
+                    results.append(
+                        {
+                            "title": title,
+                            "url": url,
+                            "content": error_msg,
+                            "snippet": error_msg,
+                        }
+                    )
             else:
                 no_url_msg = "No URL available"
-                results.append({
-                    "title": title,
-                    "url": "",
-                    "content": no_url_msg,
-                    "snippet": no_url_msg,
-                })
+                results.append(
+                    {
+                        "title": title,
+                        "url": "",
+                        "content": no_url_msg,
+                        "snippet": no_url_msg,
+                    }
+                )
         return results
-

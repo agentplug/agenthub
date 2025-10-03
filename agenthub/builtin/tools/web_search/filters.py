@@ -1,6 +1,7 @@
 """
 Result filtering and validation logic
 """
+
 from typing import Any
 
 
@@ -64,4 +65,3 @@ class ResultFilter:
             else:
                 print(f"[TOOL] Excluding URL: {url}")
         return filtered_results
-

@@ -1,6 +1,7 @@
 """
 Core web search functionality
 """
+
 from typing import Any
 
 from agenthub.config import get_config
@@ -30,7 +31,7 @@ class WebSearchTool:
         self,
         query: str,
         exclude_urls: list[str] | None = None,
-        max_results: int | None = None
+        max_results: int | None = None,
     ) -> dict[str, Any]:
         """
         Search the web for a query using DuckDuckGo with automatic query rewriting.
@@ -200,10 +201,7 @@ optimized query, no explanations.
             return query
 
     def _fetch_search_results(
-        self,
-        rewritten_query: str,
-        exclude_urls: list[str],
-        max_results: int
+        self, rewritten_query: str, exclude_urls: list[str], max_results: int
     ) -> list[dict[str, Any]]:
         """
         Fetch and filter search results from DuckDuckGo.
@@ -236,4 +234,3 @@ optimized query, no explanations.
 
         print(f"[TOOL] Final search results count: {len(search_results)}")
         return search_results
-

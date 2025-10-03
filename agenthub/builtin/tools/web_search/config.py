@@ -1,6 +1,7 @@
 """
 Configuration and constants for web search tool
 """
+
 from dataclasses import dataclass, field
 
 
