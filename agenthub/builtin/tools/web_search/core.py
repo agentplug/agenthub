@@ -216,15 +216,19 @@ optimized query, no explanations.
         """
         # Import DDGS from available package
         from typing import Any
-
-        DDGS: Any = None
-        try:
-            from duckduckgo_search import DDGS
-        except ImportError:
+        
+        def _get_ddgs() -> Any:
             try:
-                from ddgs import DDGS
+                from duckduckgo_search import DDGS
+                return DDGS
             except ImportError:
-                raise ImportError("DuckDuckGo search not available") from None
+                try:
+                    from ddgs import DDGS  # type: ignore[assignment]
+                    return DDGS
+                except ImportError:
+                    raise ImportError("DuckDuckGo search not available") from None
+        
+        DDGS = _get_ddgs()
 
         ddg = DDGS()
 
