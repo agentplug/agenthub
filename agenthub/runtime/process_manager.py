@@ -342,13 +342,30 @@ class ProcessManager:
             import asyncio
 
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # Schedule the server start
+                # Check if there's an event loop running
+                try:
+                    loop = asyncio.get_running_loop()
+                    # If we get here, there's a running loop
+                    logger.debug("📡 Event loop is running, scheduling server start")
                     asyncio.create_task(self._ensure_communication_server())
-                else:
-                    # Run the server start
-                    loop.run_until_complete(self._ensure_communication_server())
+                except RuntimeError:
+                    # No running loop, try to get or create one
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            logger.debug(
+                                "📡 Event loop is running, scheduling server start"
+                            )
+                            asyncio.create_task(self._ensure_communication_server())
+                        else:
+                            logger.debug(
+                                "📡 Event loop exists but not running, starting server"
+                            )
+                            loop.run_until_complete(self._ensure_communication_server())
+                    except RuntimeError:
+                        # No event loop at all, create a new one
+                        logger.debug("📡 No event loop found, creating new one")
+                        asyncio.run(self._ensure_communication_server())
             except Exception as e:
                 logger.warning(f"Failed to start communication server: {e}")
 

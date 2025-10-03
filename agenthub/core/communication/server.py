@@ -1,6 +1,7 @@
 """WebSocket server for real-time agent communication."""
 
 import asyncio
+import atexit
 import json
 import logging
 import os
@@ -109,6 +110,9 @@ class CommunicationServer:
 
         self._initialized = True
 
+        # Register cleanup handler for automatic shutdown on process exit
+        atexit.register(self._cleanup_on_exit)
+
         logger.info(f"CommunicationServer initialized on {self.host}:{self.port}")
 
     async def start(self) -> bool:
@@ -129,11 +133,13 @@ class CommunicationServer:
 
             # Check if startup already failed
             if self.startup_failed:
-                logger.warning(
-                    "CommunicationServer startup failed previously: "
-                    f"{self.failure_reason}"
+                # Reset failure state and try again (port might be free now)
+                logger.info(
+                    "Retrying WebSocket server startup (previous failure: "
+                    f"{self.failure_reason})"
                 )
-                return False
+                self.startup_failed = False
+                self.failure_reason = None
 
             try:
                 # Initialize message router if not already done
@@ -530,6 +536,38 @@ class CommunicationServer:
             "failure_reason": self.failure_reason,
             "websockets_available": WEBSOCKETS_AVAILABLE,
         }
+
+    def _cleanup_on_exit(self) -> None:
+        """Cleanup handler called on process exit via atexit."""
+        if not self.is_running:
+            return
+
+        logger.info("🧹 Auto-cleanup: Shutting down WebSocket server...")
+        try:
+            # Try to get event loop and stop server
+            try:
+                loop = asyncio.get_event_loop()
+                if not loop.is_closed():
+                    loop.run_until_complete(self.stop())
+            except RuntimeError:
+                # No event loop available, force cleanup
+                self.is_running = False
+                if self.server:
+                    self.server.close()
+                logger.info("✅ WebSocket server cleaned up (forced)")
+        except Exception as e:
+            logger.debug(f"Cleanup error (non-critical): {e}")
+
+    def __del__(self) -> None:
+        """Destructor to ensure server cleanup when object is garbage collected."""
+        try:
+            if hasattr(self, "is_running") and self.is_running:
+                logger.debug("🧹 __del__: Cleaning up WebSocket server...")
+                if hasattr(self, "server") and self.server:
+                    self.server.close()
+                self.is_running = False
+        except Exception:
+            pass  # Silently ignore errors in destructor
 
 
 # Global server instance accessor
