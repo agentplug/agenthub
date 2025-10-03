@@ -281,6 +281,13 @@ class ProcessManager:
             'File "/',
             "line ",
             "Traceback",
+            "noqa:",
+            "^^^^^",
+            "return ",
+            "pydantic",
+            "ValidationError",
+            "For further information visit",
+            "https://errors.pydantic",
             # HTTP library debug logs
             "HTTP Request:",
             "HTTP/1.1",
@@ -288,6 +295,11 @@ class ProcessManager:
             "httpcore:",
             # Common debug prefixes
             "DEBUG:",
+            "ERROR:",
+            # MCP and library internals
+            "mcp.client",
+            ".model_validate",
+            "__pydantic_validator__",
             # Empty or whitespace only
             r"^\s*$",
         ]
