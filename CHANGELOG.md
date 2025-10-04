@@ -7,34 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Initial release of AgentHub
-- Core agent loading and management functionality
-- GitHub integration for agent discovery and installation
-- Environment isolation using UV virtual environments
-- Tool injection system with MCP (Model Context Protocol) support
-- Comprehensive CLI interface for agent management
-- Agent validation and repository validation
-- Auto-installer for seamless agent setup
-- Advanced environment management features
+## [0.1.4] - 2025-01-27
 
-### Features
-- **One-line agent loading**: `import agenthub as ah; agent = ah.load_agent("user/agent")`
-- **Tool injection**: `agent = ah.load_agent("user/agent", tools=["tool1", "tool2"])`
-- **CLI management**: Complete command-line interface for agent operations
-- **Environment isolation**: Each agent runs in its own virtual environment
-- **GitHub integration**: Automatic cloning and validation from GitHub repositories
-- **MCP support**: Model Context Protocol for tool execution
-- **Comprehensive testing**: 401 tests with full coverage
+### Added
+- **Builtin Web Search Tool**: Complete web search module with AI-powered query rewriting
+- **Modular Tool Architecture**: New `agenthub.builtin.tools` package for easy tool integration
+- **Web Search Features**:
+  - DuckDuckGo search integration with fallback support
+  - AI-powered query optimization using LLM service
+  - Content extraction from HTML and PDF sources
+  - Asynchronous content fetching with timeout handling
+  - Result filtering and validation
+  - Configurable search parameters (max results, exclude URLs)
+- **Example Implementation**: `examples/builtin_tools/web_search_example.py` showing usage
 
 ### Technical Details
-- Python 3.11+ support
-- Built with modern Python tooling (hatchling, pytest, mypy, ruff)
-- Comprehensive error handling and validation
-- Thread-safe tool registry
-- Performance optimized for concurrent operations
+- **Smart Model Selection**: Leverages existing LLM service for automatic model detection
+- **Type Safety**: Full mypy compliance with comprehensive type hints
+- **Error Handling**: Robust error handling with graceful fallbacks
+- **Performance**: Asynchronous operations for better performance
+- **Extensibility**: Modular design allows easy addition of new builtin tools
 
-## [0.1.0] - 2025-01-27
+### Developer Experience
+- **Simple Integration**: Import and wrap with `@tool` decorator
+- **Selective Hosting**: Users choose which tools to host, not all at once
+- **Clean API**: `WebSearchTool().search(query, exclude_urls, max_results)`
+- **Documentation**: Comprehensive README with usage examples
+
+## [0.1.3] - 2025-01-27
 
 ### Added
 - Initial public release
