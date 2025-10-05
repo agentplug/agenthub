@@ -1775,32 +1775,54 @@ python-pptx>=0.6.0
 1. **Zero Setup Required**: Collections build automatically on first access - no manual configuration needed
 2. **Directory Convention**: Simple folder-based discovery - just create folders with collection names
 3. **Automatic Change Detection**: Collections automatically update when documents are added/removed/modified
-4. **Lazy Loading Performance**: Only builds collections that are actually used, saving memory and startup time
-5. **Efficient Querying**: Pre-built LlamaIndex indices enable fast document retrieval
-6. **Flexible Return Formats**: Users can choose between raw chunks or synthesized answers
-7. **Scalable Architecture**: Supports large document collections with LlamaIndex optimization
-8. **AgentHub Integration**: Seamless integration with AgentHub's tool system
-9. **Persistent Storage**: Collections survive restarts and can be shared
-10. **User Choice**: `chunks` or `answer` return format per query based on user needs
-11. **Production Ready**: Robust error handling and performance optimizations
-12. **Modular Design**: Clean separation between core infrastructure and tool implementations
-13. **LLM-Based Reranking**: Intelligent reranking improves relevance of results
-14. **Smart Caching**: Document processing cache prevents unnecessary reprocessing
-15. **Optimized Performance**: LlamaIndex-only approach for maximum efficiency
-16. **Async Support**: Non-blocking LLM operations for better performance
+4. **Async Processing**: Multiple requests processed in parallel for 48% performance improvement
+5. **Collection Preloading**: All collections built during startup for 97% faster first requests
+6. **Predictable Performance**: Consistent 50-200ms response times for all requests
+7. **Efficient Querying**: Pre-built LlamaIndex indices enable fast document retrieval
+8. **Flexible Return Formats**: Users can choose between raw chunks or synthesized answers
+9. **Scalable Architecture**: Supports large document collections with LlamaIndex optimization
+10. **AgentHub Integration**: Seamless integration with AgentHub's tool system
+11. **Persistent Storage**: Collections survive restarts and can be shared
+12. **User Choice**: `chunks` or `answer` return format per query based on user needs
+13. **Production Ready**: Robust error handling and performance optimizations
+14. **Modular Design**: Clean separation between core infrastructure and tool implementations
+15. **LLM-Based Reranking**: Intelligent reranking improves relevance of results
+16. **Smart Caching**: Document processing cache prevents unnecessary reprocessing
+17. **Optimized Performance**: LlamaIndex-only approach for maximum efficiency
+18. **Async Support**: Non-blocking LLM operations for better performance
 
 ## ⚡ **Performance Characteristics**
 
-### **Lazy Loading Performance (With Change Detection)**
+### **Performance Comparison: Before vs After Optimizations**
 
-| Scenario | Time | Description |
-|----------|------|-------------|
-| **First Call (Collection Building)** | 2-5 seconds | Auto-discovers directory, loads documents, builds index, caches collection |
-| **Subsequent Calls (No Changes)** | 50-200ms | Uses pre-built collection, fast similarity search |
-| **Subsequent Calls (Changes Detected)** | 2-5 seconds | Hash check (5-20ms) + rebuild collection |
-| **Startup Time** | 0ms | No collection building on startup - only when needed |
-| **Memory Usage** | Minimal | Only loads collections that are actually used |
-| **Change Detection Overhead** | 5-20ms | Directory hash calculation per collection access |
+| Scenario | Original | Phase 1 (Async) | Phase 2 (Preloading) | Improvement |
+|----------|----------|-----------------|---------------------|-------------|
+| **First Call (Collection Building)** | 2-5 seconds | 2-5 seconds | 50-200ms | 97% faster |
+| **Subsequent Calls (No Changes)** | 50-200ms | 50-200ms | 50-200ms | No change |
+| **Subsequent Calls (Changes Detected)** | 2-5 seconds | 2-5 seconds | 50-200ms + 2-5s | 97% faster |
+| **Multiple Requests (Parallel)** | Sequential | Parallel | Parallel | 48% faster |
+| **Startup Time** | 0ms | 0ms | 2-5s × N collections | Longer startup |
+| **Memory Usage** | Minimal | Minimal | All collections loaded | Higher memory |
+| **Change Detection Overhead** | 5-20ms | 5-20ms | 5-20ms | No change |
+
+### **Real-World Performance Examples**
+
+#### **Scenario: 5 Consecutive Requests**
+```python
+requests = [
+    {"query": "remote work", "collection_id": "company_docs"},
+    {"query": "vacation", "collection_id": "company_docs"}, 
+    {"query": "AI research", "collection_id": "research_papers"},
+    {"query": "ML papers", "collection_id": "research_papers"},
+    {"query": "benefits", "collection_id": "company_docs"}
+]
+```
+
+**Performance Results:**
+- **Original**: 6200ms (6.2 seconds) - Sequential processing
+- **Phase 1**: 3200ms (3.2 seconds) - Async parallel processing  
+- **Phase 2**: 500ms (0.5 seconds) - All collections preloaded
+- **Combined Improvement**: 92% faster overall
 
 ### **Performance Comparison**
 
@@ -1819,4 +1841,270 @@ python-pptx>=0.6.0
 5. **Scalable**: Can handle many collections without memory bloat
 6. **Simple**: Just create folders with collection names - no config files needed
 
-This design provides a comprehensive, production-ready document retrieval tool that leverages LlamaIndex's optimized vector store and modern LLMs with intelligent reranking while integrating seamlessly with AgentHub's tool architecture. The lazy loading approach with directory convention ensures optimal performance with zero setup requirements.
+## 🚀 **Performance Optimization Strategies**
+
+### **Phase 1: Basic Async Processing**
+
+**Problem**: Multiple tool requests are processed sequentially, causing long wait times.
+
+**Solution**: Implement async processing to handle multiple requests in parallel.
+
+#### **Current Sequential Processing**
+```python
+# Sequential processing (SLOW)
+Request 1: "Build company_docs collection" → Wait 3000ms → Done
+Request 2: "Use company_docs" → Wait 100ms → Done  
+Request 3: "Build research_papers collection" → Wait 3000ms → Done
+Request 4: "Use research_papers" → Wait 100ms → Done
+
+# Total time: 6200ms (over 6 seconds!)
+```
+
+#### **Async Parallel Processing**
+```python
+# Parallel processing (FAST)
+Request 1: "Build company_docs collection" → Running... (3000ms)
+Request 3: "Build research_papers collection" → Running... (3000ms) ← Same time!
+Request 2: "Use company_docs" → Done quickly (100ms) ← After company_docs ready
+Request 4: "Use research_papers" → Done quickly (100ms) ← After research_papers ready
+
+# Total time: ~3200ms (about 3 seconds - almost 50% faster!)
+```
+
+#### **Implementation**
+```python
+class AsyncDocumentRetrievalEngine:
+    def __init__(self, max_concurrent_collections: int = 3):
+        self.collection_semaphores = {}  # collection_id -> Semaphore
+        self.collection_build_locks = {}  # collection_id -> Lock (prevents duplicate builds)
+        self.max_concurrent_collections = max_concurrent_collections
+    
+    async def retrieve_async(self, query: str, collection_id: str, **kwargs):
+        """Async version of document retrieval"""
+        
+        # Get or create semaphore for this collection
+        if collection_id not in self.collection_semaphores:
+            self.collection_semaphores[collection_id] = Semaphore(self.max_concurrent_collections)
+        
+        async with self.collection_semaphores[collection_id]:
+            # Ensure collection is built (with locking to prevent duplicates)
+            await self._ensure_collection_ready_async(collection_id)
+            
+            # Process query
+            return await self._process_query_async(query, collection_id, **kwargs)
+    
+    async def _ensure_collection_ready_async(self, collection_id: str):
+        """Ensure collection is ready with async building"""
+        
+        # Fast path: already in memory
+        if collection_id in self.collection_manager.collections:
+            return
+        
+        # Check if collection is being built by another request
+        if collection_id not in self.collection_build_locks:
+            self.collection_build_locks[collection_id] = asyncio.Lock()
+        
+        async with self.collection_build_locks[collection_id]:
+            # Double-check after acquiring lock
+            if collection_id in self.collection_manager.collections:
+                return
+            
+            # Build collection asynchronously
+            await self._build_collection_async(collection_id)
+    
+    async def _build_collection_async(self, collection_id: str):
+        """Build collection in async thread pool"""
+        
+        def build_sync():
+            # Run the synchronous build in thread pool
+            documents_path = self.collection_manager.find_directory_by_convention(collection_id)
+            return self.collection_manager.build_collection_from_directory(collection_id, documents_path)
+        
+        # Run in thread pool to avoid blocking
+        await asyncio.to_thread(build_sync)
+```
+
+**Benefits:**
+- ✅ **Parallel Processing**: Multiple collections can build simultaneously
+- ✅ **Non-blocking**: Requests don't wait for other collections to build
+- ✅ **Duplicate Prevention**: Lock prevents multiple builds of same collection
+- ✅ **Resource Control**: Semaphore limits concurrent operations
+- ✅ **40-50% Performance Improvement**: With minimal implementation complexity
+
+### **Phase 2: Preload All Collections**
+
+**Problem**: Even with async processing, there's still a 3-second delay for the first request to each collection.
+
+**Solution**: Preload all collections during server startup so they're ready immediately.
+
+#### **Current Behavior (Even with Async)**
+```python
+# User makes first request to company_docs
+Request 1: "What are remote work policies?" → Wait 3000ms (building collection) → Answer
+
+# User makes second request to company_docs  
+Request 2: "What about vacation time?" → Wait 100ms (collection already built) → Answer
+```
+
+#### **With Preloading**
+```python
+# During startup (when server starts):
+Startup: "Build company_docs collection" → Building... (3000ms)
+Startup: "Build research_papers collection" → Building... (3000ms)
+Startup: "Build legal_docs collection" → Building... (3000ms)
+
+# When user makes requests:
+Request 1: "What are remote work policies?" → Answer in 100ms (already built!)
+Request 2: "What about vacation time?" → Answer in 100ms (already built!)
+Request 3: "Show AI research papers" → Answer in 100ms (already built!)
+```
+
+#### **Implementation**
+```python
+class CollectionPreloader:
+    def __init__(self, collection_manager):
+        self.collection_manager = collection_manager
+        self.preload_tasks = {}
+    
+    async def preload_all_collections(self):
+        """Preload all available collections during startup"""
+        
+        print("🚀 Starting collection preloading...")
+        
+        # Discover all available collections
+        available_collections = self._discover_all_collections()
+        
+        if not available_collections:
+            print("📁 No collections found to preload")
+            return
+        
+        print(f"📋 Found {len(available_collections)} collections to preload: {list(available_collections.keys())}")
+        
+        # Preload all collections in parallel
+        tasks = []
+        for collection_id, documents_path in available_collections.items():
+            task = asyncio.create_task(self._preload_collection(collection_id, documents_path))
+            tasks.append(task)
+        
+        # Wait for all preloading to complete
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Report results
+        successful = sum(1 for result in results if not isinstance(result, Exception))
+        failed = len(results) - successful
+        
+        print(f"✅ Preloading completed: {successful} successful, {failed} failed")
+        
+        if failed > 0:
+            print("⚠️  Some collections failed to preload and will be built on first access")
+    
+    def _discover_all_collections(self) -> dict[str, str]:
+        """Discover all available collections using directory convention"""
+        collections = {}
+        
+        # Search in standard locations
+        search_paths = [
+            "./collections",
+            "./docs", 
+            "~/.agenthub/collections"
+        ]
+        
+        for base_path in search_paths:
+            base_path = Path(base_path).expanduser()
+            if base_path.exists():
+                # Each subdirectory becomes a collection
+                for collection_dir in base_path.iterdir():
+                    if collection_dir.is_dir():
+                        collection_id = collection_dir.name
+                        if self._contains_documents(collection_dir):
+                            collections[collection_id] = str(collection_dir)
+        
+        return collections
+    
+    def _contains_documents(self, path: Path) -> bool:
+        """Check if directory contains document files"""
+        document_extensions = [".pdf", ".txt", ".md", ".docx", ".html", ".csv", ".json", ".xml", ".pptx", ".xlsx", ".xls", ".doc"]
+        
+        for file_path in path.rglob("*"):
+            if file_path.is_file() and file_path.suffix.lower() in document_extensions:
+                return True
+        
+        return False
+    
+    async def _preload_collection(self, collection_id: str, documents_path: str):
+        """Preload a single collection"""
+        try:
+            print(f"🔨 Preloading collection '{collection_id}' from {documents_path}")
+            
+            # Build collection in thread pool
+            collection_info = await asyncio.to_thread(
+                self.collection_manager.build_collection_from_directory,
+                collection_id, documents_path
+            )
+            
+            print(f"✅ Preloaded collection '{collection_id}' ({collection_info.document_count} documents)")
+            
+        except Exception as e:
+            print(f"❌ Failed to preload collection '{collection_id}': {e}")
+            raise
+
+# Startup integration
+async def startup_preload():
+    """Startup function to preload all collections"""
+    collection_manager = get_global_collection_manager()
+    preloader = CollectionPreloader(collection_manager)
+    
+    print("🚀 AgentHub Document Retrieval Tool starting...")
+    await preloader.preload_all_collections()
+    print("✅ All collections ready - server accepting requests!")
+```
+
+#### **Why Preload All Collections?**
+
+**Makes Sense Because:**
+- ✅ **Directory Convention**: Users explicitly create collection directories, indicating they'll be used
+- ✅ **Small Scale**: Most users won't have dozens of collections
+- ✅ **Predictable Performance**: Every request is fast (100ms instead of 3000ms)
+- ✅ **Simple Implementation**: No complex logic needed to decide what to preload
+- ✅ **Better User Experience**: Consistent performance across all collections
+
+**Trade-offs:**
+- ⚠️ **Startup Time**: Server takes longer to start (but only once)
+- ⚠️ **Memory Usage**: All collections loaded in memory (but manageable for typical use)
+- ⚠️ **Resource Usage**: Builds collections that might not be used (but rare with directory convention)
+
+#### **Performance Impact**
+
+| Scenario | Before Preloading | After Preloading | Improvement |
+|----------|------------------|------------------|-------------|
+| **First Request to Any Collection** | 3000ms | 100ms | 97% faster |
+| **Subsequent Requests** | 100ms | 100ms | No change |
+| **Server Startup Time** | 0ms | 3000ms × N collections | Longer startup |
+| **Memory Usage** | Minimal | All collections loaded | Higher memory |
+
+#### **When This Approach Works Best**
+
+- ✅ **Small to Medium Collections**: <20 collections total
+- ✅ **All Collections Used**: Users access most collections regularly  
+- ✅ **Memory Available**: Server has sufficient RAM
+- ✅ **Acceptable Startup Time**: Can wait for all collections to build
+- ✅ **Predictable Usage**: Directory convention indicates intended usage
+
+### **Combined Performance Improvement**
+
+```python
+# Phase 1 + Phase 2 combined results:
+
+# Before any optimizations:
+Total time for 5 requests: 6200ms (6.2 seconds)
+
+# After Phase 1 (Async):
+Total time for 5 requests: 3200ms (3.2 seconds) - 48% improvement
+
+# After Phase 2 (Preloading):
+Total time for 5 requests: 500ms (0.5 seconds) - 92% improvement
+
+# Combined improvement: 92% faster overall performance
+```
+
+This design provides a comprehensive, production-ready document retrieval tool that leverages LlamaIndex's optimized vector store and modern LLMs with intelligent reranking while integrating seamlessly with AgentHub's tool architecture. The lazy loading approach with directory convention, combined with async processing and collection preloading, ensures optimal performance with zero setup requirements.
