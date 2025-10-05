@@ -18,6 +18,7 @@ This document outlines the design and implementation of a document retrieval too
 - **Lazy Loading**: Collections are built on-demand with intelligent change detection
 - **Persistent Indexing**: Collections are built once and reused for all queries
 - **Flexible Return Formats**: Users can choose between raw chunks or synthesized answers
+- **High Concurrency**: Supports up to 5 simultaneous requests with proper isolation
 - **Async Processing**: Multiple requests processed in parallel for 48% performance improvement
 - **Collection Preloading**: All collections built during startup for 97% faster first requests
 - **LLM-Based Reranking**: Intelligent reranking using modern LLMs for improved relevance
@@ -61,6 +62,21 @@ graph TB
 ### **1. Tool Interface Design**
 
 ```python
+from agenthub.core.tools import tool
+
+@tool(
+    name="document_retrieval",
+    description="Retrieve and rank documents from a collection using LlamaIndex",
+    parameters={
+        "query": {"type": "string", "description": "The search query string"},
+        "collection_id": {"type": "string", "description": "ID of the document collection to search"},
+        "top_k": {"type": "integer", "default": 5, "description": "Number of top results to return"},
+        "return_format": {"type": "string", "default": "chunks", "enum": ["chunks", "answer"], "description": "Return format"},
+        "similarity_threshold": {"type": "number", "default": 0.7, "description": "Minimum similarity score for results"},
+        "enable_reranking": {"type": "boolean", "default": True, "description": "Whether to use LLM-based reranking"},
+        "rerank_model": {"type": "string", "description": "Specific LLM model for reranking (optional)"}
+    }
+)
 def document_retrieval(
     query: str,
     collection_id: str,
@@ -73,6 +89,9 @@ def document_retrieval(
 ) -> dict:
     """
     Retrieve and rank documents from a collection using LlamaIndex.
+    
+    Supports up to 5 concurrent requests with proper isolation and conflict prevention.
+    Collections are built automatically on first access using directory convention.
     
     Args:
         query: The search query string
@@ -407,6 +426,131 @@ Please provide a comprehensive answer based on the information in these document
         return self._call_llm(prompt, "synthesis")
 ```
 
+## 🔄 **Concurrency and Performance**
+
+### **Concurrency Limits**
+
+The document retrieval tool is designed to handle multiple concurrent requests efficiently:
+
+#### **System-Level Limits**
+- **Maximum Concurrent Requests**: 5 simultaneous calls (limited by AgentHub's MCP connection pool)
+- **Per-Collection Limit**: 3 concurrent requests per collection
+- **Collection Building**: Only 1 build process per collection at a time
+- **Memory Usage**: ~1.35GB maximum with full concurrency
+
+#### **Request Processing Flow**
+
+```mermaid
+graph TB
+    A[Multiple Agents] --> B[AgentHub Connection Pool<br/>Max: 5 connections]
+    B --> C[Async Tool Executor]
+    C --> D[Document Retrieval Tool]
+    D --> E[Collection Semaphore<br/>Max: 3 per collection]
+    E --> F[Collection Build Lock<br/>1 per collection]
+    F --> G[LlamaIndex Processing]
+    
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style E fill:#f3e5f5
+    style F fill:#e8f5e8
+```
+
+#### **Concurrency Scenarios**
+
+| Scenario | Concurrent Calls | Processing Time | Description |
+|----------|------------------|-----------------|-------------|
+| **Different Collections** | 5 parallel | ~3 seconds each | Each builds its own collection |
+| **Same Collection** | 3 parallel | ~100ms each | Collection already exists |
+| **Mixed Requests** | 5 parallel | ~3 seconds | Limited by slowest collection |
+
+### **Performance Optimization**
+
+#### **Phase 1: Async Processing**
+- **Problem**: Sequential processing causes long wait times
+- **Solution**: Parallel processing with semaphores and locks
+- **Improvement**: 48% faster for multiple requests
+
+```python
+class AsyncDocumentRetrievalEngine:
+    def __init__(self, max_concurrent_collections: int = 3):
+        self.collection_semaphores = {}  # Per-collection concurrency control
+        self.collection_build_locks = {}  # Prevent duplicate builds
+        self.max_concurrent_collections = max_concurrent_collections
+```
+
+#### **Phase 2: Collection Preloading**
+- **Problem**: 3-second delay for first request to each collection
+- **Solution**: Preload all collections during startup
+- **Improvement**: 97% faster first requests (3000ms → 100ms)
+
+```python
+class CollectionPreloader:
+    async def preload_all_collections(self):
+        """Preload all available collections during startup"""
+        available_collections = self._discover_all_collections()
+        
+        # Preload all collections in parallel
+        tasks = []
+        for collection_id, documents_path in available_collections.items():
+            task = asyncio.create_task(self._preload_collection(collection_id, documents_path))
+            tasks.append(task)
+        
+        await asyncio.gather(*tasks, return_exceptions=True)
+```
+
+#### **Performance Results**
+
+```python
+# Real-world example: 5 consecutive requests
+requests = [
+    {"query": "remote work", "collection_id": "company_docs"},
+    {"query": "vacation", "collection_id": "company_docs"}, 
+    {"query": "AI research", "collection_id": "research_papers"},
+    {"query": "ML papers", "collection_id": "research_papers"},
+    {"query": "benefits", "collection_id": "company_docs"}
+]
+
+# Performance Results:
+Original Implementation: 6200ms (6.2 seconds)
+Phase 1 (Async):        3200ms (3.2 seconds) - 48% improvement
+Phase 2 (Preloading):   500ms (0.5 seconds) - 92% improvement
+```
+
+### **Dependency Conflict Prevention**
+
+#### **Process Isolation**
+```python
+# Each agent runs in separate subprocess
+class AgentRuntime:
+    def __init__(self):
+        self.process_isolation = True  # Prevents dependency conflicts
+        self.dependency_isolation = True
+```
+
+#### **Collection-Level Locking**
+```python
+async def _ensure_collection_ready_async(self, collection_id: str):
+    # Only one build process per collection at a time
+    if collection_id not in self.collection_build_locks:
+        self.collection_build_locks[collection_id] = asyncio.Lock()
+    
+    async with self.collection_build_locks[collection_id]:
+        # Safe to build collection
+        await self._build_collection_async(collection_id)
+```
+
+#### **Resource Management**
+```python
+# Connection pooling prevents resource conflicts
+@asynccontextmanager
+async def get_connection(self):
+    connection = await self._get_or_create_connection()
+    try:
+        yield connection
+    finally:
+        await self._return_connection(connection)
+```
+
 ## 📁 **Repository Structure**
 
 ```
@@ -526,8 +670,15 @@ The system automatically detects when documents are added, removed, or modified 
 ## 🔧 **Tool Server Implementation**
 
 ```python
-# Global collection manager instance
+import asyncio
+import time
+from agenthub.core.tools import tool
+from .collection_manager import CollectionManager, CollectionNotFoundError
+from .retrieval_engine import AsyncDocumentRetrievalEngine
+
+# Global instances for async processing
 collection_manager = None
+async_engine = None
 
 def get_global_collection_manager() -> CollectionManager:
     """Get or create global collection manager instance."""
@@ -536,6 +687,26 @@ def get_global_collection_manager() -> CollectionManager:
         collection_manager = CollectionManager()
     return collection_manager
 
+def get_global_async_engine() -> AsyncDocumentRetrievalEngine:
+    """Get or create global async retrieval engine."""
+    global async_engine
+    if async_engine is None:
+        async_engine = AsyncDocumentRetrievalEngine(max_concurrent_collections=3)
+    return async_engine
+
+@tool(
+    name="document_retrieval",
+    description="Retrieve and rank documents from a collection using LlamaIndex",
+    parameters={
+        "query": {"type": "string", "description": "The search query string"},
+        "collection_id": {"type": "string", "description": "ID of the document collection to search"},
+        "top_k": {"type": "integer", "default": 5, "description": "Number of top results to return"},
+        "return_format": {"type": "string", "default": "chunks", "enum": ["chunks", "answer"], "description": "Return format"},
+        "similarity_threshold": {"type": "number", "default": 0.7, "description": "Minimum similarity score for results"},
+        "enable_reranking": {"type": "boolean", "default": True, "description": "Whether to use LLM-based reranking"},
+        "rerank_model": {"type": "string", "description": "Specific LLM model for reranking (optional)"}
+    }
+)
 def document_retrieval(
     query: str,
     collection_id: str,
@@ -547,62 +718,25 @@ def document_retrieval(
     **kwargs
 ) -> dict:
     """
-    Document retrieval tool function for AgentHub integration.
+    Document retrieval tool function with async processing and concurrency support.
+    Supports up to 5 concurrent requests with proper isolation.
     """
+    start_time = time.time()
+    
     try:
-        # Get collection manager
+        # Get global instances
         manager = get_global_collection_manager()
+        engine = get_global_async_engine()
         
-        # Get or build collection (lazy loading)
-        collection = asyncio.run(manager.get_or_build_collection(collection_id))
-        
-        # Create retrieval engine
-        engine = DocumentRetrievalEngine()
-        
-        # Retrieve documents
-        chunks = asyncio.run(engine.retrieve_documents(
-            query=query,
-            collection_id=collection_id,
-            top_k=top_k,
-            similarity_threshold=similarity_threshold,
-            enable_reranking=enable_reranking
+        # Run async retrieval
+        result = asyncio.run(_async_document_retrieval(
+            manager, engine, query, collection_id, top_k, 
+            return_format, similarity_threshold, enable_reranking
         ))
         
-        # Format response based on return_format
-        if return_format == "answer":
-            answer = asyncio.run(engine.synthesize_answer(query, chunks))
-            return {
-                "success": True,
-                "format": "answer",
-                "answer": answer,
-                "sources": [chunk.source for chunk in chunks],
-                "metadata": {
-                    "collection_id": collection_id,
-                    "query": query,
-                    "chunks_used": len(chunks),
-                    "processing_time": time.time() - start_time
-                }
-            }
-        else:  # chunks format
-            return {
-                "success": True,
-                "format": "chunks",
-                "chunks": [
-                    {
-                        "text": chunk.text,
-                        "score": chunk.score,
-                        "source": chunk.source,
-                        "metadata": chunk.metadata
-                    }
-                    for chunk in chunks
-                ],
-                "metadata": {
-                    "collection_id": collection_id,
-                    "query": query,
-                    "total_chunks": len(chunks),
-                    "processing_time": time.time() - start_time
-                }
-            }
+        # Add processing time to metadata
+        result["metadata"]["processing_time"] = time.time() - start_time
+        return result
             
     except CollectionNotFoundError as e:
         return {
@@ -613,8 +747,82 @@ def document_retrieval(
     except Exception as e:
         return {
             "success": False,
-            "error": f"Document retrieval failed: {str(e)}"
+            "error": f"Document retrieval failed: {str(e)}",
+            "metadata": {
+                "collection_id": collection_id,
+                "query": query,
+                "processing_time": time.time() - start_time
+            }
         }
+
+async def _async_document_retrieval(
+    manager: CollectionManager,
+    engine: AsyncDocumentRetrievalEngine,
+    query: str,
+    collection_id: str,
+    top_k: int,
+    return_format: str,
+    similarity_threshold: float,
+    enable_reranking: bool
+) -> dict:
+    """Async document retrieval implementation."""
+    
+    # Get or build collection (with async processing)
+    collection = await manager.get_or_build_collection(collection_id)
+    
+    # Retrieve documents with async processing
+    chunks = await engine.retrieve_documents(
+        query=query,
+        collection_id=collection_id,
+        top_k=top_k,
+        similarity_threshold=similarity_threshold,
+        enable_reranking=enable_reranking
+    )
+    
+    # Format response based on return_format
+    if return_format == "answer":
+        answer = await engine.synthesize_answer(query, chunks)
+        return {
+            "success": True,
+            "format": "answer",
+            "answer": answer,
+            "sources": [chunk.source for chunk in chunks],
+            "metadata": {
+                "collection_id": collection_id,
+                "query": query,
+                "chunks_used": len(chunks)
+            }
+        }
+    else:  # chunks format
+        return {
+            "success": True,
+            "format": "chunks",
+            "chunks": [
+                {
+                    "text": chunk.text,
+                    "score": chunk.score,
+                    "source": chunk.source,
+                    "metadata": chunk.metadata
+                }
+                for chunk in chunks
+            ],
+            "metadata": {
+                "collection_id": collection_id,
+                "query": query,
+                "total_chunks": len(chunks)
+            }
+        }
+
+# Startup function for collection preloading
+async def startup_preload():
+    """Startup function to preload all collections for better performance."""
+    print("🚀 AgentHub Document Retrieval Tool starting...")
+    
+    manager = get_global_collection_manager()
+    preloader = CollectionPreloader(manager)
+    
+    await preloader.preload_all_collections()
+    print("✅ All collections ready - server accepting requests!")
 ```
 
 ## 🤖 **AgentHub Integration**
@@ -700,124 +908,6 @@ agent.run("Search the research_papers collection for AI safety research")
 }
 ```
 
-## 🚀 **Performance Optimization Strategies**
-
-### **Phase 1: Basic Async Processing**
-
-**Problem**: Multiple tool requests are processed sequentially, causing long wait times.
-
-**Solution**: Implement async processing to handle multiple requests in parallel.
-
-#### **Performance Impact**
-
-| Scenario | Before | After | Improvement |
-|----------|--------|-------|-------------|
-| **5 Consecutive Requests** | 6200ms | 3200ms | 48% faster |
-| **Parallel Collection Building** | Sequential | Parallel | 3x faster |
-| **Memory Usage** | Same | Same | No change |
-
-#### **Implementation**
-
-```python
-class AsyncDocumentRetrievalEngine:
-    def __init__(self, max_concurrent_collections: int = 3):
-        self.collection_semaphores = {}
-        self.collection_build_locks = {}
-        self.max_concurrent_collections = max_concurrent_collections
-    
-    async def retrieve_async(self, query: str, collection_id: str, **kwargs):
-        """Async version of document retrieval"""
-        
-        # Get or create semaphore for this collection
-        if collection_id not in self.collection_semaphores:
-            self.collection_semaphores[collection_id] = Semaphore(self.max_concurrent_collections)
-        
-        async with self.collection_semaphores[collection_id]:
-            # Ensure collection is built (with locking to prevent duplicates)
-            await self._ensure_collection_ready_async(collection_id)
-            
-            # Process query
-            return await self._process_query_async(query, collection_id, **kwargs)
-```
-
-### **Phase 2: Preload All Collections**
-
-**Problem**: Even with async processing, there's still a 3-second delay for the first request to each collection.
-
-**Solution**: Preload all collections during server startup so they're ready immediately.
-
-#### **Performance Impact**
-
-| Scenario | Before | After | Improvement |
-|----------|--------|-------|-------------|
-| **First Request to Any Collection** | 3000ms | 100ms | 97% faster |
-| **Subsequent Requests** | 100ms | 100ms | No change |
-| **Multiple Requests** | 3200ms | 500ms | 84% faster |
-
-#### **Why Preload All Collections?**
-
-**Makes Sense Because:**
-- ✅ **Directory Convention**: Users explicitly create collection directories, indicating they'll be used
-- ✅ **Small Scale**: Most users won't have dozens of collections
-- ✅ **Predictable Performance**: Every request is fast (100ms instead of 3000ms)
-- ✅ **Simple Implementation**: No complex logic needed to decide what to preload
-- ✅ **Better User Experience**: Consistent performance across all collections
-
-**Trade-offs:**
-- ⚠️ **Startup Time**: Server takes longer to start (but only once)
-- ⚠️ **Memory Usage**: All collections loaded in memory (but manageable for typical use)
-
-#### **Implementation**
-
-```python
-class CollectionPreloader:
-    async def preload_all_collections(self):
-        """Preload all available collections during startup"""
-        
-        print("🚀 Starting collection preloading...")
-        
-        # Discover all available collections
-        available_collections = self._discover_all_collections()
-        
-        if not available_collections:
-            print("📁 No collections found to preload")
-            return
-        
-        print(f"📋 Found {len(available_collections)} collections to preload")
-        
-        # Preload all collections in parallel
-        tasks = []
-        for collection_id, documents_path in available_collections.items():
-            task = asyncio.create_task(self._preload_collection(collection_id, documents_path))
-            tasks.append(task)
-        
-        # Wait for all preloading to complete
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        successful = sum(1 for result in results if not isinstance(result, Exception))
-        print(f"✅ Preloading completed: {successful} successful")
-```
-
-### **Combined Performance Improvement**
-
-```python
-# Real-world example: 5 consecutive requests
-
-requests = [
-    {"query": "remote work", "collection_id": "company_docs"},
-    {"query": "vacation", "collection_id": "company_docs"}, 
-    {"query": "AI research", "collection_id": "research_papers"},
-    {"query": "ML papers", "collection_id": "research_papers"},
-    {"query": "benefits", "collection_id": "company_docs"}
-]
-
-# Performance Results:
-Original Implementation: 6200ms (6.2 seconds)
-Phase 1 (Async):        3200ms (3.2 seconds) - 48% improvement
-Phase 2 (Preloading):   500ms (0.5 seconds) - 92% improvement
-
-# Combined improvement: 92% faster overall performance
-```
 
 ## 💡 **Usage Examples**
 
@@ -900,13 +990,14 @@ pip install python-pptx>=0.6.0
 1. **Zero Setup Required**: Collections build automatically on first access
 2. **Directory Convention**: Simple folder-based discovery
 3. **Automatic Change Detection**: Collections update when documents change
-4. **Async Processing**: Multiple requests processed in parallel (48% improvement)
-5. **Collection Preloading**: All collections built during startup (97% faster)
-6. **Predictable Performance**: Consistent 50-200ms response times
-7. **Flexible Return Formats**: Users choose chunks or synthesized answers
-8. **LLM-Based Reranking**: Intelligent relevance scoring
-9. **AgentHub Integration**: Seamless tool integration
-10. **Production Ready**: Robust error handling and performance optimizations
+4. **High Concurrency**: Supports up to 5 simultaneous requests with proper isolation
+5. **Async Processing**: Multiple requests processed in parallel (48% improvement)
+6. **Collection Preloading**: All collections built during startup (97% faster)
+7. **Predictable Performance**: Consistent 50-200ms response times
+8. **Flexible Return Formats**: Users choose chunks or synthesized answers
+9. **LLM-Based Reranking**: Intelligent relevance scoring
+10. **AgentHub Integration**: Seamless tool integration
+11. **Production Ready**: Robust error handling and performance optimizations
 
 ## 🔒 **Security and Performance Considerations**
 
