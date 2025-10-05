@@ -147,22 +147,23 @@ class ProcessManager:
             logger.debug("📝 Communication server not initialized - using fallback")
             return False
 
-        # Try to start server if not running
-        if not self.communication_server.is_running:
-            logger.info("🚀 Starting WebSocket communication server...")
-            success = await self.communication_server.start()
-            if not success:
-                logger.warning(
-                    "❌ Communication server failed to start - using fallback"
-                )
-                return False
-            logger.info(
-                f"✅ WebSocket server started on port {self.communication_server.port}"
-            )
-        else:
+        # Check if server is already running
+        if self.communication_server.is_running:
             logger.debug(
-                f"✅ WebSocket server running on port {self.communication_server.port}"
+                f"✅ WebSocket server already running on port "
+                f"{self.communication_server.port}"
             )
+            return True
+
+        # Try to start server if not running
+        logger.info("🚀 Starting WebSocket communication server...")
+        success = await self.communication_server.start()
+        if not success:
+            logger.warning("❌ Communication server failed to start - using fallback")
+            return False
+        logger.info(
+            f"✅ WebSocket server started on port {self.communication_server.port}"
+        )
 
         return True
 
