@@ -115,6 +115,23 @@ class CommunicationServer:
 
         logger.info(f"CommunicationServer initialized on {self.host}:{self.port}")
 
+    def is_port_in_use(self) -> bool:
+        """
+        Check if the WebSocket port is already in use by another process.
+
+        Returns:
+            bool: True if port is in use, False if available
+        """
+        import socket
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                result = sock.connect_ex((self.host, self.port))
+                return result == 0
+        except Exception:
+            return False
+
     async def start(self) -> bool:
         """
         Start WebSocket server with graceful fallback.
@@ -129,6 +146,17 @@ class CommunicationServer:
             # Check if already running
             if self.is_running:
                 logger.info("CommunicationServer already running")
+                return True
+
+            # Check if port is already in use by another process
+            if self.is_port_in_use():
+                logger.info(
+                    f"Port {self.port} is already in use by another process. "
+                    f"Using existing WebSocket server."
+                )
+                # Mark as running to reuse the existing server
+                self.is_running = True
+                self.startup_failed = False
                 return True
 
             # Check if startup already failed
