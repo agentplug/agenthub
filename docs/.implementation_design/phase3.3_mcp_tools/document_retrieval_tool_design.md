@@ -472,8 +472,7 @@ class DocumentRetrievalEngine:
     
     def __init__(self, collection_manager: CollectionManager):
         self.collection_manager = collection_manager
-        self.synthesis_llm = self._setup_synthesis_llm()  # Small, fast LLM
-        self.rerank_llm = self._setup_rerank_llm()  # LLM for reranking
+        self.llm_client = self._setup_llm_client()  # Single LLM client for all tasks
         self.request_timeout_sec = 20
     
     # Main Retrieval Method
@@ -551,7 +550,7 @@ class DocumentRetrievalEngine:
                 
                 # Call LLM with timeout
                 response = await asyncio.wait_for(
-                    self._call_rerank_llm(ranking_prompt),
+                    self._call_llm(ranking_prompt, task_type="reranking"),
                     timeout=self.request_timeout_sec
                 )
                 
@@ -582,16 +581,10 @@ class DocumentRetrievalEngine:
     def _build_ranking_prompt(self, query: str, passages: str) -> str:
         """Build the ranking prompt for the LLM"""
         return f"""
-        You are a strict ranking engine. Given a user query and a list of 
-        passages labeled with numeric IDs, return ONLY a JSON array of the 
-        IDs sorted from most relevant to least relevant.
-        
         Query: {query}
         
         Passages:
         {passages}
-        
-        Return format: [2, 0, 1]
         """
 
     def _parse_ranking_response(self, response: str, max_index: int) -> list[int]:
@@ -625,18 +618,36 @@ class DocumentRetrievalEngine:
         except (json.JSONDecodeError, ValueError, AttributeError):
             return []
 
-    # Async LLM Call Wrapper
-    # Purpose: Call reranking LLM asynchronously using asyncio.to_thread pattern
-    # Flow: Wrap sync LLM call → Execute in thread pool → Return response
-    async def _call_rerank_llm(self, prompt: str) -> str:
-        """Call the reranking LLM asynchronously"""
+    # Unified LLM Call Method
+    # Purpose: Single LLM client for all tasks with task-specific prompting
+    # Flow: Add task context → Call LLM → Return response
+    async def _call_llm(self, prompt: str, task_type: str = "general") -> str:
+        """Call the unified LLM client with task-specific prompting"""
+        
+        # Add task-specific instructions
+        if task_type == "reranking":
+            prompt = f"""You are a strict ranking engine. Given a user query and a list of 
+passages labeled with numeric IDs, return ONLY a JSON array of the 
+IDs sorted from most relevant to least relevant.
+
+{prompt}
+
+Return format: [2, 0, 1]"""
+        
+        elif task_type == "synthesis":
+            prompt = f"""Provide a brief, concise answer (1-2 sentences) that directly addresses the query using the provided information.
+
+{prompt}
+
+If the information is not relevant to the query, respond with "Not relevant"."""
+        
         # Key pattern from refactored_storage.py: Use asyncio.to_thread for sync clients
         def _sync_call():
             # This would be implemented based on your chosen LLM provider
             # Example for aisuite (as used in refactored_storage.py):
-            # return self.rerank_llm.generate(prompt)
+            # return self.llm_client.generate(prompt)
             # Example for OpenAI:
-            # return self.rerank_llm.chat.completions.create(...)
+            # return self.llm_client.chat.completions.create(...)
             pass
         
         return await asyncio.to_thread(_sync_call)
@@ -653,12 +664,9 @@ class DocumentRetrievalEngine:
             synthesis_prompt = f"""
             Query: "{query}"
             Document chunk: "{chunk['text']}"
-            
-            Provide a brief answer (1-2 sentences) that addresses the query using this chunk.
-            If not relevant, respond with "Not relevant".
             """
             
-            answer = await self._call_synthesis_llm(synthesis_prompt)
+            answer = await self._call_llm(synthesis_prompt, task_type="synthesis")
             
             synthesized_answers.append({
                 "chunk_index": i,
@@ -669,42 +677,21 @@ class DocumentRetrievalEngine:
         
         return synthesized_answers
 
-    # Synthesis LLM Call Wrapper
-    # Purpose: Call synthesis LLM asynchronously for answer generation
-    # Flow: Wrap sync LLM call → Execute in thread pool → Return answer text
-    async def _call_synthesis_llm(self, prompt: str) -> str:
-        """Call the synthesis LLM asynchronously"""
-        # Key pattern from refactored_storage.py: Async wrapper for sync clients
-        def _sync_call():
-            # Implementation depends on chosen LLM provider
-            # This would call your actual LLM client
-            pass
-        
-        return await asyncio.to_thread(_sync_call)
     
-    # LLM Client Setup Methods
-    # Purpose: Configure LLM clients based on environment variables with fallbacks
+    # LLM Client Setup Method
+    # Purpose: Configure single LLM client for all tasks based on environment variables
     # Flow: Check env vars → Select model → Initialize client → Return configured client
-    def _setup_synthesis_llm(self):
-        """Setup synthesis LLM client"""
+    def _setup_llm_client(self):
+        """Setup single LLM client for all document retrieval tasks"""
         # Key pattern from refactored_storage.py: Environment-based model selection
         model = (
-            os.getenv("SYNTHESIS_MODEL") 
+            os.getenv("DOCUMENT_RETRIEVAL_MODEL") 
             or os.getenv("AISUITE_MODEL") 
-            or "openai:gpt-3.5-turbo"
+            or "openai:gpt-4o"  # Default to GPT-4o for all tasks
         )
+        print(f"🤖 Using LLM model: {model}")
         # Return configured LLM client
-        pass
-    
-    def _setup_rerank_llm(self):
-        """Setup reranking LLM client"""
-        # Key pattern from refactored_storage.py: Environment-based model selection
-        model = (
-            os.getenv("RERANK_MODEL") 
-            or os.getenv("AISUITE_MODEL") 
-            or "openai:gpt-4o"
-        )
-        # Return configured LLM client
+        # This would be implemented based on your chosen LLM provider
         pass
 ```
 
