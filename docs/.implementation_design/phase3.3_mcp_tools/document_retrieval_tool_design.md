@@ -66,55 +66,45 @@ from agenthub.core.tools import tool
 
 @tool(
     name="document_retrieval",
-    description="Retrieve and rank documents from a collection using LlamaIndex",
+    description="Search for information in documents",
     parameters={
-        "query": {"type": "string", "description": "The search query string"},
-        "collection_id": {"type": "string", "description": "ID of the document collection to search"},
-        "top_k": {"type": "integer", "default": 5, "description": "Number of top results to return"},
-        "return_format": {"type": "string", "default": "chunks", "enum": ["chunks", "answer"], "description": "Return format"},
-        "similarity_threshold": {"type": "number", "default": 0.7, "description": "Minimum similarity score for results"},
-        "enable_reranking": {"type": "boolean", "default": True, "description": "Whether to use LLM-based reranking"},
-        "rerank_model": {"type": "string", "description": "Specific LLM model for reranking (optional)"}
+        "query": {"type": "string", "description": "What you want to search for"},
+        "collection_id": {"type": "string", "description": "Optional: specific collection to search. If not provided, searches all collections."},
+        "return_format": {"type": "string", "default": "answer", "enum": ["chunks", "answer"], "description": "How you want the results: 'answer' for synthesized response, 'chunks' for raw document chunks"}
     }
 )
 def document_retrieval(
     query: str,
-    collection_id: str,
-    top_k: int = 5,
-    return_format: str = "chunks",  # "chunks" or "answer"
-    similarity_threshold: float = 0.7,
-    enable_reranking: bool = True,
-    rerank_model: str = None,
+    collection_id: str = None,
+    return_format: str = "answer",  # "chunks" or "answer"
     **kwargs
 ) -> dict:
     """
-    Retrieve and rank documents from a collection using LlamaIndex.
+    Search for information in documents with intelligent defaults.
     
-    Supports up to 5 concurrent requests with proper isolation and conflict prevention.
-    Collections are built automatically on first access using directory convention.
+    Uses context-aware defaults for optimal performance:
+    - Automatically discovers and searches all collections if collection_id not specified
+    - Determines optimal parameters based on query characteristics
+    - Supports up to 5 concurrent requests with proper isolation
     
     Args:
-        query: The search query string
-        collection_id: ID of the document collection to search
-        top_k: Number of top results to return (default: 5)
-        return_format: "chunks" for raw chunks or "answer" for synthesized response
-        similarity_threshold: Minimum similarity score for results (default: 0.7)
-        enable_reranking: Whether to use LLM-based reranking (default: True)
-        rerank_model: Specific LLM model for reranking (optional)
+        query: What you want to search for
+        collection_id: Optional specific collection to search. If not provided, searches all collections
+        return_format: "answer" for synthesized response, "chunks" for raw document chunks
         **kwargs: Additional parameters for future extensibility
     
     Returns:
         dict: Response containing either chunks or synthesized answer
         
     Example:
-        >>> document_retrieval("remote work policies", "company_docs", return_format="answer")
+        >>> document_retrieval("remote work policies")
         {
             "success": True,
             "format": "answer",
             "answer": "Based on the company handbook, remote work policies include...",
             "sources": ["employee_handbook.pdf", "remote_work_guide.pdf"],
             "metadata": {
-                "collection_id": "company_docs",
+                "collections_searched": ["company_docs", "hr_policies"],
                 "query": "remote work policies",
                 "processing_time": 0.15
             }
@@ -122,7 +112,52 @@ def document_retrieval(
     """
 ```
 
-### **2. Collection Management System**
+### **2. Context-Aware Smart Defaults**
+
+The tool uses intelligent defaults based on query characteristics to optimize performance without requiring parameter tuning:
+
+```python
+def determine_optimal_top_k(query: str, return_format: str) -> int:
+    """Determine optimal top_k based on query and format."""
+    if return_format == "answer":
+        return 3  # Fewer chunks for synthesis
+    elif "list" in query.lower() or "all" in query.lower():
+        return 10  # More results for listing queries
+    else:
+        return 5  # Default
+
+def determine_optimal_threshold(query: str) -> float:
+    """Determine optimal similarity threshold based on query."""
+    if len(query.split()) <= 2:
+        return 0.6  # Lower threshold for short queries
+    else:
+        return 0.7  # Higher threshold for detailed queries
+
+def determine_if_reranking_needed(query: str, return_format: str) -> bool:
+    """Determine if reranking is needed."""
+    if return_format == "answer":
+        return True  # Always rerank for synthesis
+    elif len(query.split()) > 5:
+        return True  # Rerank for complex queries
+    else:
+        return False  # Skip reranking for simple queries
+
+def discover_all_collections() -> List[str]:
+    """Discover all available collections using directory convention."""
+    collections = []
+    search_paths = ["./collections", "./docs", "~/.agenthub/collections"]
+    
+    for base_path in search_paths:
+        path = Path(base_path).expanduser()
+        if path.exists():
+            for collection_dir in path.iterdir():
+                if collection_dir.is_dir() and contains_documents(collection_dir):
+                    collections.append(collection_dir.name)
+    
+    return collections
+```
+
+### **3. Collection Management System**
 
 #### **CollectionManager Class**
 
@@ -139,11 +174,21 @@ class CollectionManager:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.directory_hashes: Dict[str, str] = {}  # For change detection
     
-    async def get_or_build_collection(self, collection_id: str) -> CollectionInfo:
+    async def get_or_build_collection(self, collection_id: str = None) -> Union[CollectionInfo, List[CollectionInfo]]:
         """
-        Get existing collection or build it automatically using directory convention.
+        Get existing collection(s) or build them automatically using directory convention.
+        If collection_id is None, returns all available collections.
         Implements lazy loading with hash-based change detection.
         """
+        if collection_id:
+            # Single collection search
+            return await self._get_single_collection(collection_id)
+        else:
+            # Multi-collection search
+            return await self._get_all_collections()
+    
+    async def _get_single_collection(self, collection_id: str) -> CollectionInfo:
+        """Get or build a single collection."""
         # 1. Check memory cache first
         if collection_id in self.collections:
             return self.collections[collection_id]
@@ -175,6 +220,34 @@ class CollectionManager:
             f"Create a directory at ./collections/{collection_id}/, ./docs/{collection_id}/, "
             f"or ~/.agenthub/collections/{collection_id}/ with your documents."
         )
+    
+    async def _get_all_collections(self) -> List[CollectionInfo]:
+        """Get or build all available collections."""
+        available_collections = self.discover_all_collections()
+        collections = []
+        
+        for collection_id in available_collections:
+            try:
+                collection = await self._get_single_collection(collection_id)
+                collections.append(collection)
+            except Exception as e:
+                logger.warning(f"Failed to load collection {collection_id}: {e}")
+        
+        return collections
+    
+    def discover_all_collections(self) -> List[str]:
+        """Discover all available collections using directory convention."""
+        collections = []
+        search_paths = ["./collections", "./docs", "~/.agenthub/collections"]
+        
+        for base_path in search_paths:
+            path = Path(base_path).expanduser()
+            if path.exists():
+                for collection_dir in path.iterdir():
+                    if collection_dir.is_dir() and self._contains_raw_documents(collection_dir):
+                        collections.append(collection_dir.name)
+        
+        return collections
     
     def find_directory_by_convention(self, collection_id: str) -> Optional[str]:
         """
@@ -304,12 +377,13 @@ storage/
     └── ...
 ```
 
-### **3. Document Retrieval Engine**
+### **4. Document Retrieval Engine**
 
 ```python
 class DocumentRetrievalEngine:
     """
     Core engine for document retrieval with LLM-based reranking and synthesis.
+    Supports both single collection and multi-collection search with intelligent defaults.
     """
     
     def __init__(self, llm_client=None):
@@ -337,12 +411,31 @@ class DocumentRetrievalEngine:
     async def retrieve_documents(
         self, 
         query: str, 
-        collection_id: str, 
-        top_k: int = 5,
-        similarity_threshold: float = 0.7,
-        enable_reranking: bool = True
+        collection_id: str = None,
+        return_format: str = "answer"
     ) -> List[DocumentChunk]:
-        """Retrieve and rank documents from collection."""
+        """Retrieve and rank documents with intelligent defaults."""
+        # Determine optimal parameters based on query and format
+        top_k = determine_optimal_top_k(query, return_format)
+        similarity_threshold = determine_optimal_threshold(query)
+        enable_reranking = determine_if_reranking_needed(query, return_format)
+        
+        if collection_id:
+            # Single collection search
+            return await self._search_single_collection(query, collection_id, top_k, similarity_threshold, enable_reranking)
+        else:
+            # Multi-collection search
+            return await self._search_all_collections(query, top_k, similarity_threshold, enable_reranking)
+    
+    async def _search_single_collection(
+        self, 
+        query: str, 
+        collection_id: str, 
+        top_k: int,
+        similarity_threshold: float,
+        enable_reranking: bool
+    ) -> List[DocumentChunk]:
+        """Search a single collection."""
         # Get collection
         collection = await self.collection_manager.get_or_build_collection(collection_id)
         
@@ -359,6 +452,38 @@ class DocumentRetrievalEngine:
             return reranked_nodes
         
         return filtered_nodes[:top_k]
+    
+    async def _search_all_collections(
+        self, 
+        query: str, 
+        top_k: int,
+        similarity_threshold: float,
+        enable_reranking: bool
+    ) -> List[DocumentChunk]:
+        """Search all available collections."""
+        # Get all collections
+        collections = await self.collection_manager.get_or_build_collection()
+        
+        all_results = []
+        for collection in collections:
+            try:
+                # Search each collection
+                retriever = collection.index.as_retriever(similarity_top_k=top_k * 2)
+                nodes = retriever.retrieve(query)
+                
+                # Filter by similarity threshold
+                filtered_nodes = [node for node in nodes if node.score >= similarity_threshold]
+                all_results.extend(filtered_nodes)
+                
+            except Exception as e:
+                logger.warning(f"Failed to search collection {collection.id}: {e}")
+        
+        # Apply reranking across all results if enabled
+        if enable_reranking and len(all_results) > 1:
+            reranked_results = await self._rerank_documents(query, all_results[:top_k * 2])
+            return reranked_results[:top_k]
+        
+        return all_results[:top_k]
     
     async def _rerank_documents(self, query: str, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         """Rerank documents using LLM-based relevance scoring."""
@@ -696,30 +821,22 @@ def get_global_async_engine() -> AsyncDocumentRetrievalEngine:
 
 @tool(
     name="document_retrieval",
-    description="Retrieve and rank documents from a collection using LlamaIndex",
+    description="Search for information in documents",
     parameters={
-        "query": {"type": "string", "description": "The search query string"},
-        "collection_id": {"type": "string", "description": "ID of the document collection to search"},
-        "top_k": {"type": "integer", "default": 5, "description": "Number of top results to return"},
-        "return_format": {"type": "string", "default": "chunks", "enum": ["chunks", "answer"], "description": "Return format"},
-        "similarity_threshold": {"type": "number", "default": 0.7, "description": "Minimum similarity score for results"},
-        "enable_reranking": {"type": "boolean", "default": True, "description": "Whether to use LLM-based reranking"},
-        "rerank_model": {"type": "string", "description": "Specific LLM model for reranking (optional)"}
+        "query": {"type": "string", "description": "What you want to search for"},
+        "collection_id": {"type": "string", "description": "Optional: specific collection to search. If not provided, searches all collections."},
+        "return_format": {"type": "string", "default": "answer", "enum": ["chunks", "answer"], "description": "How you want the results: 'answer' for synthesized response, 'chunks' for raw document chunks"}
     }
 )
 def document_retrieval(
     query: str,
-    collection_id: str,
-    top_k: int = 5,
-    return_format: str = "chunks",
-    similarity_threshold: float = 0.7,
-    enable_reranking: bool = True,
-    rerank_model: str = None,
+    collection_id: str = None,
+    return_format: str = "answer",
     **kwargs
 ) -> dict:
     """
-    Document retrieval tool function with async processing and concurrency support.
-    Supports up to 5 concurrent requests with proper isolation.
+    Search for information in documents with intelligent defaults.
+    Uses context-aware defaults for optimal performance without requiring parameter tuning.
     """
     start_time = time.time()
     
@@ -728,10 +845,9 @@ def document_retrieval(
         manager = get_global_collection_manager()
         engine = get_global_async_engine()
         
-        # Run async retrieval
+        # Run async retrieval with simplified interface
         result = asyncio.run(_async_document_retrieval(
-            manager, engine, query, collection_id, top_k, 
-            return_format, similarity_threshold, enable_reranking
+            manager, engine, query, collection_id, return_format
         ))
         
         # Add processing time to metadata
@@ -760,23 +876,15 @@ async def _async_document_retrieval(
     engine: AsyncDocumentRetrievalEngine,
     query: str,
     collection_id: str,
-    top_k: int,
-    return_format: str,
-    similarity_threshold: float,
-    enable_reranking: bool
+    return_format: str
 ) -> dict:
-    """Async document retrieval implementation."""
+    """Async document retrieval implementation with intelligent defaults."""
     
-    # Get or build collection (with async processing)
-    collection = await manager.get_or_build_collection(collection_id)
-    
-    # Retrieve documents with async processing
+    # Retrieve documents with async processing and intelligent defaults
     chunks = await engine.retrieve_documents(
         query=query,
         collection_id=collection_id,
-        top_k=top_k,
-        similarity_threshold=similarity_threshold,
-        enable_reranking=enable_reranking
+        return_format=return_format
     )
     
     # Format response based on return_format
@@ -911,22 +1019,44 @@ agent.run("Search the research_papers collection for AI safety research")
 
 ## 💡 **Usage Examples**
 
-### **1. Direct Tool Usage**
+### **1. Simple Usage (Dumb Agent Friendly)**
 
 ```python
-# Collections are automatically discovered and built
-result = document_retrieval(
-    query="What are the remote work policies?",
-    collection_id="company_docs",
-    return_format="answer",
-    top_k=3
-)
+# Super simple - just works with intelligent defaults
+result = document_retrieval("What are the remote work policies?")
 
 print(result["answer"])
 # Output: "Based on the company handbook, remote work policies include..."
 ```
 
-### **2. Agent Integration**
+### **2. Specify Collection (When You Know It)**
+
+```python
+# Can specify collection if you know it
+result = document_retrieval(
+    query="What are the remote work policies?",
+    collection_id="company_docs"
+)
+
+print(result["answer"])
+```
+
+### **3. Control Output Format**
+
+```python
+# Get raw chunks instead of synthesized answer
+result = document_retrieval(
+    query="remote work policies",
+    return_format="chunks"
+)
+
+for chunk in result["chunks"]:
+    print(f"Source: {chunk['source']}")
+    print(f"Text: {chunk['text']}")
+    print(f"Score: {chunk['score']}")
+```
+
+### **4. Agent Integration**
 
 ```python
 from agenthub.sdk import Agent
@@ -937,32 +1067,10 @@ agent = Agent(
     model="openai:gpt-4o"
 )
 
-# Agent automatically uses the tool
-response = agent.run(
-    "Search the research_papers collection for information about AI safety"
-)
-
-# Agent will:
-# 1. Call document_retrieval tool
-# 2. Process results
-# 3. Provide comprehensive answer
-```
-
-### **3. Multiple Collections**
-
-```python
-# Search across different collections
-company_info = document_retrieval(
-    query="vacation policies",
-    collection_id="company_docs",
-    return_format="chunks"
-)
-
-research_info = document_retrieval(
-    query="machine learning",
-    collection_id="research_papers", 
-    return_format="chunks"
-)
+# Agent can use natural language - no need to know about collections
+response = agent.run("Find information about AI safety in our documents")
+response = agent.run("What are our vacation policies?")
+response = agent.run("Search for machine learning research papers")
 ```
 
 ## 📝 **Dependencies**
@@ -987,17 +1095,20 @@ pip install python-pptx>=0.6.0
 
 ## 🎯 **Key Benefits**
 
-1. **Zero Setup Required**: Collections build automatically on first access
-2. **Directory Convention**: Simple folder-based discovery
-3. **Automatic Change Detection**: Collections update when documents change
-4. **High Concurrency**: Supports up to 5 simultaneous requests with proper isolation
-5. **Async Processing**: Multiple requests processed in parallel (48% improvement)
-6. **Collection Preloading**: All collections built during startup (97% faster)
-7. **Predictable Performance**: Consistent 50-200ms response times
-8. **Flexible Return Formats**: Users choose chunks or synthesized answers
-9. **LLM-Based Reranking**: Intelligent relevance scoring
-10. **AgentHub Integration**: Seamless tool integration
-11. **Production Ready**: Robust error handling and performance optimizations
+1. **Dumb Agent Friendly**: Only 1-3 parameters needed, intelligent defaults handle the rest
+2. **Zero Setup Required**: Collections build automatically on first access
+3. **Auto-Discovery**: Searches all collections automatically if none specified
+4. **Context-Aware Defaults**: Optimal parameters determined based on query characteristics
+5. **Directory Convention**: Simple folder-based discovery
+6. **Automatic Change Detection**: Collections update when documents change
+7. **High Concurrency**: Supports up to 5 simultaneous requests with proper isolation
+8. **Async Processing**: Multiple requests processed in parallel (48% improvement)
+9. **Collection Preloading**: All collections built during startup (97% faster)
+10. **Predictable Performance**: Consistent 50-200ms response times
+11. **Flexible Return Formats**: Users choose chunks or synthesized answers
+12. **LLM-Based Reranking**: Intelligent relevance scoring
+13. **AgentHub Integration**: Seamless tool integration
+14. **Production Ready**: Robust error handling and performance optimizations
 
 ## 🔒 **Security and Performance Considerations**
 
