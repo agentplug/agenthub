@@ -585,18 +585,21 @@ for chunk in result["chunks"]:
 #### **4. Agent Integration**
 
 ```python
-from agenthub.sdk import Agent
+import agenthub as ah
 
-agent = Agent(
-    name="Document Assistant",
-    tools=["document_retrieval"],
-    model="openai:gpt-4o"
-)
+# Load an existing agent (from registry or local)
+ag = ah.load_agent("agentplug/analysis-agent")
 
-# Agent can use natural language - no need to know about collections
-response = agent.run("Find information about AI safety in our documents")
-response = agent.run("What are our vacation policies?")
-response = agent.run("Search for machine learning research papers")
+# Grant access to the document_retrieval tool (external tool)
+ag.add_external_tools(["document_retrieval"])  # tool becomes available to the agent
+
+# The agent can now call the tool internally during its solve/execute flows
+result = ag.execute_tool("document_retrieval", query="remote work policies", return_format="answer")
+print(result["answer"])  # synthesized answer
+
+# Or, let the agent decide when to use tools during high-level tasks
+response = ag.solve("Summarize our company remote work policy from the internal docs")
+print(response)
 ```
 
 ## 🔄 **Change Detection**
