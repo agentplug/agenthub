@@ -67,7 +67,6 @@ dependencies = [
     "cryptography>=42.0.0",
     # Async & concurrency
     "asyncio-throttle>=1.0.0",
-    "pytest-asyncio>=1.2.0",
     "psutil>=6.0.0",
     # Real-time communication (Phase 3.4)
     "websockets>=12.0",
@@ -86,6 +85,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-mock>=3.14.0",
+    "pytest-timeout>=2.1.0",
     "black>=24.0.0",
     "mypy>=1.8.0",
     "ruff>=0.2.0",
@@ -94,6 +94,14 @@ dev = [
     "safety>=3.0.0",
     "coverage>=7.9.0",
 ]
+websocket-test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-html>=3.1.0",
+    "websockets>=12.0",
+]
 rag = [
     "llama-index>=0.12.0",
     "chromadb>=1.0.0",
@@ -101,7 +109,7 @@ rag = [
     "faiss-cpu>=1.11.0",
 ]
 code = ["docker>=7.0.0"]
-full = ["agenthub-sdk[dev,rag,code]"]
+full = ["agenthub-sdk[dev,rag,code,websocket-test]"]
 
 [project.scripts]
 agenthub = "agenthub.cli.main:main"
@@ -179,6 +187,10 @@ markers = [
     "integration: Integration tests",
     "e2e: End-to-end tests",
     "asyncio: Async tests",
+    "websocket: WebSocket communication tests",
+    "performance: Performance and load tests",
+    "slow: Slow running tests (>5s)",
+    "concurrent: Concurrent access and thread safety tests",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:websockets.*",
@@ -186,6 +198,9 @@ filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
     "ignore::PendingDeprecationWarning:starlette.formparsers",
 ]
+
+[tool.pytest_asyncio]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["agenthub"]
@@ -211,7 +226,9 @@ dev = [
     "mypy>=1.17.1",
     "pre-commit>=4.3.0",
     "pytest>=8.4.1",
+    "pytest-asyncio>=1.2.0",
     "pytest-cov>=6.2.1",
+    "pytest-timeout>=2.1.0",
     "ruff>=0.12.9",
     "types-pyyaml>=6.0.12.20250809",
 ]
