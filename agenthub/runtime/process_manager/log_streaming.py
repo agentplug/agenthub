@@ -41,6 +41,8 @@ class LogStreamer:
         self.communication_manager = communication_manager
         self.stdout_lines: list[str] = []
         self.stderr_lines: list[str] = []
+        # Track last displayed message to avoid duplicate console logs
+        self._last_displayed_message: str | None = None
 
     def stream_logs(self, process: subprocess.Popen) -> tuple[list[str], list[str]]:
         """
@@ -150,8 +152,12 @@ class LogStreamer:
             parts = stripped.split(":", 2)
             message = parts[2] if len(parts) > 2 else stripped
             if message:
+                # Suppress consecutive duplicate messages
+                if self._last_displayed_message == message:
+                    return
                 agent_name = self.agent_path.split("/")[-1]
                 logger.info(f"🤖 {agent_name}: {message}")
+                self._last_displayed_message = message
 
     def _is_noise_log(self, log_line: str) -> bool:
         """
