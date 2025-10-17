@@ -417,27 +417,16 @@ class ProcessManager:
             try:
                 # Check if there's an event loop running
                 try:
-                    loop = asyncio.get_running_loop()
+                    asyncio.get_running_loop()
                     # If we get here, there's a running loop
                     logger.debug("📡 Event loop is running, scheduling server start")
                     asyncio.create_task(self._ensure_communication_server())
                 except RuntimeError:
-                    # No running loop, try to get or create one
+                    # No running loop, start server in background thread
+                    logger.debug(
+                        "📡 No running event loop, starting server in background thread"
+                    )
                     try:
-                        loop = asyncio.get_event_loop()
-                        if loop.is_running():
-                            logger.debug(
-                                "📡 Event loop is running, scheduling server start"
-                            )
-                            asyncio.create_task(self._ensure_communication_server())
-                        else:
-                            logger.debug(
-                                "📡 Event loop exists but not running, starting server"
-                            )
-                            loop.run_until_complete(self._ensure_communication_server())
-                    except RuntimeError:
-                        # No event loop at all, start server in background thread
-                        logger.debug("📡 No event loop found, starting in background")
                         import threading
 
                         def run_server_in_thread() -> None:
@@ -453,7 +442,9 @@ class ProcessManager:
                         )
                         server_thread.start()
                         # Give server time to start
-                        time.sleep(1)
+                        time.sleep(0.5)
+                    except Exception as e:
+                        logger.warning(f"Failed to start communication server: {e}")
             except Exception as e:
                 logger.warning(f"Failed to start communication server: {e}")
 
