@@ -221,19 +221,48 @@ class MessageRouter:
         )
         self.pending_requests[request_id] = request
 
-        # Send request to user
-        message = {
-            "type": MessageType.USER_INPUT_REQUEST.value,
-            "data": {
-                "request_id": request_id,
-                "agent_id": agent_id,
-                "prompt": prompt,
-                "timestamp": request.timestamp,
-            },
-        }
+        # If no WebSocket clients are connected, fall back to console prompt
+        try:
+            has_clients = bool(getattr(self.server, "clients", None))
+        except Exception:
+            has_clients = False
 
-        await self.server.broadcast(message)
-        logger.info(f"Requested user input for agent {agent_id}: {prompt}")
+        if not has_clients:
+            # Console fallback: prompt user directly in the terminal without WebSocket
+
+            logger.info(
+                "No WebSocket clients connected; falling back to console prompt."
+            )
+            print("\n[INPUT REQUIRED]", prompt)
+            try:
+                # Avoid blocking the event loop by reading input in a thread
+                user_input = await asyncio.to_thread(
+                    lambda: input("Enter your answer: ").strip()
+                )
+            except EOFError:
+                user_input = ""
+
+            # Complete the future immediately with console input
+            request.future.set_result(user_input)
+            logger.info(
+                f"Console input received for agent {agent_id}; delivering to caller."
+            )
+        else:
+            # Send request to user via WebSocket broadcast
+            message = {
+                "type": MessageType.USER_INPUT_REQUEST.value,
+                "data": {
+                    "request_id": request_id,
+                    "agent_id": agent_id,
+                    "prompt": prompt,
+                    "timestamp": request.timestamp,
+                },
+            }
+
+            await self.server.broadcast(message)
+            logger.info(
+                f"Requested user input for agent {agent_id} via WebSocket broadcast"
+            )
 
         try:
             # Wait for response with timeout
@@ -289,7 +318,9 @@ class MessageRouter:
         # Complete the future
         if not request.future.done():
             request.future.set_result(user_input)
-            logger.info(f"User input received for request {request_id}")
+            logger.info(
+                f"User input received: req={request_id}, agent={request.agent_id}"
+            )
         else:
             logger.warning(f"Request already completed: {request_id}")
 
