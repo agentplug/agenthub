@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class MessageType(Enum):
     """Message types for routing."""
 
+    REGISTER_SESSION = "register_session"
     USER_INPUT_REQUEST = "user_input_request"
     USER_INPUT_RESPONSE = "user_input_response"
     AGENT_MESSAGE = "agent_message"
@@ -69,6 +70,7 @@ class MessageRouter:
 
         # Message handlers
         self.message_handlers: dict[MessageType, Callable] = {
+            MessageType.REGISTER_SESSION: self._handle_register_session,
             MessageType.USER_INPUT_REQUEST: self._handle_user_input_request,
             MessageType.USER_INPUT_RESPONSE: self._handle_user_input_response,
             MessageType.AGENT_MESSAGE: self._handle_agent_message,
@@ -142,6 +144,51 @@ class MessageRouter:
         except Exception as e:
             logger.error(f"Error routing message: {e}")
             await self._send_error(websocket, f"Routing error: {str(e)}")
+
+    async def _handle_register_session(
+        self, websocket: Any, message: dict[str, Any]
+    ) -> None:
+        """Handle session registration from client."""
+        data = message.get("data", {})
+        agent_id = data.get("agent_id")
+        session_metadata = data.get("metadata", {})
+
+        if not agent_id:
+            await self._send_error(
+                websocket, "Missing agent_id for session registration"
+            )
+            return
+
+        # Check if this is a reconnection
+        is_reconnection = self.server.reconnect_session(agent_id, websocket)
+
+        if not is_reconnection:
+            # Register new session with WebSocket client reference
+            session_data = {
+                "client": websocket,
+                "state": "connected",
+                "metadata": session_metadata,
+                "registered_at": time.time(),
+            }
+            self.server.register_agent_session(agent_id, session_data)
+            logger.info(f"Registered new WebSocket session for agent: {agent_id}")
+        else:
+            logger.info(f"Reconnected WebSocket session for agent: {agent_id}")
+
+        # Send confirmation back to client
+        import json
+
+        confirmation = json.dumps(
+            {
+                "type": "session_registered",
+                "data": {
+                    "agent_id": agent_id,
+                    "status": "success",
+                    "reconnected": is_reconnection,
+                },
+            }
+        )
+        await websocket.send(confirmation)
 
     async def request_user_input(
         self, agent_id: str, prompt: str, timeout: float = 300.0
