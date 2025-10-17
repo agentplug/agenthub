@@ -5,8 +5,8 @@ import atexit
 import json
 import logging
 import os
+import threading
 from collections.abc import Callable
-from queue import Queue
 from typing import Any, Optional
 
 try:
@@ -44,14 +44,15 @@ class CommunicationServer:
     """
 
     _instance: Optional["CommunicationServer"] = None
-    _lock = asyncio.Lock()
+    _singleton_lock = threading.Lock()  # For singleton pattern (sync)
     _initialized: bool = False
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "CommunicationServer":
         """Singleton pattern: Ensure only one server instance."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
+        with cls._singleton_lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                cls._instance._initialized = False
         return cls._instance
 
     def __init__(self, port: int = None, host: str = "localhost"):
@@ -85,6 +86,18 @@ class CommunicationServer:
         self.clients: set[WebSocketServerProtocol] = set()
         self.agent_sessions: dict[str, dict[str, Any]] = {}
 
+        # Thread safety locks
+        self._session_lock = threading.RLock()  # For agent_sessions access
+        self._clients_lock = threading.RLock()  # For clients set access
+        self._start_lock = asyncio.Lock()  # For async start() method
+
+        # Event loop reference for async/sync bridge
+        self._event_loop: asyncio.AbstractEventLoop | None = None
+
+        # Session management
+        self.session_ttl = 300  # 5 minutes grace period for reconnection
+        self.session_cleanup_task: asyncio.Task | None = None
+
         # Server state
         self.is_running = False
         self.server = None
@@ -103,10 +116,6 @@ class CommunicationServer:
         # Error tracking
         self.startup_failed = False
         self.failure_reason = None
-
-        # Thread-safe message queue for log streaming from threads
-        self.message_queue: Queue = Queue()
-        self.queue_processor_task: asyncio.Task | None = None
 
         self._initialized = True
 
@@ -142,7 +151,7 @@ class CommunicationServer:
         if not WEBSOCKETS_AVAILABLE:
             return False
 
-        async with self._lock:
+        async with self._start_lock:
             # Check if already running
             if self.is_running:
                 logger.info("CommunicationServer already running")
@@ -170,6 +179,9 @@ class CommunicationServer:
                 self.failure_reason = None
 
             try:
+                # Store event loop reference for async/sync bridge
+                self._event_loop = asyncio.get_running_loop()
+
                 # Initialize message router if not already done
                 if self.message_router is None:
                     from .router import MessageRouter
@@ -189,9 +201,9 @@ class CommunicationServer:
                 self.is_running = True
                 self.startup_failed = False
 
-                # Start queue processor for thread-safe message handling
-                self.queue_processor_task = asyncio.create_task(
-                    self._process_message_queue()
+                # Start session cleanup task
+                self.session_cleanup_task = asyncio.create_task(
+                    self._cleanup_expired_sessions()
                 )
 
                 logger.info(
@@ -218,7 +230,7 @@ class CommunicationServer:
         if not WEBSOCKETS_AVAILABLE:
             return
 
-        async with self._lock:
+        async with self._start_lock:
             if not self.is_running:
                 logger.info("CommunicationServer not running")
                 return
@@ -228,22 +240,30 @@ class CommunicationServer:
                 if self.message_router:
                     await self.message_router.stop()
 
-                # Stop queue processor
-                if self.queue_processor_task:
-                    self.queue_processor_task.cancel()
+                # Stop session cleanup task
+                if self.session_cleanup_task:
+                    self.session_cleanup_task.cancel()
                     try:
-                        await self.queue_processor_task
+                        await self.session_cleanup_task
                     except asyncio.CancelledError:
                         pass
-                    self.queue_processor_task = None
+                    self.session_cleanup_task = None
 
                 # Close all client connections
-                if self.clients:
+                with self._clients_lock:
+                    clients_to_close = list(self.clients)
+
+                if clients_to_close:
                     await asyncio.gather(
-                        *[client.close() for client in self.clients],
+                        *[client.close() for client in clients_to_close],
                         return_exceptions=True,
                     )
-                    self.clients.clear()
+                    with self._clients_lock:
+                        self.clients.clear()
+
+                # Clear all sessions
+                with self._session_lock:
+                    self.agent_sessions.clear()
 
                 # Stop server
                 if self.server:
@@ -257,51 +277,20 @@ class CommunicationServer:
             except Exception as e:
                 logger.error(f"Error stopping CommunicationServer: {e}")
 
-    async def _process_message_queue(self) -> None:
-        """Process messages from the thread-safe queue."""
-        while self.is_running:
-            try:
-                # Wait for messages with a timeout to allow checking is_running
-                try:
-                    message_data = self.message_queue.get(timeout=0.1)
-                except Exception:
-                    # Timeout - continue loop to check is_running
-                    continue
-
-                # Process the message
-                message_type = message_data.get("type")
-                if message_type == "send_to_agent":
-                    agent_id = message_data.get("agent_id")
-                    message = message_data.get("message")
-                    if agent_id and message:
-                        await self.send_to_agent(agent_id, message)
-                elif message_type == "broadcast":
-                    message = message_data.get("message")
-                    if message:
-                        await self.broadcast(message)
-
-                # Mark task as done
-                self.message_queue.task_done()
-
-            except Exception as e:
-                logger.warning(f"Error processing queue message: {e}")
-
-    async def _handle_client(
-        self, websocket: WebSocketServerProtocol, path: str
-    ) -> None:
+    async def _handle_client(self, websocket: WebSocketServerProtocol) -> None:
         """
         Handle individual client connection.
 
         Args:
             websocket: WebSocket client connection
-            path: Connection path (unused in Phase 3.4)
         """
         # Register client
-        self.clients.add(websocket)
+        with self._clients_lock:
+            self.clients.add(websocket)
+            total_clients = len(self.clients)
+
         client_id = id(websocket)
-        logger.info(
-            f"Client connected: {client_id} (total clients: {len(self.clients)})"
-        )
+        logger.info(f"Client connected: {client_id} (total clients: {total_clients})")
 
         try:
             # Handle messages from this client
@@ -316,7 +305,8 @@ class CommunicationServer:
 
         finally:
             # Unregister client
-            self.clients.discard(websocket)
+            with self._clients_lock:
+                self.clients.discard(websocket)
             await self._cleanup_client_sessions(client_id)
 
     async def _handle_message(
@@ -398,12 +388,14 @@ class CommunicationServer:
             message: Message to broadcast (will be JSON serialized)
             exclude: Set of clients to exclude from broadcast
         """
-        if not self.clients:
-            logger.debug("No clients to broadcast to")
-            return
+        # Get snapshot of clients with lock
+        with self._clients_lock:
+            if not self.clients:
+                logger.debug("No clients to broadcast to")
+                return
 
-        exclude = exclude or set()
-        targets = self.clients - exclude
+            exclude = exclude or set()
+            targets = self.clients - exclude
 
         if not targets:
             return
@@ -428,17 +420,21 @@ class CommunicationServer:
         Returns:
             bool: True if message sent successfully
         """
-        # Find agent session
-        session = self.agent_sessions.get(agent_id)
-        if not session:
-            logger.warning(f"Agent session not found: {agent_id}")
-            return False
+        # Find agent session with lock
+        with self._session_lock:
+            session = self.agent_sessions.get(agent_id)
+            if not session:
+                logger.warning(f"Agent session not found: {agent_id}")
+                return False
 
-        # Get agent's WebSocket connection
-        client = session.get("client")
-        if not client or client not in self.clients:
-            logger.debug(f"Agent client not connected: {agent_id}")
-            return False
+            # Get agent's WebSocket connection
+            client = session.get("client")
+
+        # Check client is still connected (outside lock to avoid holding during I/O)
+        with self._clients_lock:
+            if not client or client not in self.clients:
+                logger.debug(f"Agent client not connected: {agent_id}")
+                return False
 
         # Send message
         message_str = json.dumps(message)
@@ -462,50 +458,64 @@ class CommunicationServer:
             return True
         except websockets.exceptions.ConnectionClosed:
             logger.debug(f"Client connection closed: {id(websocket)}")
-            self.clients.discard(websocket)
+            with self._clients_lock:
+                self.clients.discard(websocket)
             return False
         except Exception as e:
             logger.error(f"Failed to send message: {e}")
             return False
 
-    def broadcast_message(self, message: dict[str, Any]) -> None:
+    def broadcast_message(self, message: dict[str, Any]) -> bool:
         """
-        Synchronous wrapper for broadcast method using thread-safe queue.
+        Synchronous wrapper for broadcast method using async/sync bridge.
 
         Args:
             message: Message to broadcast
+
+        Returns:
+            bool: True if broadcast was scheduled successfully
         """
-        if not self.is_running:
-            return
+        if not self.is_running or self._event_loop is None:
+            logger.debug("Server not running or event loop not available")
+            return False
 
         try:
-            # Add message to queue for processing by main event loop
-            self.message_queue.put({"type": "broadcast", "message": message})
+            # Schedule coroutine in event loop thread and wait for completion
+            future = asyncio.run_coroutine_threadsafe(
+                self.broadcast(message), self._event_loop
+            )
+            # Wait with timeout to avoid blocking indefinitely
+            future.result(timeout=5.0)
+            return True
         except Exception as e:
-            logger.warning(f"Failed to queue broadcast message: {e}")
+            logger.warning(f"Failed to broadcast message: {e}")
+            return False
 
     def send_to_agent_sync(self, agent_id: str, message: dict[str, Any]) -> bool:
         """
-        Synchronous wrapper for send_to_agent method using thread-safe queue.
+        Synchronous wrapper for send_to_agent method using async/sync bridge.
 
         Args:
             agent_id: Target agent identifier
             message: Message to send
 
         Returns:
-            bool: True if message queued successfully
+            bool: True if message sent successfully
         """
-        if not self.is_running:
+        if not self.is_running or self._event_loop is None:
+            logger.debug("Server not running or event loop not available")
             return False
 
         try:
-            # Add message to queue for processing by main event loop
-            self.message_queue.put(
-                {"type": "send_to_agent", "agent_id": agent_id, "message": message}
+            # Schedule coroutine in event loop thread and wait for result
+            future = asyncio.run_coroutine_threadsafe(
+                self.send_to_agent(agent_id, message), self._event_loop
             )
-            return True
+            # Wait with timeout and get the result (True/False)
+            result = future.result(timeout=5.0)
+            return result
         except Exception as e:
-            logger.warning(f"Failed to queue message for agent {agent_id}: {e}")
+            logger.warning(f"Failed to send message to agent {agent_id}: {e}")
             return False
 
     def register_agent_session(
@@ -518,26 +528,98 @@ class CommunicationServer:
             agent_id: Agent identifier
             session_data: Session metadata (client, execution_id, etc.)
         """
-        self.agent_sessions[agent_id] = session_data
+        with self._session_lock:
+            self.agent_sessions[agent_id] = session_data
         logger.info(f"Registered agent session: {agent_id}")
 
     def unregister_agent_session(self, agent_id: str) -> None:
         """Unregister agent session."""
-        if agent_id in self.agent_sessions:
-            del self.agent_sessions[agent_id]
-            logger.info(f"Unregistered agent session: {agent_id}")
+        with self._session_lock:
+            if agent_id in self.agent_sessions:
+                del self.agent_sessions[agent_id]
+                logger.info(f"Unregistered agent session: {agent_id}")
 
     async def _cleanup_client_sessions(self, client_id: int) -> None:
-        """Cleanup sessions associated with disconnected client."""
-        # Find sessions associated with this client
-        sessions_to_remove = []
-        for agent_id, session in self.agent_sessions.items():
-            if id(session.get("client")) == client_id:
-                sessions_to_remove.append(agent_id)
+        """Mark sessions associated with disconnected client as disconnected."""
+        import time
 
-        # Remove sessions
-        for agent_id in sessions_to_remove:
-            self.unregister_agent_session(agent_id)
+        # Find and mark sessions as disconnected
+        with self._session_lock:
+            for agent_id, session in self.agent_sessions.items():
+                if id(session.get("client")) == client_id:
+                    session["state"] = "disconnected"
+                    session["disconnected_at"] = time.time()
+                    session["client"] = None  # Clear client reference
+                    logger.info(
+                        f"Marked session as disconnected: {agent_id} "
+                        f"(TTL: {self.session_ttl}s)"
+                    )
+
+    async def _cleanup_expired_sessions(self) -> None:
+        """Background task to cleanup expired disconnected sessions."""
+        import time
+
+        while self.is_running:
+            try:
+                await asyncio.sleep(30)  # Check every 30 seconds
+
+                current_time = time.time()
+                sessions_to_remove = []
+
+                # Find expired sessions
+                with self._session_lock:
+                    for agent_id, session in self.agent_sessions.items():
+                        if session.get("state") == "disconnected":
+                            disconnected_at = session.get("disconnected_at", 0)
+                            age = current_time - disconnected_at
+                            if age > self.session_ttl:
+                                sessions_to_remove.append(agent_id)
+                                logger.info(
+                                    f"Session expired (age: {age:.1f}s): {agent_id}"
+                                )
+
+                # Remove expired sessions
+                for agent_id in sessions_to_remove:
+                    self.unregister_agent_session(agent_id)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in session cleanup task: {e}")
+
+    def reconnect_session(
+        self, agent_id: str, websocket: WebSocketServerProtocol
+    ) -> bool:
+        """
+        Reconnect a disconnected session.
+
+        Args:
+            agent_id: Agent identifier
+            websocket: New WebSocket connection
+
+        Returns:
+            bool: True if session was reconnected successfully
+        """
+        import time
+
+        with self._session_lock:
+            session = self.agent_sessions.get(agent_id)
+            if not session:
+                logger.warning(f"No session found for reconnection: {agent_id}")
+                return False
+
+            # Check if session is in disconnected state
+            if session.get("state") != "disconnected":
+                logger.info(f"Session not disconnected, cannot reconnect: {agent_id}")
+                return False
+
+            # Reconnect the session
+            session["client"] = websocket
+            session["state"] = "connected"
+            session["reconnected_at"] = time.time()
+            session.pop("disconnected_at", None)
+            logger.info(f"Session reconnected: {agent_id}")
+            return True
 
     def register_message_handler(
         self, msg_type: str, handler: Callable[..., Any]
@@ -554,10 +636,15 @@ class CommunicationServer:
 
     def get_stats(self) -> dict[str, Any]:
         """Get server statistics."""
+        with self._clients_lock:
+            connected_clients = len(self.clients)
+        with self._session_lock:
+            active_sessions = len(self.agent_sessions)
+
         return {
             "is_running": self.is_running,
-            "connected_clients": len(self.clients),
-            "active_sessions": len(self.agent_sessions),
+            "connected_clients": connected_clients,
+            "active_sessions": active_sessions,
             "port": self.port,
             "host": self.host,
             "startup_failed": self.startup_failed,
