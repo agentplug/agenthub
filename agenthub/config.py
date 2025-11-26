@@ -23,7 +23,8 @@ class AgentHubConfig:
     setup_environment_by_default: bool = True
 
     # Tool settings
-    mcp_server_url: str = "http://localhost:8000/sse"
+    mcp_host: str = "localhost"
+    mcp_port: int = 8000
     enable_tool_caching: bool = True
     tool_timeout: int = 30
 
@@ -56,8 +57,11 @@ class AgentHubConfig:
         if max_workers := os.getenv("AGENTHUB_MAX_WORKERS"):
             config.max_concurrent_agents = int(max_workers)
 
-        if mcp_url := os.getenv("AGENTHUB_MCP_URL"):
-            config.mcp_server_url = mcp_url
+        if mcp_host := os.getenv("AGENTHUB_MCP_HOST"):
+            config.mcp_host = mcp_host
+
+        if mcp_port := os.getenv("AGENTHUB_MCP_PORT"):
+            config.mcp_port = int(mcp_port)
 
         if log_level := os.getenv("AGENTHUB_LOG_LEVEL"):
             config.log_level = log_level
@@ -93,7 +97,8 @@ class AgentHubConfig:
             "max_concurrent_agents": self.max_concurrent_agents,
             "use_subprocess_execution": self.use_subprocess_execution,
             "setup_environment_by_default": self.setup_environment_by_default,
-            "mcp_server_url": self.mcp_server_url,
+            "mcp_host": self.mcp_host,
+            "mcp_port": self.mcp_port,
             "enable_tool_caching": self.enable_tool_caching,
             "tool_timeout": self.tool_timeout,
             "enable_agent_caching": self.enable_agent_caching,
