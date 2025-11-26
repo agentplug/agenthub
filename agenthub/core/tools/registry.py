@@ -1,5 +1,6 @@
 """Tool Registry - Singleton for managing tools and FastMCP server."""
 
+import os
 import threading
 from collections.abc import Callable
 from typing import Any
@@ -27,7 +28,12 @@ class ToolRegistry:
         if not hasattr(self, "_initialized") or not getattr(
             self, "_initialized", False
         ):
-            self.mcp_server = FastMCP("AgentHub Tools")
+            host = os.getenv("AGENTHUB_MCP_HOST", "localhost")
+            port = os.getenv("AGENTHUB_MCP_PORT", 8000)
+            if host == "localhost" and port == 8000:
+                self.mcp_server = FastMCP("AgentHub Tools")
+            else:
+                self.mcp_server = FastMCP("AgentHub Tools", host="0.0.0.0", port=port)
             self.registered_tools: dict[str, Callable] = {}
             self.tool_metadata: dict[str, ToolMetadata] = {}
             # Tool access control: agent_id -> list of allowed tool names
