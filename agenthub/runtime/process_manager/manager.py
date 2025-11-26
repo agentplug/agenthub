@@ -60,9 +60,16 @@ class ProcessManager:
 
         self.monitoring_adapter = MonitoringAdapter(enabled=monitoring)
 
-        # Start communication server if needed
-        if realtime_communication:
-            self.communication_manager.start_server_if_needed()
+        # Preserve legacy attribute for components that expect direct access
+        self.use_dynamic_execution = use_dynamic_execution
+
+        # Backward compatibility attributes
+        self.realtime_communication = self.communication_manager.enabled
+        self.communication_server = self.communication_manager.server
+        self._server_started = False
+
+        # Note: Server is not started automatically during initialization
+        # It will be started when needed (e.g., during agent execution)
 
         logger.info("✅ ProcessManager initialized with modular architecture")
 
@@ -250,9 +257,23 @@ class ProcessManager:
         """
         if enabled:
             self.communication_manager.enable()
-            self.communication_manager.start_server_if_needed()
+            self.realtime_communication = True
+            self.communication_server = self.communication_manager.server
+            # Note: Server is not started automatically, only when needed
         else:
             self.communication_manager.disable()
+            self.realtime_communication = False
+            self.communication_server = None
+            self._server_started = False
+
+    async def _ensure_communication_server(self) -> bool:
+        """
+        Ensure communication server is running (backward compatibility).
+
+        Returns:
+            bool: True if server available, False if fallback needed
+        """
+        return await self.communication_manager.ensure_server_running()
 
     def get_communication_status(self) -> dict[str, Any]:
         """
@@ -261,7 +282,23 @@ class ProcessManager:
         Returns:
             dict: Status information
         """
-        return self.communication_manager.get_status()
+        # Handle disabled case first
+        if not self.realtime_communication:
+            return {"enabled": False, "reason": "disabled"}
+
+        # Handle backward compatibility when server reference was manually cleared
+        if self.communication_server is None:
+            return {"enabled": False, "reason": "not_initialized"}
+
+        status = self.communication_manager.get_status()
+
+        # Backward compatibility: ensure 'enabled' field exists
+        if "enabled" not in status:
+            status["enabled"] = (
+                self.realtime_communication and self.communication_server is not None
+            )
+
+        return status
 
     def log_communication_status(self) -> None:
         """Log the current communication status for debugging."""
