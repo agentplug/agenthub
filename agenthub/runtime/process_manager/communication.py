@@ -150,6 +150,13 @@ class CommunicationManager:
         Returns:
             bool: True if session registered successfully
         """
+        # Validate agent_id early to avoid confusing empty IDs downstream
+        if not agent_id or not str(agent_id).strip():
+            logger.warning(
+                "📝 Cannot register WebSocket session with empty agent_id; ignoring"
+            )
+            return False
+
         if not self.is_available():
             logger.debug(
                 f"📝 Cannot register session {agent_id} - server not available"
@@ -174,6 +181,12 @@ class CommunicationManager:
         Returns:
             bool: True if session unregistered successfully
         """
+        if not agent_id or not str(agent_id).strip():
+            logger.warning(
+                "📝 Cannot unregister WebSocket session with empty agent_id; ignoring"
+            )
+            return False
+
         if not self.is_available():
             return False
 
