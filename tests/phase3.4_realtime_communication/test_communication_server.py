@@ -107,6 +107,23 @@ async def test_server_session_management(server_port):
 
 @pytest.mark.skipif(not WEBSOCKETS_AVAILABLE, reason="websockets library not installed")
 @pytest.mark.asyncio
+async def test_server_rejects_empty_agent_id(server_port):
+    """Server should ignore empty agent_id for session management."""
+    server = CommunicationServer(port=server_port)
+    await server.start()
+
+    # Attempt to register with empty agent_id
+    server.register_agent_session("", {"agent_id": "", "execution_id": "12345"})
+    assert "" not in server.agent_sessions
+
+    # Attempt to unregister with empty agent_id (should be a no-op)
+    server.unregister_agent_session("")
+
+    await server.stop()
+
+
+@pytest.mark.skipif(not WEBSOCKETS_AVAILABLE, reason="websockets library not installed")
+@pytest.mark.asyncio
 async def test_get_communication_server():
     """Test the global server accessor function."""
     server1 = get_communication_server()
