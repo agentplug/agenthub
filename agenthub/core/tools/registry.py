@@ -184,15 +184,19 @@ class ToolRegistry:
             from mcp import ClientSession
             from mcp.client.sse import sse_client
 
+            # Get the actual MCP server configuration
+            host, port = self.mcp_manager.get_config()
+            sse_url = f"http://{host}:{port}/sse"
+
             async def discover_tools() -> list[str]:
                 try:
-                    async with sse_client(url="http://localhost:8000/sse") as streams:
+                    async with sse_client(url=sse_url) as streams:
                         async with ClientSession(*streams) as session:
                             await session.initialize()
                             tools = await session.list_tools()
                             return [tool.name for tool in tools.tools]
                 except Exception as e:
-                    print(f"⚠️  MCP discovery failed: {e}")
+                    print(f"⚠️  MCP discovery failed from {sse_url}: {e}")
                     return []
 
             # Check if we're already in an event loop
@@ -248,7 +252,8 @@ class ToolRegistry:
             agent_id: Unique identifier for the agent
             tool_names: List of tool names to assign
         """
-        available_tools = list(self.registered_tools.keys())
+        # Get ALL available tools (local + MCP)
+        available_tools = self.get_available_tools()
         self.access_manager.assign_tools(agent_id, tool_names, available_tools)
 
     def get_agent_tools(self, agent_id: str) -> list[str]:
