@@ -528,16 +528,34 @@ class CommunicationServer:
             agent_id: Agent identifier
             session_data: Session metadata (client, execution_id, etc.)
         """
+        # Basic validation to avoid confusing empty/invalid agent IDs
+        if not agent_id or not str(agent_id).strip():
+            logger.warning(
+                "Attempted to register agent session with empty agent_id; ignoring"
+            )
+            return
+
         with self._session_lock:
             self.agent_sessions[agent_id] = session_data
         logger.info(f"Registered agent session: {agent_id}")
 
     def unregister_agent_session(self, agent_id: str) -> None:
         """Unregister agent session."""
+        # Guard against empty/invalid agent IDs
+        if not agent_id or not str(agent_id).strip():
+            logger.warning(
+                "Attempted to unregister agent session with empty agent_id; ignoring"
+            )
+            return
+
         with self._session_lock:
             if agent_id in self.agent_sessions:
                 del self.agent_sessions[agent_id]
                 logger.info(f"Unregistered agent session: {agent_id}")
+            else:
+                logger.debug(
+                    "Attempted to unregister non-existent agent session: %r", agent_id
+                )
 
     async def _cleanup_client_sessions(self, client_id: int) -> None:
         """Mark sessions associated with disconnected client as disconnected."""
