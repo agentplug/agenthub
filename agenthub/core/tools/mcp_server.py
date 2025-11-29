@@ -6,7 +6,14 @@ configuration, and management.
 
 import logging
 
-from mcp.server import FastMCP
+# Try to import FastMCP, fallback to MCPServer if not available
+try:
+    from mcp.server import FastMCP
+except ImportError:
+    try:
+        from chuk_mcp.server import MCPServer as FastMCP
+    except ImportError:
+        FastMCP = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +53,16 @@ class MCPServerManager:
             import os
 
             host = os.getenv("AGENTHUB_MCP_HOST", "localhost")
-            port_str = os.getenv("AGENTHUB_MCP_PORT", "8000")
+
+            # Smart port defaulting based on host
+            # Localhost/dev hosts default to 8000 (HTTP)
+            # All other hosts default to 443 (HTTPS)
+            if host in ["localhost", "127.0.0.1", "0.0.0.0"]:
+                default_port = "8000"  # Dev default
+            else:
+                default_port = "443"  # Prod default (HTTPS)
+
+            port_str = os.getenv("AGENTHUB_MCP_PORT", default_port)
 
             try:
                 port = int(port_str)
