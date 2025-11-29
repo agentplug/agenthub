@@ -289,6 +289,7 @@ class Executor:
         """Execute subprocess with real-time log streaming."""
         logger.info(f"Executing agent with log streaming: {agent_script.name}")
 
+        print(f"{python_executable} {str(agent_script)} {json.dumps(execution_data)}")
         process = subprocess.Popen(
             [python_executable, str(agent_script), json.dumps(execution_data)],
             cwd=str(agent_dir),
