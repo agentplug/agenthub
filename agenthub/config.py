@@ -24,7 +24,7 @@ class AgentHubConfig:
 
     # Tool settings
     mcp_host: str = "localhost"
-    mcp_port: int = 8000
+    mcp_port: int = 8000  # Default (will be smart-defaulted in from_env)
     enable_tool_caching: bool = True
     tool_timeout: int = 30
 
@@ -57,11 +57,21 @@ class AgentHubConfig:
         if max_workers := os.getenv("AGENTHUB_MAX_WORKERS"):
             config.max_concurrent_agents = int(max_workers)
 
-        if mcp_host := os.getenv("AGENTHUB_MCP_HOST"):
+        # Smart port defaulting based on host
+        mcp_host = os.getenv("AGENTHUB_MCP_HOST", "localhost")
+        if mcp_host:
             config.mcp_host = mcp_host
 
-        if mcp_port := os.getenv("AGENTHUB_MCP_PORT"):
-            config.mcp_port = int(mcp_port)
+            # Only set port if not explicitly provided
+            if not os.getenv("AGENTHUB_MCP_PORT"):
+                # Smart default based on host
+                if mcp_host in ["localhost", "127.0.0.1", "0.0.0.0"]:
+                    config.mcp_port = 8000  # Dev default
+                else:
+                    config.mcp_port = 443  # Prod default (HTTPS)
+        elif os.getenv("AGENTHUB_MCP_PORT"):
+            # Port specified but not host - use default host
+            config.mcp_port = int(os.getenv("AGENTHUB_MCP_PORT"))
 
         if log_level := os.getenv("AGENTHUB_LOG_LEVEL"):
             config.log_level = log_level
