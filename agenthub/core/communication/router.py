@@ -97,7 +97,9 @@ class MessageRouter:
             self.cleanup_task.cancel()
             try:
                 await self.cleanup_task
-            except asyncio.CancelledError:
+            except (asyncio.CancelledError, RuntimeError):
+                # RuntimeError: Task was created in different event loop
+                # CancelledError: Expected during task cancellation
                 pass
             self.cleanup_task = None
 

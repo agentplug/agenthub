@@ -41,7 +41,7 @@ def main():
         enable_intelligent_ranking=True,  # Disable to avoid LLM timeouts in demo
         default_max_results=3,
         api_timeout_seconds=5,
-        max_result_length=50000,  # Show full results instead of truncating
+        max_result_length=10000,  # Show full results instead of truncating
     )
 
     # Create RAG tool

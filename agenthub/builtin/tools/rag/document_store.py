@@ -8,7 +8,7 @@ import json
 import logging
 from pathlib import Path
 
-from llama_index.core import Document, SimpleDirectoryReader
+from llama_index.core import Document
 
 logger = logging.getLogger(__name__)
 
@@ -201,15 +201,58 @@ class DocumentStore:
 
             logger.info(f"Processing {len(files)} documents from: {self.source_dir}")
 
-            # Load documents using SimpleDirectoryReader
-            reader = SimpleDirectoryReader(
-                input_dir=str(self.source_dir),
-                recursive=True,
-                required_exts=list(self.supported_extensions),
-                encoding="utf-8",
-            )
+            documents = []
+            for file_path in files:
+                try:
+                    # Skip hidden files and directories
+                    if file_path.name.startswith("."):
+                        continue
 
-            documents = reader.load_data(show_progress=True, num_workers=1)
+                    # For PDFs and complex documents, use more robust loading
+                    if file_path.suffix.lower() == ".pdf":
+                        from llama_index.core.readers import PDFReader
+
+                        reader = PDFReader()
+                        doc = reader.load_data(file_path)
+                        documents.extend(doc)
+                    else:
+                        # For simple text files, read directly
+                        if file_path.suffix.lower() in [".txt", ".md"]:
+                            with open(
+                                file_path, encoding="utf-8", errors="ignore"
+                            ) as f:
+                                content = f.read()
+                                if content.strip():  # Only add non-empty content
+                                    doc = Document(
+                                        text=content,
+                                        metadata={
+                                            "file_name": file_path.name,
+                                            "file_path": str(file_path),
+                                            "file_type": file_path.suffix.lower(),
+                                        },
+                                    )
+                                    documents.append(doc)
+                        else:
+                            # Use SimpleDirectoryReader for other formats
+                            from llama_index.core import SimpleDirectoryReader
+
+                            reader = SimpleDirectoryReader(
+                                input_files=[str(file_path)], encoding="utf-8"
+                            )
+                            docs = reader.load_data()
+                            # Add file metadata if not present
+                            for doc in docs:
+                                if not hasattr(doc, "metadata") or not doc.metadata:
+                                    doc.metadata = {
+                                        "file_name": file_path.name,
+                                        "file_path": str(file_path),
+                                        "file_type": file_path.suffix.lower(),
+                                    }
+                            documents.extend(docs)
+
+                except Exception as file_error:
+                    logger.warning(f"Failed to load file {file_path}: {file_error}")
+                    continue
 
             logger.info(f"Successfully loaded {len(documents)} documents")
             return documents

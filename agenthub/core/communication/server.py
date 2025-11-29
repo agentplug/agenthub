@@ -245,7 +245,9 @@ class CommunicationServer:
                     self.session_cleanup_task.cancel()
                     try:
                         await self.session_cleanup_task
-                    except asyncio.CancelledError:
+                    except (asyncio.CancelledError, RuntimeError):
+                        # RuntimeError: Task was created in different event loop
+                        # CancelledError: Expected during task cancellation
                         pass
                     self.session_cleanup_task = None
 
@@ -268,7 +270,11 @@ class CommunicationServer:
                 # Stop server
                 if self.server:
                     self.server.close()
-                    await self.server.wait_closed()
+                    try:
+                        await self.server.wait_closed()
+                    except (asyncio.CancelledError, RuntimeError):
+                        # Handle asyncio loop issues during shutdown
+                        pass
                     self.server = None
 
                 self.is_running = False
