@@ -41,6 +41,7 @@ def main():
         enable_intelligent_ranking=True,  # Disable to avoid LLM timeouts in demo
         default_max_results=3,
         api_timeout_seconds=5,
+        max_result_length=50000,  # Show full results instead of truncating
     )
 
     # Create RAG tool
@@ -98,22 +99,24 @@ def main():
                         # Handle different result formats
                         if isinstance(doc, str):
                             # Direct string result
-                            text = doc[:200] + "..." if len(doc) > 200 else doc
                             print(f"\n   📄 Result {j}:")
-                            print(f"      📝 {text}")
+                            print(
+                                f"      📝 {doc}"
+                            )  # Show full text without truncation
                         elif isinstance(doc, dict):
                             # Dictionary result with metadata
                             text = doc.get("text", doc.get("content", ""))
                             source = doc.get("source", "document")
                             score = doc.get("score", 0.0)
 
-                            snippet = text[:200] + "..." if len(text) > 200 else text
                             print(f"\n   📄 Result {j} [{source}]:")
                             print(f"      🎯 Score: {score:.2f}")
-                            print(f"      📝 {snippet}")
+                            print(
+                                f"      📝 {text}"
+                            )  # Show full text without truncation
                         else:
                             # Fallback - just print what we got
-                            print(f"\n   📄 Result {j}: {str(doc)[:100]}...")
+                            print(f"\n   📄 Result {j}: {doc}")  # Show full result
 
                     print(f"   🔍 Used query: '{query_used}'")
                 else:
