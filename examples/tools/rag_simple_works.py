@@ -34,7 +34,7 @@ def main():
 
     print(f"📁 Found {len(files)} documents: {files}")
 
-    # Configure RAG for this directory
+    # Configure RAG for this directory (uses OpenAI embeddings by default)
     config = RAGConfig(
         source_directory="/Users/nguyennm/Project/agenthub/sample_docs",
         enable_query_rewriting=True,  # Disable for faster results in demo
@@ -42,6 +42,8 @@ def main():
         default_max_results=3,
         api_timeout_seconds=5,
         max_result_length=10000,  # Show full results instead of truncating
+        # Note: Uses OpenAI embeddings by default (text-embedding-3-small)
+        # To use local embeddings instead, add: use_local_embeddings=True
     )
 
     # Create RAG tool
@@ -49,6 +51,8 @@ def main():
 
     print("\n🔧 RAG Configuration:")
     print(f"   Source: {config.source_directory}")
+    print(f"   Embedding model: {config.embedding_model}")
+    print(f"   Using local embeddings: {config.use_local_embeddings}")
     print(f"   Query rewriting: {config.enable_query_rewriting}")
     print(f"   Intelligent ranking: {config.enable_intelligent_ranking}")
 
