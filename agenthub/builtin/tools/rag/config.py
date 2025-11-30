@@ -13,8 +13,87 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator, validator
 
 # Constants
-EMBEDDING_DIMENSION_DEFAULT = 768  # For EmbeddingGemma-300m
-EMBEDDING_FALLBACK_VECTOR = [0.0] * EMBEDDING_DIMENSION_DEFAULT
+EMBEDDING_DIMENSION_DEFAULT = 768  # Legacy fallback for unknown models
+
+# Known embedding model dimensions
+MODEL_DIMENSIONS = {
+    # OpenAI models
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+    "text-embedding-ada-002": 1536,
+    # Google models
+    "google/embeddinggemma-300m": 768,
+    "google/embeddinggemma-7b": 3072,
+    # Sentence Transformer models
+    "all-MiniLM-L6-v2": 384,
+    "all-mpnet-base-v2": 768,
+    "sentence-transformers/all-MiniLM-L6-v2": 384,
+    "sentence-transformers/all-mpnet-base-v2": 768,
+    # Common fallback
+    "default": 768,
+}
+
+
+def get_model_dimension(model_name: str, use_local_embeddings: bool = False) -> int:
+    """
+    Get dimension for a specific embedding model.
+
+    Args:
+        model_name: Name of embedding model
+        use_local_embeddings: Whether using local embeddings (affects some model naming)
+
+    Returns:
+        Expected dimension for model
+    """
+    # Direct lookup first
+    if model_name in MODEL_DIMENSIONS:
+        return MODEL_DIMENSIONS[model_name]
+
+    # Check for partial matches (useful for variations)
+    for model_pattern, dimension in MODEL_DIMENSIONS.items():
+        if model_pattern.lower() in model_name.lower():
+            return dimension
+
+    # Local model fallbacks
+    if use_local_embeddings:
+        # Common local model defaults
+        if "gemma" in model_name.lower():
+            return 768 if "300m" in model_name else 3072
+        if "minilm" in model_name.lower():
+            return 384
+        if "mpnet" in model_name.lower():
+            return 768
+        return EMBEDDING_DIMENSION_DEFAULT  # 768
+
+    # OpenAI fallbacks
+    if "text-embedding-3-small" in model_name:
+        return 1536
+    if "text-embedding-3-large" in model_name:
+        return 3072
+    if "ada-002" in model_name:
+        return 1536
+
+    # Final fallback
+    return EMBEDDING_DIMENSION_DEFAULT
+
+
+def create_fallback_vector(model_name: str, dimension: int) -> list[float]:
+    """
+    Create a fallback vector for a specific model dimension.
+
+    Args:
+        model_name: Name of embedding model (for logging)
+        dimension: Expected dimension
+
+    Returns:
+        Fallback vector with specified dimension
+    """
+    logger.warning(
+        f"Creating fallback vector for model '{model_name}' with dimension {dimension}"
+    )
+    return [0.0] * dimension
+
+
 SUPPORTED_EXTENSIONS = {
     ".pdf",
     ".txt",
@@ -28,6 +107,7 @@ SUPPORTED_EXTENSIONS = {
     ".xlsx",
     ".xls",
     ".doc",
+    ".py",
 }
 
 
@@ -65,8 +145,8 @@ class RAGConfig(BaseModel):
     index_storage_location: Path | None = Field(default=None)
 
     # Embedding settings
-    embedding_model: str = Field(default="google/embeddinggemma-300m")
-    use_local_embeddings: bool = Field(default=True)
+    embedding_model: str = Field(default="text-embedding-3-small")
+    use_local_embeddings: bool = Field(default=False)
     embedding_batch_size: int = Field(default=8, ge=1, le=128)
     embedding_device: str = Field(default="cpu")
 

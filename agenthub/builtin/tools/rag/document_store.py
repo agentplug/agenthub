@@ -210,11 +210,27 @@ class DocumentStore:
 
                     # For PDFs and complex documents, use more robust loading
                     if file_path.suffix.lower() == ".pdf":
-                        from llama_index.core.readers import PDFReader
+                        try:
+                            from llama_index.core.readers import PDFReader
 
-                        reader = PDFReader()
-                        doc = reader.load_data(file_path)
-                        documents.extend(doc)
+                            reader = PDFReader()
+                            doc = reader.load_data(file_path)
+                            documents.extend(doc)
+                        except ImportError:
+                            try:
+                                # Try alternative import path
+                                from llama_index.readers.file import PDFReader
+
+                                reader = PDFReader()
+                                doc = reader.load_data(file_path)
+                                documents.extend(doc)
+                            except ImportError:
+                                # Fallback: skip PDF with warning
+                                logger.warning(
+                                    f"PDF reader not available, "
+                                    f"skipping file: {file_path}"
+                                )
+                                continue
                     else:
                         # For simple text files, read directly
                         if file_path.suffix.lower() in [".txt", ".md"]:

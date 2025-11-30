@@ -90,6 +90,7 @@ def create_rag_tool(config: RAGConfig | None = None) -> RAGTool:
         model_name=config.embedding_model,
         device=config.embedding_device,
         batch_size=config.embedding_batch_size,
+        use_local_embeddings=config.use_local_embeddings,
     )
 
     # Create document store
