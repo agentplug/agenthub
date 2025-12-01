@@ -173,8 +173,24 @@ class DynamicAgentExecutor:
             return self.loaded_agents[cache_key]
 
         try:
-            # Load module dynamically
-            spec = importlib.util.spec_from_file_location("agent", agent_script)
+            # Load module dynamically with safe resolution for intra-module imports
+            # Ensure the agent's own directory is prioritized on sys.path
+            import sys
+
+            agent_dir = str(agent_script.parent)
+            if agent_dir not in sys.path:
+                sys.path.insert(0, agent_dir)
+
+            # Use the script's stem as the module name (e.g., "research_agent")
+            # so that "from research_agent import ..." inside the script resolves
+            module_name = agent_script.stem
+
+            # Purge any previously imported conflicting module with the same name
+            # (e.g., an examples/ file shadowing the real agent module)
+            if module_name in sys.modules:
+                del sys.modules[module_name]
+
+            spec = importlib.util.spec_from_file_location(module_name, agent_script)
             if spec is None or spec.loader is None:
                 raise DynamicExecutionError(
                     f"Could not load agent module: {agent_script}"

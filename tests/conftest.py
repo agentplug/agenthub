@@ -1,5 +1,6 @@
 """Shared test configuration and fixtures for all tests."""
 
+import asyncio
 import shutil
 import tempfile
 from collections.abc import Generator
@@ -101,3 +102,34 @@ if __name__ == "__main__":
     (agent_dir / "agent.py").chmod(0o755)
 
     return agent_dir
+
+
+@pytest.fixture(autouse=True)
+def cleanup_websocket_servers():
+    """Automatically clean up WebSocket servers between tests."""
+    yield  # Run the test
+
+    # Cleanup after test
+    try:
+        from agenthub.core.communication.server import CommunicationServer
+
+        # Reset singleton instance
+        CommunicationServer._instance = None
+        CommunicationServer._initialized = False
+
+        # Stop any running server
+        if hasattr(CommunicationServer, "_instance") and CommunicationServer._instance:
+            server = CommunicationServer._instance
+            if hasattr(server, "is_running") and server.is_running:
+                try:
+                    # Try to stop server in a new event loop
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(server.stop())
+                    loop.close()
+                except Exception:
+                    # Ignore cleanup errors
+                    pass
+    except ImportError:
+        # WebSocket module not available, skip cleanup
+        pass
