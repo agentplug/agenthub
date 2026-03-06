@@ -28,15 +28,16 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub make
 
 AgentHub revolutionizes how you work with AI agents:
 
-- **🧩 Compose Multi-Agent Systems**: Build a `Team()` by plugging together pre-built or custom agents
-- **🧠 Universal Intelligence**: `agent.solve()` and `Team().solve()` for high-level, goal-driven execution
+- **🧠 Universal Intelligence**: `agent.solve()` for high-level, goal-driven execution
 - **🔧 Customize Agents**: Add custom tools and domain knowledge to any agent
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
 - **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
-- **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
+- **📡 Real-Time Log Streaming**: WebSocket-based agent execution monitoring
+
+> **Coming Soon**: `Team()` multi-agent composition and `Team().solve()` for orchestrating agent pipelines
 
 ### Before AgentHub
 
@@ -61,40 +62,31 @@ coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
 
-## 🧩 Build Multi-Agent Teams (High-Level Flow)
+## 🧩 Multi-Agent Teams (Coming Soon)
 
-Create complex systems by composing pre-built agents (research, analysis, data access, planning, quality control, ...) and your custom agents into a `Team()`.
+> ⚠️ The `Team()` API is under active development and not yet available. The example below shows the planned interface.
 
 ```python
 import agenthub as ah
+from agenthub import Team  # Not yet available
 
-# 1) Load pre-built agents from the marketplace (customize via load params)
+# Load agents individually (this part works today)
 research = ah.load_agent(
     "agentplug/research-agent",
-    external_tools=["web_search"],            # attach your tools
-    knowledge=["knowledge/base/"]             # attach your knowledge sources
-)
-
-analysis = ah.load_agent(
-    "agentplug/analysis-agent",
+    external_tools=["web_search"],
     knowledge=["knowledge/base/"]
 )
-
+analysis = ah.load_agent("agentplug/analysis-agent", knowledge=["knowledge/base/"])
 planner  = ah.load_agent("agentplug/planning-agent")
 qc       = ah.load_agent("agentplug/quality-control-agent")
 
-# 3) Compose into a Team
-#    Team API preview — designed for simple, high-level orchestration
-from agenthub import Team  # Coming soon
-
+# Planned: compose into a Team and solve with one call
 team = Team(name="ResearchPipeline", agents=[planner, research, analysis, qc])
-
-# 4) High-level goal, single entry point
 result = team.solve("Analyze the latest LLM papers and produce actionable insights")
-print(result["result"])  # Unified output
+print(result["result"])
 ```
 
-Flow to build:
+Planned flow:
 
 - **Pick agents**: research, analysis, data access, planning, quality control, ...
 - **Customize**: pass `external_tools=[...]` and `knowledge=[...]` to `ah.load_agent(...)`
@@ -103,15 +95,16 @@ Flow to build:
 
 ## ✨ Key Features
 
-- **🧩 Team Composition (High-Level Logic)**: Create a `Team()` and plug agents together to build complex systems
-- **🧠 Universal Solve Method**: `agent.solve()` and `Team().solve()` - describe goals, not steps
+- **🧠 Universal Solve Method**: `agent.solve()` - describe goals, not steps
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
 - **🛠️ Custom Tools & Knowledge**: Create tools with `@tool`, connect via `run_resources()`, and attach domain knowledge
 - **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
-- **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
+- **📡 Real-Time Log Streaming**: WebSocket-based visibility into agent execution
+
+> **Coming Soon**: `Team()` multi-agent composition and `Team().solve()`
 
 ## 🚀 Quick Start
 
@@ -147,7 +140,7 @@ print(result["result"])
 
 ### 🧠 Universal Solve Method
 
-Describe your goal in natural language — `agent.solve()` (and soon `Team().solve()`) selects the best internal method and executes the steps:
+Describe your goal in natural language — `agent.solve()` selects the best internal method and executes the steps:
 
 ```python
 import agenthub as ah
@@ -400,13 +393,11 @@ Here's how to get started:
 git clone https://github.com/YOUR_USERNAME/agenthub.git
 cd agenthub
 
-# 2. Setup environment
-python3.12 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -e ".[dev]"
+# 2. Setup environment (uses UV)
+uv sync
 
 # 3. Run tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # 4. Make changes
 git checkout -b feature/your-feature
