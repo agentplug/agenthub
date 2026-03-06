@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from ...interfaces import AgentWrapperProtocol, LLMServiceProtocol
+from ...tools.exceptions import AgentExecutionError
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,8 @@ class FrameworkSolveHandler:
             # Return the exact same format as direct method calls
             return result
 
+        except AgentExecutionError:
+            raise
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(f"Error in framework solve method: {e}")

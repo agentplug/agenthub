@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from ...interfaces import AgentWrapperProtocol
+from ...tools.exceptions import AgentExecutionError
 from .interface import AgentSolveInterface
 
 logger = logging.getLogger(__name__)
@@ -11,7 +13,7 @@ logger = logging.getLogger(__name__)
 class CustomSolveHandler:
     """Handles agents with custom solve implementations."""
 
-    def __init__(self, agent_wrapper: Any) -> None:
+    def __init__(self, agent_wrapper: AgentWrapperProtocol) -> None:
         """Initialize custom solve handler."""
         self.agent_wrapper = agent_wrapper
 
@@ -36,6 +38,8 @@ class CustomSolveHandler:
             # Return the exact same format as direct method calls
             return result
 
+        except AgentExecutionError:
+            raise
         except Exception as e:
             logger.error(f"Error in custom solve method: {e}")
             return {"error": str(e), "execution_time": 0.0}

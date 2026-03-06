@@ -346,11 +346,12 @@ class AgentToolManager:
 
             # Convert result to JSON string
             if result and hasattr(result, "content") and len(result.content) > 0:
-                return (
-                    result.content[0].text
+                text: str = (
+                    str(result.content[0].text)
                     if hasattr(result.content[0], "text")
                     else str(result.content[0])
                 )
+                return text
             else:
                 return json.dumps({"error": "No result returned from tool"})
 

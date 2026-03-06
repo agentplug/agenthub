@@ -188,7 +188,7 @@ class DynamicAgentExecutor:
             spec.loader.exec_module(module)
 
             # Find agent class (look for classes that don't start with underscore)
-            agent_class = None
+            agent_class: type | None = None
             for name, obj in inspect.getmembers(module, inspect.isclass):
                 if not name.startswith("_") and obj.__module__ == module.__name__:
                     agent_class = obj

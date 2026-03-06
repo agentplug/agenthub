@@ -38,24 +38,19 @@ class TestLoadAgentAndSolve:
         assert agent_wrapper.has_method("greet")
         assert not agent_wrapper.has_method("nonexistent")
 
-    def test_solve_returns_result(self, agent_wrapper):
-        """solve() should return a dict (not raise) even without an LLM.
+    def test_solve_without_runtime_raises(self, agent_wrapper):
+        """solve() without a runtime raises AgentExecutionError.
 
-        Without an LLM service the framework handler falls back, but the
-        key invariant is: solve() never raises -- it returns a dict with
-        either 'result' or 'error'.
+        Without a runtime the method executor cannot execute the selected
+        method, so AgentExecutionError propagates to the caller.
         """
-        result = agent_wrapper.solve("echo hello world")
-        assert isinstance(result, dict)
-        # solve() should always return a dict, even on error path
-        assert "error" in result or "result" in result
+        with pytest.raises(AgentExecutionError, match="No runtime available"):
+            agent_wrapper.solve("echo hello world")
 
-    def test_solve_with_context(self, agent_wrapper):
-        """solve() accepts optional context dict."""
-        result = agent_wrapper.solve(
-            "greet the user", context={"user": "integration-test"}
-        )
-        assert isinstance(result, dict)
+    def test_solve_with_context_without_runtime_raises(self, agent_wrapper):
+        """solve() with context but no runtime raises AgentExecutionError."""
+        with pytest.raises(AgentExecutionError):
+            agent_wrapper.solve("greet the user", context={"user": "integration-test"})
 
 
 # ===================================================================
@@ -279,12 +274,10 @@ class TestBadManifestErrors:
 class TestDirectMethodExecution:
     """Test the execute() path end-to-end."""
 
-    def test_execute_fallback_without_runtime(self, agent_wrapper):
-        """execute() without runtime returns a fallback result dict."""
-        result = agent_wrapper.execute("echo", {"text": "hello"})
-        assert isinstance(result, dict)
-        # Fallback path returns a dict with "result" key
-        assert "result" in result
+    def test_execute_without_runtime_raises(self, agent_wrapper):
+        """execute() without runtime raises AgentExecutionError."""
+        with pytest.raises(AgentExecutionError, match="No runtime available"):
+            agent_wrapper.execute("echo", {"text": "hello"})
 
     def test_execute_with_runtime_subprocess(self, agent_wrapper_with_runtime):
         """execute() through AgentRuntime runs the real agent.py subprocess."""
@@ -312,10 +305,10 @@ class TestDirectMethodExecution:
             assert "execution_time" in result
             assert isinstance(result["execution_time"], int | float)
 
-    def test_dynamic_method_call_via_getattr(self, agent_wrapper):
-        """Calling agent.echo(text="hi") dispatches through __getattr__."""
-        result = agent_wrapper.echo(text="hi")
-        assert isinstance(result, dict)
+    def test_dynamic_method_call_via_getattr_without_runtime(self, agent_wrapper):
+        """Calling agent.echo(text="hi") without runtime raises."""
+        with pytest.raises(AgentExecutionError, match="No runtime available"):
+            agent_wrapper.echo(text="hi")
 
     def test_has_method_accurate(self, agent_wrapper):
         """has_method reflects the real manifest methods."""

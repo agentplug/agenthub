@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from ...interfaces import AgentWrapperProtocol
+from ...tools.exceptions import AgentExecutionError
 from .custom_handler import CustomSolveHandler
 from .framework_handler import FrameworkSolveHandler
 from .interface import AgentSolveInterface
@@ -54,10 +55,11 @@ class SolveEngine:
             else:
                 return self.framework_handler.solve(query, context, **kwargs)
 
+        except AgentExecutionError:
+            raise
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(f"Error in solve() method: {e}")
-            # Return error in the same format as agent execution errors
             return {"error": str(e), "execution_time": execution_time}
 
     def _has_custom_solve(self) -> bool:

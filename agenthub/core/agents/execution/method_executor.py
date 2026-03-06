@@ -5,16 +5,20 @@ import logging
 import os
 from typing import Any
 
-from ...interfaces import AgentWrapperProtocol
 from ...tools.exceptions import AgentExecutionError
 
 logger = logging.getLogger(__name__)
+
+# MethodExecutor uses a forward reference to avoid circular imports.
+# The agent_wrapper is typed as Any because it accesses AgentWrapper-specific
+# attributes (name, namespace, agent_id) not present on the protocol.
+_AgentWrapperType = Any
 
 
 class MethodExecutor:
     """Handles method execution and parameter mapping."""
 
-    def __init__(self, agent_wrapper: AgentWrapperProtocol) -> None:
+    def __init__(self, agent_wrapper: _AgentWrapperType) -> None:
         """Initialize method executor."""
         self.agent_wrapper = agent_wrapper
 

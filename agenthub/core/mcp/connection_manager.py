@@ -41,9 +41,9 @@ class MCPConnectionPool:
         )
 
         stdio_transport = stdio_client(server_params)
-        client = await stdio_transport.__aenter__()
+        client: ClientSession = await stdio_transport.__aenter__()
         logger.debug("Created new MCP connection")
-        return client  # type: ignore
+        return client
 
     async def _cleanup_idle_connections(self) -> None:
         """Clean up idle connections."""
