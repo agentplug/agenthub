@@ -148,10 +148,11 @@ class TestAgentWrapper:
 
         wrapper = AgentWrapper(agent_info)
 
-        # Current implementation uses fallback execution instead of raising error
-        result = wrapper.execute("test_method", {})
-        # Should return some result (fallback execution)
-        assert result is not None
+        # Without a runtime, execute() raises AgentExecutionError
+        from agenthub.core.tools.exceptions import AgentExecutionError
+
+        with pytest.raises(AgentExecutionError, match="No runtime available"):
+            wrapper.execute("test_method", {})
 
     def test_execute_method_nonexistent(self):
         """Test executing nonexistent method."""
