@@ -93,7 +93,7 @@ def status(agent_name: str | None) -> None:
 def info_agent(agent_name: str, base_path: str | None) -> None:
     """Show detailed information about an installed agent."""
     try:
-        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.core.agents.lifecycle.loader import AgentLoader
         from agenthub.storage.local_storage import LocalStorage
 
         # Parse agent name

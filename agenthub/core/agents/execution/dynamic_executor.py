@@ -86,9 +86,13 @@ class DynamicAgentExecutor:
 
             return {"result": result}
 
+        except DynamicExecutionError:
+            raise
         except Exception as e:
             logger.error(f"Dynamic execution failed: {e}")
-            return {"error": str(e)}
+            raise DynamicExecutionError(
+                f"Unexpected error during dynamic execution: {e}"
+            ) from e
 
     def _get_agent_script(self, agent_path: str) -> Path:
         """

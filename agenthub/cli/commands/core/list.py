@@ -7,7 +7,7 @@ from rich import print as rprint
 from rich.console import Console
 from rich.table import Table
 
-from agenthub.core.agents.loader import AgentLoader
+from agenthub.core.agents.lifecycle.loader import AgentLoader
 from agenthub.storage.local_storage import LocalStorage
 
 from ...utils.display_helpers import truncate_text

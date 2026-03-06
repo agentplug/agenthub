@@ -3,14 +3,14 @@
 import logging
 from typing import Any
 
-from ..interfaces import (
+from ...interfaces import (
     KnowledgeManagerProtocol,
     ToolManagerProtocol,
 )
-from .agent_info import AgentInfo
-from .method_executor import MethodExecutor
-from .solve import SolveEngine
-from .validator import InterfaceValidator
+from ..execution.method_executor import MethodExecutor
+from ..lifecycle.validator import InterfaceValidator
+from ..models.agent_info import AgentInfo
+from ..solve import SolveEngine
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class AgentWrapper:
 
     def __init__(
         self,
-        agent_info: dict,
+        agent_info: dict[str, Any],
         tool_registry: Any = None,
         agent_id: str | None = None,
         assigned_tools: list[str] | None = None,
@@ -47,7 +47,7 @@ class AgentWrapper:
         # Get LLM service for solve engine
         llm_service = None
         try:
-            from ..llm import get_shared_llm_service
+            from ...llm import get_shared_llm_service
 
             llm_service = get_shared_llm_service()
         except ImportError:
@@ -60,7 +60,7 @@ class AgentWrapper:
             self.knowledge_manager = knowledge_manager
         else:
             # Import here to avoid circular dependency
-            from ..knowledge import KnowledgeManager
+            from ...knowledge import KnowledgeManager
 
             self.knowledge_manager = KnowledgeManager()  # type: ignore[assignment]
 
@@ -68,7 +68,7 @@ class AgentWrapper:
             self.tool_manager = tool_manager
         else:
             # Import here to avoid circular dependency
-            from ..mcp.agent_tool_manager import AgentToolManager
+            from ...mcp.agent_tool_manager import AgentToolManager
 
             self.tool_manager = AgentToolManager(agent_info.get("manifest", {}))
 
@@ -104,11 +104,13 @@ class AgentWrapper:
 
     def has_method(self, method_name: str) -> bool:
         """Check if agent has method."""
-        return self.agent_info.has_method(method_name)
+        result: bool = self.agent_info.has_method(method_name)
+        return result
 
     def get_method_info(self, method_name: str) -> dict[str, Any]:
         """Get method information."""
-        return self.agent_info.get_method_info(method_name)
+        result: dict[str, Any] = self.agent_info.get_method_info(method_name)
+        return result
 
     # Tool management (delegate to existing tool_manager)
     def assign_tools(self, tool_names: list[str]) -> None:
@@ -201,7 +203,8 @@ class AgentWrapper:
 
     def can_access_tool(self, tool_name: str) -> bool:
         """Check if agent can access tool."""
-        return self.tool_manager.has_tool_access(self.agent_id, tool_name)
+        result: bool = self.tool_manager.has_tool_access(self.agent_id, tool_name)
+        return result
 
     def get_assigned_tools(self) -> list[str]:
         """Get assigned tools."""
@@ -238,21 +241,27 @@ class AgentWrapper:
 
     def get_all_available_tools(self) -> list[str]:
         """Get all available tools (enabled built-in + external)."""
-        return self.tool_manager.get_all_available_tools(self.agent_id)
+        result: list[str] = self.tool_manager.get_all_available_tools(self.agent_id)
+        return result
 
     def is_builtin_tool_available(self, tool_name: str) -> bool:
         """Check if a built-in tool is available."""
-        return self.tool_manager.is_builtin_tool_available(tool_name)
+        result: bool = self.tool_manager.is_builtin_tool_available(tool_name)
+        return result
 
     def is_builtin_tool_required(self, tool_name: str) -> bool:
         """Check if a built-in tool is required."""
-        return self.tool_manager.is_builtin_tool_required(tool_name)
+        result: bool = self.tool_manager.is_builtin_tool_required(tool_name)
+        return result
 
     def validate_builtin_tool_parameters(
         self, tool_name: str, parameters: dict[str, Any]
     ) -> list[str]:
         """Validate parameters for a built-in tool."""
-        return self.tool_manager.validate_builtin_tool_parameters(tool_name, parameters)
+        result: list[str] = self.tool_manager.validate_builtin_tool_parameters(
+            tool_name, parameters
+        )
+        return result
 
     def execute_tool(self, tool_name: str, *args: Any, **kwargs: Any) -> Any:
         """Execute a tool."""
@@ -278,28 +287,34 @@ class AgentWrapper:
 
     def get_tool_summary(self) -> dict[str, Any]:
         """Get tool summary."""
-        return self.tool_manager.get_tool_summary(self.agent_id)
+        result: dict[str, Any] = self.tool_manager.get_tool_summary(self.agent_id)
+        return result
 
     # Knowledge management (delegate to existing knowledge_manager)
     def inject_knowledge(
         self, knowledge_text: str, metadata: dict[str, Any] | None = None
     ) -> str:
         """Inject knowledge into agent context."""
-        knowledge_id = self.knowledge_manager.inject_knowledge(knowledge_text, metadata)
+        knowledge_id: str = self.knowledge_manager.inject_knowledge(
+            knowledge_text, metadata
+        )
         logger.info(f"Injected knowledge into agent {self.agent_id}: {knowledge_id}")
         return knowledge_id
 
     def get_knowledge(self) -> str:
         """Get injected knowledge."""
-        return self.knowledge_manager.get_knowledge()
+        result: str = self.knowledge_manager.get_knowledge()
+        return result
 
     def get_knowledge_metadata(self) -> dict[str, Any]:
         """Get knowledge metadata."""
-        return self.knowledge_manager.get_metadata()
+        result: dict[str, Any] = self.knowledge_manager.get_metadata()
+        return result
 
     def is_knowledge_available(self) -> bool:
         """Check if knowledge is available."""
-        return self.knowledge_manager.is_knowledge_available()
+        result: bool = self.knowledge_manager.is_knowledge_available()
+        return result
 
     def clear_knowledge(self) -> None:
         """Clear injected knowledge."""
@@ -308,11 +323,13 @@ class AgentWrapper:
 
     def search_knowledge(self, query: str) -> str | None:
         """Search knowledge for relevant information."""
-        return self.knowledge_manager.search_knowledge(query)
+        result: str | None = self.knowledge_manager.search_knowledge(query)
+        return result
 
     def get_knowledge_summary(self) -> dict[str, Any]:
         """Get knowledge summary."""
-        return self.knowledge_manager.get_knowledge_summary()
+        result: dict[str, Any] = self.knowledge_manager.get_knowledge_summary()
+        return result
 
     # Summary methods
     def get_agent_summary(self) -> dict[str, Any]:
@@ -336,11 +353,13 @@ class AgentWrapper:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
-        return self.agent_info.to_dict()
+        result: dict[str, Any] = self.agent_info.to_dict()
+        return result
 
     def __repr__(self) -> str:
         """String representation."""
-        return self.agent_info.__repr__()
+        result: str = self.agent_info.__repr__()
+        return result
 
     # Magic method for dynamic method calls
     def __getattr__(self, method_name: str) -> Any:

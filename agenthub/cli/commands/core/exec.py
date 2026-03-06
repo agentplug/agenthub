@@ -7,7 +7,7 @@ import click
 from rich import print as rprint
 from rich.prompt import Prompt
 
-from agenthub.core.agents.loader import AgentLoader
+from agenthub.core.agents.lifecycle.loader import AgentLoader
 from agenthub.runtime.agent_runtime import AgentRuntime
 from agenthub.storage.local_storage import LocalStorage
 

@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from ..di import get_container
-from ..interfaces import (
+from ...di import get_container
+from ...interfaces import (
     KnowledgeManagerProtocol,
     ToolManagerProtocol,
 )
-from .wrapper import AgentWrapper
+from ..orchestration.wrapper import AgentWrapper
 
 
 class AgentWrapperFactory:
@@ -19,7 +19,7 @@ class AgentWrapperFactory:
 
     def create_wrapper(
         self,
-        agent_info: dict,
+        agent_info: dict[str, Any],
         tool_registry: Any = None,
         agent_id: str | None = None,
         assigned_tools: list[str] | None = None,
@@ -52,9 +52,12 @@ class AgentWrapperFactory:
         """Get tool manager from container."""
         try:
             # For now, create tool manager directly since it needs agent_info
-            from ..mcp.agent_tool_manager import AgentToolManager
+            from ...mcp.agent_tool_manager import AgentToolManager
 
-            return AgentToolManager(agent_info.get("manifest", {}))
+            manager: ToolManagerProtocol = AgentToolManager(
+                agent_info.get("manifest", {})
+            )
+            return manager
         except ImportError:
             return None
 

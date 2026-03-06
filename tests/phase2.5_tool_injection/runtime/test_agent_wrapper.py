@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from agenthub.core.agents.wrapper import AgentWrapper
+from agenthub.core.agents.orchestration.wrapper import AgentWrapper
 from agenthub.core.tools.exceptions import ToolConflictError, ToolNotFoundError
 from agenthub.core.tools.metadata import ToolMetadata
 from agenthub.core.tools.registry import ToolRegistry

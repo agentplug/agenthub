@@ -2,7 +2,7 @@
 
 import pytest
 
-from agenthub.core.agents.wrapper import AgentWrapper
+from agenthub.core.agents.orchestration.wrapper import AgentWrapper
 from agenthub.core.tools.exceptions import AgentExecutionError
 
 

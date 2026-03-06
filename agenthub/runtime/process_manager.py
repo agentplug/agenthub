@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from agenthub.core.agents.dynamic_executor import DynamicAgentExecutor
+from agenthub.core.agents.execution.dynamic_executor import DynamicAgentExecutor
 from agenthub.runtime.environment_manager import EnvironmentManager
 
 logger = logging.getLogger(__name__)

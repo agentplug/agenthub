@@ -85,7 +85,7 @@ class TestBackwardCompatibility:
 
     def test_agent_loader_instantiation(self):
         """Test that AgentLoader can still be instantiated."""
-        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.core.agents.lifecycle.loader import AgentLoader
         from agenthub.storage.local_storage import LocalStorage
 
         storage = LocalStorage()
@@ -115,7 +115,7 @@ class TestIntegration:
     def test_module_isolation(self):
         """Test that new modules don't interfere with existing ones."""
         # Import both old and new modules
-        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.core.agents.lifecycle.loader import AgentLoader
         from agenthub.storage.local_storage import LocalStorage
 
         # Create instances of existing components

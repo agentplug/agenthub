@@ -56,7 +56,9 @@ def main() -> None:
         parameters = input_data.get("parameters", {})
 
         # Import the dynamic executor
-        from agenthub.core.agents.dynamic_executor import execute_agent_dynamically
+        from agenthub.core.agents.execution.dynamic_executor import (
+            execute_agent_dynamically,
+        )
 
         # Get the agent path (current directory)
         agent_path = "."

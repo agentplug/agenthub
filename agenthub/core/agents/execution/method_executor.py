@@ -5,7 +5,8 @@ import logging
 import os
 from typing import Any
 
-from ..tools.exceptions import AgentExecutionError
+from ...interfaces import AgentWrapperProtocol
+from ...tools.exceptions import AgentExecutionError
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class MethodExecutor:
     """Handles method execution and parameter mapping."""
 
-    def __init__(self, agent_wrapper: Any) -> None:
+    def __init__(self, agent_wrapper: AgentWrapperProtocol) -> None:
         """Initialize method executor."""
         self.agent_wrapper = agent_wrapper
 
@@ -66,12 +67,10 @@ class MethodExecutor:
                 )
                 return result
             else:
-                # Fallback execution
-                logger.warning("No runtime available, using fallback execution")
-                return {
-                    "result": f"Method '{method}' executed with parameters: "
-                    f"{resolved_params}"
-                }
+                raise AgentExecutionError(
+                    f"No runtime available to execute method '{method}' "
+                    f"on agent '{self.agent_wrapper.name}'"
+                )
 
         except Exception as e:
             logger.error(f"Error executing method '{method}': {e}")

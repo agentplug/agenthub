@@ -4,7 +4,7 @@ import warnings
 from typing import Any
 
 from ..core.agents import AgentLoader, AgentWrapper
-from ..core.agents.loader import AgentLoadError
+from ..core.agents.lifecycle.loader import AgentLoadError
 from ..core.tools import get_tool_registry
 from ..core.tools.exceptions import ValidationError
 

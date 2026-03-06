@@ -376,7 +376,7 @@ class TestBackwardCompatibility:
         """Test that existing module imports still work."""
         # These should still work after adding RepositoryCloner
         from agenthub import load_agent
-        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.core.agents.lifecycle.loader import AgentLoader
         from agenthub.github import URLParser
         from agenthub.storage.local_storage import LocalStorage
 
@@ -394,7 +394,7 @@ class TestBackwardCompatibility:
         """Test that importing RepositoryCloner has no side effects."""
         # Import RepositoryCloner
         # Existing functionality should still work
-        from agenthub.core.agents.loader import AgentLoader
+        from agenthub.core.agents.lifecycle.loader import AgentLoader
         from agenthub.github import URLParser
         from agenthub.github.repository_cloner import RepositoryCloner
         from agenthub.storage.local_storage import LocalStorage

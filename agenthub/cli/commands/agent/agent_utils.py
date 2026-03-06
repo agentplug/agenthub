@@ -14,7 +14,7 @@ console = Console()
 
 def display_simple_agent_list(agents: dict[str, str]) -> None:
     """Display simple agent list with descriptions."""
-    from agenthub.core.agents.loader import AgentLoader
+    from agenthub.core.agents.lifecycle.loader import AgentLoader
     from agenthub.storage.local_storage import LocalStorage
 
     table = Table(title=f"📦 Installed Agents ({len(agents)})")
