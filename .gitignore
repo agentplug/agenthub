@@ -1,6 +1,9 @@
 # Cursor IDE
 .cursor/
 
+# Claude Code local settings
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]
