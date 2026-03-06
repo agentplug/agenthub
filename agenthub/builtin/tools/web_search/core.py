@@ -27,6 +27,14 @@ class WebSearchTool:
         self.result_filter = ResultFilter(self.config)
         self.content_extractor = ContentExtractor()
 
+    def cleanup(self) -> None:
+        """Clean up any active resources"""
+        try:
+            if hasattr(self.content_fetcher, 'cleanup'):
+                self.content_fetcher.cleanup()
+        except Exception as e:
+            print(f"[TOOL] Error during WebSearchTool cleanup: {e}")
+
     def search(
         self,
         query: str,
@@ -148,6 +156,12 @@ class WebSearchTool:
                 "error": "Web search failed",
                 "message": f"Search error: {str(e)}",
             }
+        finally:
+            # Ensure cleanup happens
+            try:
+                self.cleanup()
+            except Exception:
+                pass  # Ignore cleanup errors
 
     def rewrite_query(self, query: str) -> str:
         """
