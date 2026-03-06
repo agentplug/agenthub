@@ -17,6 +17,7 @@ from .exceptions import (
     ToolRegistrationError,
     ToolValidationError,
 )
+from .mcp_server import MCPServerManager
 from .registry import (
     ToolRegistry,
     assign_tools_to_agent,
@@ -29,7 +30,9 @@ from .registry import (
     get_tool_metadata,
     get_tool_registry,
     run_resources,
+    unregister_tool,
 )
+from .tool_access import ToolAccessManager
 
 __all__ = [
     # Core functionality
@@ -41,6 +44,10 @@ __all__ = [
     "get_tool_registry",
     "get_tool_function",
     "run_resources",
+    "unregister_tool",
+    # Specialized managers
+    "MCPServerManager",
+    "ToolAccessManager",
     # Tool access control
     "assign_tools_to_agent",
     "get_agent_tools",

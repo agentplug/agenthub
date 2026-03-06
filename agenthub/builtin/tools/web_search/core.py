@@ -83,6 +83,19 @@ class WebSearchTool:
                 rewritten_query, exclude_urls, num_results
             )
 
+            # If rewriting made the query too narrow, fall back to original query
+            if rewritten_query != query and len(search_results) < max(
+                2, num_results // 2 or 1
+            ):
+                print(
+                    "[TOOL] Rewritten query returned very few results. "
+                    "Retrying with original query."
+                )
+                search_results = self._fetch_search_results(
+                    query, exclude_urls, num_results
+                )
+                rewritten_query = query
+
             # Check if we got any search results
             if not search_results:
                 return {
@@ -104,11 +117,19 @@ class WebSearchTool:
                 # Filter out results with empty content
                 filtered_results = self.result_filter.filter_empty_content(results)
 
-                # Limit to requested number of results
-                final_results = filtered_results[:num_results]
+                if filtered_results:
+                    final_results = filtered_results[:num_results]
+                else:
+                    print(
+                        "[TOOL] Content extraction produced no usable results. "
+                        "Falling back to raw search snippets."
+                    )
+                    final_results = self._format_basic_results(
+                        search_results[:num_results]
+                    )
             else:
                 # Just return search results without content extraction
-                final_results = search_results[:num_results]
+                final_results = self._format_basic_results(search_results[:num_results])
 
             return {
                 "original_query": query,
@@ -243,3 +264,23 @@ optimized query, no explanations.
 
         print(f"[TOOL] Final search results count: {len(search_results)}")
         return search_results
+
+    def _format_basic_results(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Convert raw search results into a consistent structure."""
+        formatted_results: list[dict[str, Any]] = []
+        for result in search_results:
+            url = result.get("href") or result.get("url") or result.get("link") or ""
+            snippet = result.get("body") or result.get("snippet") or ""
+            formatted_results.append(
+                {
+                    "title": result.get("title", "Untitled result"),
+                    "url": url,
+                    "snippet": snippet,
+                    # When we fall back to raw results we may not have full content,
+                    # so reuse the snippet as lightweight content.
+                    "content": result.get("content", snippet),
+                }
+            )
+        return formatted_results

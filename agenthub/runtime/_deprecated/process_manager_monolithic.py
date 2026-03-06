@@ -3,6 +3,7 @@
 import json
 import logging
 import subprocess
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,7 @@ class ProcessManager:
         timeout: int = 300,
         use_dynamic_execution: bool = True,
         monitoring: bool = False,
+        realtime_communication: bool = True,
     ) -> None:
         """
         Initialize the process manager.
@@ -29,6 +31,8 @@ class ProcessManager:
             timeout: Maximum execution time in seconds
             use_dynamic_execution: Whether to use dynamic execution (default: True)
             monitoring: Whether to enable real-time monitoring (default: False)
+            realtime_communication: Whether to enable WebSocket communication
+                (default: True)
         """
         self.timeout = timeout
         self.environment_manager = EnvironmentManager()
@@ -42,6 +46,11 @@ class ProcessManager:
         self.llm_analyzer: Any = None
         self.log_streamer: Any = None
         self.terminal_display: Any = None
+
+        # Real-time communication
+        self.realtime_communication = realtime_communication
+        self.communication_server: Any = None
+        self._server_started = False
 
         # Initialize monitoring components if enabled
         if self.monitoring:
@@ -59,7 +68,15 @@ class ProcessManager:
             except ImportError as e:
                 logger.warning(f"Monitoring components not available: {e}")
                 self.monitoring = False
-        # Monitoring components are already initialized as None above
+
+        # Try to initialize communication server if enabled
+        if self.realtime_communication:
+            logger.info("🔄 Initializing real-time communication server...")
+            self._try_start_communication_server()
+        else:
+            logger.info(
+                "📝 Real-time communication disabled - will use stdin/stdout fallback"
+            )
 
     def set_monitoring(self, enabled: bool) -> None:
         """Enable or disable monitoring dynamically."""
@@ -87,6 +104,273 @@ class ProcessManager:
             self.log_streamer = None
             self.terminal_display = None
             logger.info("Real-time monitoring disabled")
+
+    def _try_start_communication_server(self) -> None:
+        """Try to start communication server with graceful fallback."""
+        try:
+            # Check if WebSocket dependencies are available
+            import websockets  # noqa: F401
+
+            logger.debug("✅ WebSocket library available")
+
+            # Import communication server
+            from agenthub.core.communication import get_communication_server
+
+            # Create server instance
+            self.communication_server = get_communication_server()
+
+            # Server will be started on first use (lazy initialization)
+            logger.info("✅ Communication server initialized (lazy start)")
+            logger.info(f"   📡 WebSocket port: {self.communication_server.port}")
+
+        except ImportError as e:
+            logger.warning(f"❌ WebSocket library not available: {e}")
+            logger.info("📝 Falling back to stdin/stdout communication")
+            self.realtime_communication = False
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize communication server: {e}")
+            logger.info("📝 Falling back to stdin/stdout communication")
+            self.realtime_communication = False
+
+    async def _ensure_communication_server(self) -> bool:
+        """
+        Ensure communication server is running.
+
+        Returns:
+            bool: True if server available, False if fallback needed
+        """
+        if not self.realtime_communication:
+            logger.debug("📝 Real-time communication disabled - using fallback")
+            return False
+
+        if self.communication_server is None:
+            logger.debug("📝 Communication server not initialized - using fallback")
+            return False
+
+        # Check if server is already running
+        if self.communication_server.is_running:
+            logger.debug(
+                f"✅ WebSocket server already running on port "
+                f"{self.communication_server.port}"
+            )
+            return True
+
+        # Try to start server if not running
+        logger.info("🚀 Starting WebSocket communication server...")
+        success = await self.communication_server.start()
+        if not success:
+            logger.warning("❌ Communication server failed to start - using fallback")
+            return False
+        logger.info(
+            f"✅ WebSocket server started on port {self.communication_server.port}"
+        )
+
+        return True
+
+    def _stream_agent_logs(
+        self, process: subprocess.Popen, agent_path: str, method: str
+    ) -> tuple[list[str], list[str]]:
+        """
+        Stream agent subprocess logs in real-time via WebSocket.
+
+        Args:
+            process: The subprocess running the agent
+            agent_path: Path to the agent
+            method: Method being executed
+
+        Returns:
+            tuple: (stdout_lines, stderr_lines) collected during streaming
+        """
+        if not self.communication_server or not self.communication_server.is_running:
+            return ([], [])
+
+        stdout_lines: list[str] = []
+        stderr_lines: list[str] = []
+
+        def stream_stdout() -> None:
+            """Stream stdout logs."""
+            try:
+                for line in iter(process.stdout.readline, ""):
+                    if line:
+                        # Collect output for final result
+                        stdout_lines.append(line)
+
+                        # Send log message via WebSocket
+                        log_message = {
+                            "type": "agent_log",
+                            "agent_path": agent_path,
+                            "method": method,
+                            "stream": "stdout",
+                            "message": line.strip(),
+                            "timestamp": time.time(),
+                        }
+
+                        # Send log message only to this agent's session (not broadcast)
+                        if hasattr(self.communication_server, "send_to_agent_sync"):
+                            self.communication_server.send_to_agent_sync(
+                                agent_path, log_message
+                            )
+
+                        # Clean display - only show non-empty, meaningful logs
+                        stripped = line.strip()
+                        if stripped and not self._is_noise_log(stripped):
+                            # Extract message: "LEVEL:logger:message" -> "message"
+                            parts = stripped.split(":", 2)
+                            message = parts[2] if len(parts) > 2 else stripped
+                            if message:
+                                agent_name = agent_path.split("/")[-1]
+                                logger.info(f"🤖 {agent_name}: {message}")
+            except Exception as e:
+                logger.debug(f"Error streaming stdout: {e}")
+
+        def stream_stderr() -> None:
+            """Stream stderr logs."""
+            try:
+                for line in iter(process.stderr.readline, ""):
+                    if line:
+                        # Collect output for final result
+                        stderr_lines.append(line)
+
+                        # Send log message via WebSocket
+                        log_message = {
+                            "type": "agent_log",
+                            "agent_path": agent_path,
+                            "method": method,
+                            "stream": "stderr",
+                            "message": line.strip(),
+                            "timestamp": time.time(),
+                        }
+
+                        # Send log message only to this agent's session (not broadcast)
+                        if hasattr(self.communication_server, "send_to_agent_sync"):
+                            self.communication_server.send_to_agent_sync(
+                                agent_path, log_message
+                            )
+
+                        # Clean display - filter noise and show only important logs
+                        stripped = line.strip()
+                        if stripped and not self._is_noise_log(stripped):
+                            # Extract message: "LEVEL:logger:message" -> "message"
+                            parts = stripped.split(":", 2)
+                            message = parts[2] if len(parts) > 2 else stripped
+                            if message:
+                                agent_name = agent_path.split("/")[-1]
+                                logger.info(f"🤖 {agent_name}: {message}")
+            except Exception as e:
+                logger.debug(f"Error streaming stderr: {e}")
+
+        # Start log streaming threads (not daemon - we need to wait for them)
+        stdout_thread = threading.Thread(target=stream_stdout)
+        stderr_thread = threading.Thread(target=stream_stderr)
+
+        stdout_thread.start()
+        stderr_thread.start()
+
+        logger.info(f"📡 Started real-time log streaming for {agent_path}.{method}")
+
+        # Wait for threads to complete reading
+        stdout_thread.join()
+        stderr_thread.join()
+
+        return (stdout_lines, stderr_lines)
+
+    def _is_noise_log(self, log_line: str) -> bool:
+        """
+        Check if a log line is noise that should be filtered out.
+
+        Args:
+            log_line: The log line to check
+
+        Returns:
+            bool: True if this is noise, False if it should be displayed
+        """
+        # Filter by logger name (Python logging format: "LEVEL:logger.name:message")
+        if ":" in log_line:
+            parts = log_line.split(":", 2)
+            if len(parts) >= 2:
+                logger_name = parts[1].strip()
+
+                # Filter internal research agent loggers
+                internals = [
+                    "research_agent.core.research",
+                    "research_agent.core.tools.agenthub_mcp_client",
+                ]
+
+                for internal in internals:
+                    if logger_name.startswith(internal):
+                        return True
+
+        # Filter common noise patterns
+        noise = [
+            'File "/',
+            "Traceback",
+            "DEBUG:",
+            "ERROR:",
+            "HTTP Request:",
+            "httpx:",
+            "pydantic",
+        ]
+
+        for pattern in noise:
+            if pattern in log_line:
+                return True
+        return False
+
+    def set_realtime_communication(self, enabled: bool) -> None:
+        """Enable or disable real-time communication dynamically."""
+        if enabled and not self.realtime_communication:
+            logger.info("🔄 Enabling real-time communication...")
+            self._try_start_communication_server()
+            if self.communication_server is not None:
+                self.realtime_communication = True
+                logger.info("✅ Real-time communication enabled")
+            else:
+                logger.warning("❌ Failed to enable real-time communication")
+        elif not enabled and self.realtime_communication:
+            logger.info("🔄 Disabling real-time communication...")
+            self.realtime_communication = False
+            # Stop server if running
+            if self.communication_server and self.communication_server.is_running:
+                import asyncio
+
+                try:
+                    asyncio.create_task(self.communication_server.stop())
+                    logger.info("🛑 WebSocket server stopped")
+                except Exception as e:
+                    logger.warning(f"❌ Error stopping communication server: {e}")
+            logger.info(
+                "📝 Real-time communication disabled - using stdin/stdout fallback"
+            )
+
+    def get_communication_status(self) -> dict[str, Any]:
+        """Get communication server status."""
+        if not self.realtime_communication:
+            return {"enabled": False, "reason": "disabled"}
+
+        if self.communication_server is None:
+            return {"enabled": False, "reason": "not_initialized"}
+
+        return {
+            "enabled": True,
+            "server_running": self.communication_server.is_running,
+            "port": self.communication_server.port,
+            "host": self.communication_server.host,
+            "active_sessions": len(self.communication_server.agent_sessions),
+        }
+
+    def log_communication_status(self) -> None:
+        """Log the current communication status for debugging."""
+        status = self.get_communication_status()
+
+        if status["enabled"]:
+            logger.info("📡 COMMUNICATION STATUS: WebSocket Real-time Communication")
+            logger.info(f"   ✅ Server running: {status['server_running']}")
+            logger.info(f"   🌐 Host: {status['host']}")
+            logger.info(f"   🔌 Port: {status['port']}")
+            logger.info(f"   👥 Active sessions: {status['active_sessions']}")
+        else:
+            logger.info("📝 COMMUNICATION STATUS: stdin/stdout Fallback")
+            logger.info(f"   ❌ Reason: {status['reason']}")
 
     def execute_agent(
         self,
@@ -124,30 +408,123 @@ class ProcessManager:
         if not agent_script.exists():
             raise ValueError(f"Agent script not found: {agent_script}")
 
-        # Try dynamic execution first if enabled
-        if self.use_dynamic_execution and self.dynamic_executor:
+        # Register agent session if communication server is available
+        session_registered = False
+        if self.communication_server:
+            # Try to ensure server is running
+            import asyncio
+
             try:
-                start_time = time.time()
-                result = self.dynamic_executor.execute_agent_method(
-                    agent_path, method, parameters, manifest
-                )
-                execution_time = time.time() - start_time
-                result["execution_time"] = execution_time
-                return result
+                # Check if there's an event loop running
+                try:
+                    asyncio.get_running_loop()
+                    # If we get here, there's a running loop
+                    logger.debug("📡 Event loop is running, scheduling server start")
+                    asyncio.create_task(self._ensure_communication_server())
+                except RuntimeError:
+                    # No running loop, start server in background thread
+                    logger.debug(
+                        "📡 No running event loop, starting server in background thread"
+                    )
+                    try:
+                        import threading
+
+                        def run_server_in_thread() -> None:
+                            """Run WebSocket server in dedicated thread."""
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            loop.run_until_complete(self._ensure_communication_server())
+                            # Keep loop running for server tasks
+                            loop.run_forever()
+
+                        server_thread = threading.Thread(
+                            target=run_server_in_thread, daemon=True
+                        )
+                        server_thread.start()
+                        # Give server time to start
+                        time.sleep(0.5)
+                    except Exception as e:
+                        logger.warning(f"Failed to start communication server: {e}")
             except Exception as e:
-                logger.warning(
-                    f"Dynamic execution failed, falling back to subprocess: {e}"
+                logger.warning(f"Failed to start communication server: {e}")
+
+            if self.communication_server.is_running:
+                logger.info(f"📡 Registering WebSocket session: {agent_path}.{method}")
+                self.communication_server.register_agent_session(
+                    agent_path,
+                    {
+                        "method": method,
+                        "parameters": parameters,
+                        "start_time": time.time(),
+                    },
+                )
+                session_registered = True
+            else:
+                logger.info(
+                    f"📝 WebSocket not running - using fallback: {agent_path}.{method}"
+                )
+        else:
+            logger.info(
+                f"📝 No communication server - using fallback: {agent_path}.{method}"
+            )
+
+        try:
+            # Try dynamic execution first if enabled
+            if self.use_dynamic_execution and self.dynamic_executor:
+                try:
+                    start_time = time.time()
+                    result = self.dynamic_executor.execute_agent_method(
+                        agent_path, method, parameters, manifest
+                    )
+                    execution_time = time.time() - start_time
+                    result["execution_time"] = execution_time
+
+                    # Update session status
+                    if session_registered:
+                        logger.info(
+                            f"✅ Agent completed - unregistering session: {agent_path}"
+                        )
+                        self.communication_server.unregister_agent_session(agent_path)
+
+                    return result
+                except Exception as e:
+                    logger.warning(
+                        f"Dynamic execution failed, falling back to subprocess: {e}"
+                    )
+
+            # Choose execution method based on monitoring setting
+            if self.monitoring:
+                result = self._execute_with_monitoring(
+                    agent_path,
+                    method,
+                    parameters,
+                    tool_context,
+                    agent_script,
+                    agent_dir,
+                )
+            else:
+                result = self._execute_without_monitoring(
+                    agent_path,
+                    method,
+                    parameters,
+                    tool_context,
+                    agent_script,
+                    agent_dir,
                 )
 
-        # Choose execution method based on monitoring setting
-        if self.monitoring:
-            return self._execute_with_monitoring(
-                agent_path, method, parameters, tool_context, agent_script, agent_dir
-            )
-        else:
-            return self._execute_without_monitoring(
-                agent_path, method, parameters, tool_context, agent_script, agent_dir
-            )
+            # Update session status
+            if session_registered:
+                logger.info(f"✅ Agent completed - unregistering session: {agent_path}")
+                self.communication_server.unregister_agent_session(agent_path)
+
+            return result
+
+        except Exception:
+            # Update session status on error
+            if session_registered:
+                logger.warning(f"❌ Agent failed - unregistering session: {agent_path}")
+                self.communication_server.unregister_agent_session(agent_path)
+            raise
 
     def _execute_without_monitoring(
         self,
@@ -183,20 +560,67 @@ class ProcessManager:
                     ),
                 }
 
-            # Execute agent in subprocess
+            # Execute agent in subprocess with real-time log streaming
             start_time = time.time()
             logger.info(
                 f"Executing agent in subprocess: {python_executable} "
                 f"{str(agent_script)} '{json.dumps(execution_data)}'"
             )
-            result = subprocess.run(
-                [python_executable, str(agent_script), json.dumps(execution_data)],
-                cwd=str(agent_dir),
-                capture_output=True,
-                text=True,
-                timeout=self.timeout,
-            )
-            execution_time = time.time() - start_time
+
+            # Use Popen for real-time log streaming if WebSocket is available
+            if self.communication_server and self.communication_server.is_running:
+                logger.info(
+                    f"📡 Starting agent with real-time streaming: {agent_path}.{method}"
+                )
+                process = subprocess.Popen(
+                    [python_executable, str(agent_script), json.dumps(execution_data)],
+                    cwd=str(agent_dir),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,  # Line buffered
+                    universal_newlines=True,
+                )
+
+                # Start log streaming and collect output
+                stdout_lines, stderr_lines = self._stream_agent_logs(
+                    process, agent_path, method
+                )
+
+                # Wait for process to complete
+                try:
+                    process.wait(timeout=self.timeout)
+                    execution_time = time.time() - start_time
+
+                    # Use collected output from streaming
+                    stdout = "".join(stdout_lines)
+                    stderr = "".join(stderr_lines)
+                    result = subprocess.CompletedProcess(
+                        process.args, process.returncode, stdout, stderr
+                    )
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                    execution_time = time.time() - start_time
+                    result = subprocess.CompletedProcess(
+                        process.args,
+                        -1,
+                        "",
+                        f"Process timed out after {self.timeout} seconds",
+                    )
+            else:
+                # Fallback to original method without log streaming
+                logger.info(
+                    f"📝 Executing agent without log streaming: {agent_path}.{method}"
+                )
+                result = subprocess.run(
+                    [python_executable, str(agent_script), json.dumps(execution_data)],
+                    cwd=str(agent_dir),
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout,
+                )
+                execution_time = time.time() - start_time
 
             # Parse the result
             if result.returncode == 0:

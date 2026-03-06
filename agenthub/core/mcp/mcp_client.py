@@ -8,8 +8,18 @@ import json
 import logging
 from typing import Any
 
-from mcp.client.session import ClientSession
-from mcp.client.stdio import StdioServerParameters, stdio_client
+# Try to import MCP components
+try:
+    from mcp.client.session import ClientSession
+    from mcp.client.stdio import StdioServerParameters, stdio_client
+except ImportError:
+    try:
+        from chuk_mcp.client.session import ClientSession
+        from chuk_mcp.client.stdio import StdioServerParameters, stdio_client
+    except ImportError:
+        ClientSession = None  # type: ignore[assignment]
+        StdioServerParameters = None  # type: ignore[assignment]
+        stdio_client = None  # type: ignore[assignment]
 
 from agenthub.core.tools import get_tool_registry
 
