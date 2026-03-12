@@ -6,30 +6,27 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Beta-green.svg)]()
+[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
 [![PyPI version](https://badge.fury.io/py/agenthub-sdk.svg)](https://badge.fury.io/py/agenthub-sdk)
-[![PyPI downloads](https://pepy.tech/badge/agenthub-sdk)](https://pepy.tech/project/agenthub-sdk)
 
-[📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
+
+[📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🐛 Report a Bug](#-reporting-bugs) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
 
 </div>
 
 ## 🚀 What is AgentHub?
 
-Transform weeks of AI agent integration into **one line of code**. AgentHub makes powerful AI agents as easy to use as installing a Python package — and lets you compose them into robust multi-agent Teams.
+Transform weeks of AI agent integration into **one line of code**. AgentHub makes powerful AI agents as easy to use as installing a Python package.
 
 ### 🗺️ At a Glance
 
-- What you do: Install agents, customize with tools/knowledge, and compose a Team to solve complex goals
-- What you get: High-level `agent.solve()` and `Team().solve()` APIs, isolation, auto-install, and monitoring
+- What you do: Install agents, customize with tools/knowledge, and call `agent.solve()`
+- What you get: High-level `agent.solve()` API, isolated environments, auto-install, and monitoring
 - Who it's for: Developers and builders who want pragmatic, composable AI systems without boilerplate
 
 ### 🎯 **Core Abilities**
 
-AgentHub revolutionizes how you work with AI agents:
-
-- **🧩 Compose Multi-Agent Systems**: Build a `Team()` by plugging together pre-built or custom agents
-- **🧠 Universal Intelligence**: `agent.solve()` and `Team().solve()` for high-level, goal-driven execution
+- **🧠 Universal Solve Method**: `agent.solve()` — describe your goal, AI selects the best method
 - **🔧 Customize Agents**: Add custom tools and domain knowledge to any agent
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
@@ -61,50 +58,9 @@ coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
 ```
 
-## 🧩 Build Multi-Agent Teams (High-Level Flow)
-
-Create complex systems by composing pre-built agents (research, analysis, data access, planning, quality control, ...) and your custom agents into a `Team()`.
-
-```python
-import agenthub as ah
-
-# 1) Load pre-built agents from the marketplace (customize via load params)
-research = ah.load_agent(
-    "agentplug/research-agent",
-    external_tools=["web_search"],            # attach your tools
-    knowledge=["knowledge/base/"]             # attach your knowledge sources
-)
-
-analysis = ah.load_agent(
-    "agentplug/analysis-agent",
-    knowledge=["knowledge/base/"]
-)
-
-planner  = ah.load_agent("agentplug/planning-agent")
-qc       = ah.load_agent("agentplug/quality-control-agent")
-
-# 3) Compose into a Team
-#    Team API preview — designed for simple, high-level orchestration
-from agenthub import Team  # Coming soon
-
-team = Team(name="ResearchPipeline", agents=[planner, research, analysis, qc])
-
-# 4) High-level goal, single entry point
-result = team.solve("Analyze the latest LLM papers and produce actionable insights")
-print(result["result"])  # Unified output
-```
-
-Flow to build:
-
-- **Pick agents**: research, analysis, data access, planning, quality control, ...
-- **Customize**: pass `external_tools=[...]` and `knowledge=[...]` to `ah.load_agent(...)`
-- **Compose**: add agents into a `Team()`
-- **Solve**: call `Team().solve(goal)` to run the entire multi-agent pipeline
-
 ## ✨ Key Features
 
-- **🧩 Team Composition (High-Level Logic)**: Create a `Team()` and plug agents together to build complex systems
-- **🧠 Universal Solve Method**: `agent.solve()` and `Team().solve()` - describe goals, not steps
+- **🧠 Universal Solve Method**: `agent.solve()` — describe goals, not steps
 - **🏪 Agent Marketplace**: Discover and install agents from GitHub with one command
 - **🔌 One-Line Integration**: `ah.load_agent("user/agent")` - no complex setup required
 - **🛠️ Custom Tools & Knowledge**: Create tools with `@tool`, connect via `run_resources()`, and attach domain knowledge
@@ -124,6 +80,40 @@ pip install agenthub-sdk
 # Verify installation
 agenthub --version
 ```
+
+### 🔑 Set Up Your LLM
+
+Agents need an LLM to run. Choose one:
+
+**Cloud provider** — set the API key for whichever service you use:
+
+```bash
+# OpenAI
+export OPENAI_API_KEY=sk-...
+
+# Anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Google Gemini
+export GOOGLE_API_KEY=...
+
+# DeepSeek
+export DEEPSEEK_API_KEY=...
+
+# Groq
+export GROQ_API_KEY=...
+```
+
+**Local LLM** — no API key needed. Just start [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai) and AgentHub auto-detects it:
+
+```bash
+# Ollama (default port 11434)
+ollama run llama3.2
+
+# LM Studio (default port 1234) — start the local server from the app
+```
+
+AgentHub checks for a running local model first, then falls back to whichever cloud API key is set.
 
 ### 🎯 Your First Agent (30 seconds)
 
@@ -147,7 +137,7 @@ print(result["result"])
 
 ### 🧠 Universal Solve Method
 
-Describe your goal in natural language — `agent.solve()` (and soon `Team().solve()`) selects the best internal method and executes the steps:
+Describe your goal in natural language — `agent.solve()` selects the best internal method and executes the steps:
 
 ```python
 import agenthub as ah
@@ -158,8 +148,8 @@ analysis_agent = ah.load_agent("agentplug/analysis-agent")
 
 # 🧠 AI automatically selects the best method for each query
 code = coding_agent.solve("Create a neural network class")  # → generate_code()
-review = coding_agent.solve("Review this code: def hello(): print('world')")  # → review_code()
 explanation = coding_agent.solve("Explain what this function does")  # → explain_code()
+validation = coding_agent.solve("Validate this code meets PEP8: def hello(): print('world')")  # → validate_code()
 
 # 📊 Analysis agent automatically chooses the right approach
 insights = analysis_agent.solve("Analyze this customer feedback: 'Great app!'")  # → analyze_text()
@@ -263,79 +253,29 @@ agenthub exec agentplug/scientific-paper-analyzer analyze_paper '{"file": "resea
 agenthub exec agentplug/scientific-paper-analyzer analyze_paper --interactive
 
 # Agent management commands
-agenthub agent list                                    # List installed agents
-agenthub agent status agentplug/scientific-paper-analyzer  # Check agent status
-agenthub agent remove agentplug/scientific-paper-analyzer  # Remove an agent
-agenthub agent backup agentplug/scientific-paper-analyzer  # Create backup
-agenthub agent restore agentplug/scientific-paper-analyzer # Restore from backup
-agenthub agent repair agentplug/scientific-paper-analyzer  # Repair broken agent
-agenthub agent migrate agentplug/scientific-paper-analyzer # Migrate Python version
+agenthub agent list                                          # List installed agents
+agenthub agent info agentplug/scientific-paper-analyzer     # Detailed agent info
+agenthub agent status agentplug/scientific-paper-analyzer   # Check agent status
+agenthub agent remove agentplug/scientific-paper-analyzer   # Remove an agent
+agenthub agent backup agentplug/scientific-paper-analyzer   # Create backup
+agenthub agent restore agentplug/scientific-paper-analyzer  # Restore from backup
+agenthub agent repair agentplug/scientific-paper-analyzer   # Repair broken agent
+agenthub agent migrate agentplug/scientific-paper-analyzer  # Migrate Python version
 agenthub agent optimize agentplug/scientific-paper-analyzer # Optimize environment
 agenthub agent analyze-deps agentplug/scientific-paper-analyzer # Analyze dependencies
+agenthub agent cleanup                                       # Clean up agent storage
+agenthub agent clone agentplug/scientific-paper-analyzer    # Clone an agent
+agenthub agent python-versions                               # List available Python versions
 
 # System validation
 agenthub validate
 ```
 
-## 🛠️ Creating Your Own Agent
+## 🛠️ Creating an AgentHub-Compatible Agent
 
-### 1. Create Agent Files
+See **[CREATING_AGENTS.md](CREATING_AGENTS.md)** for the full guide — covering `agent.yaml`, `agent.py`, `pyproject.toml`, and how to publish your agent to GitHub.
 
-```bash
-mkdir my-coding-agent
-cd my-coding-agent/
-```
-
-Create `agent.py`:
-
-```python
-class CodingAgent:
-    def __init__(self):
-        self.name = "Coding Agent"
-
-    def generate_code(self, description: str) -> str:
-        """Generate code based on description."""
-        return f"# Generated code for: {description}\nprint('Hello, World!')"
-
-    def review_code(self, code: str) -> str:
-        """Review and improve code."""
-        return f"Code review: {code} looks good!"
-```
-
-Create `agent.yaml`:
-
-```yaml
-name: coding-agent
-version: 1.0.0
-description: AI agent for code generation and review
-author: your-username
-entry_point: agent.py:CodingAgent
-```
-
-### 2. Test Locally
-
-```bash
-agenthub exec ./my-coding-agent generate_code "hello world"
-```
-
-### 3. Publish to GitHub
-
-```bash
-git init
-git add .
-git commit -m "Initial agent release"
-git remote add origin https://github.com/your-username/my-coding-agent.git
-git push -u origin main
-```
-
-### 4. Share with the World
-
-```python
-# Anyone can now use your agent:
-import agenthub as ah
-agent = ah.load_agent("your-username/my-coding-agent")
-code = agent.generate_code("React component")
-```
+Reference implementation: [agentplug/coding-agent](https://github.com/agentplug/coding-agent)
 
 ## 📚 Examples
 
@@ -352,8 +292,8 @@ analysis_agent = ah.load_agent("agentplug/analysis-agent")
 code = coding_agent.solve("Create a React component for data table")
 print(code["result"])
 
-review = coding_agent.solve("Review this code: def hello(): print('world')")
-print(review["result"])
+validation = coding_agent.solve("Validate this code meets PEP8: def hello(): print('world')")
+print(validation["result"])
 
 insights = analysis_agent.solve("Analyze this customer feedback: 'Great app!'")
 print(insights["result"])
@@ -371,8 +311,8 @@ coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("React component for data table")
 print(code["result"])
 
-review = coding_agent.review_code("def hello(): print('world')")
-print(review["result"])
+explanation = coding_agent.explain_code("def hello(): print('world')")
+print(explanation["result"])
 ```
 
 ### 🧠 Universal Solve Method Benefits
@@ -382,62 +322,23 @@ print(review["result"])
 - **📝 Natural Language**: Use plain English queries
 - **🔄 Consistent Interface**: Same pattern across all agents
 
+## 🐛 Reporting Bugs
+
+Found a bug? [Open an issue](https://github.com/agentplug/agenthub/issues/new) and include:
+
+- A short description of the problem
+- Steps to reproduce it
+- What you expected vs what happened
+- Your Python version and OS (`python --version`, `uname -a`)
+- Any relevant error output
+
 ## 🤝 Contributing
 
-We welcome contributions! You can:
+Contributions are welcome via pull request. Fork the repo, make your changes, and open a PR against `main`.
 
-- Build and contribute new tools (via `@tool` and `run_resources()`)
-- Create new pre-built agents (publishable GitHub repos with `agent.yaml`)
-- Enhance existing agents (add methods, improve prompts, optimize flows)
-- Improve documentation and examples
+## 📞 Contact
 
-Here's how to get started:
-
-### 🚀 Development Setup
-
-```bash
-# 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/agenthub.git
-cd agenthub
-
-# 2. Setup environment
-python3.12 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -e ".[dev]"
-
-# 3. Run tests
-pytest tests/ -v
-
-# 4. Make changes
-git checkout -b feature/your-feature
-```
-
-### 🎯 Ways to Contribute
-
-- **🧰 Tools**: Add new tools or improve existing ones
-- **🤖 Pre-built Agents**: Create and share agents for common tasks
-- **🚀 Enhancements**: Optimize agent methods, prompts, and pipelines
-- **🐛 Bug Reports**: [Open an Issue](https://github.com/agentplug/agenthub/issues)
-- **📖 Documentation**: Improve guides and examples
-- **🔧 Code**: Fix bugs, add features
-- **🎨 Design**: UI/UX improvements
-- **📊 Testing**: Help improve test coverage
-
-## 📞 Support & Community
-
-### 💬 Get Help
-
-| Platform | Purpose | Link |
-|:---------|:--------|:-----|
-| **💬 Discord** | Live chat and support | [Join Server](https://discord.gg/agenthub) |
-| **🐦 Twitter** | Updates and announcements | [@AgentHub](https://twitter.com/agenthub) |
-| **📧 Email** | Business inquiries | [agenthub@agentplug.net](mailto:agenthub@agentplug.net) |
-
-### 🐛 Report Issues
-
-- **Bug Reports**: [GitHub Issues](https://github.com/agentplug/agenthub/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/agentplug/agenthub/discussions)
-- **Security Issues**: [agenthub@agentplug.net](mailto:agenthub@agentplug.net)
+For questions, bug reports, and feature requests: [nguyennm1024@gmail.com](mailto:nguyennm1024@gmail.com)
 
 ## 📄 License
 

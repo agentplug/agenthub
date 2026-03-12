@@ -11,7 +11,7 @@ from .commands.core.validate import core_validate
 
 
 @click.group()
-@click.version_option()
+@click.version_option(package_name="agenthub-sdk")
 def cli() -> None:
     """AgentHub - AI Agent Management Platform."""
     pass
