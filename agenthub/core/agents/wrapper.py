@@ -62,7 +62,7 @@ class AgentWrapper:
             # Import here to avoid circular dependency
             from ..knowledge import KnowledgeManager
 
-            self.knowledge_manager = KnowledgeManager()  # type: ignore[assignment]
+            self.knowledge_manager = KnowledgeManager()
 
         if tool_manager is not None:
             self.tool_manager = tool_manager

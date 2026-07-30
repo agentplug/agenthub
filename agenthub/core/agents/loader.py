@@ -4,16 +4,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from ..tools.exceptions import AgentLoadError
 from .manifest import ManifestParser
 from .validator import InterfaceValidator
 
 logger = logging.getLogger(__name__)
-
-
-class AgentLoadError(Exception):
-    """Raised when agent loading fails."""
-
-    pass
 
 
 class AgentNotFoundError(AgentLoadError):
