@@ -5,6 +5,7 @@ registration, storage, and metadata. It delegates MCP server management
 and access control to specialized modules.
 """
 
+import logging
 import threading
 from collections.abc import Callable
 from typing import Any
@@ -27,6 +28,8 @@ from .exceptions import (
 from .mcp_server import MCPServerManager
 from .metadata import ToolMetadata
 from .tool_access import ToolAccessManager
+
+logger = logging.getLogger(__name__)
 
 
 class ToolRegistry:
@@ -261,7 +264,7 @@ class ToolRegistry:
                             for tool in getattr(tools, "tools", [])
                         ]
             except Exception as e:
-                print(f"⚠️  MCP discovery failed from {sse_url}: {e}")
+                logger.warning("MCP discovery failed from %s: %s", sse_url, e)
                 return []
 
         try:
@@ -283,7 +286,7 @@ class ToolRegistry:
         try:
             mcp_metadata = self._discover_mcp_tool_metadata()
         except Exception as e:  # pragma: no cover
-            print(f"⚠️  Could not discover tools from MCP server: {e}")
+            logger.warning("Could not discover tools from MCP server: %s", e)
             mcp_metadata = []
 
         remote_names = [metadata.name for metadata in mcp_metadata]

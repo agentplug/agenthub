@@ -60,10 +60,7 @@ This document outlines the steps taken to prepare AgentHub for PyPI publishing.
 
 ```
 agenthub/
-├── pyproject.toml          # Modern Python packaging configuration
-├── setup.py                # Fallback setup script
-├── requirements.txt        # Basic dependencies
-├── MANIFEST.in            # Distribution file inclusion
+├── pyproject.toml          # Packaging configuration (single source of truth)
 ├── CHANGELOG.md           # Release notes
 ├── README.md              # Project documentation
 ├── LICENSE                # MIT license

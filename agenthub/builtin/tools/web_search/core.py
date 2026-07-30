@@ -30,7 +30,7 @@ class WebSearchTool:
     def cleanup(self) -> None:
         """Clean up any active resources"""
         try:
-            if hasattr(self.content_fetcher, 'cleanup'):
+            if hasattr(self.content_fetcher, "cleanup"):
                 self.content_fetcher.cleanup()
         except Exception as e:
             print(f"[TOOL] Error during WebSearchTool cleanup: {e}")
