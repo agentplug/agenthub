@@ -154,30 +154,25 @@ class Executor:
             ExecutionResult: Execution result
         """
         start_time = time.time()
+        if self.dynamic_executor is None:
+            return ExecutionResult(success=False, error="Dynamic execution is disabled")
         try:
             result = self.dynamic_executor.execute_agent_method(
                 agent_path, method, parameters, manifest
             )
             execution_time = time.time() - start_time
 
-            if isinstance(result, dict):
-                # Check if result contains an error
-                if "error" in result:
-                    return ExecutionResult(
-                        success=False,
-                        error=result["error"],
-                        execution_time=execution_time,
-                    )
-                else:
-                    return ExecutionResult(
-                        success=True, data=result, execution_time=execution_time
-                    )
-            else:
+            # execute_agent_method always returns a dict with either a
+            # payload or an "error" key
+            if "error" in result:
                 return ExecutionResult(
                     success=False,
-                    error="Dynamic execution returned non-dictionary result",
+                    error=result["error"],
                     execution_time=execution_time,
                 )
+            return ExecutionResult(
+                success=True, data=result, execution_time=execution_time
+            )
         except Exception as e:
             execution_time = time.time() - start_time
             return ExecutionResult(

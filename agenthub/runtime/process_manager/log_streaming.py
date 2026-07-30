@@ -116,6 +116,8 @@ class LogStreamer:
 
     def _stream_stdout(self, process: subprocess.Popen) -> None:
         """Stream stdout logs in separate thread."""
+        if process.stdout is None:
+            return
         try:
             for line in iter(process.stdout.readline, ""):
                 if line:
@@ -132,6 +134,8 @@ class LogStreamer:
 
     def _stream_stderr(self, process: subprocess.Popen) -> None:
         """Stream stderr logs in separate thread."""
+        if process.stderr is None:
+            return
         try:
             for line in iter(process.stderr.readline, ""):
                 if line:

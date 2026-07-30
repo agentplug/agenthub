@@ -16,7 +16,7 @@ try:
     from mcp.server.fastmcp import FastMCP
 except ImportError:
     try:
-        from mcp.server import FastMCP  # type: ignore[attr-defined,no-redef]
+        from mcp.server import FastMCP
     except ImportError:
         try:
             from chuk_mcp.server import MCPServer as FastMCP  # type: ignore
