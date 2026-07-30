@@ -372,11 +372,11 @@ class TestDocumentStore:
             assert count == 3
             mock_load.assert_called_once()
 
-    def test_get_supported_extensions(self):
+    def test_get_supported_extensions(self, tmp_path):
         """Test getting supported extensions."""
         store = DocumentStore(
-            source_dir=Path("/tmp/source"),
-            cache_path=Path("/tmp/cache.json"),
+            source_dir=tmp_path / "source",
+            cache_path=tmp_path / "cache.json",
             supported_extensions={".txt", ".pdf"},
         )
 
@@ -439,18 +439,20 @@ class TestDocumentStore:
             assert ".txt" in stats["supported_extensions"]
             assert stats["source_directory_exists"] is True
 
-    def test_repr(self):
+    def test_repr(self, tmp_path):
         """Test string representation."""
+        source_dir = tmp_path / "source"
+        cache_path = tmp_path / "cache.json"
         store = DocumentStore(
-            source_dir=Path("/tmp/source"),
-            cache_path=Path("/tmp/cache.json"),
+            source_dir=source_dir,
+            cache_path=cache_path,
             supported_extensions={".txt", ".pdf"},
         )
 
         repr_str = repr(store)
         assert "DocumentStore" in repr_str
-        assert "/tmp/source" in repr_str
-        assert "/tmp/cache.json" in repr_str
+        assert str(source_dir) in repr_str
+        assert str(cache_path) in repr_str
         assert "2" in repr_str  # Number of extensions
 
     def _create_test_store(self, source_exists: bool = True) -> DocumentStore:

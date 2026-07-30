@@ -73,24 +73,24 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/agenthub/agenthub"
+Homepage = "https://github.com/agentplug/agenthub"
 Documentation = "https://docs.agenthub.dev"
-Repository = "https://github.com/agenthub/agenthub"
-Issues = "https://github.com/agenthub/agenthub/issues"
-Changelog = "https://github.com/agenthub/agenthub/blob/main/CHANGELOG.md"
+Repository = "https://github.com/agentplug/agenthub"
+Issues = "https://github.com/agentplug/agenthub/issues"
+Changelog = "https://github.com/agentplug/agenthub/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-asyncio>=0.23.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "pytest-asyncio>=1.2.0",
     "pytest-mock>=3.14.0",
     "pytest-timeout>=2.1.0",
-    "black>=24.0.0",
-    "mypy>=1.8.0",
-    "ruff>=0.2.0",
-    "pre-commit>=3.6.0",
-    "types-pyyaml>=6.0.12",
+    "black>=25.1.0",
+    "mypy>=1.17.1",
+    "ruff>=0.12.9",
+    "pre-commit>=4.3.0",
+    "types-pyyaml>=6.0.12.20250809",
     "safety>=3.0.0",
     "coverage>=7.9.0",
 ]
@@ -201,8 +201,6 @@ filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
     "ignore::PendingDeprecationWarning:starlette.formparsers",
 ]
-
-[tool.pytest_asyncio]
 asyncio_mode = "auto"
 
 [tool.coverage.run]
@@ -221,17 +219,4 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
-]
-
-[dependency-groups]
-dev = [
-    "black>=25.1.0",
-    "mypy>=1.17.1",
-    "pre-commit>=4.3.0",
-    "pytest>=8.4.1",
-    "pytest-asyncio>=1.2.0",
-    "pytest-cov>=6.2.1",
-    "pytest-timeout>=2.1.0",
-    "ruff>=0.12.9",
-    "types-pyyaml>=6.0.12.20250809",
 ]
