@@ -54,7 +54,7 @@ class OllamaProvider(LLMProvider):
             response = self._client.get(
                 f"{self._base}/api/tags", timeout=self._endpoint.probe_timeout
             )
-            return response.status_code == 200
+            return bool(response.status_code == 200)
         except Exception as e:
             logger.debug("Ollama not reachable at %s: %s", self._base, e)
             return False

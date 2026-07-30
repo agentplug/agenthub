@@ -94,6 +94,7 @@ dev = [
     "ruff>=0.12.9",
     "pre-commit>=4.3.0",
     "types-pyyaml>=6.0.12.20250809",
+    "types-requests>=2.31.0",
     "safety>=3.0.0",
     "coverage>=7.9.0",
 ]
@@ -189,19 +190,15 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
     "agenthub.builtin.tools.rag.*",
-    "agenthub.builtin.tools.web_search.fetchers",
     "agenthub.config",
     "agenthub.core.agents.execution",
     "agenthub.core.agents.lifecycle",
     "agenthub.core.agents.models",
     "agenthub.core.agents.orchestration",
     "agenthub.core.communication.*",
-    "agenthub.core.llm.client_manager",
     "agenthub.core.mcp.*",
     "agenthub.core.tools.mcp_server",
     "agenthub.core.tools.registry",
-    "agenthub.runtime._deprecated.*",
-    "agenthub.runtime.process_manager._deprecated.*",
     "agenthub.runtime.process_manager.communication",
     "agenthub.runtime.process_manager.executor",
     "agenthub.runtime.process_manager.log_streaming",

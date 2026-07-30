@@ -61,7 +61,7 @@ class OpenAICompatProvider(LLMProvider):
                 headers=self._headers(),
                 timeout=self._endpoint.probe_timeout,
             )
-            return response.status_code == 200
+            return bool(response.status_code == 200)
         except Exception as e:
             logger.debug("%s not reachable at %s: %s", self.name, self._base, e)
             return False

@@ -2,7 +2,10 @@
 Result filtering and validation logic
 """
 
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class ResultFilter:
@@ -34,8 +37,8 @@ class ResultFilter:
             ):
                 filtered_results.append(result)
             else:
-                print(
-                    f"[TOOL] Filtering out result with empty content: "
+                logger.debug(
+                    f"Filtering out result with empty content: "
                     f"{result.get('title', 'No title')}"
                 )
 
@@ -63,5 +66,5 @@ class ResultFilter:
             if url not in exclude_urls:
                 filtered_results.append(result)
             else:
-                print(f"[TOOL] Excluding URL: {url}")
+                logger.debug(f"Excluding URL: {url}")
         return filtered_results
