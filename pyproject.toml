@@ -170,7 +170,6 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
-ignore_missing_imports = true
 
 # Legacy modules exempted from type checking: a VISIBLE debt register.
 # `mypy agenthub/` must stay green - never add new modules here; remove
