@@ -26,9 +26,9 @@ class AgentWrapperFactory:
         assigned_tools: list[str] | None = None,
         runtime: Any = None,
     ) -> AgentWrapper:
-        """Create agent wrapper with injected dependencies."""
+        """Create an agent wrapper with its collaborators constructed."""
 
-        # Get dependencies from container
+        # Construct optional collaborators directly
         knowledge_manager = self._get_knowledge_manager()
         tool_manager = self._get_tool_manager(agent_info)
 
