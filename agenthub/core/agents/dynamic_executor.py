@@ -172,13 +172,24 @@ class DynamicAgentExecutor:
         if cache_key in self.loaded_agents:
             return self.loaded_agents[cache_key]
 
+        # Refuse scripts that resolve outside their own agent directory
+        # (e.g. a symlinked agent.py pointing elsewhere on the filesystem).
+        resolved_dir = agent_script.parent.resolve()
+        resolved_script = agent_script.resolve()
+        if resolved_dir not in resolved_script.parents:
+            raise DynamicExecutionError(
+                f"Agent script resolves outside its agent directory: "
+                f"{agent_script} -> {resolved_script}"
+            )
+
         try:
             # Load module dynamically with safe resolution for intra-module imports
             # Ensure the agent's own directory is prioritized on sys.path
             import sys
 
             agent_dir = str(agent_script.parent)
-            if agent_dir not in sys.path:
+            path_added = agent_dir not in sys.path
+            if path_added:
                 sys.path.insert(0, agent_dir)
 
             # Use the script's stem as the module name (e.g., "research_agent")
@@ -197,7 +208,14 @@ class DynamicAgentExecutor:
                 )
 
             module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            try:
+                spec.loader.exec_module(module)
+            finally:
+                # The path entry exists only for the agent's own imports
+                # during load; never leave it on sys.path where it could
+                # shadow modules for the whole host process.
+                if path_added and agent_dir in sys.path:
+                    sys.path.remove(agent_dir)
 
             # Find agent class (look for classes that don't start with underscore)
             agent_class = None

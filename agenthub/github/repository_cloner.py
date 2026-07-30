@@ -136,6 +136,44 @@ class RepositoryCloner:
             logger.error(f"Git clone timed out after 5 minutes: {github_url}")
             raise CloneError(f"Clone operation timed out for {github_url}") from e
 
+    def _validate_cloned_repository(self, local_path: Path) -> str | None:
+        """Validate a freshly cloned agent repository.
+
+        Requires the agent structure (config plus a script file) and rejects
+        symlinks that resolve outside the clone, so nothing can load code
+        from an unexpected filesystem location.
+
+        Args:
+            local_path: Path to the cloned repository
+
+        Returns:
+            An error description, or None if the repository is valid.
+        """
+        has_config = (local_path / "agent.yaml").exists() or (
+            local_path / "agent.yml"
+        ).exists()
+        if not has_config:
+            return "missing agent.yaml/agent.yml"
+
+        has_script = (local_path / "agent.py").exists() or (
+            local_path / "agent.na"
+        ).exists()
+        if not has_script:
+            return "missing agent.py/agent.na"
+
+        clone_root = local_path.resolve()
+        for path in local_path.rglob("*"):
+            if ".git" in path.parts:
+                continue
+            if path.is_symlink():
+                try:
+                    resolved = path.resolve()
+                except OSError:
+                    return f"unresolvable symlink: {path}"
+                if clone_root not in resolved.parents and resolved != clone_root:
+                    return f"symlink escapes repository: {path} -> {resolved}"
+        return None
+
     def _verify_clone_completeness(self, local_path: Path) -> bool:
         """
         Verify that the clone operation was complete and contains expected files.
@@ -309,6 +347,16 @@ class RepositoryCloner:
                     f"Successfully cloned {agent_name} to {local_path} "
                     f"in {clone_time:.2f}s"
                 )
+
+                # Validate repository structure and reject escaping symlinks
+                # before anything can load code from it.
+                structure_error = self._validate_cloned_repository(local_path)
+                if structure_error:
+                    shutil.rmtree(local_path, ignore_errors=True)
+                    raise CloneError(
+                        f"Cloned repository failed validation and was removed: "
+                        f"{structure_error}"
+                    )
 
                 # Verify clone completeness
                 if not self._verify_clone_completeness(local_path):
