@@ -44,26 +44,41 @@ class LogStreamer:
         # Track last displayed message to avoid duplicate console logs
         self._last_displayed_message: str | None = None
 
-    def stream_logs(self, process: subprocess.Popen) -> tuple[list[str], list[str]]:
+    def stream_logs(
+        self, process: subprocess.Popen, timeout: float | None = None
+    ) -> tuple[list[str], list[str]]:
         """
         Stream logs from subprocess in real-time.
 
         Args:
             process: The subprocess running the agent
+            timeout: Maximum seconds to wait for the process's output streams
+                to close. None waits indefinitely.
 
         Returns:
             tuple: (stdout_lines, stderr_lines) collected during streaming
+
+        Raises:
+            subprocess.TimeoutExpired: If the streams are still open when the
+                timeout elapses (e.g. a hung agent). The caller owns the
+                process and is responsible for killing it; the reader threads
+                are daemons and exit once the process's pipes close.
         """
         if (
             not self.communication_manager
             or not self.communication_manager.is_available()
         ):
             # No WebSocket available, just collect output
-            return self._collect_output(process)
+            return self._collect_output(process, timeout)
 
-        # Start log streaming threads
-        stdout_thread = threading.Thread(target=self._stream_stdout, args=(process,))
-        stderr_thread = threading.Thread(target=self._stream_stderr, args=(process,))
+        # Daemon threads: a hung agent must not be able to block
+        # interpreter shutdown through its reader threads.
+        stdout_thread = threading.Thread(
+            target=self._stream_stdout, args=(process,), daemon=True
+        )
+        stderr_thread = threading.Thread(
+            target=self._stream_stderr, args=(process,), daemon=True
+        )
 
         stdout_thread.start()
         stderr_thread.start()
@@ -72,15 +87,29 @@ class LogStreamer:
             f"📡 Started real-time log streaming for {self.agent_path}.{self.method}"
         )
 
-        # Wait for threads to complete
-        stdout_thread.join()
-        stderr_thread.join()
+        # Wait for both streams to reach EOF, bounded by a single deadline.
+        deadline = None if timeout is None else time.monotonic() + timeout
+        for thread in (stdout_thread, stderr_thread):
+            remaining = (
+                None if deadline is None else max(deadline - time.monotonic(), 0)
+            )
+            thread.join(remaining)
+
+        if stdout_thread.is_alive() or stderr_thread.is_alive():
+            raise subprocess.TimeoutExpired(process.args, timeout or 0)
 
         return (self.stdout_lines, self.stderr_lines)
 
-    def _collect_output(self, process: subprocess.Popen) -> tuple[list[str], list[str]]:
-        """Collect output without streaming (fallback)."""
-        stdout, stderr = process.communicate()
+    def _collect_output(
+        self, process: subprocess.Popen, timeout: float | None = None
+    ) -> tuple[list[str], list[str]]:
+        """Collect output without streaming (fallback).
+
+        Raises:
+            subprocess.TimeoutExpired: If the process does not finish within
+                the timeout. The caller owns the process and its cleanup.
+        """
+        stdout, stderr = process.communicate(timeout=timeout)
         stdout_lines = stdout.splitlines(keepends=True) if stdout else []
         stderr_lines = stderr.splitlines(keepends=True) if stderr else []
         return (stdout_lines, stderr_lines)
