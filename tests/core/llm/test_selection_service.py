@@ -394,3 +394,36 @@ class TestLiteLLMCloudProvider:
         with patch.dict(sys.modules, {"litellm": None}):
             with pytest.raises(LLMUnavailableError, match="not installed"):
                 provider.chat(self.make_request())
+
+
+class TestGeminiKeyAliases:
+    """Codex P2 regression: gemini accepts both conventional env vars."""
+
+    def test_gemini_available_with_gemini_key(self):
+        provider = LiteLLMCloudProvider("gemini", ["gemini-2.5-flash"])
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "k"}, clear=True):
+            assert provider.is_available() is True
+
+    def test_gemini_available_with_google_key(self):
+        provider = LiteLLMCloudProvider("gemini", ["gemini-2.5-flash"])
+        with patch.dict("os.environ", {"GOOGLE_API_KEY": "k"}, clear=True):
+            assert provider.is_available() is True
+
+    def test_resolved_key_passed_to_litellm(self):
+        provider = LiteLLMCloudProvider("gemini", ["gemini-2.5-flash"])
+        recorder: dict = {}
+        module = make_fake_litellm(recorder)
+        with (
+            patch.dict("os.environ", {"GOOGLE_API_KEY": "g-key"}, clear=True),
+            patch.dict(sys.modules, {"litellm": module}),
+        ):
+            from agenthub.core.llm.types import Message
+
+            provider.chat(
+                ChatRequest(
+                    model="gemini-2.5-flash",
+                    messages=(Message(role="user", content="hi"),),
+                )
+            )
+        assert recorder["api_key"] == "g-key"
+        assert recorder["model"] == "gemini/gemini-2.5-flash"

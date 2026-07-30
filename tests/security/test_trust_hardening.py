@@ -177,3 +177,22 @@ class TestKnowledgeValidatorStrictness:
             "The capital of France is Paris and croissants are pastries."
         )
         assert result.is_valid
+
+
+class TestLazySiblingImports:
+    def test_method_body_import_of_sibling_works(self, tmp_path):
+        """Codex P1 regression: agents deferring sibling imports into
+        method bodies must still resolve them at call time."""
+        agent_dir = make_agent_dir(tmp_path)
+        (agent_dir / "lazy_helper_xyz.py").write_text("VALUE = 99\n")
+        (agent_dir / "agent.py").write_text(
+            "class Agent:\n"
+            "    def ping(self):\n"
+            "        import lazy_helper_xyz\n"
+            "        return {'pong': lazy_helper_xyz.VALUE}\n"
+        )
+        executor = DynamicAgentExecutor()
+        result = executor.execute_agent_method(str(agent_dir), "ping", {})
+        assert result == {"result": {"pong": 99}}
+        assert str(agent_dir) not in sys.path
+        sys.modules.pop("lazy_helper_xyz", None)

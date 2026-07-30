@@ -25,6 +25,12 @@ from ..types import (
 
 logger = logging.getLogger(__name__)
 
+# Vendors whose conventional env var differs from {NAME}_API_KEY, or that
+# accept several. First present candidate wins.
+_API_KEY_VARS: dict[str, tuple[str, ...]] = {
+    "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
+}
+
 
 def _import_litellm() -> Any:
     try:
@@ -43,7 +49,9 @@ class LiteLLMCloudProvider(LLMProvider):
     def __init__(self, provider: str, default_models: Sequence[str]) -> None:
         self.name = provider
         self._default_models = tuple(default_models)
-        self._api_key_var = f"{provider.upper()}_API_KEY"
+        self._api_key_vars = _API_KEY_VARS.get(
+            provider, (f"{provider.upper()}_API_KEY",)
+        )
         # Tri-state cache: None = not yet checked against LiteLLM.
         self._native_json: bool | None = None
 
@@ -69,10 +77,16 @@ class LiteLLMCloudProvider(LLMProvider):
                 self._native_json = False
         return self._native_json
 
+    def _resolve_api_key(self) -> str | None:
+        for variable in self._api_key_vars:
+            if value := os.getenv(variable):
+                return value
+        return None
+
     def is_available(self) -> bool:
         # Key presence only — no network call; cloud reachability problems
         # surface as errors at generation time.
-        return bool(os.getenv(self._api_key_var))
+        return self._resolve_api_key() is not None
 
     def list_models(self) -> list[ModelDescriptor]:
         return [
@@ -102,6 +116,11 @@ class LiteLLMCloudProvider(LLMProvider):
             kwargs["max_tokens"] = request.max_tokens
         if request.json_mode and self._supports_response_format():
             kwargs["response_format"] = {"type": "json_object"}
+        # Pass the resolved key explicitly so alias variables (e.g.
+        # GOOGLE_API_KEY for gemini) work even when LiteLLM would only
+        # look up its own conventional name.
+        if api_key := self._resolve_api_key():
+            kwargs["api_key"] = api_key
         kwargs.update(request.extra)
 
         try:
