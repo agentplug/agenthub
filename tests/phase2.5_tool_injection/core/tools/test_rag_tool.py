@@ -6,7 +6,16 @@ from unittest.mock import Mock
 
 import pytest
 
-from agenthub.builtin.tools.rag import RAGConfig, RAGTool, create_rag_tool
+pytest.importorskip(
+    "llama_index.core",
+    reason="RAG optional dependencies not installed (pip install agenthub-sdk[rag])",
+)
+
+from agenthub.builtin.tools.rag import (  # noqa: E402
+    RAGConfig,
+    RAGTool,
+    create_rag_tool,
+)
 
 
 class TestRAGConfig:
