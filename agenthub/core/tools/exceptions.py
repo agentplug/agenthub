@@ -85,6 +85,12 @@ class AgentError(AgentHubError):
     pass
 
 
+class AgentSolveError(AgentError):
+    """solve() failed: method selection, parameter extraction, or execution."""
+
+    pass
+
+
 class AgentLoadError(AgentError):
     """Raised when agent loading fails."""
 
