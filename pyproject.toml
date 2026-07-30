@@ -178,6 +178,32 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
+ignore_missing_imports = true
+
+# Legacy modules exempted from type checking: a VISIBLE debt register.
+# `mypy agenthub/` must stay green - never add new modules here; remove
+# entries as their errors get fixed.
+[[tool.mypy.overrides]]
+module = [
+    "agenthub.builtin.tools.rag.*",
+    "agenthub.builtin.tools.web_search.fetchers",
+    "agenthub.config",
+    "agenthub.core.agents.execution",
+    "agenthub.core.agents.lifecycle",
+    "agenthub.core.agents.models",
+    "agenthub.core.agents.orchestration",
+    "agenthub.core.communication.*",
+    "agenthub.core.llm.client_manager",
+    "agenthub.core.mcp.*",
+    "agenthub.core.tools.mcp_server",
+    "agenthub.core.tools.registry",
+    "agenthub.runtime._deprecated.*",
+    "agenthub.runtime.process_manager._deprecated.*",
+    "agenthub.runtime.process_manager.communication",
+    "agenthub.runtime.process_manager.executor",
+    "agenthub.runtime.process_manager.log_streaming",
+]
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

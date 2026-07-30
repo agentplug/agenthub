@@ -34,7 +34,9 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest tests/ -v --tb=short --cov=agenthub --cov-report=xml
+        # --cov-fail-under is a ratchet: raise it as coverage grows,
+        # never lower it to make a build pass.
+        pytest tests/ -v --tb=short --cov=agenthub --cov-report=xml --cov-fail-under=35
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -42,7 +44,7 @@ jobs:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
-        fail_ci_if_error: false
+        fail_ci_if_error: true
 
   lint:
     runs-on: ubuntu-latest

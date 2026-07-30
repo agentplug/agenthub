@@ -2,6 +2,14 @@
 Tests for RAG Embedding Service
 """
 
+import pytest
+
+pytest.importorskip(
+    "llama_index.core",
+    reason="RAG optional dependencies not installed (pip install agenthub-sdk[rag])",
+)
+
+
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
