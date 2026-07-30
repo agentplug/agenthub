@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from ...interfaces import AgentWrapperProtocol
+from ...tools.exceptions import AgentSolveError
 from .framework_handler import FrameworkSolveHandler
 
 logger = logging.getLogger(__name__)
@@ -47,13 +48,14 @@ class SolveEngine:
 
         try:
             return self.framework_handler.solve(query, context, **kwargs)
+        except AgentSolveError:
+            raise
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(f"Error in solve() method: {e}", exc_info=True)
-            # Boundary: errors become the result-dict contract callers
-            # expect. (Raising typed errors instead is a planned breaking
-            # change tracked with the public-API-contract work.)
-            return {"error": str(e), "execution_time": execution_time}
+            raise AgentSolveError(
+                f"solve() failed after {execution_time:.2f}s: {e}"
+            ) from e
 
     def get_solve_capabilities(self) -> dict[str, Any]:
         """Get solve capabilities information."""
