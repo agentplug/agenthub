@@ -3,13 +3,15 @@
 This module provides functionality to clone GitHub repositories containing agents.
 """
 
+import json
 import logging
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from .url_parser import URLParser
+from .url_parser import URLParser, parse_agent_spec
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ class CloneResult:
     github_url: str
     error_message: str | None = None
     clone_time_seconds: float | None = None
+    commit_sha: str | None = None
 
 
 class CloneError(Exception):
@@ -174,6 +177,78 @@ class RepositoryCloner:
                     return f"symlink escapes repository: {path} -> {resolved}"
         return None
 
+    INSTALL_METADATA_FILE = ".agenthub-install.json"
+
+    def _checkout_ref(self, local_path: Path, ref: str) -> str | None:
+        """Detach-checkout a ref in the clone. Returns an error string on
+        failure, None on success."""
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(local_path), "checkout", "--detach", ref],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            return str(e)
+        if result.returncode != 0:
+            return result.stderr.strip() or f"git checkout exited {result.returncode}"
+        return None
+
+    def _resolve_head_sha(self, local_path: Path) -> str | None:
+        """Resolve the clone's HEAD commit SHA (None if git fails)."""
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(local_path), "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            logger.warning(f"Could not resolve installed commit SHA: {e}")
+            return None
+        if result.returncode != 0:
+            logger.warning(
+                f"Could not resolve installed commit SHA: {result.stderr.strip()}"
+            )
+            return None
+        return result.stdout.strip()
+
+    def _write_install_metadata(
+        self,
+        local_path: Path,
+        agent_name: str,
+        github_url: str,
+        commit_sha: str | None,
+        requested_ref: str | None,
+    ) -> None:
+        """Record install provenance next to the agent (best effort)."""
+        metadata = {
+            "agent_name": agent_name,
+            "github_url": github_url,
+            "commit_sha": commit_sha,
+            "requested_ref": requested_ref,
+            "installed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        try:
+            path = local_path / self.INSTALL_METADATA_FILE
+            path.write_text(json.dumps(metadata, indent=2) + "\n")
+        except OSError as e:
+            logger.warning(f"Could not write install metadata: {e}")
+
+    def get_install_metadata(self, agent_name: str) -> dict | None:
+        """Read recorded install provenance for an installed agent."""
+        agent_name, _ = parse_agent_spec(agent_name)
+        path = self._get_agent_storage_path(agent_name) / self.INSTALL_METADATA_FILE
+        try:
+            data = json.loads(path.read_text())
+        except FileNotFoundError:
+            return None
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning(f"Unreadable install metadata for {agent_name}: {e}")
+            return None
+        return data if isinstance(data, dict) else None
+
     def _verify_clone_completeness(self, local_path: Path) -> bool:
         """
         Verify that the clone operation was complete and contains expected files.
@@ -290,11 +365,15 @@ class RepositoryCloner:
             >>> if result.success:
             ...     print(f"Agent cloned to: {result.local_path}")
         """
-        import time
-
         start_time = time.time()
 
-        logger.info(f"Starting clone operation for agent: {agent_name}")
+        # A spec may pin a ref: "developer/agent@<sha|tag|branch>"
+        agent_name, requested_ref = parse_agent_spec(agent_name)
+
+        logger.info(
+            f"Starting clone operation for agent: {agent_name}"
+            + (f" @ {requested_ref}" if requested_ref else "")
+        )
 
         # Validate agent name format
         if not self.url_parser.is_valid_agent_name(agent_name):
@@ -348,6 +427,17 @@ class RepositoryCloner:
                     f"in {clone_time:.2f}s"
                 )
 
+                # Pin to the requested ref before validating: what gets
+                # validated must be what will run.
+                if requested_ref:
+                    checkout_error = self._checkout_ref(local_path, requested_ref)
+                    if checkout_error:
+                        shutil.rmtree(local_path, ignore_errors=True)
+                        raise CloneError(
+                            f"Requested ref {requested_ref!r} could not be "
+                            f"checked out (clone removed): {checkout_error}"
+                        )
+
                 # Validate repository structure and reject escaping symlinks
                 # before anything can load code from it.
                 structure_error = self._validate_cloned_repository(local_path)
@@ -378,12 +468,20 @@ class RepositoryCloner:
                 else:
                     logger.info(f"Clone depth unknown for {agent_name}")
 
+                # Record what was installed: the resolved commit is the
+                # auditable identity of the code that will run.
+                commit_sha = self._resolve_head_sha(local_path)
+                self._write_install_metadata(
+                    local_path, agent_name, github_url, commit_sha, requested_ref
+                )
+
                 return CloneResult(
                     success=True,
                     local_path=str(local_path),
                     agent_name=agent_name,
                     github_url=github_url,
                     clone_time_seconds=clone_time,
+                    commit_sha=commit_sha,
                 )
             else:
                 # Check for specific error types

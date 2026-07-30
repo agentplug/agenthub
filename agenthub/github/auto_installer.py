@@ -20,7 +20,7 @@ except ImportError:
 
 from .repository_cloner import CloneResult, RepositoryCloner
 from .repository_validator import RepositoryValidator, ValidationResult
-from .url_parser import URLParser
+from .url_parser import URLParser, parse_agent_spec
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +113,10 @@ class AutoInstaller:
 
         try:
             # Step 1: Validate agent name and construct GitHub URL
+            # (the URL never carries the optional @ref pin)
             logger.debug("Step 1: Validating agent name and constructing GitHub URL")
-            github_url = self.url_parser.build_github_url(agent_name)
+            clean_name, _ref = parse_agent_spec(agent_name)
+            github_url = self.url_parser.build_github_url(clean_name)
             if not github_url:
                 return self._create_failure_result(
                     agent_name,

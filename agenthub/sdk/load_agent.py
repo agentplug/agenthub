@@ -64,10 +64,16 @@ def load_agent(
             stacklevel=2,
         )
 
+    # A spec may pin a ref ("user/agent@sha"); local lookups use the clean
+    # name, installation receives the full spec
+    from ..github.url_parser import parse_agent_spec
+
+    clean_name, _ref = parse_agent_spec(base_agent)
+
     # Try to load agent definition from YAML first; a missing agent (typed,
     # not string-matched) triggers auto-installation
     try:
-        agent_info = _load_agent_from_yaml(base_agent)
+        agent_info = _load_agent_from_yaml(clean_name)
     except AgentNotFoundError:
         print(
             f"🤖 Agent '{base_agent}' not found locally. "
@@ -138,8 +144,12 @@ def _auto_install_agent(agent_name: str) -> dict[str, Any]:
     print(f"✅ Successfully installed agent '{agent_name}'!")
     print(f"📁 Location: {result.local_path}")
 
-    # Load the newly installed agent
-    return _load_agent_from_yaml(agent_name)
+    # Load the newly installed agent (lookup by clean name; the spec may
+    # have carried an @ref pin)
+    from ..github.url_parser import parse_agent_spec
+
+    clean_name, _ref = parse_agent_spec(agent_name)
+    return _load_agent_from_yaml(clean_name)
 
 
 def _create_agent_instance(
