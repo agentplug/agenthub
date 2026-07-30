@@ -115,3 +115,29 @@ class TestInstallProvenance:
         """The provenance file must not break structure validation."""
         result = cloner.clone_agent("user/pinned-agent")
         assert cloner._validate_cloned_repository(Path(result.local_path)) is None
+
+
+class TestAtomicInstall:
+    def test_failed_reinstall_preserves_existing_agent(self, cloner, agent_repo):
+        result = cloner.clone_agent("user/pinned-agent")
+        marker = Path(result.local_path) / "agent.py"
+        original = marker.read_text()
+
+        with pytest.raises(CloneError):
+            cloner.clone_agent("user/pinned-agent@doesnotexist999")
+
+        # The working install survives a failed replacement.
+        assert marker.read_text() == original
+        parent = Path(result.local_path).parent
+        assert not list(parent.glob(".*.staging"))
+        assert not list(parent.glob(".*.backup"))
+
+    def test_successful_reinstall_replaces_and_cleans_up(self, cloner, agent_repo):
+        repo, sha_v1, _ = agent_repo
+        cloner.clone_agent(f"user/pinned-agent@{sha_v1}")
+        result = cloner.clone_agent("user/pinned-agent")  # HEAD (v2)
+
+        assert (Path(result.local_path) / "agent.py").read_text() == "VERSION = 2\n"
+        parent = Path(result.local_path).parent
+        assert not list(parent.glob(".*.staging"))
+        assert not list(parent.glob(".*.backup"))

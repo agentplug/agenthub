@@ -401,15 +401,15 @@ class RepositoryCloner:
         else:
             local_path = self._get_agent_storage_path(agent_name)
 
-        # Check if directory already exists
-        if local_path.exists():
-            if local_path.is_dir() and any(local_path.iterdir()):
-                error_msg = f"Directory already exists and is not empty: {local_path}"
-                logger.warning(error_msg)
-                # For now, we'll remove and re-clone. In production,
-                # we might want to update instead
-                shutil.rmtree(local_path)
-                logger.info(f"Removed existing directory: {local_path}")
+        # Atomic install: clone into a staging directory and only swap it
+        # into place after checkout, validation, and metadata succeed. A
+        # failed or interrupted install never destroys an existing agent.
+        final_path = local_path
+        staging_path = final_path.parent / f".{final_path.name}.staging"
+        backup_path = final_path.parent / f".{final_path.name}.backup"
+        shutil.rmtree(staging_path, ignore_errors=True)
+        shutil.rmtree(backup_path, ignore_errors=True)
+        local_path = staging_path
 
         # Get GitHub URL
         github_url = self.url_parser.build_github_url(agent_name)
@@ -477,6 +477,23 @@ class RepositoryCloner:
                     local_path, agent_name, github_url, commit_sha, requested_ref
                 )
 
+                # Swap staging into place; keep the previous install as a
+                # backup until the swap succeeds.
+                if final_path.exists():
+                    final_path.rename(backup_path)
+                try:
+                    staging_path.rename(final_path)
+                except OSError as e:
+                    if backup_path.exists():
+                        backup_path.rename(final_path)  # restore previous
+                    shutil.rmtree(staging_path, ignore_errors=True)
+                    raise CloneError(
+                        f"Could not activate installed agent (previous "
+                        f"install restored): {e}"
+                    ) from e
+                shutil.rmtree(backup_path, ignore_errors=True)
+                local_path = final_path
+
                 return CloneResult(
                     success=True,
                     local_path=str(local_path),
@@ -503,9 +520,12 @@ class RepositoryCloner:
                 raise CloneError(error_msg)
 
         except (RepositoryNotFoundError, CloneError):
-            # Re-raise these specific exceptions
+            # Re-raise these specific exceptions; the staging directory is
+            # discarded and any existing install remains untouched.
+            shutil.rmtree(staging_path, ignore_errors=True)
             raise
         except Exception as e:
+            shutil.rmtree(staging_path, ignore_errors=True)
             error_msg = f"Unexpected error during clone: {str(e)}"
             logger.error(error_msg)
             raise CloneError(error_msg) from e
