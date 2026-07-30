@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from ...interfaces import AgentWrapperProtocol, LLMServiceProtocol
+from ...llm.errors import LLMError
 
 logger = logging.getLogger(__name__)
 
@@ -154,19 +155,14 @@ class FrameworkSolveHandler:
         # Create the full prompt with user query
         full_prompt = f'{combined_prompt}\n\nUser Query: "{query}"'
 
-        # Get LLM response directly
-        response = llm_service.generate(full_prompt, return_json=True)
-
-        # Log the combined LLM output
-        logger.info("🔍 Combined Method Selection & Parameter Extraction LLM Output:")
-        logger.info(f"   Query: {query}")
-        logger.info(f"   Available methods: {[m['name'] for m in agent_methods]}")
-        logger.info(f"   LLM Response: {response}")
-
-        # Handle fallback response when LLM is unavailable
-        if response == "AISuite not available":
-            logger.warning("LLM service unavailable, using fallback method selection")
-            # Use first available method as fallback
+        # Get LLM response directly; fall back to the first method when no
+        # LLM is usable
+        try:
+            response = llm_service.generate(full_prompt, return_json=True)
+        except LLMError as e:
+            logger.warning(
+                f"LLM service unavailable ({e}), using fallback method selection"
+            )
             if agent_methods:
                 fallback_method = agent_methods[0]["name"]
                 return (
@@ -179,6 +175,12 @@ class FrameworkSolveHandler:
                 )
             else:
                 return "", {}, 0.0, 0.0, "No methods available", "No methods available"
+
+        # Log the combined LLM output
+        logger.info("🔍 Combined Method Selection & Parameter Extraction LLM Output:")
+        logger.info(f"   Query: {query}")
+        logger.info(f"   Available methods: {[m['name'] for m in agent_methods]}")
+        logger.info(f"   LLM Response: {response}")
 
         # Parse the JSON response
         import json

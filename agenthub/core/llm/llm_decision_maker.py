@@ -10,7 +10,9 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from .llm_service import CoreLLMService, get_shared_llm_service
+from .llm_service import get_shared_llm_service
+from .service import LLMService
+from .structured import extract_json_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ class LLMDecisionMaker:
     - Any other choice-based scenarios
     """
 
-    def __init__(self, llm_service: CoreLLMService | None = None):
+    def __init__(self, llm_service: LLMService | None = None):
         """
         Initialize the LLM Decision Maker.
 
@@ -106,12 +108,8 @@ class LLMDecisionMaker:
                     options[0].get("name", ""), 0.0, "Empty response from LLM", options
                 )
 
-            # Parse response - try direct parsing first, then extract JSON if needed
-            try:
-                result = json.loads(response)
-            except json.JSONDecodeError:
-                # Try to extract JSON from response that might have extra text
-                result = self._extract_json_from_response(response)
+            # Parse response, tolerating extra prose around the JSON
+            result = extract_json_from_text(response)
 
             selected_option = result.get("selected_option", "")
             confidence = result.get("confidence", 0.0)
@@ -187,12 +185,8 @@ class LLMDecisionMaker:
                     {}, 0.0, "Empty response from LLM", ["Empty response from LLM"]
                 )
 
-            # Parse response - try direct parsing first, then extract JSON if needed
-            try:
-                result = json.loads(response)
-            except json.JSONDecodeError:
-                # Try to extract JSON from response that might have extra text
-                result = self._extract_json_from_response(response)
+            # Parse response, tolerating extra prose around the JSON
+            result = extract_json_from_text(response)
 
             extracted_data = result.get("extracted_data", {})
             confidence = result.get("confidence", 0.0)
@@ -354,45 +348,3 @@ Expected Schema:
                     errors.append(f"Field '{key}' should be boolean, got {type(value)}")
 
         return errors
-
-    def _extract_json_from_response(self, response: str) -> dict[str, Any]:
-        """
-        Try to extract JSON from response that might contain extra text.
-
-        Args:
-            response: Raw LLM response
-
-        Returns:
-            Parsed JSON dictionary
-
-        Raises:
-            json.JSONDecodeError: If no valid JSON can be extracted
-        """
-        import re
-
-        # Try to find JSON object in the response
-        json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
-        matches = re.findall(json_pattern, response, re.DOTALL)
-
-        for match in matches:
-            try:
-                result = json.loads(match)
-                if isinstance(result, dict):
-                    return result
-            except json.JSONDecodeError:
-                continue
-
-        # If no JSON object found, try to find JSON array
-        json_array_pattern = r"\[[^\[\]]*(?:\[[^\[\]]*\][^\[\]]*)*\]"
-        array_matches = re.findall(json_array_pattern, response, re.DOTALL)
-
-        for match in array_matches:
-            try:
-                result = json.loads(match)
-                if isinstance(result, dict):
-                    return result
-            except json.JSONDecodeError:
-                continue
-
-        # If still no valid JSON, raise error
-        raise json.JSONDecodeError("No valid JSON found in response", response, 0)

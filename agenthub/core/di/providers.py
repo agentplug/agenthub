@@ -28,9 +28,7 @@ class LLMServiceProvider:
         # Import here to avoid circular dependency
         from ..llm import get_shared_llm_service
 
-        service = get_shared_llm_service()
-        # Cast to protocol to satisfy type checker
-        return service  # type: ignore[return-value]
+        return get_shared_llm_service()
 
 
 class KnowledgeManagerProvider:

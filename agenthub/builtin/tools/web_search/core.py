@@ -221,9 +221,8 @@ optimized query, no explanations.
                 temperature=config.llm_temperature,
             )
 
-            # Check if we got a fallback response and return original query instead
-            if response == "AISuite not available" or not response.strip():
-                print("[TOOL] LLM service unavailable, using original query")
+            if not response.strip():
+                print("[TOOL] LLM returned empty rewrite, using original query")
                 return query
 
             # Clean up the response

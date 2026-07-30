@@ -1,28 +1,54 @@
-"""
-Core LLM Component for AgentHub
+"""Core LLM component for AgentHub.
 
-This module provides a unified interface for LLM operations across the system.
-It uses AISuite to support multiple LLM providers with a consistent API.
+A provider-generalized LLM layer: local providers (Ollama, LM Studio,
+llama.cpp) speak their native protocols over httpx; cloud vendors route
+through LiteLLM. ``LLMService`` is the entry point; ``get_shared_llm_service``
+returns the shared process-wide instance.
 """
 
-from .client_manager import ClientManager
+from .base import LLMProvider
+from .config import EndpointConfig, LLMConfig
+from .errors import (
+    LLMError,
+    LLMGenerationError,
+    LLMResponseFormatError,
+    LLMUnavailableError,
+    ModelNotFoundError,
+    NoModelAvailableError,
+)
 from .llm_decision_maker import DecisionResult, LLMDecisionMaker, StructuredDataResult
 from .llm_service import (
     CoreLLMService,
     get_shared_llm_service,
     reset_shared_llm_service,
 )
-from .model_config import ModelConfig, ModelInfo
-from .model_detector import ModelDetector
+from .selection import ModelSelector
+from .service import LLMService
+from .types import ChatRequest, ChatResponse, Message, ModelDescriptor
+
+# Legacy alias: ModelInfo was the pre-refactor descriptor dataclass.
+ModelInfo = ModelDescriptor
 
 __all__ = [
-    "ClientManager",
+    "ChatRequest",
+    "ChatResponse",
     "CoreLLMService",
     "DecisionResult",
+    "EndpointConfig",
+    "LLMConfig",
     "LLMDecisionMaker",
-    "ModelConfig",
-    "ModelDetector",
+    "LLMError",
+    "LLMGenerationError",
+    "LLMProvider",
+    "LLMResponseFormatError",
+    "LLMService",
+    "LLMUnavailableError",
+    "Message",
+    "ModelDescriptor",
     "ModelInfo",
+    "ModelNotFoundError",
+    "ModelSelector",
+    "NoModelAvailableError",
     "StructuredDataResult",
     "get_shared_llm_service",
     "reset_shared_llm_service",
