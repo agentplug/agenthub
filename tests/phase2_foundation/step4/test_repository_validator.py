@@ -1,6 +1,7 @@
 """Tests for RepositoryValidator class."""
 
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -310,8 +311,9 @@ pytest>=7.0.0<8.0.0
     @patch("subprocess.run")
     def test_collect_repository_info_git_remote_failure(self, mock_run):
         """Test failed git remote origin retrieval."""
-        # Mock the subprocess.run to raise an exception
-        mock_run.side_effect = Exception("Git command failed")
+        # Realistic failure type; per the error policy, unexpected
+        # exception types now propagate instead of being swallowed
+        mock_run.side_effect = subprocess.SubprocessError("Git command failed")
 
         info = self.validator._collect_repository_info(self.test_repo_path)
 

@@ -93,7 +93,7 @@ class RepositoryValidator:
                 else:
                     required_files.append("agent.py")
                     self.logger.info("Python agent detected - requiring agent.py")
-            except Exception as e:
+            except (OSError, yaml.YAMLError) as e:
                 self.logger.warning(
                     f"Failed to parse agent.yaml: {e}, defaulting to agent.py"
                 )
@@ -319,7 +319,7 @@ class RepositoryValidator:
 
         except yaml.YAMLError as e:
             errors.append(f"Invalid YAML format: {e}")
-        except Exception as e:
+        except OSError as e:
             errors.append(f"Error reading agent.yaml: {e}")
 
         return errors
@@ -359,7 +359,7 @@ class RepositoryValidator:
                             f"Line {i}: Conflicting version constraints in '{line}'"
                         )
 
-        except Exception as e:
+        except OSError as e:
             errors.append(f"Error reading requirements.txt: {e}")
 
         return errors
@@ -398,7 +398,7 @@ class RepositoryValidator:
                     )
                     if result.returncode == 0:
                         info["git_remote"] = result.stdout.strip()
-                except Exception:
+                except (OSError, subprocess.SubprocessError):
                     info["git_remote"] = "Unknown"
             else:
                 info["git_repository"] = "No"
@@ -411,7 +411,7 @@ class RepositoryValidator:
             all_files = list(repo_path.rglob("*"))
             info["total_files"] = str(len(all_files))
 
-        except Exception as e:
+        except OSError as e:
             info["error"] = f"Error collecting repository info: {e}"
 
         return info

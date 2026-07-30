@@ -87,7 +87,9 @@ class AutoInstaller:
                 self.environment_setup = EnvironmentSetup()
                 logger.debug("Environment setup initialized successfully")
             except Exception as e:
-                logger.warning(f"Environment setup not available: {e}")
+                # Availability probe boundary: degrade, but keep the
+                # evidence (a bug here would otherwise hide forever).
+                logger.warning(f"Environment setup not available: {e}", exc_info=True)
                 self.environment_setup = None
                 self.setup_environment = False
         else:

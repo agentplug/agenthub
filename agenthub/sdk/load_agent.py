@@ -4,7 +4,7 @@ import warnings
 from typing import Any
 
 from ..core.agents import AgentLoader, AgentWrapper
-from ..core.agents.loader import AgentLoadError
+from ..core.agents.loader import AgentLoadError, AgentNotFoundError
 from ..core.tools import get_tool_registry
 from ..core.tools.exceptions import ValidationError
 
@@ -64,24 +64,21 @@ def load_agent(
             stacklevel=2,
         )
 
-    # Try to load agent definition from YAML first
+    # Try to load agent definition from YAML first; a missing agent (typed,
+    # not string-matched) triggers auto-installation
     try:
         agent_info = _load_agent_from_yaml(base_agent)
-    except AgentLoadError as e:
-        # If agent not found, try to auto-install it
-        if "not found" in str(e).lower():
-            print(
-                f"🤖 Agent '{base_agent}' not found locally. "
-                f"Attempting to auto-install..."
-            )
-            try:
-                agent_info = _auto_install_agent(base_agent)
-            except Exception as install_error:
-                raise AgentLoadError(
-                    f"Failed to auto-install agent '{base_agent}': {install_error}"
-                ) from install_error
-        else:
-            raise e
+    except AgentNotFoundError:
+        print(
+            f"🤖 Agent '{base_agent}' not found locally. "
+            f"Attempting to auto-install..."
+        )
+        try:
+            agent_info = _auto_install_agent(base_agent)
+        except Exception as install_error:
+            raise AgentLoadError(
+                f"Failed to auto-install agent '{base_agent}': {install_error}"
+            ) from install_error
 
     try:
         # Create agent instance

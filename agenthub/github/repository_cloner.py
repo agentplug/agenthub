@@ -216,7 +216,7 @@ class RepositoryCloner:
             logger.debug(f"Clone verification passed for {local_path}")
             return True
 
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Error during clone verification: {e}")
             return False
 
@@ -260,7 +260,7 @@ class RepositoryCloner:
             else:
                 return "unknown"
 
-        except Exception as e:
+        except (OSError, subprocess.SubprocessError, ValueError) as e:
             logger.debug(f"Could not determine clone depth: {e}")
             return "unknown"
 
@@ -493,7 +493,7 @@ class RepositoryCloner:
                 shutil.rmtree(local_path)
                 logger.info(f"Removed agent {agent_name} from {local_path}")
                 return True
-            except Exception as e:
+            except OSError as e:
                 logger.error(f"Failed to remove agent {agent_name}: {e}")
                 return False
         else:

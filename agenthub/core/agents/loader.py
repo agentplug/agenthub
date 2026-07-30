@@ -16,6 +16,16 @@ class AgentLoadError(Exception):
     pass
 
 
+class AgentNotFoundError(AgentLoadError):
+    """Raised when the requested agent is not installed locally.
+
+    Subclasses AgentLoadError so existing handlers keep working; the SDK
+    catches this specific type to trigger auto-installation.
+    """
+
+    pass
+
+
 class AgentLoader:
     """Load and validate agents from storage with tool capabilities."""
 
@@ -107,7 +117,7 @@ class AgentLoader:
 
         # Check if agent exists
         if not self.storage.agent_exists(namespace, agent_name):
-            raise AgentLoadError(f"Agent not found: {namespace}/{agent_name}")
+            raise AgentNotFoundError(f"Agent not found: {namespace}/{agent_name}")
 
         # Get agent path
         agent_path = str(self.storage.get_agent_path(namespace, agent_name))
