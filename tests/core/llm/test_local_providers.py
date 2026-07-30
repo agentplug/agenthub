@@ -326,15 +326,15 @@ class TestLlamaCppHealthProbe:
 class TestBuildProviders:
     def test_priority_order_and_unknown_skipped(self):
         config = LLMConfig.from_env(
-            {"AGENTHUB_LLM_PROVIDER_PRIORITY": "llamacpp,ollama,cloud,bogus"}
+            {"AGENTHUB_LLM_PROVIDER_PRIORITY": "llamacpp,ollama,bogus"}
         )
         providers = build_providers(config)
         assert [provider.name for provider in providers] == ["llamacpp", "ollama"]
 
-    def test_default_order(self):
+    def test_default_order_expands_cloud_vendors(self):
         providers = build_providers(LLMConfig.from_env({}))
-        assert [provider.name for provider in providers] == [
-            "ollama",
-            "lmstudio",
-            "llamacpp",
-        ]
+        names = [provider.name for provider in providers]
+        assert names[:3] == ["ollama", "lmstudio", "llamacpp"]
+        # "cloud" expands to one provider per configured vendor, in order.
+        assert names[3:5] == ["openai", "anthropic"]
+        assert len(names) > 5

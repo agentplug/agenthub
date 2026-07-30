@@ -10,7 +10,6 @@ models that emit ``<think>...</think>`` blocks (deepseek-r1, qwen3, ...).
 import re
 from abc import ABC, abstractmethod
 from dataclasses import replace
-from typing import ClassVar
 
 from .types import (
     ChatRequest,
@@ -68,7 +67,9 @@ class LLMProvider(ABC):
     :meth:`is_available`); shared generation behavior lives in :meth:`chat`.
     """
 
-    name: ClassVar[str]
+    # Class attribute on most providers; the cloud provider sets it per
+    # instance ("openai", "anthropic", ...), one instance per cloud vendor.
+    name: str
 
     @property
     @abstractmethod

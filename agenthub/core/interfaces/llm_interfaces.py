@@ -1,4 +1,9 @@
-"""LLM-related interfaces to break circular dependencies."""
+"""LLM-related interfaces to break circular dependencies.
+
+``LLMServiceProtocol`` mirrors the real surface of
+``agenthub.core.llm.service.LLMService`` so consumers and DI can type
+against it without importing the LLM package.
+"""
 
 from typing import Any, Protocol
 
@@ -7,22 +12,35 @@ from typing_extensions import runtime_checkable
 
 @runtime_checkable
 class LLMServiceProtocol(Protocol):
-    """Protocol for LLM service."""
+    """Protocol for the LLM service."""
 
-    def generate_response(
-        self, prompt: str, model: str | None = None, **kwargs: Any
+    def generate(
+        self,
+        input_data: str | list[dict],
+        system_prompt: str | None = None,
+        return_json: bool = False,
+        temperature: float = 0.0,
+        **kwargs: Any,
     ) -> str:
-        """Generate response from LLM."""
+        """Generate a text response. Raises LLMError on failure."""
         ...
 
-    def generate_structured_response(
+    def generate_structured(
         self,
-        prompt: str,
-        response_format: dict[str, Any],
-        model: str | None = None,
+        input_data: str | list[dict],
+        system_prompt: str | None = None,
+        temperature: float = 0.0,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Generate structured response from LLM."""
+        """Generate and parse a JSON object response."""
+        ...
+
+    def get_current_model(self) -> str:
+        """The selected model's qualified id."""
+        ...
+
+    def is_available(self) -> bool:
+        """Whether any provider can serve generation right now."""
         ...
 
 
