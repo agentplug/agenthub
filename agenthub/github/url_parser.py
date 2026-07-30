@@ -174,6 +174,8 @@ def parse_agent_spec(spec: str) -> tuple[str, str | None]:
     Raises:
         ValueError: If the ref portion is present but malformed.
     """
+    if not isinstance(spec, str):
+        raise ValueError(f"Agent spec must be a string, got {type(spec).__name__}")
     name, separator, ref = spec.partition("@")
     if not separator:
         return spec, None

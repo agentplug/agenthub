@@ -115,7 +115,14 @@ class AutoInstaller:
             # Step 1: Validate agent name and construct GitHub URL
             # (the URL never carries the optional @ref pin)
             logger.debug("Step 1: Validating agent name and constructing GitHub URL")
-            clean_name, _ref = parse_agent_spec(agent_name)
+            try:
+                clean_name, _ref = parse_agent_spec(agent_name)
+            except ValueError as e:
+                return self._create_failure_result(
+                    agent_name,
+                    start_time,
+                    f"Invalid agent name format: {e}",
+                )
             github_url = self.url_parser.build_github_url(clean_name)
             if not github_url:
                 return self._create_failure_result(
