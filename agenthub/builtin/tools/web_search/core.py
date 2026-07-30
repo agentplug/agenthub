@@ -2,6 +2,7 @@
 Core web search functionality
 """
 
+import logging
 from typing import Any
 
 from agenthub.config import get_config
@@ -10,6 +11,8 @@ from .config import WebSearchConfig
 from .extractors import ContentExtractor
 from .fetchers import ContentFetcher
 from .filters import ResultFilter
+
+logger = logging.getLogger(__name__)
 
 
 class WebSearchTool:
@@ -33,7 +36,7 @@ class WebSearchTool:
             if hasattr(self.content_fetcher, "cleanup"):
                 self.content_fetcher.cleanup()
         except Exception as e:
-            print(f"[TOOL] Error during WebSearchTool cleanup: {e}")
+            logger.info(f"Error during WebSearchTool cleanup: {e}")
 
     def search(
         self,
@@ -61,8 +64,8 @@ class WebSearchTool:
             # Use max_results from parameter or config
             num_results = max_results or self.config.max_results
 
-            print(f"[TOOL] Excluding URLs: {exclude_urls}")
-            print(f"Number of excluded URLs: {len(exclude_urls)}")
+            logger.info(f"Excluding URLs: {exclude_urls}")
+            logger.debug(f"Number of excluded URLs: {len(exclude_urls)}")
 
             # Automatically rewrite the query using AI if enabled
             if self.config.enable_query_rewriting:
@@ -70,11 +73,11 @@ class WebSearchTool:
             else:
                 rewritten_query = query
 
-            print(f"[TOOL] Original query: '{query}'")
-            print(f"[TOOL] Rewritten query: '{rewritten_query}'")
-            print(f"[TOOL] Excluding URLs: {exclude_urls}")
-            print(
-                f"[TOOL] Performing web search for: '{rewritten_query}' "
+            logger.info(f"Original query: '{query}'")
+            logger.info(f"Rewritten query: '{rewritten_query}'")
+            logger.info(f"Excluding URLs: {exclude_urls}")
+            logger.info(
+                f"Performing web search for: '{rewritten_query}' "
                 f"(max_results={num_results})"
             )
 
@@ -87,8 +90,8 @@ class WebSearchTool:
             if rewritten_query != query and len(search_results) < max(
                 2, num_results // 2 or 1
             ):
-                print(
-                    "[TOOL] Rewritten query returned very few results. "
+                logger.info(
+                    "Rewritten query returned very few results. "
                     "Retrying with original query."
                 )
                 search_results = self._fetch_search_results(
@@ -120,8 +123,8 @@ class WebSearchTool:
                 if filtered_results:
                     final_results = filtered_results[:num_results]
                 else:
-                    print(
-                        "[TOOL] Content extraction produced no usable results. "
+                    logger.info(
+                        "Content extraction produced no usable results. "
                         "Falling back to raw search snippets."
                     )
                     final_results = self._format_basic_results(
@@ -181,7 +184,7 @@ class WebSearchTool:
 
             # LLM service automatically detects and uses the best available model
             current_model = llm_service.get_current_model()
-            print(f"[TOOL] Using model: {current_model}")
+            logger.info(f"Using model: {current_model}")
 
             prompt = f"""
 You are a search query optimization expert. Rewrite the given query to use
@@ -222,16 +225,16 @@ optimized query, no explanations.
             )
 
             if not response.strip():
-                print("[TOOL] LLM returned empty rewrite, using original query")
+                logger.info("LLM returned empty rewrite, using original query")
                 return query
 
             # Clean up the response
             rewritten_query = response.strip().strip('"').strip("'")
-            print(f"[TOOL] Query rewritten: '{query}' -> '{rewritten_query}'")
+            logger.info(f"Query rewritten: '{query}' -> '{rewritten_query}'")
             return rewritten_query
 
         except Exception as e:
-            print(f"[TOOL] Query rewriter failed ({e}), using original query")
+            logger.info(f"Query rewriter failed ({e}), using original query")
             return query
 
     def _fetch_search_results(
@@ -261,7 +264,7 @@ optimized query, no explanations.
             initial_results, exclude_urls
         )
 
-        print(f"[TOOL] Final search results count: {len(search_results)}")
+        logger.info(f"Final search results count: {len(search_results)}")
         return search_results
 
     def _format_basic_results(
