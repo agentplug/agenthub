@@ -1,13 +1,15 @@
 """Agent factory with dependency injection."""
 
+import logging
 from typing import Any
 
-from ..di import get_container
 from ..interfaces import (
     KnowledgeManagerProtocol,
     ToolManagerProtocol,
 )
 from .wrapper import AgentWrapper
+
+logger = logging.getLogger(__name__)
 
 
 class AgentWrapperFactory:
@@ -15,7 +17,6 @@ class AgentWrapperFactory:
 
     def __init__(self) -> None:
         """Initialize factory."""
-        self.container = get_container()
 
     def create_wrapper(
         self,
@@ -42,20 +43,23 @@ class AgentWrapperFactory:
         )
 
     def _get_knowledge_manager(self) -> KnowledgeManagerProtocol | None:
-        """Get knowledge manager from container."""
+        """Construct the knowledge manager (optional feature boundary)."""
         try:
-            return self.container.get(KnowledgeManagerProtocol)  # type: ignore[type-abstract]
-        except ValueError:
+            from ..knowledge import KnowledgeManager
+
+            return KnowledgeManager()
+        except ImportError as e:
+            logger.warning(f"Knowledge manager unavailable: {e}", exc_info=True)
             return None
 
     def _get_tool_manager(self, agent_info: dict) -> ToolManagerProtocol | None:
-        """Get tool manager from container."""
+        """Construct the tool manager (optional feature boundary)."""
         try:
-            # For now, create tool manager directly since it needs agent_info
             from ..mcp.agent_tool_manager import AgentToolManager
 
             return AgentToolManager(agent_info.get("manifest", {}))
-        except ImportError:
+        except ImportError as e:
+            logger.warning(f"Tool manager unavailable: {e}", exc_info=True)
             return None
 
 
