@@ -191,6 +191,9 @@ class SessionManager:
             # Only cleanup completed/failed sessions
             if session.get("status") in ["completed", "failed"]:
                 end_time = session.get("end_time", session.get("start_time"))
+                if end_time is None:
+                    # Session carries no timestamps; nothing to age out.
+                    continue
                 age = current_time - end_time
 
                 if age > max_age_seconds:

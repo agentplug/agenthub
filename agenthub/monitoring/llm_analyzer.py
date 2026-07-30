@@ -5,11 +5,11 @@ Uses the Core LLM Component to analyze agent execution logs and provide
 structured insights about progress, errors, and suggestions.
 """
 
-import json
 from dataclasses import dataclass
 from typing import Any
 
-from agenthub.core.llm.llm_service import CoreLLMService
+from agenthub.core.interfaces.llm_interfaces import LLMServiceProtocol
+from agenthub.core.llm.errors import LLMError
 
 
 @dataclass
@@ -32,12 +32,12 @@ class LLMAnalyzer:
     detection, and actionable suggestions.
     """
 
-    def __init__(self, core_llm_service: CoreLLMService):
+    def __init__(self, core_llm_service: LLMServiceProtocol):
         """
         Initialize LLM Analyzer
 
         Args:
-            core_llm_service: Core LLM service instance for log analysis
+            core_llm_service: LLM service instance for log analysis
         """
         self.core_llm = core_llm_service
         self.cache: dict[str, Any] = {}
@@ -46,6 +46,9 @@ class LLMAnalyzer:
     def analyze(self, logs: list[str]) -> LogAnalysis:
         """
         Analyze agent execution logs using Core LLM Component
+
+        Falls back to pattern-matching analysis when no LLM is usable or
+        the model output is not parseable.
 
         Args:
             logs: List of log lines from agent execution
@@ -63,12 +66,21 @@ class LLMAnalyzer:
             "errors, and providing actionable insights."
         )
 
-        response = self.core_llm.generate(
-            self.log_analysis_prompt.format(text=log_text),
-            system_prompt=system_prompt,
-            return_json=True,
+        try:
+            data = self.core_llm.generate_structured(
+                self.log_analysis_prompt.format(text=log_text),
+                system_prompt=system_prompt,
+            )
+        except LLMError:
+            return self._fallback_analysis(logs)
+
+        return LogAnalysis(
+            summary=data.get("summary", "Working..."),
+            progress=data.get("progress", 0),
+            status=data.get("status", "working"),
+            errors=data.get("errors", []),
+            suggestions=data.get("suggestions", []),
         )
-        return self._parse_log_analysis_response(response)
 
     def _get_log_analysis_prompt(self) -> str:
         """
@@ -99,28 +111,6 @@ class LLMAnalyzer:
                 "suggestions": ["..."]
             }}
         """
-
-    def _parse_log_analysis_response(self, response: str) -> LogAnalysis:
-        """
-        Parse log analysis response from LLM
-
-        Args:
-            response: JSON response string from LLM
-
-        Returns:
-            Parsed LogAnalysis object
-        """
-        try:
-            data = json.loads(response)
-            return LogAnalysis(
-                summary=data.get("summary", "Working..."),
-                progress=data.get("progress", 0),
-                status=data.get("status", "working"),
-                errors=data.get("errors", []),
-                suggestions=data.get("suggestions", []),
-            )
-        except (json.JSONDecodeError, TypeError):
-            return self._fallback_analysis([])
 
     def _fallback_analysis(self, logs: list[str]) -> LogAnalysis:
         """

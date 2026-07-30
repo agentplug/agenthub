@@ -19,10 +19,11 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
+  # No arg overrides: the hook must enforce exactly what pyproject.toml
+  # declares, on all of agenthub/, or the config claims are meaningless.
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.1
+    rev: v1.17.1
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests, types-PyYAML]
-        args: [--ignore-missing-imports, --no-strict-optional, --disable-error-code=misc, --disable-error-code=unreachable, --disable-error-code=unused-ignore, --disable-error-code=no-any-return]
-        files: ^agenthub/core/
+        additional_dependencies: [types-requests, types-PyYAML, httpx, aiohttp, "mcp>=1.13.1,<2.0.0"]
+        files: ^agenthub/

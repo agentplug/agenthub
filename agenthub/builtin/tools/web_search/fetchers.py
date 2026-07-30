@@ -4,9 +4,12 @@ Async URL fetching and content retrieval
 
 import asyncio
 import concurrent.futures
+import logging
 from typing import Any
 
 from .extractors import ContentExtractor
+
+logger = logging.getLogger(__name__)
 
 
 class ContentFetcher:
@@ -26,7 +29,7 @@ class ContentFetcher:
                     task.cancel()
             self._active_tasks.clear()
         except Exception as e:
-            print(f"[TOOL] Error during cleanup: {e}")
+            logger.warning(f"Error during cleanup: {e}")
 
     def fetch_content_from_urls(
         self, search_results: list[dict[str, Any]]
@@ -43,27 +46,27 @@ class ContentFetcher:
         # Use the current event loop if available, otherwise create a new one
         try:
             # Try to get the current event loop
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # If we're in an async context, we need to run in a thread
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(
-                    self._run_with_timeout, search_results
-                )
+                future = executor.submit(self._run_with_timeout, search_results)
                 return future.result(timeout=self.config.timeout + 10)
         except RuntimeError:
             # No event loop running, we can create one
             return self._run_with_timeout(search_results)
         except Exception as e:
-            print(f"[TOOL] Error in fetch_content_from_urls: {e}")
+            logger.warning(f"Error in fetch_content_from_urls: {e}")
             # Fallback to synchronous processing
             return self._fetch_content_sync(search_results)
 
-    def _run_with_timeout(self, search_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _run_with_timeout(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Run async processing with proper timeout and cleanup"""
         try:
             return asyncio.run(self._process_all_urls(search_results))
         except Exception as e:
-            print(f"[TOOL] Error in _run_with_timeout: {e}")
+            logger.warning(f"Error in _run_with_timeout: {e}")
             return self._fetch_content_sync(search_results)
 
     async def _process_all_urls(
@@ -74,29 +77,36 @@ class ContentFetcher:
             import aiohttp
         except ImportError:
             # Fallback to synchronous processing if aiohttp not available
-            print("[TOOL] aiohttp not available, using synchronous fetching")
+            logger.warning("aiohttp not available, using synchronous fetching")
             return self._fetch_content_sync(search_results)
 
         async with aiohttp.ClientSession() as session:
-            tasks = []
+            # Wrap in real Tasks: the timeout path below calls
+            # done()/cancel()/result(), which bare coroutines don't have.
+            tasks: list[asyncio.Task[dict[str, Any]]] = []
             for r in search_results:
                 url = r.get("href")
                 title = r.get("title", "No title")
                 if url:
-                    task = self._fetch_snippet_async(session, url, title)
-                    tasks.append(task)
+                    tasks.append(
+                        asyncio.ensure_future(
+                            self._fetch_snippet_async(session, url, title)
+                        )
+                    )
                 else:
                     # Handle results without URLs
-                    tasks.append(self._create_no_url_result(title))
+                    tasks.append(
+                        asyncio.ensure_future(self._create_no_url_result(title))
+                    )
 
             # Execute all requests concurrently with timeout
             try:
                 results = await asyncio.wait_for(
                     asyncio.gather(*tasks, return_exceptions=True),
-                    timeout=self.config.timeout + 5
+                    timeout=self.config.timeout + 5,
                 )
-            except asyncio.TimeoutError:
-                print("[TOOL] Timeout occurred during content fetching")
+            except TimeoutError:
+                logger.warning("Timeout occurred during content fetching")
                 # Cancel remaining tasks
                 for task in tasks:
                     if not task.done():
@@ -108,19 +118,23 @@ class ContentFetcher:
                         if task.done() and not task.cancelled():
                             results.append(task.result())
                         else:
-                            results.append({
-                                "title": "Timeout",
-                                "url": "",
-                                "content": "Request timed out",
-                                "snippet": "Request timed out",
-                            })
+                            results.append(
+                                {
+                                    "title": "Timeout",
+                                    "url": "",
+                                    "content": "Request timed out",
+                                    "snippet": "Request timed out",
+                                }
+                            )
                     except Exception:
-                        results.append({
-                            "title": "Error",
-                            "url": "",
-                            "content": "Task failed",
-                            "snippet": "Task failed",
-                        })
+                        results.append(
+                            {
+                                "title": "Error",
+                                "url": "",
+                                "content": "Task failed",
+                                "snippet": "Task failed",
+                            }
+                        )
 
             # Handle any exceptions
             processed_results: list[dict[str, Any]] = []
@@ -149,7 +163,7 @@ class ContentFetcher:
 
             # Set a shorter timeout for individual requests
             timeout = aiohttp.ClientTimeout(total=min(self.config.timeout, 10))
-            
+
             async with session.get(url, timeout=timeout) as response:
                 # Check response status
                 if response.status >= 400:
@@ -159,16 +173,16 @@ class ContentFetcher:
                         "content": f"HTTP {response.status} error",
                         "snippet": f"HTTP {response.status} error",
                     }
-                
+
                 content_type = response.headers.get("content-type", "").lower()
 
                 # Check if it's a PDF file - but validate content first
                 if "application/pdf" in content_type or url.lower().endswith(".pdf"):
-                    print(f"[TOOL] Processing PDF file: {title}")
+                    logger.debug(f"Processing PDF file: {title}")
                     # Get PDF content as bytes
                     pdf_content = await response.read()
                     # Validate PDF content before processing
-                    if pdf_content.startswith(b'%PDF'):
+                    if pdf_content.startswith(b"%PDF"):
                         return self.content_extractor.extract_content(
                             pdf_content, content_type, title, url
                         )
@@ -183,7 +197,7 @@ class ContentFetcher:
                     return self.content_extractor.extract_content(
                         html_content, content_type, title, url
                     )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {
                 "title": title,
                 "url": url,
@@ -219,7 +233,7 @@ class ContentFetcher:
             title = r.get("title", "No title")
             if url:
                 try:
-                    import requests  # type: ignore[import-untyped]
+                    import requests
 
                     response = requests.get(url, timeout=self.config.timeout)
                     content_type = response.headers.get("content-type", "").lower()

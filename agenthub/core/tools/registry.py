@@ -5,18 +5,27 @@ registration, storage, and metadata. It delegates MCP server management
 and access control to specialized modules.
 """
 
+# Deferred annotation evaluation is required here: FastMCP may be None
+# (import fallback below), and evaluated `FastMCP | None` annotations
+# would raise TypeError at import time.
+from __future__ import annotations
+
+import logging
 import threading
 from collections.abc import Callable
 from typing import Any
 
-# Try to import FastMCP, fallback to MCPServer if not available
+# FastMCP moved between mcp releases; try both locations, then chuk_mcp.
 try:
-    from mcp.server import FastMCP
+    from mcp.server.fastmcp import FastMCP
 except ImportError:
     try:
-        from chuk_mcp.server import MCPServer as FastMCP
+        from mcp.server import FastMCP
     except ImportError:
-        FastMCP = None  # type: ignore[assignment]
+        try:
+            from chuk_mcp.server import MCPServer as FastMCP  # type: ignore
+        except ImportError:
+            FastMCP = None  # type: ignore[assignment,misc]
 
 from .exceptions import (
     ToolExecutionError,
@@ -27,6 +36,8 @@ from .exceptions import (
 from .mcp_server import MCPServerManager
 from .metadata import ToolMetadata
 from .tool_access import ToolAccessManager
+
+logger = logging.getLogger(__name__)
 
 
 class ToolRegistry:
@@ -42,10 +53,10 @@ class ToolRegistry:
     specialized components (MCPServerManager and ToolAccessManager).
     """
 
-    _instance: "ToolRegistry | None" = None
+    _instance: ToolRegistry | None = None
     _lock = threading.Lock()
 
-    def __new__(cls) -> "ToolRegistry":
+    def __new__(cls) -> ToolRegistry:
         """Singleton pattern - ensure only one registry instance."""
         if cls._instance is None:
             with cls._lock:
@@ -261,7 +272,7 @@ class ToolRegistry:
                             for tool in getattr(tools, "tools", [])
                         ]
             except Exception as e:
-                print(f"⚠️  MCP discovery failed from {sse_url}: {e}")
+                logger.warning("MCP discovery failed from %s: %s", sse_url, e)
                 return []
 
         try:
@@ -283,7 +294,7 @@ class ToolRegistry:
         try:
             mcp_metadata = self._discover_mcp_tool_metadata()
         except Exception as e:  # pragma: no cover
-            print(f"⚠️  Could not discover tools from MCP server: {e}")
+            logger.warning("Could not discover tools from MCP server: %s", e)
             mcp_metadata = []
 
         remote_names = [metadata.name for metadata in mcp_metadata]

@@ -4,16 +4,24 @@ This module handles MCP (Model Context Protocol) server lifecycle,
 configuration, and management.
 """
 
+# Deferred annotation evaluation is required here: FastMCP may be None
+# (import fallback below), and evaluated `FastMCP | None` annotations
+# would raise TypeError at import time.
+from __future__ import annotations
+
 import logging
 
-# Try to import FastMCP, fallback to MCPServer if not available
+# FastMCP moved between mcp releases; try both locations, then chuk_mcp.
 try:
-    from mcp.server import FastMCP
+    from mcp.server.fastmcp import FastMCP
 except ImportError:
     try:
-        from chuk_mcp.server import MCPServer as FastMCP
+        from mcp.server import FastMCP
     except ImportError:
-        FastMCP = None  # type: ignore[assignment]
+        try:
+            from chuk_mcp.server import MCPServer as FastMCP  # type: ignore
+        except ImportError:
+            FastMCP = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 

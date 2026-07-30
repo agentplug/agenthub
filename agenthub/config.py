@@ -69,9 +69,9 @@ class AgentHubConfig:
                     config.mcp_port = 8000  # Dev default
                 else:
                     config.mcp_port = 443  # Prod default (HTTPS)
-        elif os.getenv("AGENTHUB_MCP_PORT"):
+        elif port := os.getenv("AGENTHUB_MCP_PORT"):
             # Port specified but not host - use default host
-            config.mcp_port = int(os.getenv("AGENTHUB_MCP_PORT"))
+            config.mcp_port = int(port)
 
         if log_level := os.getenv("AGENTHUB_LOG_LEVEL"):
             config.log_level = log_level

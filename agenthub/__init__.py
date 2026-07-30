@@ -1,10 +1,17 @@
-"""
-Agent Hub - Phase 1 Foundation
+"""AgentHub - The App Store for AI Agents.
 
-A system for executing and managing agentplug agents.
+Discover, install, and use AI agents with one line of code.
 """
 
-__version__ = "0.1.3"
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _package_version
+
+try:
+    __version__ = _package_version("agenthub-sdk")
+except PackageNotFoundError:
+    # Source checkout without an installed distribution
+    __version__ = "0.0.0+unknown"
+
 __author__ = "William"
 
 # Import core modules

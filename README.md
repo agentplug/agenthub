@@ -10,7 +10,7 @@
 [![PyPI version](https://badge.fury.io/py/agenthub-sdk.svg)](https://badge.fury.io/py/agenthub-sdk)
 
 
-[📖 Documentation](https://docs.agenthub.dev) • [🚀 Quick Start](#-quick-start) • [🐛 Report a Bug](#-reporting-bugs) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
+[🚀 Quick Start](#-quick-start) • [🛠️ Create an Agent](CREATING_AGENTS.md) • [🔒 Security Model](SECURITY.md) • [🐛 Report a Bug](#-reporting-bugs) • [🤝 Contributing](#-contributing) • [📧 Contact](#-contact)
 
 </div>
 
@@ -33,12 +33,11 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub make
 - **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
-- **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
+- **📊 Optional Monitoring**: Stream agent logs and progress in real time over WebSocket
 
-### Before AgentHub
+### The manual way
 
 ```python
-# Traditional approach: 2-4 weeks setup
 # 1. Find agent on GitHub
 # 2. Clone repository
 # 3. Read documentation
@@ -52,7 +51,6 @@ Transform weeks of AI agent integration into **one line of code**. AgentHub make
 ### With AgentHub
 
 ```python
-# One line, 30 seconds
 import agenthub as ah
 coding_agent = ah.load_agent("agentplug/coding-agent")
 code = coding_agent.generate_code("neural network class")
@@ -67,7 +65,7 @@ code = coding_agent.generate_code("neural network class")
 - **🔒 Isolated Environments**: No dependency conflicts between agents
 - **⚡ Auto-Installation**: Agents install automatically when needed
 - **🎯 CLI Interface**: Full command-line management and execution
-- **📊 Comprehensive Monitoring**: Full visibility into agent execution and performance
+- **📊 Optional Monitoring**: Stream agent logs and progress in real time over WebSocket
 
 ## 🚀 Quick Start
 
@@ -104,16 +102,26 @@ export DEEPSEEK_API_KEY=...
 export GROQ_API_KEY=...
 ```
 
-**Local LLM** — no API key needed. Just start [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai) and AgentHub auto-detects it:
+**Local LLM** — no API key needed. Start [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or a [llama.cpp](https://github.com/ggml-org/llama.cpp) server and AgentHub auto-detects it:
 
 ```bash
 # Ollama (default port 11434)
 ollama run llama3.2
 
 # LM Studio (default port 1234) — start the local server from the app
+
+# llama.cpp (default port 8080)
+llama-server -m your-model.gguf
 ```
 
-AgentHub checks for a running local model first, then falls back to whichever cloud API key is set.
+AgentHub checks for a running local model first (Ollama → LM Studio → llama.cpp), then falls back to whichever cloud API key is set. To override the defaults:
+
+```bash
+export AGENTHUB_LLM_MODEL="ollama:qwen3:8b"          # pin a specific model
+export AGENTHUB_LLM_PROVIDER_PRIORITY="llamacpp,cloud"  # change detection order
+export OLLAMA_API_URL="http://gpu-box:11434"          # non-default endpoints
+export LLAMACPP_API_URL="http://gpu-box:8080/v1"
+```
 
 ### 🎯 Your First Agent (30 seconds)
 
@@ -231,9 +239,9 @@ Each agent runs in its own isolated environment:
 
 ```python
 # No dependency conflicts between agents
-coding_agent = ah.load_agent("agentplug/coding-agent")      # Uses Python 3.11
-data_agent = ah.load_agent("agentplug/data-agent")          # Uses Python 3.12
-ml_agent = ah.load_agent("agentplug/ml-agent")             # Uses different packages
+coding_agent   = ah.load_agent("agentplug/coding-agent")          # Uses Python 3.11
+research_agent = ah.load_agent("agentplug/research-agent")        # Uses different packages
+analysis_agent = ah.load_agent("agentplug/data-analysis-agent")   # Uses different packages
 
 # All agents work independently without conflicts
 ```
@@ -322,6 +330,10 @@ print(explanation["result"])
 - **📝 Natural Language**: Use plain English queries
 - **🔄 Consistent Interface**: Same pattern across all agents
 
+## 🔒 Security Model
+
+Installing an agent means running its code with your user's privileges — the same trust decision as installing a pip package. AgentHub isolates agent *dependencies* (each agent gets its own environment) and enforces resolution integrity (validated clones, no symlink escapes), but does not sandbox agent *code*. Only install agents from developers you trust. Full details: **[SECURITY.md](SECURITY.md)**.
+
 ## 🐛 Reporting Bugs
 
 Found a bug? [Open an issue](https://github.com/agentplug/agenthub/issues/new) and include:
@@ -334,7 +346,7 @@ Found a bug? [Open an issue](https://github.com/agentplug/agenthub/issues/new) a
 
 ## 🤝 Contributing
 
-Contributions are welcome via pull request. Fork the repo, make your changes, and open a PR against `main`.
+Contributions are welcome via pull request. Fork the repo, make your changes, and open a PR against `develop` (the integration branch; `main` tracks releases). CI runs ruff, black, mypy, and the test suite with a coverage gate on every PR.
 
 ## 📞 Contact
 

@@ -8,7 +8,6 @@ agent-to-client communication.
 import asyncio
 import logging
 import threading
-import time
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -32,6 +31,11 @@ class CommunicationManager:
         self.enabled = enabled
         self.server: Any = None
         self._initialized = False
+        # Set when this manager starts the server on its own background
+        # thread; needed to stop that loop and join the thread on shutdown.
+        self._server_thread: threading.Thread | None = None
+        self._server_loop: asyncio.AbstractEventLoop | None = None
+        self._start_task: Any = None
 
         if self.enabled:
             self._try_initialize_server()
@@ -109,35 +113,103 @@ class CommunicationManager:
         # Check if there's an event loop running
         try:
             try:
-                asyncio.get_running_loop()
+                caller_loop = asyncio.get_running_loop()
                 # If we get here, there's a running loop
                 logger.debug("📡 Event loop is running, scheduling server start")
-                asyncio.create_task(self.ensure_server_running())
+                # Keep references: the task must not be garbage-collected,
+                # and shutdown() needs to know which loop runs the server.
+                self._start_task = caller_loop.create_task(self.ensure_server_running())
+                self._server_loop = caller_loop
                 return True
             except RuntimeError:
                 # No running loop, start server in background thread
                 logger.debug(
                     "📡 No running event loop, starting server in background thread"
                 )
-
-                def run_server_in_thread() -> None:
-                    """Run WebSocket server in dedicated thread."""
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    loop.run_until_complete(self.ensure_server_running())
-                    # Keep loop running for server tasks
-                    loop.run_forever()
-
-                server_thread = threading.Thread(
-                    target=run_server_in_thread, daemon=True
-                )
-                server_thread.start()
-                # Give server time to start
-                time.sleep(0.5)
-                return self.server.is_running if self.server else False
+                return self._start_server_thread()
         except Exception as e:
             logger.warning(f"Failed to start communication server: {e}")
             return False
+
+    def _start_server_thread(self) -> bool:
+        """Start the server on a dedicated background thread and wait for it.
+
+        Returns:
+            bool: True if the server reported a successful start.
+        """
+        started = threading.Event()
+        start_ok = False
+
+        def run_server_in_thread() -> None:
+            """Run WebSocket server in dedicated thread."""
+            nonlocal start_ok
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            self._server_loop = loop
+            try:
+                start_ok = loop.run_until_complete(self.ensure_server_running())
+            except Exception as e:
+                logger.warning(f"Communication server failed to start: {e}")
+            finally:
+                # Signal only after start finished, so the caller never
+                # observes a half-started server.
+                started.set()
+            if start_ok:
+                # Serve until shutdown() stops the loop.
+                loop.run_forever()
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+
+        self._server_thread = threading.Thread(
+            target=run_server_in_thread,
+            name="agenthub-communication-server",
+            daemon=True,
+        )
+        self._server_thread.start()
+        if not started.wait(timeout=10):
+            logger.warning("Communication server start timed out")
+            return False
+        return start_ok
+
+    def shutdown(self, timeout: float = 5.0) -> None:
+        """Stop the WebSocket server and the background thread running it.
+
+        Safe to call multiple times and from any thread. If the server was
+        started on a caller-owned event loop, stopping is scheduled there
+        instead of blocking.
+        """
+        server = self.server
+        loop = self._server_loop
+
+        if server is None or loop is None:
+            return
+
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            current_loop = None
+
+        if not loop.is_closed() and server.is_running:
+            try:
+                if current_loop is loop:
+                    # Called from the loop the server runs on: cannot block
+                    # on it, schedule the stop instead.
+                    self._start_task = loop.create_task(server.stop())
+                else:
+                    future = asyncio.run_coroutine_threadsafe(server.stop(), loop)
+                    future.result(timeout=timeout)
+            except Exception as e:
+                logger.warning(f"Error stopping communication server: {e}")
+
+        if self._server_thread is not None:
+            if not loop.is_closed():
+                loop.call_soon_threadsafe(loop.stop)
+            self._server_thread.join(timeout=timeout)
+            if self._server_thread.is_alive():
+                logger.warning("Communication server thread did not stop in time")
+            self._server_thread = None
+
+        self._server_loop = None
 
     def register_session(self, agent_id: str, session_data: dict[str, Any]) -> bool:
         """
@@ -214,7 +286,7 @@ class CommunicationManager:
 
         try:
             if hasattr(self.server, "send_to_agent_sync"):
-                return self.server.send_to_agent_sync(agent_id, message)
+                return bool(self.server.send_to_agent_sync(agent_id, message))
             return False
         except Exception as e:
             logger.warning(f"Failed to send message to {agent_id}: {e}")
@@ -298,12 +370,7 @@ class CommunicationManager:
         logger.info("🔄 Disabling real-time communication...")
         self.enabled = False
 
-        # Stop server if running
-        if self.server and self.server.is_running:
-            try:
-                asyncio.create_task(self.server.stop())
-                logger.info("🛑 WebSocket server stopped")
-            except Exception as e:
-                logger.warning(f"❌ Error stopping communication server: {e}")
+        # Stop server if this manager started it
+        self.shutdown()
 
         logger.info("📝 Real-time communication disabled - using stdin/stdout fallback")

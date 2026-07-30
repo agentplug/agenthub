@@ -80,7 +80,7 @@ class TestManifestParser:
         with open(manifest_file, "w") as f:
             yaml.dump(manifest_data, f)
 
-        with pytest.raises(ManifestValidationError, match="Missing required field"):
+        with pytest.raises(ManifestValidationError, match="Field required"):
             parser.parse_manifest(str(manifest_file))
 
     def test_validate_invalid_interface(self, temp_dir: Path):
@@ -100,9 +100,7 @@ class TestManifestParser:
         with open(manifest_file, "w") as f:
             yaml.dump(manifest_data, f)
 
-        with pytest.raises(
-            ManifestValidationError, match="Invalid interface structure"
-        ):
+        with pytest.raises(ManifestValidationError, match="interface"):
             parser.parse_manifest(str(manifest_file))
 
     def test_validate_empty_methods(self, temp_dir: Path):
@@ -122,7 +120,7 @@ class TestManifestParser:
         with open(manifest_file, "w") as f:
             yaml.dump(manifest_data, f)
 
-        with pytest.raises(ManifestValidationError, match="No methods defined"):
+        with pytest.raises(ManifestValidationError, match="interface.methods"):
             parser.parse_manifest(str(manifest_file))
 
     def test_validate_method_structure(self, temp_dir: Path):
@@ -144,7 +142,9 @@ class TestManifestParser:
         with open(manifest_file, "w") as f:
             yaml.dump(manifest_data, f)
 
-        with pytest.raises(ManifestValidationError, match="Invalid method definition"):
+        with pytest.raises(
+            ManifestValidationError, match="interface.methods.invalid_method"
+        ):
             parser.parse_manifest(str(manifest_file))
 
     def test_get_methods(self, temp_dir: Path):

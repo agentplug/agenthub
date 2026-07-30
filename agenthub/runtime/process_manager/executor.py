@@ -7,6 +7,8 @@ subprocesses or via dynamic in-process execution.
 
 import json
 import logging
+import os
+import signal
 import subprocess
 import time
 from pathlib import Path
@@ -152,30 +154,25 @@ class Executor:
             ExecutionResult: Execution result
         """
         start_time = time.time()
+        if self.dynamic_executor is None:
+            return ExecutionResult(success=False, error="Dynamic execution is disabled")
         try:
             result = self.dynamic_executor.execute_agent_method(
                 agent_path, method, parameters, manifest
             )
             execution_time = time.time() - start_time
 
-            if isinstance(result, dict):
-                # Check if result contains an error
-                if "error" in result:
-                    return ExecutionResult(
-                        success=False,
-                        error=result["error"],
-                        execution_time=execution_time,
-                    )
-                else:
-                    return ExecutionResult(
-                        success=True, data=result, execution_time=execution_time
-                    )
-            else:
+            # execute_agent_method always returns a dict with either a
+            # payload or an "error" key
+            if "error" in result:
                 return ExecutionResult(
                     success=False,
-                    error="Dynamic execution returned non-dictionary result",
+                    error=result["error"],
                     execution_time=execution_time,
                 )
+            return ExecutionResult(
+                success=True, data=result, execution_time=execution_time
+            )
         except Exception as e:
             execution_time = time.time() - start_time
             return ExecutionResult(
@@ -270,12 +267,21 @@ class Executor:
         """Execute subprocess without log streaming."""
         logger.info(f"Executing agent without log streaming: {agent_script.name}")
 
-        return subprocess.run(
+        process = subprocess.Popen(
             [python_executable, str(agent_script), json.dumps(execution_data)],
             cwd=str(agent_dir),
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=self.timeout,
+            start_new_session=True,
+        )
+        try:
+            stdout, stderr = process.communicate(timeout=self.timeout)
+        except subprocess.TimeoutExpired:
+            self._kill_process_tree(process)
+            raise
+        return subprocess.CompletedProcess(
+            process.args, process.returncode, stdout, stderr
         )
 
     def _execute_with_streaming(
@@ -289,7 +295,12 @@ class Executor:
         """Execute subprocess with real-time log streaming."""
         logger.info(f"Executing agent with log streaming: {agent_script.name}")
 
-        print(f"{python_executable} {str(agent_script)} {json.dumps(execution_data)}")
+        logger.debug(
+            "Agent command: %s %s %s",
+            python_executable,
+            agent_script,
+            json.dumps(execution_data),
+        )
         process = subprocess.Popen(
             [python_executable, str(agent_script), json.dumps(execution_data)],
             cwd=str(agent_dir),
@@ -297,29 +308,55 @@ class Executor:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,  # Line buffered
-            universal_newlines=True,
+            start_new_session=True,
         )
 
-        # Stream logs and collect output
-        stdout_lines, stderr_lines = log_streamer.stream_logs(process)
-
-        # Wait for process completion
+        # One deadline covers both streaming and process exit: streaming ends
+        # at pipe EOF, which normally coincides with the process exiting.
+        deadline = time.monotonic() + self.timeout
         try:
-            process.wait(timeout=self.timeout)
+            stdout_lines, stderr_lines = log_streamer.stream_logs(
+                process, timeout=self.timeout
+            )
+            process.wait(timeout=max(deadline - time.monotonic(), 1.0))
             stdout = "".join(stdout_lines)
             stderr = "".join(stderr_lines)
             return subprocess.CompletedProcess(
                 process.args, process.returncode, stdout, stderr
             )
         except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
+            self._kill_process_tree(process)
             return subprocess.CompletedProcess(
                 process.args,
                 -1,
                 "",
                 f"Process timed out after {self.timeout} seconds",
             )
+
+    def _kill_process_tree(self, process: subprocess.Popen) -> None:
+        """Kill the agent's process group and release its pipes.
+
+        Agents may spawn their own children; killing only the direct child
+        would leak them and let them hold the output pipes open. The process
+        was started with ``start_new_session=True``, so its pid is also its
+        process group id.
+        """
+        if os.name == "posix":
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+        # Reap the child and drain/close pipes so no reader stays blocked.
+        try:
+            process.communicate(timeout=5)
+        except (subprocess.TimeoutExpired, ValueError):
+            for stream in (process.stdout, process.stderr):
+                if stream is not None:
+                    stream.close()
 
     def _parse_result(
         self, result: subprocess.CompletedProcess, execution_time: float

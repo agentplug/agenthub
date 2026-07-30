@@ -1,5 +1,6 @@
 """Knowledge validation for agents."""
 
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,12 +15,21 @@ class ValidationResult:
 
 
 class KnowledgeValidator:
-    """Validates knowledge content for agents."""
+    """Validates knowledge content for agents.
 
-    def __init__(self) -> None:
+    Args:
+        strict: Treat suspicious content (eval/exec/import/URL patterns) as
+            a validation error instead of a warning. Defaults to the
+            ``AGENTHUB_KNOWLEDGE_STRICT=1`` environment variable.
+    """
+
+    def __init__(self, strict: bool | None = None) -> None:
         """Initialize knowledge validator."""
         self.max_knowledge_length = 10000  # 10KB limit
         self.min_knowledge_length = 10  # Minimum meaningful content
+        if strict is None:
+            strict = os.getenv("AGENTHUB_KNOWLEDGE_STRICT", "") == "1"
+        self.strict = strict
 
     def validate_knowledge(self, knowledge_text: str) -> ValidationResult:
         """Validate knowledge text."""
@@ -49,7 +59,11 @@ class KnowledgeValidator:
 
         # Check for potentially problematic content
         if self._contains_suspicious_content(knowledge_text):
-            warnings.append("Knowledge text contains potentially problematic content")
+            message = "Knowledge text contains potentially problematic content"
+            if self.strict:
+                errors.append(message)
+            else:
+                warnings.append(message)
 
         is_valid = len(errors) == 0
         return ValidationResult(is_valid=is_valid, errors=errors, warnings=warnings)

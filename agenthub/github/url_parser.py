@@ -160,3 +160,25 @@ class URLParser:
             "github_url": self.build_github_url(agent_name),
             "repository_name": f"{developer}/{agent}",
         }
+
+
+_REF_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+
+
+def parse_agent_spec(spec: str) -> tuple[str, str | None]:
+    """Split an agent spec into (agent_name, ref).
+
+    A spec is ``developer/agent-name`` optionally suffixed with ``@ref``
+    where ref is a commit SHA, tag, or branch: ``user/agent@a1b2c3d``.
+
+    Raises:
+        ValueError: If the ref portion is present but malformed.
+    """
+    if not isinstance(spec, str):
+        raise ValueError(f"Agent spec must be a string, got {type(spec).__name__}")
+    name, separator, ref = spec.partition("@")
+    if not separator:
+        return spec, None
+    if not ref or not _REF_PATTERN.match(ref):
+        raise ValueError(f"Invalid ref in agent spec: {spec!r}")
+    return name, ref

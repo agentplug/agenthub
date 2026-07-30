@@ -4,14 +4,19 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from ..tools.exceptions import AgentLoadError
 from .manifest import ManifestParser
 from .validator import InterfaceValidator
 
 logger = logging.getLogger(__name__)
 
 
-class AgentLoadError(Exception):
-    """Raised when agent loading fails."""
+class AgentNotFoundError(AgentLoadError):
+    """Raised when the requested agent is not installed locally.
+
+    Subclasses AgentLoadError so existing handlers keep working; the SDK
+    catches this specific type to trigger auto-installation.
+    """
 
     pass
 
@@ -107,7 +112,7 @@ class AgentLoader:
 
         # Check if agent exists
         if not self.storage.agent_exists(namespace, agent_name):
-            raise AgentLoadError(f"Agent not found: {namespace}/{agent_name}")
+            raise AgentNotFoundError(f"Agent not found: {namespace}/{agent_name}")
 
         # Get agent path
         agent_path = str(self.storage.get_agent_path(namespace, agent_name))
