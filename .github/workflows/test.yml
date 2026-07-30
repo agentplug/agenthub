@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -38,13 +38,16 @@ jobs:
         # never lower it to make a build pass.
         pytest tests/ -v --tb=short --cov=agenthub --cov-report=xml --cov-fail-under=35
 
+    # Coverage is ENFORCED by pytest's --cov-fail-under above. The Codecov
+    # upload is best-effort telemetry: tokenless uploads get rate-limited
+    # (429), and that infra flakiness must not fail the build.
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
-        fail_ci_if_error: true
+        fail_ci_if_error: false
 
   lint:
     runs-on: ubuntu-latest
