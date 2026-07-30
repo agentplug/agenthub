@@ -152,11 +152,13 @@ class RepositoryCloner:
         Returns:
             An error description, or None if the repository is valid.
         """
-        has_config = (local_path / "agent.yaml").exists() or (
-            local_path / "agent.yml"
-        ).exists()
-        if not has_config:
-            return "missing agent.yaml/agent.yml"
+        # Schema-validate the manifest: agent authors get a field-precise
+        # error at install time instead of a deep loader failure later.
+        from agenthub.core.agents.manifest import validate_manifest_dir
+
+        manifest_error = validate_manifest_dir(local_path)
+        if manifest_error:
+            return manifest_error
 
         has_script = (local_path / "agent.py").exists() or (
             local_path / "agent.na"

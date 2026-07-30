@@ -29,7 +29,11 @@ def agent_repo(tmp_path):
     subprocess.run(["git", "init", "-q", str(repo)], check=True)
     git(repo, "config", "user.email", "test@test.invalid")
     git(repo, "config", "user.name", "Test")
-    (repo / "agent.yaml").write_text("name: pinned-agent\nversion: 1.0.0\n")
+    (repo / "agent.yaml").write_text(
+        "name: pinned-agent\nversion: 1.0.0\n"
+        "description: Pinned test agent\nauthor: tests\n"
+        "interface:\n  methods:\n    ping:\n      description: Ping\n"
+    )
     (repo / "agent.py").write_text("VERSION = 1\n")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "v1")

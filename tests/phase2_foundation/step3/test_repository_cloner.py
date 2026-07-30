@@ -117,7 +117,11 @@ class TestCloneAgent:
 
         def clone(github_url, local_path):
             local_path.mkdir(parents=True, exist_ok=True)
-            (local_path / "agent.yaml").write_text("name: test\nversion: 1.0.0\n")
+            (local_path / "agent.yaml").write_text(
+                "name: test\nversion: 1.0.0\n"
+                "description: Test agent\nauthor: tests\n"
+                "interface:\n  methods:\n    run:\n      description: Run\n"
+            )
             (local_path / "agent.py").write_text("class Agent:\n    pass\n")
             return Mock(returncode=returncode, stderr=stderr)
 
