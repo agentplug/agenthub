@@ -2,7 +2,7 @@
 
 **AgentHub** is an "App Store for AI Agents" - a Python framework enabling developers to discover, install, and use AI agents with one line of code.
 
-**Status**: Production-ready. Core features complete through Phase 3.4 (Real-time Communication).
+**Status**: Alpha. Core features work through Phase 3.4 (Real-time Communication); see README badges for the honest state.
 
 ---
 
@@ -75,7 +75,7 @@ Confident? NO → Check codebase first, then search if needed
 - Search once, apply broadly
 - Check codebase first, search second
 
-**Tech context**: Python 3.11+, FastAPI, Pydantic v2, LlamaIndex, UV (NOT pip), MCP, WebSockets
+**Tech context**: Python 3.11+, Pydantic v2, LiteLLM, LlamaIndex (rag extra), UV (NOT pip), MCP, websockets
 
 ### **When to Plan vs. Proceed**
 
@@ -321,7 +321,7 @@ run_resources()  # Starts MCP server
 
 ## ⚙️ Technical Details
 
-**Dependencies**: UV (fast package manager), Click, Rich, Pydantic v2, MCP, FastAPI, WebSockets, LlamaIndex
+**Dependencies**: UV (fast package manager), Click, Rich, Pydantic v2, MCP, LiteLLM, websockets; LlamaIndex via the rag extra
 
 **Code Style**: Black (88 chars), Ruff, MyPy (strict), isort
 
