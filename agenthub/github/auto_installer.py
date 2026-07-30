@@ -20,7 +20,7 @@ except ImportError:
 
 from .repository_cloner import CloneResult, RepositoryCloner
 from .repository_validator import RepositoryValidator, ValidationResult
-from .url_parser import URLParser
+from .url_parser import URLParser, parse_agent_spec
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,9 @@ class AutoInstaller:
                 self.environment_setup = EnvironmentSetup()
                 logger.debug("Environment setup initialized successfully")
             except Exception as e:
-                logger.warning(f"Environment setup not available: {e}")
+                # Availability probe boundary: degrade, but keep the
+                # evidence (a bug here would otherwise hide forever).
+                logger.warning(f"Environment setup not available: {e}", exc_info=True)
                 self.environment_setup = None
                 self.setup_environment = False
         else:
@@ -111,8 +113,17 @@ class AutoInstaller:
 
         try:
             # Step 1: Validate agent name and construct GitHub URL
+            # (the URL never carries the optional @ref pin)
             logger.debug("Step 1: Validating agent name and constructing GitHub URL")
-            github_url = self.url_parser.build_github_url(agent_name)
+            try:
+                clean_name, _ref = parse_agent_spec(agent_name)
+            except ValueError as e:
+                return self._create_failure_result(
+                    agent_name,
+                    start_time,
+                    f"Invalid agent name format: {e}",
+                )
+            github_url = self.url_parser.build_github_url(clean_name)
             if not github_url:
                 return self._create_failure_result(
                     agent_name,

@@ -286,7 +286,7 @@ class CommunicationManager:
 
         try:
             if hasattr(self.server, "send_to_agent_sync"):
-                return self.server.send_to_agent_sync(agent_id, message)
+                return bool(self.server.send_to_agent_sync(agent_id, message))
             return False
         except Exception as e:
             logger.warning(f"Failed to send message to {agent_id}: {e}")

@@ -18,6 +18,17 @@ from agenthub.core.knowledge.validator import KnowledgeValidator
 from agenthub.github.repository_cloner import RepositoryCloner
 from agenthub.storage.local_storage import LocalStorage
 
+MINIMAL_MANIFEST = """\
+name: test-agent
+version: 1.0.0
+description: Test fixture agent
+author: tests
+interface:
+  methods:
+    ping:
+      description: Ping method
+"""
+
 AGENT_SCRIPT = """\
 class Agent:
     def ping(self):
@@ -29,7 +40,7 @@ def make_agent_dir(base, name="agent"):
     agent_dir = base / name
     agent_dir.mkdir(parents=True)
     (agent_dir / "agent.py").write_text(AGENT_SCRIPT)
-    (agent_dir / "agent.yaml").write_text("name: test\nversion: 1.0.0\n")
+    (agent_dir / "agent.yaml").write_text(MINIMAL_MANIFEST)
     return agent_dir
 
 
@@ -39,7 +50,7 @@ class TestDynamicExecutorHardening:
         outside.write_text(AGENT_SCRIPT)
         agent_dir = tmp_path / "agent"
         agent_dir.mkdir()
-        (agent_dir / "agent.yaml").write_text("name: t\n")
+        (agent_dir / "agent.yaml").write_text(MINIMAL_MANIFEST)
         os.symlink(outside, agent_dir / "agent.py")
 
         executor = DynamicAgentExecutor()
@@ -113,9 +124,20 @@ class TestPostCloneValidation:
     def test_missing_script_rejected(self, tmp_path):
         repo = tmp_path / "repo"
         repo.mkdir()
-        (repo / "agent.yaml").write_text("name: t\n")
+        (repo / "agent.yaml").write_text(MINIMAL_MANIFEST)
         error = self.make_cloner()._validate_cloned_repository(repo)
         assert error is not None and "agent.py" in error
+
+    def test_invalid_manifest_rejected_with_field_errors(self, tmp_path):
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "agent.py").write_text(AGENT_SCRIPT)
+        (repo / "agent.yaml").write_text("name: t\n")
+        error = self.make_cloner()._validate_cloned_repository(repo)
+        assert error is not None
+        # Install-time schema validation names the missing fields.
+        assert "version: Field required" in error
+        assert "interface: Field required" in error
 
     def test_escaping_symlink_rejected(self, tmp_path):
         repo = make_agent_dir(tmp_path, "repo")

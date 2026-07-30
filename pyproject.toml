@@ -51,23 +51,11 @@ dependencies = [
     "ddgs>=9.5.0",
     # AI/LLM
     "litellm>=1.60.0",
-    "openai>=1.50.0",
-    "anthropic>=0.45.0",
-    # Document processing
+    # Document processing (web_search PDF extraction)
     "pypdf>=4.0.0",
-    "python-docx>=1.1.0",
-    "openpyxl>=3.1.0",
-    "python-pptx>=0.6.0",
-    "markdown>=3.5.0",
     # Code analysis
     "docstring-parser>=0.16",
-    # Data processing
-    "pandas>=2.2.0",
-    "numpy>=1.26.0",
-    # Security & validation
-    "cryptography>=42.0.0",
     # Async & concurrency
-    "asyncio-throttle>=1.0.0",
     "psutil>=6.0.0",
     # Real-time communication (Phase 3.4)
     "websockets>=12.0",
@@ -187,21 +175,18 @@ ignore_missing_imports = true
 # Legacy modules exempted from type checking: a VISIBLE debt register.
 # `mypy agenthub/` must stay green - never add new modules here; remove
 # entries as their errors get fixed.
+
+# Legacy modules exempted from type checking: a VISIBLE debt register.
+# `mypy agenthub/` must stay green - never add new modules here; remove
+# entries as their errors get fixed.
+# Remaining debt (measured 2026-07-30): rag 21, communication 24, mcp 15.
 [[tool.mypy.overrides]]
 module = [
     "agenthub.builtin.tools.rag.*",
-    "agenthub.config",
-    "agenthub.core.agents.execution",
-    "agenthub.core.agents.lifecycle",
-    "agenthub.core.agents.models",
-    "agenthub.core.agents.orchestration",
-    "agenthub.core.communication.*",
+    "agenthub.core.communication.protocol",
+    "agenthub.core.communication.router",
+    "agenthub.core.communication.server",
     "agenthub.core.mcp.*",
-    "agenthub.core.tools.mcp_server",
-    "agenthub.core.tools.registry",
-    "agenthub.runtime.process_manager.communication",
-    "agenthub.runtime.process_manager.executor",
-    "agenthub.runtime.process_manager.log_streaming",
 ]
 ignore_errors = true
 

@@ -4,7 +4,7 @@ import warnings
 from typing import Any
 
 from ..core.agents import AgentLoader, AgentWrapper
-from ..core.agents.loader import AgentLoadError
+from ..core.agents.loader import AgentLoadError, AgentNotFoundError
 from ..core.tools import get_tool_registry
 from ..core.tools.exceptions import ValidationError
 
@@ -64,24 +64,27 @@ def load_agent(
             stacklevel=2,
         )
 
-    # Try to load agent definition from YAML first
+    # A spec may pin a ref ("user/agent@sha"); local lookups use the clean
+    # name, installation receives the full spec
+    from ..github.url_parser import parse_agent_spec
+
+    clean_name, _ref = parse_agent_spec(base_agent)
+
+    # Try to load agent definition from YAML first; a missing agent (typed,
+    # not string-matched) triggers auto-installation
     try:
-        agent_info = _load_agent_from_yaml(base_agent)
-    except AgentLoadError as e:
-        # If agent not found, try to auto-install it
-        if "not found" in str(e).lower():
-            print(
-                f"🤖 Agent '{base_agent}' not found locally. "
-                f"Attempting to auto-install..."
-            )
-            try:
-                agent_info = _auto_install_agent(base_agent)
-            except Exception as install_error:
-                raise AgentLoadError(
-                    f"Failed to auto-install agent '{base_agent}': {install_error}"
-                ) from install_error
-        else:
-            raise e
+        agent_info = _load_agent_from_yaml(clean_name)
+    except AgentNotFoundError:
+        print(
+            f"🤖 Agent '{base_agent}' not found locally. "
+            f"Attempting to auto-install..."
+        )
+        try:
+            agent_info = _auto_install_agent(base_agent)
+        except Exception as install_error:
+            raise AgentLoadError(
+                f"Failed to auto-install agent '{base_agent}': {install_error}"
+            ) from install_error
 
     try:
         # Create agent instance
@@ -141,8 +144,12 @@ def _auto_install_agent(agent_name: str) -> dict[str, Any]:
     print(f"✅ Successfully installed agent '{agent_name}'!")
     print(f"📁 Location: {result.local_path}")
 
-    # Load the newly installed agent
-    return _load_agent_from_yaml(agent_name)
+    # Load the newly installed agent (lookup by clean name; the spec may
+    # have carried an @ref pin)
+    from ..github.url_parser import parse_agent_spec
+
+    clean_name, _ref = parse_agent_spec(agent_name)
+    return _load_agent_from_yaml(clean_name)
 
 
 def _create_agent_instance(

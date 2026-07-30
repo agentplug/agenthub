@@ -39,6 +39,13 @@ contains, loaded from where it claims to be:
   module shadowing of the host process).
 - **No shell interpolation**: git operations run with argument lists, never
   `shell=True`.
+- **Install provenance**: every install records the resolved commit SHA,
+  source URL, and timestamp in `.agenthub-install.json` inside the agent
+  directory — the auditable identity of the code that runs.
+- **Pinned installs**: `agenthub install developer/agent@<sha|tag|branch>`
+  (and `ah.load_agent("developer/agent@...")`) checks out exactly that ref
+  before validation; an unresolvable ref fails the install and removes the
+  clone.
 
 ## Knowledge content strictness
 
@@ -50,8 +57,9 @@ validation error.
 
 - Sandboxing agent code (containers, seccomp, capability restriction).
   Planned as a separate project phase; contributions welcome.
-- Verifying repository *contents* beyond structure (no signature or
-  checksum scheme yet).
+- Verifying repository *contents* beyond structure: installs are
+  SHA-recorded and pinnable (see above), but there is no signature
+  scheme yet.
 
 ## Reporting a vulnerability
 
