@@ -5,19 +5,27 @@ registration, storage, and metadata. It delegates MCP server management
 and access control to specialized modules.
 """
 
+# Deferred annotation evaluation is required here: FastMCP may be None
+# (import fallback below), and evaluated `FastMCP | None` annotations
+# would raise TypeError at import time.
+from __future__ import annotations
+
 import logging
 import threading
 from collections.abc import Callable
 from typing import Any
 
-# Try to import FastMCP, fallback to MCPServer if not available
+# FastMCP moved between mcp releases; try both locations, then chuk_mcp.
 try:
-    from mcp.server import FastMCP
+    from mcp.server.fastmcp import FastMCP
 except ImportError:
     try:
-        from chuk_mcp.server import MCPServer as FastMCP
+        from mcp.server import FastMCP  # type: ignore[attr-defined,no-redef]
     except ImportError:
-        FastMCP = None  # type: ignore[assignment]
+        try:
+            from chuk_mcp.server import MCPServer as FastMCP  # type: ignore
+        except ImportError:
+            FastMCP = None  # type: ignore[assignment,misc]
 
 from .exceptions import (
     ToolExecutionError,
@@ -45,10 +53,10 @@ class ToolRegistry:
     specialized components (MCPServerManager and ToolAccessManager).
     """
 
-    _instance: "ToolRegistry | None" = None
+    _instance: ToolRegistry | None = None
     _lock = threading.Lock()
 
-    def __new__(cls) -> "ToolRegistry":
+    def __new__(cls) -> ToolRegistry:
         """Singleton pattern - ensure only one registry instance."""
         if cls._instance is None:
             with cls._lock:
