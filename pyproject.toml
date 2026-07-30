@@ -87,7 +87,9 @@ dev = [
     "pytest-asyncio>=1.2.0",
     "pytest-mock>=3.14.0",
     "pytest-timeout>=2.1.0",
-    "black>=25.1.0",
+    # black majors change formatting style; keep in lockstep with the
+    # pre-commit hook rev (currently 25.x) so CI and hooks agree
+    "black>=25.1.0,<26",
     "mypy>=1.17.1",
     "ruff>=0.12.9",
     "pre-commit>=4.3.0",
