@@ -139,6 +139,22 @@ class LocalStorage:
         Returns:
             True if the directory contains required agent files
         """
+        # Reject agent directories that are symlinks escaping the storage
+        # root: discovery must only surface agents that actually live in
+        # the store.
+        try:
+            base = self._base_dir.resolve()
+            resolved = agent_path.resolve()
+            if agent_path.is_symlink() and base not in resolved.parents:
+                logger.warning(
+                    f"Ignoring agent directory symlinked outside storage: "
+                    f"{agent_path} -> {resolved}"
+                )
+                return False
+        except OSError as e:
+            logger.debug(f"Could not resolve {agent_path}: {e}")
+            return False
+
         # Check for agent config file (agent.yaml or agent.yml)
         agent_yaml_exists = (agent_path / "agent.yaml").exists()
         agent_yml_exists = (agent_path / "agent.yml").exists()

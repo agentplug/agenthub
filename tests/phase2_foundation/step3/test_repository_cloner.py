@@ -111,12 +111,24 @@ class TestCloneAgent:
         with pytest.raises(GitNotAvailableError, match="Git is not available"):
             self.cloner.clone_agent("user/agent")
 
+    @staticmethod
+    def _fake_clone(returncode=0, stderr=""):
+        """Simulate git clone by materializing a valid agent repository."""
+
+        def clone(github_url, local_path):
+            local_path.mkdir(parents=True, exist_ok=True)
+            (local_path / "agent.yaml").write_text("name: test\nversion: 1.0.0\n")
+            (local_path / "agent.py").write_text("class Agent:\n    pass\n")
+            return Mock(returncode=returncode, stderr=stderr)
+
+        return clone
+
     @patch.object(RepositoryCloner, "_check_git_available")
     @patch.object(RepositoryCloner, "_execute_git_clone")
     def test_clone_agent_success(self, mock_git_clone, mock_git_check):
         """Test successful agent cloning."""
         mock_git_check.return_value = True
-        mock_git_clone.return_value = Mock(returncode=0, stderr="")
+        mock_git_clone.side_effect = self._fake_clone()
 
         result = self.cloner.clone_agent("user/agent")
 
@@ -158,13 +170,32 @@ class TestCloneAgent:
     def test_clone_agent_with_custom_path(self, mock_git_clone, mock_git_check):
         """Test clone_agent with custom target path."""
         mock_git_check.return_value = True
-        mock_git_clone.return_value = Mock(returncode=0, stderr="")
+        mock_git_clone.side_effect = self._fake_clone()
 
         custom_path = str(Path(self.temp_dir) / "custom_location")
         result = self.cloner.clone_agent("user/agent", target_path=custom_path)
 
         assert result.success is True
         assert result.local_path == custom_path
+
+    @patch.object(RepositoryCloner, "_check_git_available")
+    @patch.object(RepositoryCloner, "_execute_git_clone")
+    def test_clone_agent_invalid_structure_removed(
+        self, mock_git_clone, mock_git_check
+    ):
+        """A clone without required agent files is rejected and deleted."""
+        mock_git_check.return_value = True
+
+        def clone_empty(github_url, local_path):
+            local_path.mkdir(parents=True, exist_ok=True)
+            (local_path / "README.md").write_text("not an agent")
+            return Mock(returncode=0, stderr="")
+
+        mock_git_clone.side_effect = clone_empty
+
+        with pytest.raises(CloneError, match="failed validation"):
+            self.cloner.clone_agent("user/agent")
+        assert not (Path(self.temp_dir) / "user" / "agent").exists()
 
 
 class TestAgentManagement:
