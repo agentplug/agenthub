@@ -45,8 +45,12 @@ def make_manager(server: FakeServer) -> CommunicationManager:
     return manager
 
 
-def server_threads() -> list[threading.Thread]:
-    return [t for t in threading.enumerate() if t.name == SERVER_THREAD_NAME]
+def server_threads() -> set[threading.Thread]:
+    """Live server threads. Other suites may leak the singleton server's
+    thread (they never call close()), so tests must assert relative to a
+    baseline captured before they start their own server — never on the
+    global set being empty."""
+    return {t for t in threading.enumerate() if t.name == SERVER_THREAD_NAME}
 
 
 class TestStartServer:
@@ -83,14 +87,16 @@ class TestShutdown:
     def test_shutdown_stops_server_and_joins_thread(self):
         server = FakeServer()
         manager = make_manager(server)
+        baseline = server_threads()
         assert manager.start_server_if_needed() is True
-        assert len(server_threads()) == 1
+        started = server_threads() - baseline
+        assert len(started) == 1
 
         manager.shutdown()
 
         assert server.stop_calls == 1
         assert not server.is_running
-        assert server_threads() == []
+        assert not any(thread.is_alive() for thread in started)
         assert manager._server_thread is None
         assert manager._server_loop is None
 
@@ -111,13 +117,15 @@ class TestShutdown:
     def test_disable_stops_running_server(self):
         server = FakeServer()
         manager = make_manager(server)
+        baseline = server_threads()
         manager.start_server_if_needed()
+        started = server_threads() - baseline
 
         manager.disable()
 
         assert not manager.enabled
         assert server.stop_calls == 1
-        assert server_threads() == []
+        assert not any(thread.is_alive() for thread in started)
 
     def test_no_thread_leak_across_cycles(self):
         baseline = threading.active_count()
@@ -139,13 +147,15 @@ class TestProcessManagerLifecycle:
         manager = ProcessManager(realtime_communication=False)
         server = FakeServer()
         manager.communication_manager = make_manager(server)
+        baseline = server_threads()
         manager.communication_manager.start_server_if_needed()
-        assert len(server_threads()) == 1
+        started = server_threads() - baseline
+        assert len(started) == 1
 
         manager.close()
 
         assert server.stop_calls == 1
-        assert server_threads() == []
+        assert not any(thread.is_alive() for thread in started)
 
     def test_close_is_idempotent(self):
         manager = ProcessManager(realtime_communication=False)
