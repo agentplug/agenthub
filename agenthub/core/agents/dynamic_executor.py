@@ -3,10 +3,31 @@
 import importlib.util
 import inspect
 import logging
+import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _agent_import_path(agent_dir: str) -> Iterator[None]:
+    """Temporarily put the agent's directory on sys.path.
+
+    Agents import sibling modules both at load time and lazily inside
+    method bodies, so this wraps every agent code entry point; the path
+    never outlives the call (no permanent shadowing of host modules).
+    """
+    added = agent_dir not in sys.path
+    if added:
+        sys.path.insert(0, agent_dir)
+    try:
+        yield
+    finally:
+        if added and agent_dir in sys.path:
+            sys.path.remove(agent_dir)
 
 
 class DynamicExecutionError(Exception):
@@ -81,8 +102,11 @@ class DynamicAgentExecutor:
                 method, parameters, manifest, method_name
             )
 
-            # Execute method
-            result = method(**mapped_parameters)
+            # Execute method with the agent's directory importable:
+            # agents commonly defer sibling imports into method bodies
+            agent_dir = str(self._get_agent_script(agent_path).parent)
+            with _agent_import_path(agent_dir):
+                result = method(**mapped_parameters)
 
             return {"result": result}
 
@@ -183,15 +207,6 @@ class DynamicAgentExecutor:
             )
 
         try:
-            # Load module dynamically with safe resolution for intra-module imports
-            # Ensure the agent's own directory is prioritized on sys.path
-            import sys
-
-            agent_dir = str(agent_script.parent)
-            path_added = agent_dir not in sys.path
-            if path_added:
-                sys.path.insert(0, agent_dir)
-
             # Use the script's stem as the module name (e.g., "research_agent")
             # so that "from research_agent import ..." inside the script resolves
             module_name = agent_script.stem
@@ -208,14 +223,8 @@ class DynamicAgentExecutor:
                 )
 
             module = importlib.util.module_from_spec(spec)
-            try:
+            with _agent_import_path(str(agent_script.parent)):
                 spec.loader.exec_module(module)
-            finally:
-                # The path entry exists only for the agent's own imports
-                # during load; never leave it on sys.path where it could
-                # shadow modules for the whole host process.
-                if path_added and agent_dir in sys.path:
-                    sys.path.remove(agent_dir)
 
             # Find agent class (look for classes that don't start with underscore)
             agent_class = None

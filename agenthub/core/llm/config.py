@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 DEFAULT_CLOUD_MODELS: dict[str, tuple[str, ...]] = {
     "openai": ("gpt-5", "gpt-5-mini", "gpt-4.1-mini"),
     "anthropic": ("claude-sonnet-4-6", "claude-haiku-4-5"),
-    "google": ("gemini-2.5-pro", "gemini-2.5-flash"),
+    "gemini": ("gemini-2.5-pro", "gemini-2.5-flash"),
     "deepseek": ("deepseek-chat", "deepseek-reasoner"),
     "groq": ("llama-3.3-70b-versatile", "llama-3.1-8b-instant"),
     "mistral": ("mistral-large-latest", "mistral-small-latest"),
