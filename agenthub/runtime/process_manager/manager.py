@@ -73,6 +73,22 @@ class ProcessManager:
 
         logger.info("✅ ProcessManager initialized with modular architecture")
 
+    def close(self) -> None:
+        """Release resources: stop the communication server and its thread.
+
+        Safe to call multiple times. The underlying CommunicationServer also
+        registers an atexit hook as a last resort, but callers that create
+        many ProcessManagers (or tests) should close explicitly or use the
+        context-manager form.
+        """
+        self.communication_manager.shutdown()
+
+    def __enter__(self) -> "ProcessManager":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
+
     def execute_agent(
         self,
         agent_path: str,

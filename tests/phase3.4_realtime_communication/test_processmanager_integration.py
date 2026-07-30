@@ -80,11 +80,14 @@ class TestProcessManagerIntegration:
 
             manager = ProcessManager(realtime_communication=True)
 
-            with patch("asyncio.create_task") as mock_task:
-                manager.set_realtime_communication(False)
+            manager.set_realtime_communication(False)
 
-                assert manager.realtime_communication is False
-                mock_task.assert_called_once()
+            assert manager.realtime_communication is False
+            assert manager.communication_server is None
+            assert manager.communication_manager.enabled is False
+            # The server was not started by this manager (no owned loop),
+            # so disable must not attempt to stop it.
+            mock_server.stop.assert_not_called()
 
     def test_get_communication_status_disabled(self):
         """Test getting communication status when disabled."""
