@@ -19,12 +19,8 @@ class KnowledgeManagerProtocol(Protocol):
         """Get injected knowledge."""
         ...
 
-    def get_knowledge_metadata(self) -> dict[str, Any]:
-        """Get knowledge metadata."""
-        ...
-
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata (alias for get_knowledge_metadata)."""
+        """Get knowledge metadata."""
         ...
 
     def is_knowledge_available(self) -> bool:

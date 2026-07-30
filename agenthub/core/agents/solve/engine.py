@@ -96,7 +96,10 @@ class SolveEngine:
             return None
 
         except Exception as e:
-            logger.debug(f"Could not load custom solve agent: {e}")
+            # Optional-feature boundary: absence is normal (most agents have
+            # no custom solve), but an exception during loading is evidence
+            # of a broken agent and must be visible.
+            logger.warning(f"Custom solve agent failed to load: {e}", exc_info=True)
             return None
 
     def _load_agent_module(self) -> Any:
