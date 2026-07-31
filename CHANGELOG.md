@@ -7,10 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-07-31
+
+Hardening arc: typed errors completed, composition converged, A2A
+ambition amputated, architecture documented. Suite fully green
+(723 passed, 49% coverage); mypy exemptions down to one.
+
+Note: typed `AgentSolveError` was documented in 0.1.5's changelog but
+the code landed after the tag — it ships in this release, reconciling
+the notes with reality.
+
 ### Added
+- `ARCHITECTURE.md`: the pipeline, the four product contracts, the LLM
+  layer, and the error model on one page, with file:line anchors
+- Decision records in `docs/adr/` (0001 composition execution model,
+  0002 communication transport, 0003 typed error taxonomy, 0004 LLM
+  provider layer, 0005 manifest schema v1) and a dated debt burn-down
+  schedule in CONTRIBUTING.md
 - Characterization test suite pinning the solve/executor/wrapper/AgentInfo
   contracts (including subprocess-isolated pins that `import agenthub`
-  leaves global logging state untouched)
+  leaves global logging state untouched), an end-to-end solve-contract
+  suite, and a real MCP composition round trip (in-memory client↔server,
+  zero network, zero mocks)
 - Schema-aware file-path resolution: parameters declared `type: file`
   (or `path`/`file_path`/`filepath`) in agent.yaml are resolved against
   the agent directory then cwd
@@ -23,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LLM selection responses are parsed with the shared structured extractor
   (`core.llm.structured`) — prose/fence-wrapped JSON now parses instead of
   failing as "no selection"
+- External tool execution converged on one in-process path and one
+  assignment store (ADR 0001); `AgentToolManager.execute_tool` keeps its
+  access check and now works
 - Library code no longer prints auto-install progress; it logs at INFO and
   the CLI configures logging. SDK users opt in via `agenthub.setup_logging()`
 - `import agenthub` no longer disables third-party loggers; the MCP/HTTP
@@ -30,31 +51,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `list_python_versions` returns `[]` when discovery fails instead of a
   fabricated `["3.12", "3.11", ...]` list (the CLI already renders the
   empty case honestly)
-- Coverage ratchet raised 35% → 45% (measured actual: 47%)
+- Coverage ratchet raised 35% → 45% (measured actual: 49%)
+- mypy exemption register: 5 entries → 1 (`rag.*` remains; `core.mcp.*`
+  and all three `communication.*` removed and their errors fixed)
+- pre-commit mypy environment declares `websockets>=12`, matching
+  pyproject (it previously resolved an older layout and disagreed with dev)
 
 ### Deprecated
 - The legacy string file-path heuristic for parameters with no declared
-  type (fires with a DeprecationWarning for one release; declare
-  `type: file` to keep resolution)
+  type (fires with a DeprecationWarning; declare `type: file` to keep
+  resolution) — **flips in 0.2.0**
 - Positional arguments to methods with no declared interface (raw `args`
-  tuple pass-through warns; becomes an AgentExecutionError next release)
+  tuple pass-through warns; becomes an AgentExecutionError) — **flips in 0.2.0**
+- `solve()` error dicts under `raise_errors=False` (DeprecationWarning;
+  catching `AgentSolveError` becomes the only behavior) — **flips in 0.2.0**
 
 ### Removed
 - **Breaking:** the phase-3.4 A2A protocol is gone —
   `core/communication/protocol.py` (agent cards, task/status/result
   messages), the router's `agent_message`/`agent_request`/
   `agent_response` wire types, and the capability registry. Agent-to-
-  agent messaging had no consumers; composition is MCP tools. Decision
-  recorded in `docs/adr/0002-communication-transport.md`; the monitoring
-  WebSocket path (logs, progress, user input) is unchanged and no longer
-  mypy-exempt
+  agent messaging had no consumers; composition is MCP tools (ADR 0002);
+  the monitoring WebSocket path is unchanged
 - **Breaking:** `MCPClient`, `MCPConnectionPool`, `AsyncToolExecutor`,
   and `ToolInjector` are gone from `agenthub.core` / `agenthub.core.mcp`.
   They served a never-functional execution path (per-call stdio
   subprocess with a fresh empty registry that could not see `@tool`
-  registrations) and had no production callers — removed per the
-  never-functional precedent, recorded in
-  `docs/adr/0001-composition-execution-model.md`
+  registrations) and had no production callers (ADR 0001)
 - External tool assignment now has a single store (the registry's access
   manager); `AgentToolManager.agent_tools` no longer exists
 - Unused `Result[T]` monad (`core/common/`), never-instantiated
@@ -67,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AgentWrapper` facade: eleven copied AgentInfo fields became read-only
   property delegations (no drift), and the wrapper→executor tool-context
   JSON serialize→deserialize round-trip is gone
+- `add_external_tools` replaced the assignment store while extending the
+  local list, so the two disagreed; now union semantics in both
 - The autouse WebSocket cleanup fixture nulled the singleton before trying
   to stop it, so no server was ever stopped; order fixed, cleanup errors
   logged instead of swallowed
