@@ -40,7 +40,7 @@ class KnowledgeStorage:
             logger.debug(f"Stored knowledge with ID: {knowledge_id}")
             return knowledge_id
 
-        except Exception as e:
+        except (OSError, TypeError, ValueError) as e:
             logger.error(f"Failed to store knowledge: {e}")
             raise
 
@@ -55,7 +55,7 @@ class KnowledgeStorage:
             with open(knowledge_file, encoding="utf-8") as f:
                 data = json.load(f)
                 return data if isinstance(data, dict) else None
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to retrieve knowledge {knowledge_id}: {e}")
             return None
 
@@ -74,7 +74,7 @@ class KnowledgeStorage:
                             "file": str(knowledge_file),
                         }
                     )
-            except Exception as e:
+            except (OSError, json.JSONDecodeError) as e:
                 logger.warning(f"Failed to read knowledge file {knowledge_file}: {e}")
 
         return knowledge_list
@@ -90,7 +90,7 @@ class KnowledgeStorage:
             knowledge_file.unlink()
             logger.debug(f"Deleted knowledge with ID: {knowledge_id}")
             return True
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Failed to delete knowledge {knowledge_id}: {e}")
             return False
 
@@ -102,7 +102,7 @@ class KnowledgeStorage:
             try:
                 knowledge_file.unlink()
                 deleted_count += 1
-            except Exception as e:
+            except OSError as e:
                 logger.warning(f"Failed to delete knowledge file {knowledge_file}: {e}")
 
         logger.info(f"Cleared {deleted_count} knowledge entries")

@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from ..tools.exceptions import AgentLoadError
 from .manifest import ManifestParser
 from .validator import InterfaceValidator
@@ -225,11 +227,9 @@ class AgentLoader:
             return None
 
         try:
-            import yaml
-
             with open(config_path) as f:
                 return yaml.safe_load(f)  # type: ignore[no-any-return]
-        except Exception as e:
+        except (yaml.YAMLError, OSError) as e:
             logger.warning(f"Failed to parse agent config: {e}")
             return None
 
@@ -292,6 +292,11 @@ class AgentLoader:
             }
 
         except Exception as e:
+            # Boundary returning a degraded info dict; keep broad, log trace.
+            logger.error(
+                f"Failed to read agent info for {namespace}/{agent_name}: {e}",
+                exc_info=True,
+            )
             return {
                 "name": agent_name,
                 "namespace": namespace,

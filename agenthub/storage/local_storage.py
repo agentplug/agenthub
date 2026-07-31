@@ -3,6 +3,8 @@
 import logging
 from pathlib import Path
 
+import yaml
+
 logger = logging.getLogger(__name__)
 
 
@@ -170,8 +172,6 @@ class LocalStorage:
 
         # Check agent configuration to determine script file requirement
         try:
-            import yaml
-
             with open(config_path) as f:
                 agent_config = yaml.safe_load(f)
 
@@ -189,7 +189,7 @@ class LocalStorage:
                         f"Missing required file agent.py (Python agent) in {agent_path}"
                     )
                     return False
-        except Exception as e:
+        except (yaml.YAMLError, OSError) as e:
             logger.debug(f"Error reading agent config from {config_path}: {e}")
             # Default to requiring agent.py if config can't be read
             if not (agent_path / "agent.py").exists():
@@ -219,13 +219,15 @@ class LocalStorage:
             return None
 
         try:
-            import yaml
-
             with open(manifest_path) as f:
                 manifest = yaml.safe_load(f)
-                version = manifest.get("version")
-                return str(version) if version is not None else None
-        except Exception as e:
+            # An empty or non-mapping manifest has no version; handle it
+            # explicitly instead of letting .get() raise AttributeError.
+            if not isinstance(manifest, dict):
+                return None
+            version = manifest.get("version")
+            return str(version) if version is not None else None
+        except (yaml.YAMLError, OSError) as e:
             logger.debug(f"Error reading version from {manifest_path}: {e}")
             return None
 
