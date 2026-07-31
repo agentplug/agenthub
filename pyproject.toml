@@ -174,11 +174,11 @@ strict_equality = true
 # Legacy modules exempted from type checking: a VISIBLE debt register.
 # `mypy agenthub/` must stay green - never add new modules here; remove
 # entries as their errors get fixed.
-# Remaining debt (measured 2026-07-31): rag 21, mcp 15.
+# Remaining debt (measured 2026-07-31): rag 27 (mostly the untyped
+# llama_index dependency and Any-returns through it).
 [[tool.mypy.overrides]]
 module = [
     "agenthub.builtin.tools.rag.*",
-    "agenthub.core.mcp.*",
 ]
 ignore_errors = true
 

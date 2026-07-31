@@ -56,6 +56,28 @@ these rules:
 The ~190 remaining blanket handlers predate this policy and are being
 narrowed subsystem by subsystem; do not add new ones.
 
+## Debt burn-down schedule
+
+Debt is registered with dates and paid on a schedule, not swept when
+someone feels energetic. The register lives in three places: blanket
+handlers (below), mypy exemptions (`pyproject.toml`), and the coverage
+ratchet (`.github/workflows/test.yml`). All three are ratchets: the
+numbers may only shrink.
+
+| Item | Measured | Target | Release |
+|---|---|---|---|
+| `core.mcp.*` mypy exemption (15 errors) | 2026-07-31 | removed | 0.1.6 (done) |
+| `communication.*` mypy exemptions (24 errors) | 2026-07-31 | removed | 0.1.6 (done) |
+| Coverage floor 35% | 2026-07-30 | 45% | 0.1.6 (done) |
+| `rag.*` mypy exemption (27 errors, untyped `llama_index`) | 2026-07-31 | register empty: typed facade or per-line ignores | 0.1.7 |
+| Blanket `except Exception` handlers | ~190 (2026-07-30) | ≤120, sweeping `github/` + `environment/` first | 0.1.8 |
+| Legacy-dict `solve()` shim, file-path heuristic, raw positional-args pass-through | — | flipped/removed as promised | 0.2.0 |
+| Blanket handlers | ~190 | ≤60 | 0.2.0 |
+| phase2.5 mock-wiring tests | 277 tests | converted to behavioral or retired on touch | continuous |
+
+Rules: never add new exemptions, never lower the coverage floor, never
+add new blanket handlers. A missed target moves the date, never the goal.
+
 ## Tests
 
 - Unit tests must be hermetic: no network, no live LLMs, no wall-clock
