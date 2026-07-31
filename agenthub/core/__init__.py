@@ -38,10 +38,6 @@ from .llm import CoreLLMService
 # Import from mcp package
 from .mcp import (
     AgentToolManager,
-    MCPClient,
-    ToolInjector,
-    get_mcp_client,
-    get_tool_injector,
     get_tool_manager,
 )
 
@@ -106,11 +102,7 @@ __all__ = [
     "run_resources",
     # MCP components (new)
     "AgentToolManager",
-    "MCPClient",
-    "ToolInjector",
     "get_tool_manager",
-    "get_mcp_client",
-    "get_tool_injector",
     # LLM components (new)
     "CoreLLMService",
     # Unified exceptions

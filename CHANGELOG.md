@@ -40,6 +40,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tuple pass-through warns; becomes an AgentExecutionError next release)
 
 ### Removed
+- **Breaking:** `MCPClient`, `MCPConnectionPool`, `AsyncToolExecutor`,
+  and `ToolInjector` are gone from `agenthub.core` / `agenthub.core.mcp`.
+  They served a never-functional execution path (per-call stdio
+  subprocess with a fresh empty registry that could not see `@tool`
+  registrations) and had no production callers — removed per the
+  never-functional precedent, recorded in
+  `docs/adr/0001-composition-execution-model.md`
+- External tool assignment now has a single store (the registry's access
+  manager); `AgentToolManager.agent_tools` no longer exists
 - Unused `Result[T]` monad (`core/common/`), never-instantiated
   `SolveResult`, unreachable `{"query": args[0]}` parameter-guess
   fallbacks, and the dead `solve` branch in `AgentWrapper.__getattr__`

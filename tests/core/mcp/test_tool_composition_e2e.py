@@ -6,10 +6,10 @@ runs the real FastMCP server in-process over memory streams: zero network,
 zero subprocess, zero mocked tool logic. The only stub is SSE metadata
 discovery, disabled so the test never probes localhost:8000.
 
-Deliberately not covered: AgentToolManager.execute_tool's stdio-subprocess
-path, which builds a fresh empty registry in the child process and cannot
-see @tool functions (known defect; see ARCHITECTURE.md "Known
-limitations").
+Deliberately not covered: AgentToolManager.execute_tool's former
+stdio-subprocess path, which built a fresh empty registry in the child
+process and could never see @tool functions. It was removed in the
+composition convergence; see docs/adr/0001-composition-execution-model.md.
 """
 
 import pytest
