@@ -7,10 +7,8 @@ and parameter extraction using a combined LLM approach for optimal performance.
 
 from .engine import SolveEngine
 from .framework_handler import FrameworkSolveHandler
-from .result import SolveResult
 
 __all__ = [
     "FrameworkSolveHandler",
     "SolveEngine",
-    "SolveResult",
 ]
