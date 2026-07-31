@@ -79,7 +79,7 @@ Functions become tools via `@tool` (agenthub/core/tools/decorator.py:8),
 which registers them in the process-wide `ToolRegistry`
 (agenthub/core/tools/registry.py:43) and onto the FastMCP server served
 by `run_resources()` (registry.py:496). `AgentToolManager`
-(agenthub/core/mcp/agent_tool_manager.py:50) computes what an agent may
+(agenthub/core/mcp/agent_tool_manager.py:36) computes what an agent may
 use (enabled built-ins + assigned external tools); the registry's access
 manager is the single assignment store. External tools execute in-process
 via the registry — see
@@ -136,7 +136,7 @@ e.g. `execution_time`, `raw_response`). The main subtrees are `AgentError`
 | `agenthub/core/agents/solve/` | LLM method selection | `engine.py:14`, `framework_handler.py:16` |
 | `agenthub/core/llm/` | Provider-generalized LLM layer | `service.py:30`, `base.py:63`, `errors.py:13` |
 | `agenthub/core/tools/` | `@tool`, registry, FastMCP server | `decorator.py:8`, `registry.py:43` |
-| `agenthub/core/mcp/` | Agent-side tool access/execution | `agent_tool_manager.py:50` |
+| `agenthub/core/mcp/` | Agent-side tool access/execution | `agent_tool_manager.py:36` |
 | `agenthub/core/knowledge/` | Knowledge injection/storage | `manager.py:12` |
 | `agenthub/core/interfaces/` | `typing.Protocol` seams (cycle-breaking) | `agent_interfaces.py` |
 | `agenthub/core/communication/` | Monitoring/user-interaction WebSocket transport (no agent-to-agent; ADR 0002) | `server.py`, `router.py` |

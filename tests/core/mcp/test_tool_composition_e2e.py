@@ -16,6 +16,7 @@ import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 
 from agenthub.core.mcp.agent_tool_manager import AgentToolManager
+from agenthub.core.tools import ToolAccessDeniedError
 from agenthub.core.tools.decorator import tool
 from agenthub.core.tools.registry import ToolRegistry
 
@@ -70,6 +71,13 @@ async def test_tool_composition_round_trip_over_mcp(clean_registry):
         "hello agent-1"
     )
 
+    # Agent-facing execution leg: AgentToolManager.execute_tool routes an
+    # external @tool through the shared registry (the path that used to
+    # spawn a subprocess with an empty registry; see ADR 0001).
+    assert (
+        await manager.execute_tool("agent-1", "greet_e2e", {"name": "agent-1"})
+    ) == "hello agent-1"
+
     # MCP protocol leg: visibility and execution through a real
     # client<->server session
     server = clean_registry.mcp_manager.get_server()
@@ -78,3 +86,19 @@ async def test_tool_composition_round_trip_over_mcp(clean_registry):
         assert "greet_e2e" in {t.name for t in listed.tools}
         result = await session.call_tool("greet_e2e", {"name": "agent-1"})
         assert result.content[0].text == "hello agent-1"
+
+
+@pytest.mark.integration
+async def test_execute_tool_denies_unassigned_agent(clean_registry):
+    """The access check gates execute_tool: an agent that was never
+    assigned the tool is refused before any registry lookup."""
+
+    @tool(name="secret_e2e", description="Restricted tool")
+    def secret() -> str:
+        return "classified"
+
+    manager = AgentToolManager()
+    manager.assign_tools_to_agent("agent-1", ["secret_e2e"])
+
+    with pytest.raises(ToolAccessDeniedError):
+        await manager.execute_tool("agent-2", "secret_e2e", {})
