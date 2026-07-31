@@ -17,7 +17,6 @@ async def test_router_initialization():
     router = MessageRouter()
 
     assert router.pending_requests == {}
-    assert router.agent_registry == {}
     assert len(router.message_handlers) > 0
 
 
@@ -37,53 +36,14 @@ async def test_router_start_stop():
 
 
 @pytest.mark.asyncio
-async def test_router_agent_registry():
-    """Test agent registration and discovery."""
-    router = MessageRouter()
-
-    # Register agent
-    agent_metadata = {
-        "agent_id": "test-agent",
-        "name": "Test Agent",
-        "capabilities": ["search", "analyze"],
-    }
-    router.register_agent("test-agent", agent_metadata)
-
-    # Verify registration
-    assert "test-agent" in router.agent_registry
-    assert router.agent_registry["test-agent"]["name"] == "Test Agent"
-
-    # Discover all agents
-    agents = router.discover_agents()
-    assert len(agents) == 1
-    assert agents[0]["agent_id"] == "test-agent"
-
-    # Discover by capability
-    search_agents = router.discover_agents(capability="search")
-    assert len(search_agents) == 1
-
-    analyze_agents = router.discover_agents(capability="analyze")
-    assert len(analyze_agents) == 1
-
-    other_agents = router.discover_agents(capability="other")
-    assert len(other_agents) == 0
-
-    # Unregister agent
-    router.unregister_agent("test-agent")
-    assert "test-agent" not in router.agent_registry
-
-
-@pytest.mark.asyncio
 async def test_router_stats():
     """Test router statistics."""
     router = MessageRouter()
 
     stats = router.get_stats()
     assert "pending_requests" in stats
-    assert "registered_agents" in stats
     assert "active_handlers" in stats
     assert stats["pending_requests"] == 0
-    assert stats["registered_agents"] == 0
 
 
 @pytest.mark.asyncio
@@ -91,9 +51,6 @@ async def test_message_type_enum():
     """Test MessageType enum values."""
     assert MessageType.USER_INPUT_REQUEST.value == "user_input_request"
     assert MessageType.USER_INPUT_RESPONSE.value == "user_input_response"
-    assert MessageType.AGENT_MESSAGE.value == "agent_message"
-    assert MessageType.AGENT_REQUEST.value == "agent_request"
-    assert MessageType.AGENT_RESPONSE.value == "agent_response"
     assert MessageType.SYSTEM_STATUS.value == "system_status"
     assert MessageType.ERROR.value == "error"
 

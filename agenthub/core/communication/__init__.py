@@ -1,13 +1,17 @@
-"""Core communication module for real-time agent interaction.
+"""Core communication module for real-time user-agent interaction.
 
-This module provides WebSocket-based real-time communication infrastructure
-for user-agent and agent-agent interactions.
+This module provides WebSocket-based real-time infrastructure for
+monitoring and user interaction: streaming agent logs/progress to
+clients and routing user-input requests to connected users.
+
+Agent-to-agent messaging (the phase-3.4 A2A protocol) was removed:
+AgentHub's composition story is MCP tools. See
+docs/adr/0002-communication-transport.md.
 
 Components:
 - CommunicationServer: Single shared WebSocket server
-- MessageRouter: Routes messages between users, agents, and services
+- MessageRouter: Routes session/user-input/status messages
 - SessionManager: Manages active agent execution sessions
-- A2AMessageAdapter: A2A-compatible message format adapter
 
 Usage:
     from agenthub.core.communication import get_communication_server
@@ -19,15 +23,6 @@ Usage:
     success = await server.start()
 """
 
-from .protocol import (
-    A2AAgentCard,
-    A2AMessageAdapter,
-    A2AMessageType,
-    A2AResultMessage,
-    A2AStatusMessage,
-    A2ATaskMessage,
-    A2ATaskStatus,
-)
 from .router import MessageRouter, MessageType
 from .server import CommunicationServer, get_communication_server
 from .session import SessionManager
@@ -41,12 +36,4 @@ __all__ = [
     "MessageType",
     # Session
     "SessionManager",
-    # Protocol
-    "A2AMessageAdapter",
-    "A2AAgentCard",
-    "A2ATaskMessage",
-    "A2AStatusMessage",
-    "A2AResultMessage",
-    "A2AMessageType",
-    "A2ATaskStatus",
 ]

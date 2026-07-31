@@ -139,6 +139,8 @@ e.g. `execution_time`, `raw_response`). The main subtrees are `AgentError`
 | `agenthub/core/mcp/` | Agent-side tool access/execution | `agent_tool_manager.py:50` |
 | `agenthub/core/knowledge/` | Knowledge injection/storage | `manager.py:12` |
 | `agenthub/core/interfaces/` | `typing.Protocol` seams (cycle-breaking) | `agent_interfaces.py` |
+| `agenthub/core/communication/` | Monitoring/user-interaction WebSocket transport (no agent-to-agent; ADR 0002) | `server.py`, `router.py` |
+| `agenthub/monitoring/` | Log streaming, metrics, terminal display | `log_streamer.py` |
 | `agenthub/runtime/` | Subprocess execution, process lifecycle | `agent_runtime.py:16` |
 | `agenthub/github/` | Clone, validate, auto-install, provenance | `auto_installer.py:101` |
 | `agenthub/environment/` | Per-agent venv setup/maintenance | `environment_setup.py:99` |
@@ -160,5 +162,7 @@ e.g. `execution_time`, `raw_response`). The main subtrees are `AgentError`
 
 ## Out of scope here
 
-RAG tool internals, the realtime WebSocket/A2A communication subsystem,
-and the CLI command surface (see [README](README.md)).
+RAG tool internals, the monitoring WebSocket transport (see
+[ADR 0002](docs/adr/0002-communication-transport.md) — agent-to-agent
+messaging was removed, not documented), and the CLI command surface (see
+[README](README.md)).
