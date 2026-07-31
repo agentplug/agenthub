@@ -42,8 +42,9 @@ class MethodExecutor:
             # Map parameters if needed
             mapped_params = self._map_parameters(method, parameters)
 
-            # Prepare tool context
-            tool_context = self.agent_wrapper.get_tool_context_json()
+            # Prepare tool context (the wrapper builds the dict once; the
+            # runtime serializes it for transport)
+            tool_context = self.agent_wrapper.get_tool_context()
 
             # Resolve file paths in parameters
             resolved_params = self._resolve_file_paths(mapped_params)
@@ -58,11 +59,7 @@ class MethodExecutor:
                     agent_name=self.agent_wrapper.name,
                     method=method,
                     parameters=resolved_params,
-                    tool_context=(
-                        json.loads(tool_context)
-                        if isinstance(tool_context, str)
-                        else tool_context
-                    ),
+                    tool_context=tool_context,
                 )
                 return result
             else:

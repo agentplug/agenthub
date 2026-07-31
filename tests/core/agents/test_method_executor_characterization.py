@@ -30,7 +30,7 @@ def make_wrapper(methods=None, method_info=None, runtime=None, agent_path=""):
     )
     wrapper.agent_info.path = agent_path
     wrapper.runtime = runtime
-    wrapper.get_tool_context_json.return_value = "{}"
+    wrapper.get_tool_context.return_value = {}
     return wrapper
 
 
@@ -158,12 +158,13 @@ class TestFilePathHeuristic:
 
 
 class TestExecutionContract:
-    def test_tool_context_deserialized_before_reaching_runtime(self):
-        """Pins the JSON round-trip: wrapper returns a JSON string, the
-        runtime receives the parsed dict."""
+    def test_tool_context_passed_to_runtime_as_dict(self):
+        """The wrapper builds the tool-context document once; the runtime
+        receives the dict. (Pinned as a JSON-string round-trip until Phase 2
+        removed the serialize→deserialize hop between wrapper and executor.)"""
         runtime = make_runtime()
         wrapper = make_wrapper(runtime=runtime)
-        wrapper.get_tool_context_json.return_value = '{"available_tools": ["t1"]}'
+        wrapper.get_tool_context.return_value = {"available_tools": ["t1"]}
         executor = MethodExecutor(wrapper)
         executor.execute("summarize", {})
         tool_context = runtime.execute_agent.call_args.kwargs["tool_context"]

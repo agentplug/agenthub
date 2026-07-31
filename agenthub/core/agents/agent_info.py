@@ -1,12 +1,16 @@
 """Agent information and metadata management."""
 
-from dataclasses import dataclass
 from typing import Any
 
 
-@dataclass
 class AgentInfo:
-    """Encapsulates agent information and metadata."""
+    """Encapsulates agent information and metadata.
+
+    Plain class constructed from the raw info dict; the annotations below
+    declare the attribute types. (Previously decorated @dataclass with a
+    manual __init__ that bypassed the generated one — the decorator was
+    vestigial and is gone.)
+    """
 
     # Core properties
     name: str
