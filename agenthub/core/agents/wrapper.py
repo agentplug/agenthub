@@ -126,7 +126,14 @@ class AgentWrapper:
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return {"error": str(e)}
+            # Rebuild the legacy dict: the plain message (suggestions render
+            # only in str(e) for typed-path users) plus execution_time when
+            # the raise site provided it — the same keys the engine used to
+            # fabricate.
+            legacy: dict[str, Any] = {"error": e.args[0] if e.args else str(e)}
+            if "execution_time" in e.context:
+                legacy["execution_time"] = e.context["execution_time"]
+            return legacy
 
     def execute(self, method: str, parameters: dict[str, Any] | None = None) -> Any:
         """Delegate to method executor."""
