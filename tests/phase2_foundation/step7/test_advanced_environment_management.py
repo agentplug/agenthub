@@ -536,8 +536,16 @@ numpy>=1.21.0
 
         assert total_saved >= 0  # Should save space
 
-        # Test dependency analysis
-        for agent in agents:
-            dep_result = manager.analyze_dependencies(agent)
-            assert dep_result["success"] is True
-            assert dep_result["total_packages"] >= 2  # requests + pandas
+        # Test dependency analysis. The installed-package probe is stubbed:
+        # the fake .venv has no real site-packages, so the probe's result
+        # depends on the host machine's uv/environment — this test used to
+        # pass or fail depending on where it ran.
+        with patch.object(
+            manager.env_setup,
+            "_get_installed_packages",
+            return_value=["requests", "pandas", "numpy"],
+        ):
+            for agent in agents:
+                dep_result = manager.analyze_dependencies(agent)
+                assert dep_result["success"] is True
+                assert dep_result["total_packages"] >= 2  # requests + pandas

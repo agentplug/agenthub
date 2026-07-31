@@ -1,6 +1,7 @@
 """Advanced environment management for Python version migration and optimization."""
 
 import json
+import logging
 import shutil
 import subprocess
 import time
@@ -9,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from agenthub.environment.environment_setup import EnvironmentSetup
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -392,8 +395,10 @@ class AdvancedEnvironmentManager:
                 if result.returncode != 0 and "vulnerability" in result.stdout.lower():
                     conflicts.append("Security vulnerabilities found")
                     recommendations.append("Update vulnerable packages")
-            except Exception:
-                pass  # pip-audit not available
+            except Exception as e:
+                # Optional enrichment: audit data is nice-to-have, but the
+                # failure must be visible when debugging, not silent
+                logger.debug(f"Skipping vulnerability audit for {agent_name}: {e}")
 
             # Check for outdated packages
             try:
@@ -412,8 +417,8 @@ class AdvancedEnvironmentManager:
                         recommendations.append(
                             f"Update {outdated_count} outdated packages"
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Skipping outdated-package check for {agent_name}: {e}")
 
             return {
                 "success": True,
@@ -432,28 +437,35 @@ class AdvancedEnvironmentManager:
             }
 
     def list_python_versions(self) -> list[str]:
-        """List available Python versions for migration."""
+        """List available Python versions for migration.
+
+        Returns an empty list when discovery fails — never a fabricated
+        version set. The CLI renders the empty case as "No Python versions
+        found".
+        """
         try:
             result = subprocess.run(
                 ["uv", "python", "list"], capture_output=True, text=True, timeout=10
             )
-            if result.returncode == 0:
-                versions = []
-                for line in result.stdout.strip().split("\n"):
-                    line = line.strip()
-                    if line and not line.startswith(" ") and line.startswith("3."):
-                        # Extract major.minor version (e.g., "3.11" from "3.11.0")
-                        version_parts = line.split(".")
-                        if len(version_parts) >= 2:
-                            short_version = f"{version_parts[0]}.{version_parts[1]}"
-                            if short_version not in versions:
-                                versions.append(short_version)
-                return versions
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Could not discover Python versions via uv: {e}")
+            return []
 
-        # Fallback versions
-        return ["3.12", "3.11", "3.10", "3.9", "3.8"]
+        if result.returncode != 0:
+            logger.warning(f"'uv python list' failed: {result.stderr.strip()}")
+            return []
+
+        versions = []
+        for line in result.stdout.strip().split("\n"):
+            line = line.strip()
+            if line and not line.startswith(" ") and line.startswith("3."):
+                # Extract major.minor version (e.g., "3.11" from "3.11.0")
+                version_parts = line.split(".")
+                if len(version_parts) >= 2:
+                    short_version = f"{version_parts[0]}.{version_parts[1]}"
+                    if short_version not in versions:
+                        versions.append(short_version)
+        return versions
 
     def _get_agent_path(self, agent_name: str) -> Path:
         """Get the full path for an agent."""

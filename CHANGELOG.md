@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Characterization test suite pinning the solve/executor/wrapper/AgentInfo
+  contracts (including subprocess-isolated pins that `import agenthub`
+  leaves global logging state untouched)
+- Schema-aware file-path resolution: parameters declared `type: file`
+  (or `path`/`file_path`/`filepath`) in agent.yaml are resolved against
+  the agent directory then cwd
+
+### Changed
+- FrameworkSolveHandler raises typed `AgentSolveError` (with suggestions
+  and `execution_time` context) instead of fabricating `{"error": ...}`
+  dicts; the default `raise_errors=False` shim reproduces the legacy dicts
+  byte-for-byte for one release
+- LLM selection responses are parsed with the shared structured extractor
+  (`core.llm.structured`) — prose/fence-wrapped JSON now parses instead of
+  failing as "no selection"
+- Library code no longer prints auto-install progress; it logs at INFO and
+  the CLI configures logging. SDK users opt in via `agenthub.setup_logging()`
+- `import agenthub` no longer disables third-party loggers; the MCP/HTTP
+  suppression moved into `setup_logging()`, which the CLI always calls
+- `list_python_versions` returns `[]` when discovery fails instead of a
+  fabricated `["3.12", "3.11", ...]` list (the CLI already renders the
+  empty case honestly)
+- Coverage ratchet raised 35% → 45% (measured actual: 47%)
+
+### Deprecated
+- The legacy string file-path heuristic for parameters with no declared
+  type (fires with a DeprecationWarning for one release; declare
+  `type: file` to keep resolution)
+- Positional arguments to methods with no declared interface (raw `args`
+  tuple pass-through warns; becomes an AgentExecutionError next release)
+
+### Removed
+- Unused `Result[T]` monad (`core/common/`), never-instantiated
+  `SolveResult`, unreachable `{"query": args[0]}` parameter-guess
+  fallbacks, and the dead `solve` branch in `AgentWrapper.__getattr__`
+- Contract-less legacy tests (`test_project_structure.py` file-existence
+  asserts); empty `tests/integration/` directory
+
+### Fixed
+- `AgentWrapper` facade: eleven copied AgentInfo fields became read-only
+  property delegations (no drift), and the wrapper→executor tool-context
+  JSON serialize→deserialize round-trip is gone
+- The autouse WebSocket cleanup fixture nulled the singleton before trying
+  to stop it, so no server was ever stopped; order fixed, cleanup errors
+  logged instead of swallowed
+- `test_enterprise_cleanup_workflow` no longer depends on the host
+  machine's environment (installed-package probe stubbed)
+
 ## [0.1.5] - 2026-07-30
 
 Consolidation release: the full engineering-hardening arc.
