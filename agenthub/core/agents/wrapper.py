@@ -1,12 +1,14 @@
 """Simplified agent wrapper - orchestration layer only."""
 
 import logging
+import warnings
 from typing import Any
 
 from ..interfaces import (
     KnowledgeManagerProtocol,
     ToolManagerProtocol,
 )
+from ..tools.exceptions import AgentSolveError
 from .agent_info import AgentInfo
 from .method_executor import MethodExecutor
 from .solve import SolveEngine
@@ -93,10 +95,38 @@ class AgentWrapper:
 
     # Core delegation methods
     def solve(
-        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+        self,
+        query: str,
+        context: dict[str, Any] | None = None,
+        *,
+        raise_errors: bool = False,
+        **kwargs: Any,
     ) -> Any:
-        """Delegate to solve engine."""
-        return self.solve_engine.solve(query, context, **kwargs)
+        """Solve a natural-language query via LLM method selection.
+
+        Args:
+            query: Natural-language goal.
+            context: Optional context information.
+            raise_errors: When True, failures raise
+                :class:`~agenthub.core.tools.exceptions.AgentSolveError`.
+                The False default preserves the legacy
+                ``{"error": ...}`` dict for one release and emits a
+                DeprecationWarning on failure; raising becomes the only
+                behavior in the next minor release.
+        """
+        try:
+            return self.solve_engine.solve(query, context, **kwargs)
+        except AgentSolveError as e:
+            if raise_errors:
+                raise
+            warnings.warn(
+                "solve() returning error dicts is deprecated; pass "
+                "raise_errors=True and catch AgentSolveError (this becomes "
+                "the default in the next minor release)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return {"error": str(e)}
 
     def execute(self, method: str, parameters: dict[str, Any] | None = None) -> Any:
         """Delegate to method executor."""
