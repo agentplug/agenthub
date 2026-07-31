@@ -105,9 +105,12 @@ class LoggingManager:
         # Configure specific loggers
         self._configure_library_loggers()
 
-        # Suppress MCP HTTP logs if in quiet mode
-        if self.settings.quiet_mode:
-            suppress_mcp_http_logs()
+        # MCP/HTTP chatter is suppressed whenever AgentHub configures
+        # logging — not only in quiet mode. This used to happen at package
+        # import time; doing it here keeps `import agenthub` side-effect
+        # free while preserving the quiet-by-default behavior for anyone
+        # who opts into AgentHub's logging setup (the CLI always does).
+        suppress_mcp_http_logs()
 
         self._setup_done = True
 
