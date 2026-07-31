@@ -63,20 +63,6 @@ def sample_tools(tool_registry):
 
 
 @pytest.fixture
-def mock_mcp_client():
-    """Provide a mock MCP client."""
-    mock_client = MagicMock()
-    mock_client.is_connected = True
-    mock_client.connect = MagicMock(return_value=asyncio.coroutine(lambda: None)())
-    mock_client.disconnect = MagicMock(return_value=asyncio.coroutine(lambda: None)())
-    mock_client.list_tools = MagicMock(return_value=asyncio.coroutine(lambda: [])())
-    mock_client.call_tool = MagicMock(
-        return_value=asyncio.coroutine(lambda: "result")()
-    )
-    return mock_client
-
-
-@pytest.fixture
 def mock_agent_loader():
     """Provide a mock agent loader."""
     mock_loader = MagicMock()
