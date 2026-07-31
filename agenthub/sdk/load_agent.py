@@ -1,5 +1,6 @@
 """Enhanced load_agent function with Phase 3 features."""
 
+import logging
 import warnings
 from typing import Any
 
@@ -7,6 +8,8 @@ from ..core.agents import AgentLoader, AgentWrapper
 from ..core.agents.loader import AgentLoadError, AgentNotFoundError
 from ..core.tools import get_tool_registry
 from ..core.tools.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def load_agent(
@@ -75,7 +78,7 @@ def load_agent(
     try:
         agent_info = _load_agent_from_yaml(clean_name)
     except AgentNotFoundError:
-        print(
+        logger.info(
             f"🤖 Agent '{base_agent}' not found locally. "
             f"Attempting to auto-install..."
         )
@@ -141,8 +144,8 @@ def _auto_install_agent(agent_name: str) -> dict[str, Any]:
             f"Failed to auto-install agent '{agent_name}': {result.error_message}"
         )
 
-    print(f"✅ Successfully installed agent '{agent_name}'!")
-    print(f"📁 Location: {result.local_path}")
+    logger.info(f"✅ Successfully installed agent '{agent_name}'!")
+    logger.info(f"📁 Location: {result.local_path}")
 
     # Load the newly installed agent (lookup by clean name; the spec may
     # have carried an @ref pin)
