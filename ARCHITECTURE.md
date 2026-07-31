@@ -80,7 +80,11 @@ which registers them in the process-wide `ToolRegistry`
 (agenthub/core/tools/registry.py:43) and onto the FastMCP server served
 by `run_resources()` (registry.py:496). `AgentToolManager`
 (agenthub/core/mcp/agent_tool_manager.py:50) computes what an agent may
-use (enabled built-ins + assigned external tools). Knowledge text
+use (enabled built-ins + assigned external tools); the registry's access
+manager is the single assignment store. External tools execute in-process
+via the registry — see
+[ADR 0001](docs/adr/0001-composition-execution-model.md) for why the
+never-functional stdio-subprocess path was removed. Knowledge text
 injected via `wrapper.inject_knowledge()` flows into the solve context.
 `solve()` itself is a single LLM call that sees method names,
 descriptions, and parameter schemas — which is why the manifest's typed
@@ -143,13 +147,6 @@ e.g. `execution_time`, `raw_response`). The main subtrees are `AgentError`
 
 ## Known limitations (honest list)
 
-- `AgentToolManager.execute_tool` for external tools spawns a stdio
-  subprocess that builds a fresh, empty `ToolRegistry`; tools registered
-  in-process via `@tool` are invisible on that path. The working
-  composition legs today are in-process execution
-  (`ToolRegistry.execute_tool`, registry.py:303) and the MCP protocol
-  against the running server. Tracked as a defect; do not build on the
-  stdio path.
 - A few exception types predate the taxonomy and inherit plain
   `Exception` (`InterfaceValidationError` in validator.py, `CloneError`
   in github/, `EnvironmentSetupError` in environment/); they are caught

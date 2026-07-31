@@ -196,8 +196,9 @@ class AgentWrapper:
     def assign_tools(self, tool_names: list[str]) -> None:
         """Assign tools to agent."""
         if self.tool_registry:
-            self.tool_registry.assign_tools_to_agent(self.agent_id, tool_names)
-            # Also update the tool manager
+            # The manager validates against built-in conflicts and writes
+            # the registry's single assignment store (previously two stores
+            # were written and could disagree)
             self.tool_manager.assign_tools_to_agent(self.agent_id, tool_names)
             self.assigned_tools = tool_names.copy()
         else:
@@ -296,10 +297,13 @@ class AgentWrapper:
     def add_external_tools(self, tool_names: list[str]) -> None:
         """Add external tools to agent."""
         if self.tool_registry:
-            self.tool_registry.assign_tools_to_agent(self.agent_id, tool_names)
-            # Also update the tool manager
-            self.tool_manager.assign_tools_to_agent(self.agent_id, tool_names)
-            self.assigned_tools.extend(tool_names)
+            # Union semantics: previously the store was REPLACED with just
+            # the new names while assigned_tools grew, so the two disagreed
+            combined = self.assigned_tools + [
+                name for name in tool_names if name not in self.assigned_tools
+            ]
+            self.tool_manager.assign_tools_to_agent(self.agent_id, combined)
+            self.assigned_tools = combined
         else:
             raise RuntimeError("No tool registry available for tool assignment")
 

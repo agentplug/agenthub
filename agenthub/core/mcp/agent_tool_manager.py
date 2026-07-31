@@ -3,28 +3,14 @@
 This module provides the AgentToolManager class that handles:
 - Built-in tool management from agent.yaml
 - External tool assignment and access control
-- Tool execution through MCP client
+- Tool execution (in-process via the shared ToolRegistry)
 - Tool discovery and validation
 """
 
-import asyncio
 import json
 import logging
 from dataclasses import dataclass
 from typing import Any
-
-# Try to import MCP components
-try:
-    from mcp.client.session import ClientSession
-    from mcp.client.stdio import StdioServerParameters, stdio_client
-except ImportError:
-    try:
-        from chuk_mcp.client.session import ClientSession
-        from chuk_mcp.client.stdio import StdioServerParameters, stdio_client
-    except ImportError:
-        ClientSession = None  # type: ignore[assignment]
-        StdioServerParameters = None  # type: ignore[assignment]
-        stdio_client = None  # type: ignore[assignment]
 
 from agenthub.core.tools import (
     ToolAccessDeniedError,
@@ -53,11 +39,6 @@ class AgentToolManager:
     def __init__(self, agent_manifest: dict[str, Any] | None = None):
         """Initialize the unified agent tool manager."""
         self.tool_registry = get_tool_registry()
-        self.agent_tools: dict[str, set[str]] = (
-            {}
-        )  # agent_id -> set of external tool names
-        self.client: ClientSession | None = None
-        self._client_lock = asyncio.Lock()
 
         # Built-in tool management
         self.builtin_tools: dict[str, BuiltinToolInfo] = {}
@@ -199,25 +180,6 @@ class AgentToolManager:
         # Use type() instead of isinstance for better type checking
         return type(value) is expected_python_type
 
-    async def _ensure_client(self) -> ClientSession:
-        """Ensure MCP client is connected."""
-        async with self._client_lock:
-            if self.client is None:
-                # Create MCP client connection to our FastMCP server
-                server_params = StdioServerParameters(
-                    command="python",
-                    args=[
-                        "-c",
-                        "from agenthub.core.tools import get_mcp_server; "
-                        "import asyncio; asyncio.run(get_mcp_server().run_stdio())",
-                    ],
-                )
-
-                stdio_transport = stdio_client(server_params)
-                self.client = await stdio_transport.__aenter__()
-
-            return self.client
-
     def assign_tools_to_agent(self, agent_id: str, tool_names: list[str]) -> list[str]:
         """Assign external tools to a specific agent.
 
@@ -249,8 +211,9 @@ class AgentToolManager:
                 raise ToolNotFoundError(f"Tool '{tool_name}' not found in registry")
             assigned_tools.append(tool_name)
 
-        # Store assigned tools for this agent
-        self.agent_tools[agent_id] = set(assigned_tools)
+        # The registry's access manager is the single assignment store
+        # (previously mirrored here in a second dict that could drift)
+        self.tool_registry.assign_tools_to_agent(agent_id, assigned_tools)
 
         return assigned_tools
 
@@ -263,7 +226,7 @@ class AgentToolManager:
         Returns:
             List of external tool names assigned to the agent
         """
-        return list(self.agent_tools.get(agent_id, set()))
+        return self.tool_registry.access_manager.get_agent_tools(agent_id)
 
     def get_all_available_tools(self, agent_id: str) -> list[str]:
         """Get all available tools for an agent (built-in + external).
@@ -293,7 +256,7 @@ class AgentToolManager:
             return True
 
         # Check external tools
-        return tool_name in self.agent_tools.get(agent_id, set())
+        return self.tool_registry.access_manager.can_access(agent_id, tool_name)
 
     async def execute_tool(
         self, agent_id: str, tool_name: str, arguments: dict[str, Any]
@@ -342,28 +305,17 @@ class AgentToolManager:
                 }
             )
 
-        # Handle external tools through MCP
+        # Handle external tools in-process via the shared registry. (This
+        # path used to spawn a stdio MCP subprocess whose fresh, empty
+        # registry could never see @tool registrations — it was removed;
+        # see docs/adr/0001-composition-execution-model.md.)
         available_tools = self.tool_registry.get_available_tools()
         if tool_name not in available_tools:
             raise ToolNotFoundError(f"Tool '{tool_name}' not found in registry")
 
         try:
-            # Get MCP client and execute tool
-            client = await self._ensure_client()
-
-            # Call tool through MCP
-            result = await client.call_tool(tool_name, arguments)
-
-            # Convert result to JSON string
-            if result and hasattr(result, "content") and len(result.content) > 0:
-                return (
-                    result.content[0].text
-                    if hasattr(result.content[0], "text")
-                    else str(result.content[0])
-                )
-            else:
-                return json.dumps({"error": "No result returned from tool"})
-
+            result = self.tool_registry.execute_tool(tool_name, arguments)
+            return result if isinstance(result, str) else json.dumps(result)
         except Exception as e:
             return json.dumps(
                 {
@@ -382,8 +334,8 @@ class AgentToolManager:
         Returns:
             True if agent had tools assigned, False otherwise
         """
-        if agent_id in self.agent_tools:
-            del self.agent_tools[agent_id]
+        if self.tool_registry.access_manager.get_agent_tools(agent_id):
+            self.tool_registry.access_manager.clear_agent_tools(agent_id)
             return True
         return False
 
@@ -393,7 +345,7 @@ class AgentToolManager:
         Returns:
             Dictionary mapping agent_id to list of assigned external tool names
         """
-        return {agent_id: list(tools) for agent_id, tools in self.agent_tools.items()}
+        return dict(self.tool_registry.access_manager.agent_tool_access)
 
     def get_tool_summary(self, agent_id: str) -> dict[str, Any]:
         """Get comprehensive tool summary for an agent.
@@ -428,15 +380,6 @@ class AgentToolManager:
             },
             "all_available": self.get_all_available_tools(agent_id),
         }
-
-    async def close(self) -> None:
-        """Close the MCP client connection."""
-        if self.client:
-            if hasattr(self.client, "close"):
-                await self.client.close()
-            elif hasattr(self.client, "aclose"):
-                await self.client.aclose()
-            self.client = None
 
 
 # Global instance

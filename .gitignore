@@ -71,7 +71,8 @@ temp/
 test_agent_repo/
 sample_docs/
 agentplug/
-docs/
+docs/*
+!docs/adr/
 test_websocket/
 conversation.md
 brainstorming.md

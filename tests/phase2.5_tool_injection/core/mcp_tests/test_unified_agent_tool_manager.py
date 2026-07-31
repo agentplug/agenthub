@@ -6,6 +6,25 @@ import pytest
 
 from agenthub.core.mcp.agent_tool_manager import AgentToolManager
 from agenthub.core.tools.exceptions import ToolConflictError, ToolNotFoundError
+from agenthub.core.tools.tool_access import ToolAccessManager
+
+
+def make_registry(available):
+    """Mock registry whose assignment store behaves like the real one.
+
+    AgentToolManager delegates assignment storage to the registry's
+    access manager (single store); a bare MagicMock swallows those calls,
+    so these tests wire a real ToolAccessManager behind the mock.
+    """
+    registry = MagicMock()
+    registry.get_available_tools.return_value = available
+    registry.access_manager = ToolAccessManager()
+    registry.assign_tools_to_agent.side_effect = (
+        lambda agent_id, names: registry.access_manager.assign_tools(
+            agent_id, names, available
+        )
+    )
+    return registry
 
 
 class TestUnifiedAgentToolManager:
@@ -177,15 +196,17 @@ class TestUnifiedAgentToolManager:
         """Test assigning external tools to agent."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2", "tool3"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2", "tool3"])
         tool_manager.tool_registry = mock_registry
 
         # Assign tools
         assigned = tool_manager.assign_tools_to_agent("agent1", ["tool1", "tool2"])
         assert assigned == ["tool1", "tool2"]
-        assert tool_manager.agent_tools["agent1"] == {"tool1", "tool2"}
+        assert set(mock_registry.access_manager.get_agent_tools("agent1")) == {
+            "tool1",
+            "tool2",
+        }
 
     def test_assign_tools_to_agent_conflict_with_builtin(self):
         """Test that external tools cannot conflict with built-in tools."""
@@ -204,9 +225,8 @@ class TestUnifiedAgentToolManager:
         """Test assigning non-existent external tools."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2"])
         tool_manager.tool_registry = mock_registry
 
         # Try to assign non-existent tool
@@ -217,9 +237,8 @@ class TestUnifiedAgentToolManager:
         """Test getting tools assigned to an agent."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2"])
         tool_manager.tool_registry = mock_registry
 
         # Assign tools
@@ -237,9 +256,8 @@ class TestUnifiedAgentToolManager:
         """Test getting all available tools for an agent."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2"])
         tool_manager.tool_registry = mock_registry
 
         # Assign external tools
@@ -258,9 +276,8 @@ class TestUnifiedAgentToolManager:
         """Test checking if agent has access to a tool."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1"])
         tool_manager.tool_registry = mock_registry
 
         # Assign external tools
@@ -279,9 +296,8 @@ class TestUnifiedAgentToolManager:
         """Test getting comprehensive tool summary."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2"])
         tool_manager.tool_registry = mock_registry
 
         # Assign external tools
@@ -319,19 +335,18 @@ class TestUnifiedAgentToolManager:
         """Test removing all tools from an agent."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2"])
         tool_manager.tool_registry = mock_registry
 
         # Assign tools
         tool_manager.assign_tools_to_agent("agent1", ["tool1", "tool2"])
-        assert "agent1" in tool_manager.agent_tools
+        assert mock_registry.access_manager.get_agent_tools("agent1")
 
         # Remove tools
         result = tool_manager.remove_agent_tools("agent1")
         assert result is True
-        assert "agent1" not in tool_manager.agent_tools
+        assert not mock_registry.access_manager.get_agent_tools("agent1")
 
         # Remove from non-existent agent
         result = tool_manager.remove_agent_tools("nonexistent_agent")
@@ -341,9 +356,8 @@ class TestUnifiedAgentToolManager:
         """Test getting all agent tool assignments."""
         tool_manager = AgentToolManager(self.manifest)
 
-        # Mock tool registry
-        mock_registry = MagicMock()
-        mock_registry.get_available_tools.return_value = ["tool1", "tool2", "tool3"]
+        # Mock tool registry with a real assignment store
+        mock_registry = make_registry(["tool1", "tool2", "tool3"])
         tool_manager.tool_registry = mock_registry
 
         # Assign tools to multiple agents
