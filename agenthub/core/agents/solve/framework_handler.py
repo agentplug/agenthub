@@ -26,16 +26,30 @@ class FrameworkSolveHandler:
         self.llm_service = llm_service
 
     def solve(
-        self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
+        self,
+        query: str,
+        context: dict[str, Any] | None = None,
+        *,
+        fallback_first_method: bool = False,
+        **kwargs: Any,
     ) -> Any:
         """Execute framework-level solve using LLM method selection.
 
+        Args:
+            fallback_first_method: When no LLM is reachable, run the first
+                declared method with empty parameters instead of raising.
+                Off by default: guessing a method the user did not ask for
+                and reporting it as success is the fabricated behavior the
+                error policy forbids. Opt in only when a deterministic
+                single-method agent makes the guess safe.
+
         Raises:
-            AgentSolveError: No methods declared, no method selectable, or
-                an unexpected failure. The plain message stays in
-                ``args[0]`` and ``context["execution_time"]`` is always set,
-                so the wrapper's legacy-dict shim reproduces the pre-typed
-                error dicts exactly.
+            AgentSolveError: No methods declared, no method selectable, no
+                LLM available (unless ``fallback_first_method``), or an
+                unexpected failure. The plain message stays in ``args[0]``
+                and ``context["execution_time"]`` is always set, so the
+                wrapper's legacy-dict shim reproduces the pre-typed error
+                dicts exactly.
         """
         start_time = time.time()
 
@@ -65,7 +79,10 @@ class FrameworkSolveHandler:
                 reasoning,
                 param_reasoning,
             ) = self._combined_method_selection_and_extraction(
-                query, agent_methods, full_context
+                query,
+                agent_methods,
+                full_context,
+                fallback_first_method=fallback_first_method,
             )
 
             if not method_name:
@@ -147,6 +164,8 @@ class FrameworkSolveHandler:
         query: str,
         agent_methods: list[dict[str, Any]],
         context: dict[str, Any],
+        *,
+        fallback_first_method: bool = False,
     ) -> tuple[str, dict[str, Any], float, float, str, str]:
         """
         Combined method selection and parameter extraction in a single LLM call.
@@ -169,26 +188,41 @@ class FrameworkSolveHandler:
         # Create the full prompt with user query
         full_prompt = f'{combined_prompt}\n\nUser Query: "{query}"'
 
-        # Get LLM response directly; fall back to the first method when no
-        # LLM is usable
+        # Get the LLM to select the method. With no usable LLM there is no
+        # honest selection to make: raise rather than guess a method the user
+        # did not ask for and report it as success (the fabricated behavior
+        # the error policy forbids). Callers who want the old best-effort
+        # behavior opt in via ``fallback_first_method``.
         try:
             response = llm_service.generate(full_prompt, return_json=True)
         except LLMError as e:
-            logger.warning(
-                f"LLM service unavailable ({e}), using fallback method selection"
-            )
-            if agent_methods:
+            if fallback_first_method and agent_methods:
                 fallback_method = agent_methods[0]["name"]
+                logger.warning(
+                    "LLM unavailable (%s); fallback_first_method=True, "
+                    "running '%s' with no parameters",
+                    e,
+                    fallback_method,
+                )
                 return (
                     fallback_method,
                     {},
-                    0.5,  # Low confidence for fallback
+                    0.5,  # Low confidence for the opt-in fallback
                     0.5,
                     "Fallback selection due to LLM unavailability",
                     "No parameters extracted due to LLM unavailability",
                 )
-            else:
-                return "", {}, 0.0, 0.0, "No methods available", "No methods available"
+            raise AgentSolveError(
+                "No LLM available to select a method",
+                suggestions=getattr(e, "suggestions", None)
+                or [
+                    "Start a local model (ollama serve / LM Studio / llama-server) "
+                    "or set a cloud API key",
+                    "Or pin a model via AGENTHUB_LLM_MODEL",
+                    "Or pass solve(..., fallback_first_method=True) to run the "
+                    "first declared method without an LLM",
+                ],
+            ) from e
 
         # Log the combined LLM output
         logger.info("🔍 Combined Method Selection & Parameter Extraction LLM Output:")

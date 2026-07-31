@@ -39,11 +39,14 @@ SELECTION = (
 )
 
 
-def make_wrapper(llm_response):
+def make_wrapper(llm_response=None, llm_error=None):
     runtime = Mock()
     runtime.execute_agent.return_value = {"result": "summary!"}
     llm = Mock()
-    llm.generate.return_value = llm_response
+    if llm_error is not None:
+        llm.generate.side_effect = llm_error
+    else:
+        llm.generate.return_value = llm_response
 
     wrapper = AgentWrapper(
         AGENT_INFO,
@@ -91,3 +94,36 @@ class TestSolveFailurePaths:
         assert error.args[0] == "Could not select appropriate method"
         assert error.context["raw_response"] == "definitely not json"
         assert error.suggestions
+
+
+class TestNoLLMAvailable:
+    """No reachable LLM surfaces as an honest failure through the shim, not a
+    fabricated first-method result (unless the caller opts in)."""
+
+    def test_default_returns_error_dict_not_a_fabricated_result(self):
+        from agenthub.core.llm.errors import NoModelAvailableError
+
+        wrapper, runtime = make_wrapper(llm_error=NoModelAvailableError())
+        with pytest.warns(DeprecationWarning, match="raise_errors=True"):
+            result = wrapper.solve("summarize this")
+        assert result["error"] == "No LLM available to select a method"
+        assert isinstance(result["execution_time"], float)
+        assert set(result) == {"error", "execution_time"}
+        runtime.execute_agent.assert_not_called()
+
+    def test_opt_in_raises_typed(self):
+        from agenthub.core.llm.errors import NoModelAvailableError
+
+        wrapper, _ = make_wrapper(llm_error=NoModelAvailableError())
+        with pytest.raises(AgentSolveError) as exc_info:
+            wrapper.solve("summarize this", raise_errors=True)
+        assert exc_info.value.args[0] == "No LLM available to select a method"
+        assert exc_info.value.suggestions
+
+    def test_fallback_first_method_opt_in_runs_without_an_llm(self):
+        from agenthub.core.llm.errors import NoModelAvailableError
+
+        wrapper, runtime = make_wrapper(llm_error=NoModelAvailableError())
+        result = wrapper.solve("summarize this", fallback_first_method=True)
+        assert result == {"result": "summary!"}
+        assert runtime.execute_agent.call_args.kwargs["method"] == "summarize"

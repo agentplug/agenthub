@@ -97,13 +97,50 @@ class TestTypedErrorContract:
         assert exc_info.value.args[0] == "Failed to execute method 'summarize': boom"
 
 
-class TestLLMOutageFallback:
-    def test_falls_back_to_first_method_with_empty_params(self):
+class TestLLMOutageBehavior:
+    def test_no_llm_raises_instead_of_fabricating_a_selection(self):
+        """With no usable LLM there is no honest selection: solve() raises
+        rather than run a method the user never asked for. The originating
+        LLMError is chained; execution_time is set for the wrapper shim."""
+        wrapper = make_wrapper(methods=["summarize", "translate"])
+        handler = make_handler(wrapper, llm_error=LLMError("no provider"))
+
+        with pytest.raises(AgentSolveError) as exc_info:
+            handler.solve("summarize this")
+
+        error = exc_info.value
+        assert error.args[0] == "No LLM available to select a method"
+        assert isinstance(error.__cause__, LLMError)
+        assert error.suggestions
+        assert isinstance(error.context["execution_time"], float)
+        wrapper.execute.assert_not_called()
+
+    def test_no_llm_suggestions_come_from_the_llm_error_when_present(self):
+        """A NoModelAvailableError already carries per-provider guidance;
+        solve() surfaces it rather than a generic hint."""
+        from agenthub.core.llm.errors import NoModelAvailableError
+
+        wrapper = make_wrapper(methods=["summarize"])
+        handler = make_handler(
+            wrapper,
+            llm_error=NoModelAvailableError(
+                probe_results={"ollama": "not running", "openai": "no key"}
+            ),
+        )
+
+        with pytest.raises(AgentSolveError) as exc_info:
+            handler.solve("summarize this")
+
+        assert exc_info.value.suggestions == exc_info.value.__cause__.suggestions
+
+    def test_opt_in_runs_first_method_with_empty_params(self):
+        """fallback_first_method=True preserves the old best-effort behavior
+        for callers who deliberately choose it."""
         wrapper = make_wrapper(methods=["summarize", "translate"])
         wrapper.execute.return_value = {"summary": "..."}
         handler = make_handler(wrapper, llm_error=LLMError("no provider"))
 
-        result = handler.solve("summarize this")
+        result = handler.solve("summarize this", fallback_first_method=True)
 
         wrapper.execute.assert_called_once_with("summarize", {})
         assert result == {"summary": "..."}

@@ -145,6 +145,7 @@ class AgentWrapper:
         context: dict[str, Any] | None = None,
         *,
         raise_errors: bool = False,
+        fallback_first_method: bool = False,
         **kwargs: Any,
     ) -> Any:
         """Solve a natural-language query via LLM method selection.
@@ -158,9 +159,18 @@ class AgentWrapper:
                 ``{"error": ...}`` dict for one release and emits a
                 DeprecationWarning on failure; raising becomes the only
                 behavior in the next minor release.
+            fallback_first_method: When True and no LLM is reachable, run the
+                first declared method with empty parameters instead of
+                failing. Off by default: with no LLM there is no honest
+                method selection, so ``solve()`` raises rather than guess.
         """
         try:
-            return self.solve_engine.solve(query, context, **kwargs)
+            return self.solve_engine.solve(
+                query,
+                context,
+                fallback_first_method=fallback_first_method,
+                **kwargs,
+            )
         except AgentSolveError as e:
             if raise_errors:
                 raise
