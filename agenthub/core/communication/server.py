@@ -363,7 +363,7 @@ class CommunicationServer:
         Validate message structure.
 
         Required fields:
-        - type: Message type (user_input, agent_message, etc.)
+        - type: Message type (user_input_request, system_status, etc.)
         - data: Message payload
 
         Optional fields:

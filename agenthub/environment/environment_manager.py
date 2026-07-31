@@ -5,6 +5,7 @@ import logging
 import shutil
 import subprocess
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -497,13 +498,23 @@ class AdvancedEnvironmentManager:
         return "unknown"
 
     def _create_backup(self, agent_name: str, suffix: str) -> str:
-        """Create a backup of an agent before migration."""
+        """Create a backup of an agent before migration.
+
+        Backups live under the storage root (``base_storage_path``'s parent),
+        so a manager pointed at a custom root keeps its backups there instead
+        of always writing to the real home directory. For the default manager
+        this resolves to ``~/.agenthub/backups`` as before.
+        """
         agent_path = self._get_agent_path(agent_name)
-        backup_dir = Path.home() / ".agenthub" / "backups"
+        backup_dir = self.base_storage_path.parent / "backups"
         backup_dir.mkdir(parents=True, exist_ok=True)
 
+        # A second-granularity timestamp collides when the same agent is
+        # backed up twice within one second; a short unique suffix keeps
+        # each backup distinct (and keeps concurrent migrations isolated).
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        backup_name = f"{agent_name.replace('/', '_')}_{suffix}_{timestamp}"
+        unique = uuid.uuid4().hex[:8]
+        backup_name = f"{agent_name.replace('/', '_')}_{suffix}_{timestamp}_{unique}"
         backup_path = backup_dir / backup_name
 
         # Remove existing backup if it exists

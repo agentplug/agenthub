@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.6] - 2026-07-31
 
 Hardening arc: typed errors completed, composition converged, A2A
-ambition amputated, architecture documented. Suite fully green
-(723 passed, 49% coverage); mypy exemptions down to one.
+ambition amputated, architecture documented. Suite fully green at ~49%
+coverage (enforced floor 45%); mypy exemptions down to one.
 
 Note: typed `AgentSolveError` was documented in 0.1.5's changelog but
 the code landed after the tag — it ships in this release, reconciling
@@ -37,7 +37,7 @@ the notes with reality.
 - FrameworkSolveHandler raises typed `AgentSolveError` (with suggestions
   and `execution_time` context) instead of fabricating `{"error": ...}`
   dicts; the default `raise_errors=False` shim reproduces the legacy dicts
-  byte-for-byte for one release
+  (same keys and message) for one release
 - LLM selection responses are parsed with the shared structured extractor
   (`core.llm.structured`) — prose/fence-wrapped JSON now parses instead of
   failing as "no selection"
@@ -74,10 +74,12 @@ the notes with reality.
   agent messaging had no consumers; composition is MCP tools (ADR 0002);
   the monitoring WebSocket path is unchanged
 - **Breaking:** `MCPClient`, `MCPConnectionPool`, `AsyncToolExecutor`,
-  and `ToolInjector` are gone from `agenthub.core` / `agenthub.core.mcp`.
-  They served a never-functional execution path (per-call stdio
-  subprocess with a fresh empty registry that could not see `@tool`
-  registrations) and had no production callers (ADR 0001)
+  and `ToolInjector` — along with the `get_mcp_client` and
+  `get_tool_injector` helpers exported from `agenthub.core` — are gone
+  from `agenthub.core` / `agenthub.core.mcp`. They served a
+  never-functional execution path (per-call stdio subprocess with a fresh
+  empty registry that could not see `@tool` registrations) and had no
+  production callers (ADR 0001)
 - External tool assignment now has a single store (the registry's access
   manager); `AgentToolManager.agent_tools` no longer exists
 - Unused `Result[T]` monad (`core/common/`), never-instantiated
