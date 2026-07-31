@@ -23,11 +23,11 @@ agent.yaml (manifest: interface.methods, typed parameters)
   → solve(): SolveEngine                agenthub/core/agents/solve/engine.py:14
     → FrameworkSolveHandler             agenthub/core/agents/solve/framework_handler.py:16
       (one LLM call selects the method and extracts its parameters)
-  → MethodExecutor                      agenthub/core/agents/method_executor.py:25
+  → MethodExecutor                      agenthub/core/agents/method_executor.py:18
     (parameter mapping, schema-aware file-path resolution)
   → AgentRuntime / ProcessManager       agenthub/runtime/agent_runtime.py:37
     → Executor (per-agent venv subprocess)
-      agenthub/runtime/process_manager/executor.py:184
+      agenthub/runtime/process_manager/executor.py:182
 ```
 
 Direct method calls skip the solve stage: `AgentWrapper.__getattr__`
@@ -68,7 +68,7 @@ side is specified in [CREATING_AGENTS](CREATING_AGENTS.md)).
 Each agent gets its own virtual environment (environment/environment_setup.py),
 so agents cannot conflict over dependency versions. Execution happens in
 a subprocess started with `start_new_session=True`; a timeout kills the
-whole process group (executor.py:336). This bounds dependency and
+whole process group (executor.py:334). This bounds dependency and
 resource cleanup only — agent code runs with the user's privileges. The
 trust boundary is defined in [SECURITY](SECURITY.md) and not restated
 here.
