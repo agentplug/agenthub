@@ -60,9 +60,6 @@ class ProcessManager:
 
         self.monitoring_adapter = MonitoringAdapter(enabled=monitoring)
 
-        # Preserve legacy attribute for components that expect direct access
-        self.use_dynamic_execution = use_dynamic_execution
-
         # Backward compatibility attributes
         self.realtime_communication = self.communication_manager.enabled
         self.communication_server = self.communication_manager.server
@@ -72,6 +69,17 @@ class ProcessManager:
         # It will be started when needed (e.g., during agent execution)
 
         logger.info("✅ ProcessManager initialized with modular architecture")
+
+    @property
+    def use_dynamic_execution(self) -> bool:
+        """Whether execution attempts dynamic in-process execution first."""
+        return self.executor.use_dynamic_execution
+
+    @use_dynamic_execution.setter
+    def use_dynamic_execution(self, enabled: bool) -> None:
+        # Must reach the executor: a plain attribute here silently diverges
+        # from the executor's own flag, and agents then run outside their venv.
+        self.executor.use_dynamic_execution = enabled
 
     def close(self) -> None:
         """Release resources: stop the communication server and its thread.

@@ -22,6 +22,23 @@ class TestProcessManager:
         pm = ProcessManager(timeout=60)
         assert pm.timeout == 60
 
+    def test_use_dynamic_execution_propagates_to_executor(self):
+        """Toggling use_dynamic_execution after construction reaches the executor.
+
+        Regression test: the SDK disables dynamic execution via this attribute
+        to force venv-isolated subprocess execution; a stale copy on the
+        manager let agents run in the host environment instead.
+        """
+        pm = ProcessManager(use_dynamic_execution=False)
+        assert pm.use_dynamic_execution is False
+        assert pm.executor.use_dynamic_execution is False
+
+        pm.use_dynamic_execution = True
+        assert pm.executor.use_dynamic_execution is True
+
+        pm.use_dynamic_execution = False
+        assert pm.executor.use_dynamic_execution is False
+
     def test_execute_agent_invalid_parameters(self):
         """Test execute_agent raises ValueError for invalid parameters."""
         pm = ProcessManager()

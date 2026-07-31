@@ -86,9 +86,9 @@ class Executor:
         self.timeout = timeout
         self.use_dynamic_execution = use_dynamic_execution
         self.environment_manager = environment_manager or EnvironmentManager()
-        self.dynamic_executor = (
-            DynamicAgentExecutor() if use_dynamic_execution else None
-        )
+        # Instantiated unconditionally (stateless until used) so that
+        # use_dynamic_execution can be toggled after construction.
+        self.dynamic_executor = DynamicAgentExecutor()
 
     def execute(
         self,
@@ -114,7 +114,7 @@ class Executor:
             ExecutionResult: Execution result
         """
         # Try dynamic execution first if enabled
-        if self.use_dynamic_execution and self.dynamic_executor:
+        if self.use_dynamic_execution:
             try:
                 result = self._execute_dynamic(agent_path, method, parameters, manifest)
                 if result.success:
@@ -154,8 +154,6 @@ class Executor:
             ExecutionResult: Execution result
         """
         start_time = time.time()
-        if self.dynamic_executor is None:
-            return ExecutionResult(success=False, error="Dynamic execution is disabled")
         try:
             result = self.dynamic_executor.execute_agent_method(
                 agent_path, method, parameters, manifest
