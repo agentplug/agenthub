@@ -18,9 +18,6 @@ class MessageType(Enum):
     REGISTER_SESSION = "register_session"
     USER_INPUT_REQUEST = "user_input_request"
     USER_INPUT_RESPONSE = "user_input_response"
-    AGENT_MESSAGE = "agent_message"
-    AGENT_REQUEST = "agent_request"
-    AGENT_RESPONSE = "agent_response"
     SYSTEM_STATUS = "system_status"
     ERROR = "error"
 
@@ -41,16 +38,20 @@ class MessageRouter:
     """
     Routes messages between users, agents, and services.
 
+    Scope: user-facing real-time interaction (session registration, user
+    input requests, status broadcast). The agent-to-agent message types
+    and the capability registry were removed — AgentHub's composition
+    story is MCP tools, not agent-to-agent messaging
+    (docs/adr/0002-communication-transport.md).
+
     Design Principles:
     - Message type based routing
     - Request/response tracking
     - Timeout handling
-    - A2A-compatible message format
 
     Integration Points:
     - CommunicationServer: Uses this router for message handling
     - ProcessManager: Sends/receives messages through this router
-    - A2AMessageAdapter: Converts messages to A2A format
     """
 
     def __init__(self, server: Any = None) -> None:
@@ -65,17 +66,11 @@ class MessageRouter:
         # Pending user input requests
         self.pending_requests: dict[str, PendingRequest] = {}
 
-        # Agent registry for agent-to-agent communication
-        self.agent_registry: dict[str, dict[str, Any]] = {}
-
         # Message handlers
         self.message_handlers: dict[MessageType, Callable] = {
             MessageType.REGISTER_SESSION: self._handle_register_session,
             MessageType.USER_INPUT_REQUEST: self._handle_user_input_request,
             MessageType.USER_INPUT_RESPONSE: self._handle_user_input_response,
-            MessageType.AGENT_MESSAGE: self._handle_agent_message,
-            MessageType.AGENT_REQUEST: self._handle_agent_request,
-            MessageType.AGENT_RESPONSE: self._handle_agent_response,
             MessageType.SYSTEM_STATUS: self._handle_system_status,
             MessageType.ERROR: self._handle_error,
         }
@@ -281,7 +276,8 @@ class MessageRouter:
 
         finally:
             # Cleanup request
-            self.pending_requests.pop(request_id, None)
+            if request_id in self.pending_requests:
+                del self.pending_requests[request_id]
 
     async def _handle_user_input_request(
         self, websocket: Any, message: dict[str, Any]
@@ -325,93 +321,6 @@ class MessageRouter:
             )
         else:
             logger.warning(f"Request already completed: {request_id}")
-
-    async def _handle_agent_message(
-        self, websocket: Any, message: dict[str, Any]
-    ) -> None:
-        """Handle agent-to-agent message."""
-        data = message.get("data", {})
-        from_agent = data.get("from_agent")
-        to_agent = data.get("to_agent")
-        content = data.get("content")
-
-        if not all([from_agent, to_agent, content]):
-            await self._send_error(
-                websocket, "Missing required fields for agent message"
-            )
-            return
-
-        # Route to target agent
-        success = await self.server.send_to_agent(
-            to_agent,
-            {
-                "type": MessageType.AGENT_MESSAGE.value,
-                "data": {
-                    "from_agent": from_agent,
-                    "content": content,
-                    "timestamp": time.time(),
-                },
-            },
-        )
-
-        if not success:
-            logger.warning(f"Failed to deliver message to agent: {to_agent}")
-            await self._send_error(websocket, f"Agent not found: {to_agent}")
-
-    async def _handle_agent_request(
-        self, websocket: Any, message: dict[str, Any]
-    ) -> None:
-        """Handle agent-to-agent request (A2A style)."""
-        data = message.get("data", {})
-        from_agent = data.get("from_agent")
-        to_agent = data.get("to_agent")
-        task_type = data.get("task_type")
-        parameters = data.get("parameters", {})
-        request_id = data.get("request_id", str(uuid.uuid4()))
-
-        if not all([from_agent, to_agent, task_type]):
-            await self._send_error(
-                websocket, "Missing required fields for agent request"
-            )
-            return
-
-        # Create A2A-compatible task message
-        task_message = {
-            "type": MessageType.AGENT_REQUEST.value,
-            "data": {
-                "request_id": request_id,
-                "from_agent": from_agent,
-                "task_type": task_type,
-                "parameters": parameters,
-                "timestamp": time.time(),
-            },
-        }
-
-        # Route to target agent
-        success = await self.server.send_to_agent(to_agent, task_message)
-
-        if not success:
-            logger.warning(f"Failed to send request to agent: {to_agent}")
-            await self._send_error(websocket, f"Agent not found: {to_agent}")
-        else:
-            logger.info(f"Agent request sent: {from_agent} -> {to_agent} ({task_type})")
-
-    async def _handle_agent_response(
-        self, websocket: Any, message: dict[str, Any]
-    ) -> None:
-        """Handle response from agent (A2A style)."""
-        data = message.get("data", {})
-        request_id = data.get("request_id")
-        # result = data.get("result")  # Placeholder for future implementation
-        # error = data.get("error")  # Placeholder for future implementation
-
-        if not request_id:
-            await self._send_error(websocket, "Missing request_id")
-            return
-
-        # Find original requester and forward response
-        # This would integrate with agent-to-agent request tracking
-        logger.info(f"Agent response received for request: {request_id}")
 
     async def _handle_system_status(
         self, websocket: Any, message: dict[str, Any]
@@ -463,13 +372,15 @@ class MessageRouter:
 
                 # Cleanup expired requests
                 for request_id in expired_requests:
-                    request = self.pending_requests.pop(request_id, None)
-                    if request and not request.future.done():
-                        request.future.set_exception(
-                            TimeoutError(
-                                f"User input request timed out: {request.prompt}"
+                    expired = self.pending_requests.get(request_id)
+                    if expired is not None:
+                        del self.pending_requests[request_id]
+                        if not expired.future.done():
+                            expired.future.set_exception(
+                                TimeoutError(
+                                    f"User input request timed out: {expired.prompt}"
+                                )
                             )
-                        )
                         logger.warning(f"Cleaned up expired request: {request_id}")
 
             except asyncio.CancelledError:
@@ -477,47 +388,9 @@ class MessageRouter:
             except Exception as e:
                 logger.error(f"Error in cleanup task: {e}")
 
-    def register_agent(self, agent_id: str, metadata: dict[str, Any]) -> None:
-        """
-        Register agent for agent-to-agent discovery.
-
-        Args:
-            agent_id: Agent identifier
-            metadata: Agent metadata (capabilities, methods, etc.)
-        """
-        self.agent_registry[agent_id] = metadata
-        logger.info(f"Registered agent: {agent_id}")
-
-    def unregister_agent(self, agent_id: str) -> None:
-        """Unregister agent."""
-        if agent_id in self.agent_registry:
-            del self.agent_registry[agent_id]
-            logger.info(f"Unregistered agent: {agent_id}")
-
-    def discover_agents(self, capability: str = None) -> list:
-        """
-        Discover available agents.
-
-        Args:
-            capability: Optional capability filter
-
-        Returns:
-            List of agent metadata dicts
-        """
-        if capability is None:
-            return list(self.agent_registry.values())
-
-        # Filter by capability
-        return [
-            agent
-            for agent in self.agent_registry.values()
-            if capability in agent.get("capabilities", [])
-        ]
-
     def get_stats(self) -> dict[str, Any]:
         """Get router statistics."""
         return {
             "pending_requests": len(self.pending_requests),
-            "registered_agents": len(self.agent_registry),
             "active_handlers": len(self.message_handlers),
         }

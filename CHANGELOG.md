@@ -40,6 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tuple pass-through warns; becomes an AgentExecutionError next release)
 
 ### Removed
+- **Breaking:** the phase-3.4 A2A protocol is gone —
+  `core/communication/protocol.py` (agent cards, task/status/result
+  messages), the router's `agent_message`/`agent_request`/
+  `agent_response` wire types, and the capability registry. Agent-to-
+  agent messaging had no consumers; composition is MCP tools. Decision
+  recorded in `docs/adr/0002-communication-transport.md`; the monitoring
+  WebSocket path (logs, progress, user input) is unchanged and no longer
+  mypy-exempt
 - **Breaking:** `MCPClient`, `MCPConnectionPool`, `AsyncToolExecutor`,
   and `ToolInjector` are gone from `agenthub.core` / `agenthub.core.mcp`.
   They served a never-functional execution path (per-call stdio

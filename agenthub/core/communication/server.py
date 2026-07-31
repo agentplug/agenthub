@@ -7,7 +7,16 @@ import logging
 import os
 import threading
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    # Modern websockets (>=12) names, used for all annotations
+    from websockets.asyncio.server import Server as WSServer
+    from websockets.asyncio.server import (
+        ServerConnection as WebSocketServerProtocol,
+    )
+
+    from .router import MessageRouter
 
 try:
     import websockets
@@ -16,13 +25,16 @@ try:
     WEBSOCKETS_AVAILABLE = True
 except ImportError:
     try:
-        # Fallback for older websockets versions
-        from websockets.server import WebSocketServerProtocol
+        # Fallback for older websockets versions; the legacy module layout
+        # is invisible to mypy against the installed modern package
+        from websockets.server import (  # type: ignore[attr-defined,no-redef]
+            WebSocketServerProtocol,
+        )
 
         WEBSOCKETS_AVAILABLE = True
     except ImportError:
         WEBSOCKETS_AVAILABLE = False
-        WebSocketServerProtocol = Any
+        WebSocketServerProtocol = Any  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +67,7 @@ class CommunicationServer:
                 cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, port: int = None, host: str = "localhost"):
+    def __init__(self, port: int | None = None, host: str = "localhost"):
         """
         Initialize communication server.
 
@@ -74,7 +86,7 @@ class CommunicationServer:
                 "websockets library not available, communication features disabled"
             )
             self.startup_failed = True
-            self.failure_reason = "websockets library not installed"
+            self.failure_reason: str | None = "websockets library not installed"
             self._initialized = True
             return
 
@@ -100,18 +112,14 @@ class CommunicationServer:
 
         # Server state
         self.is_running = False
-        self.server = None
+        self.server: WSServer | None = None
         self.server_task: asyncio.Task | None = None
 
         # Message handlers
         self.message_handlers: dict[str, Callable] = {}
 
-        # Message router (will be set after initialization)
-        from typing import TYPE_CHECKING
-
-        if TYPE_CHECKING:
-            from .router import MessageRouter as MR
-        self.message_router: MR | None = None  # type: ignore[name-defined]
+        # Message router (set on first start)
+        self.message_router: MessageRouter | None = None
 
         # Error tracking
         self.startup_failed = False
@@ -186,7 +194,7 @@ class CommunicationServer:
                 if self.message_router is None:
                     from .router import MessageRouter
 
-                    self.message_router = MessageRouter(self)  # type: ignore[assignment]
+                    self.message_router = MessageRouter(self)
                     self.message_router.start()
 
                 # Start WebSocket server
@@ -301,6 +309,8 @@ class CommunicationServer:
         try:
             # Handle messages from this client
             async for message in websocket:
+                if isinstance(message, bytes):
+                    message = message.decode("utf-8", errors="replace")
                 await self._handle_message(websocket, message)
 
         except websockets.exceptions.ConnectionClosed:
@@ -348,7 +358,7 @@ class CommunicationServer:
             logger.error(f"Error handling message: {e}")
             await self._send_error(websocket, f"Message handling error: {str(e)}")
 
-    def _validate_message(self, data: dict[str, Any]) -> bool:
+    def _validate_message(self, data: Any) -> bool:
         """
         Validate message structure.
 
