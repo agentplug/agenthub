@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Breaking (behavior):** when no LLM is reachable, `solve()` now raises
+  `AgentSolveError` ("No LLM available to select a method", carrying the
+  LLM layer's probe diagnostics) instead of silently running the first
+  declared method with empty parameters and reporting it as success. The
+  fabricated selection was the exact anti-pattern the error policy forbids.
+  Under the default `raise_errors=False` shim this surfaces as the legacy
+  `{"error": ...}` dict; opt back into the old behavior per call with
+  `solve(..., fallback_first_method=True)`.
+
 ## [0.1.6] - 2026-07-31
 
 Hardening arc: typed errors completed, composition converged, A2A

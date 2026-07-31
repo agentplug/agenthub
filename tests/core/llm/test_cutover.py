@@ -114,22 +114,35 @@ class TestFrameworkHandlerFallback:
 
         return FrameworkSolveHandler(WrapperStub(), llm_service=service)
 
-    def test_llm_failure_falls_back_to_first_method(self):
+    def test_llm_failure_raises_without_opt_in(self):
+        from agenthub.core.tools.exceptions import AgentSolveError
+
+        handler = self.make_handler(RaisingService())
+        methods = [{"name": "run", "description": "", "parameters": {}}]
+        with pytest.raises(AgentSolveError, match="No LLM available"):
+            handler._combined_method_selection_and_extraction(
+                "do something", methods, {}
+            )
+
+    def test_llm_failure_opt_in_falls_back_to_first_method(self):
         handler = self.make_handler(RaisingService())
         methods = [{"name": "run", "description": "", "parameters": {}}]
         result = handler._combined_method_selection_and_extraction(
-            "do something", methods, {}
+            "do something", methods, {}, fallback_first_method=True
         )
         method_name, params, method_confidence, *_ = result
         assert method_name == "run"
         assert params == {}
         assert method_confidence == 0.5
 
-    def test_llm_failure_with_no_methods(self):
+    def test_llm_failure_with_no_methods_raises_even_with_opt_in(self):
+        from agenthub.core.tools.exceptions import AgentSolveError
+
         handler = self.make_handler(RaisingService())
-        result = handler._combined_method_selection_and_extraction("query", [], {})
-        assert result[0] == ""
-        assert result[2] == 0.0
+        with pytest.raises(AgentSolveError, match="No LLM available"):
+            handler._combined_method_selection_and_extraction(
+                "query", [], {}, fallback_first_method=True
+            )
 
     def test_successful_selection_parses(self):
         service = AnsweringService(

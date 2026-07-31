@@ -156,9 +156,10 @@ e.g. `execution_time`, `raw_response`). The main subtrees are `AgentError`
 - `solve()` still returns legacy error dicts under the default
   `raise_errors=False` shim; raising becomes the only behavior in the
   next minor release.
-- When no LLM is reachable, `solve()` falls back to the first declared
-  method rather than failing — kept for compatibility, queued for an
-  explicit opt-in.
+- When no LLM is reachable, `solve()` raises `AgentSolveError` (carrying
+  the LLM layer's probe diagnostics) rather than guessing a method the
+  user did not ask for. Callers that want the old best-effort behavior
+  opt in with `solve(..., fallback_first_method=True)`.
 
 ## Out of scope here
 
