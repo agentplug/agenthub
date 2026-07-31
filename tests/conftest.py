@@ -1,12 +1,15 @@
 """Shared test configuration and fixtures for all tests."""
 
 import asyncio
+import logging
 import shutil
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -109,27 +112,22 @@ def cleanup_websocket_servers():
     """Automatically clean up WebSocket servers between tests."""
     yield  # Run the test
 
-    # Cleanup after test
     try:
         from agenthub.core.communication.server import CommunicationServer
-
-        # Reset singleton instance
-        CommunicationServer._instance = None
-        CommunicationServer._initialized = False
-
-        # Stop any running server
-        if hasattr(CommunicationServer, "_instance") and CommunicationServer._instance:
-            server = CommunicationServer._instance
-            if hasattr(server, "is_running") and server.is_running:
-                try:
-                    # Try to stop server in a new event loop
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    loop.run_until_complete(server.stop())
-                    loop.close()
-                except Exception:
-                    # Ignore cleanup errors
-                    pass
     except ImportError:
-        # WebSocket module not available, skip cleanup
-        pass
+        return  # WebSocket module not available, nothing to clean
+
+    # Stop a running server BEFORE resetting the singleton — previously the
+    # instance was nulled first, making the stop logic unreachable
+    server = getattr(CommunicationServer, "_instance", None)
+    if server is not None and getattr(server, "is_running", False):
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(server.stop())
+            loop.close()
+        except Exception as e:
+            logger.debug(f"WebSocket server cleanup failed: {e}")
+
+    CommunicationServer._instance = None
+    CommunicationServer._initialized = False
