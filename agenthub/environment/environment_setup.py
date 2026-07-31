@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 logger = logging.getLogger(__name__)
 
 # Check if environment module is available
@@ -127,8 +129,6 @@ class EnvironmentSetup:
             # Check for installation commands in agent.yaml
             if agent_yaml_path.exists():
                 try:
-                    import yaml
-
                     with open(agent_yaml_path, encoding="utf-8") as f:
                         agent_config = yaml.safe_load(f)
                     if (
@@ -136,8 +136,8 @@ class EnvironmentSetup:
                         and "commands" in agent_config["installation"]
                     ):
                         has_installation_method = True
-                except Exception:
-                    pass
+                except (yaml.YAMLError, OSError) as e:
+                    logger.debug(f"Could not read install info from agent.yaml: {e}")
 
             # Check for other installation methods
             if pyproject_path.exists() or requirements_path.exists():
@@ -193,8 +193,6 @@ class EnvironmentSetup:
 
             if agent_yaml_path.exists():
                 try:
-                    import yaml
-
                     with open(agent_yaml_path) as f:
                         agent_config = yaml.safe_load(f)
 
@@ -218,7 +216,7 @@ class EnvironmentSetup:
                             "No installation commands or dependencies section in "
                             "agent.yaml, falling back to requirements.txt"
                         )
-                except Exception as e:
+                except (yaml.YAMLError, OSError) as e:
                     self.logger.warning(
                         f"Failed to parse agent.yaml: {e}, "
                         f"falling back to requirements.txt"
@@ -387,6 +385,11 @@ class EnvironmentSetup:
                 next_steps=["Check system resources and try again"],
             )
         except Exception as e:
+            # Boundary over uv venv/subprocess work: keep broad (returns a
+            # result, per contract) but log a traceback for diagnosability.
+            logger.error(
+                f"Environment setup failed for {agent_path}: {e}", exc_info=True
+            )
             return EnvironmentSetupResult(
                 success=False,
                 agent_path=agent_path,
@@ -489,6 +492,11 @@ class EnvironmentSetup:
                 warnings=["Large dependency trees may take longer to install"],
             )
         except Exception as e:
+            # Boundary over uv install/subprocess work: keep broad, log trace.
+            logger.error(
+                f"Dependency installation failed for {agent_path}: {e}",
+                exc_info=True,
+            )
             return DependencyInstallResult(
                 success=False,
                 agent_path=agent_path,
@@ -518,14 +526,16 @@ class EnvironmentSetup:
                 ["uv", "--version"], capture_output=True, text=True, timeout=10
             )
             return result.stdout.strip() if result.returncode == 0 else "Unknown"
-        except Exception:
+        except (subprocess.SubprocessError, OSError) as e:
+            logger.debug(f"Could not read uv version: {e}")
             return "Unknown"
 
     def _get_project_files(self, agent_path: Path) -> list[str]:
         """Get list of project files."""
         try:
             return [f.name for f in agent_path.iterdir() if f.is_file()]
-        except Exception:
+        except OSError as e:
+            logger.debug(f"Could not list project files in {agent_path}: {e}")
             return []
 
     def _get_installed_packages(self, venv_path: str) -> list[str]:
@@ -548,7 +558,8 @@ class EnvironmentSetup:
                         packages.append(package_name)
                 return packages
             return []
-        except Exception:
+        except (subprocess.SubprocessError, OSError) as e:
+            logger.debug(f"Could not list installed packages in {venv_path}: {e}")
             return []
 
     def activate_environment(self, venv_path: str) -> str:

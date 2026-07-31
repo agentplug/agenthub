@@ -192,6 +192,12 @@ class AdvancedEnvironmentManager:
             )
 
         except Exception as e:
+            # Boundary over arbitrary FS/subprocess migration work: keep the
+            # broad catch (the method's contract is a MigrationResult, not a
+            # raise) but log with a traceback so the failure is diagnosable.
+            logger.error(
+                f"Python migration failed for {agent_name}: {e}", exc_info=True
+            )
             return MigrationResult(
                 success=False,
                 source_agent=agent_name,
@@ -262,6 +268,11 @@ class AdvancedEnvironmentManager:
             )
 
         except Exception as e:
+            # Boundary returning a CloneResult; keep broad, log the traceback.
+            logger.error(
+                f"Cloning '{source_agent}' -> '{target_agent}' failed: {e}",
+                exc_info=True,
+            )
             return CloneResult(
                 success=False,
                 source_agent=source_agent,
@@ -327,8 +338,9 @@ class AdvancedEnvironmentManager:
                 )
                 if result.returncode == 0:
                     actions_taken.append("Cleaned UV cache")
-            except Exception:
-                pass  # UV cache clean is optional
+            except (subprocess.SubprocessError, OSError) as e:
+                # UV cache clean is optional enrichment; log, don't fail.
+                logger.debug(f"UV cache clean skipped: {e}")
 
             optimized_size = self._calculate_directory_size(agent_path)
             space_saved = original_size - optimized_size
@@ -345,6 +357,11 @@ class AdvancedEnvironmentManager:
             )
 
         except Exception as e:
+            # Boundary returning an OptimizationResult; keep broad, log trace.
+            logger.error(
+                f"Environment optimization failed for {agent_name}: {e}",
+                exc_info=True,
+            )
             return OptimizationResult(
                 success=False,
                 agent_name=agent_name,
@@ -396,7 +413,7 @@ class AdvancedEnvironmentManager:
                 if result.returncode != 0 and "vulnerability" in result.stdout.lower():
                     conflicts.append("Security vulnerabilities found")
                     recommendations.append("Update vulnerable packages")
-            except Exception as e:
+            except (subprocess.SubprocessError, OSError) as e:
                 # Optional enrichment: audit data is nice-to-have, but the
                 # failure must be visible when debugging, not silent
                 logger.debug(f"Skipping vulnerability audit for {agent_name}: {e}")
@@ -418,7 +435,7 @@ class AdvancedEnvironmentManager:
                         recommendations.append(
                             f"Update {outdated_count} outdated packages"
                         )
-            except Exception as e:
+            except (subprocess.SubprocessError, OSError) as e:
                 logger.debug(f"Skipping outdated-package check for {agent_name}: {e}")
 
             return {
@@ -430,6 +447,10 @@ class AdvancedEnvironmentManager:
             }
 
         except Exception as e:
+            # Boundary returning a result dict; keep broad, log the traceback.
+            logger.error(
+                f"Dependency analysis failed for {agent_name}: {e}", exc_info=True
+            )
             return {
                 "success": False,
                 "error": str(e),
@@ -448,7 +469,7 @@ class AdvancedEnvironmentManager:
             result = subprocess.run(
                 ["uv", "python", "list"], capture_output=True, text=True, timeout=10
             )
-        except Exception as e:
+        except (subprocess.SubprocessError, OSError) as e:
             logger.warning(f"Could not discover Python versions via uv: {e}")
             return []
 
@@ -492,8 +513,8 @@ class AdvancedEnvironmentManager:
             )
             if result.returncode == 0:
                 return result.stdout.strip().replace("Python ", "")
-        except Exception:
-            pass
+        except (subprocess.SubprocessError, OSError) as e:
+            logger.debug(f"Could not read Python version at {agent_path}: {e}")
 
         return "unknown"
 
@@ -532,5 +553,6 @@ class AdvancedEnvironmentManager:
                 if item.is_file():
                     total_size += item.stat().st_size
             return total_size / (1024 * 1024)  # Convert to MB
-        except Exception:
+        except OSError as e:
+            logger.debug(f"Could not size directory {path}: {e}")
             return 0.0
