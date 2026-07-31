@@ -30,7 +30,7 @@ def make_wrapper(methods=None, method_info=None, runtime=None, agent_path=""):
     )
     wrapper.agent_info.path = agent_path
     wrapper.runtime = runtime
-    wrapper.get_tool_context_json.return_value = "{}"
+    wrapper.get_tool_context.return_value = {}
     return wrapper
 
 
@@ -79,17 +79,19 @@ class TestParameterMapping:
 
     def test_args_pass_through_raw_when_no_schema(self):
         """Quirk: with no declared parameters, positional args reach the
-        runtime as a literal ``args`` tuple (the ``{"query": ...}`` guess in
-        the mapping helpers is unreachable in production)."""
+        runtime as a literal ``args`` tuple. One release with a
+        DeprecationWarning, then a typed error."""
         runtime = make_runtime()
         executor = MethodExecutor(make_wrapper(runtime=runtime))
-        executor.execute("summarize", {"args": ("hello",)})
+        with pytest.warns(DeprecationWarning, match="Positional arguments"):
+            executor.execute("summarize", {"args": ("hello",)})
         assert captured_parameters(runtime) == {"args": ("hello",)}
 
     def test_mixed_args_kwargs_pass_through_raw_when_no_schema(self):
         runtime = make_runtime()
         executor = MethodExecutor(make_wrapper(runtime=runtime))
-        executor.execute("summarize", {"args": ("hello",), "style": "short"})
+        with pytest.warns(DeprecationWarning, match="Positional arguments"):
+            executor.execute("summarize", {"args": ("hello",), "style": "short"})
         assert captured_parameters(runtime) == {
             "args": ("hello",),
             "style": "short",
@@ -134,12 +136,15 @@ class TestFilePathHeuristic:
         assert executor._looks_like_file_path(value) is expected
 
     def test_relative_path_resolved_against_agent_path(self, tmp_path):
+        """Undeclared parameter + path-like value: the legacy heuristic
+        still resolves for one release, with a DeprecationWarning."""
         (tmp_path / "data.txt").write_text("x")
         runtime = make_runtime()
         executor = MethodExecutor(
             make_wrapper(runtime=runtime, agent_path=str(tmp_path))
         )
-        executor.execute("summarize", {"file": "data.txt"})
+        with pytest.warns(DeprecationWarning, match="no declared"):
+            executor.execute("summarize", {"file": "data.txt"})
         assert captured_parameters(runtime)["file"] == os.path.abspath(
             tmp_path / "data.txt"
         )
@@ -147,7 +152,8 @@ class TestFilePathHeuristic:
     def test_unresolvable_path_string_passes_through(self):
         runtime = make_runtime()
         executor = MethodExecutor(make_wrapper(runtime=runtime))
-        executor.execute("summarize", {"file": "/nonexistent/dir/file.txt"})
+        with pytest.warns(DeprecationWarning, match="no declared"):
+            executor.execute("summarize", {"file": "/nonexistent/dir/file.txt"})
         assert captured_parameters(runtime)["file"] == "/nonexistent/dir/file.txt"
 
     def test_non_path_strings_untouched(self):
@@ -157,13 +163,69 @@ class TestFilePathHeuristic:
         assert captured_parameters(runtime)["text"] == "just some words"
 
 
+class TestSchemaAwarePathResolution:
+    """The manifest-driven contract replacing the string heuristic:
+    declared file-path types resolve, everything else passes through."""
+
+    def file_schema_wrapper(self, runtime, agent_path=""):
+        return make_wrapper(
+            method_info={
+                "parameters": {
+                    "file": {"type": "file"},
+                    "text": {"type": "string"},
+                }
+            },
+            runtime=runtime,
+            agent_path=agent_path,
+        )
+
+    def test_declared_file_type_resolves_without_warning(self, tmp_path, recwarn):
+        (tmp_path / "data.txt").write_text("x")
+        runtime = make_runtime()
+        executor = MethodExecutor(
+            self.file_schema_wrapper(runtime, agent_path=str(tmp_path))
+        )
+        executor.execute("summarize", {"file": "data.txt"})
+        assert captured_parameters(runtime)["file"] == os.path.abspath(
+            tmp_path / "data.txt"
+        )
+        assert not [
+            w for w in recwarn.list if issubclass(w.category, DeprecationWarning)
+        ]
+
+    def test_declared_file_type_unresolvable_passes_through(self, recwarn):
+        runtime = make_runtime()
+        executor = MethodExecutor(self.file_schema_wrapper(runtime))
+        executor.execute("summarize", {"file": "/nonexistent/dir/file.txt"})
+        assert captured_parameters(runtime)["file"] == "/nonexistent/dir/file.txt"
+        assert not [
+            w for w in recwarn.list if issubclass(w.category, DeprecationWarning)
+        ]
+
+    def test_declared_string_type_never_rewritten(self, tmp_path, recwarn):
+        """The fix at the heart of Phase 3: a parameter declared as a plain
+        string keeps its value even when it looks exactly like a file path
+        that exists relative to the agent."""
+        (tmp_path / "data.txt").write_text("x")
+        runtime = make_runtime()
+        executor = MethodExecutor(
+            self.file_schema_wrapper(runtime, agent_path=str(tmp_path))
+        )
+        executor.execute("summarize", {"text": "data.txt"})
+        assert captured_parameters(runtime)["text"] == "data.txt"
+        assert not [
+            w for w in recwarn.list if issubclass(w.category, DeprecationWarning)
+        ]
+
+
 class TestExecutionContract:
-    def test_tool_context_deserialized_before_reaching_runtime(self):
-        """Pins the JSON round-trip: wrapper returns a JSON string, the
-        runtime receives the parsed dict."""
+    def test_tool_context_passed_to_runtime_as_dict(self):
+        """The wrapper builds the tool-context document once; the runtime
+        receives the dict. (Pinned as a JSON-string round-trip until Phase 2
+        removed the serialize→deserialize hop between wrapper and executor.)"""
         runtime = make_runtime()
         wrapper = make_wrapper(runtime=runtime)
-        wrapper.get_tool_context_json.return_value = '{"available_tools": ["t1"]}'
+        wrapper.get_tool_context.return_value = {"available_tools": ["t1"]}
         executor = MethodExecutor(wrapper)
         executor.execute("summarize", {})
         tool_context = runtime.execute_agent.call_args.kwargs["tool_context"]

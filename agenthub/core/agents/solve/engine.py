@@ -54,7 +54,8 @@ class SolveEngine:
             execution_time = time.time() - start_time
             logger.error(f"Error in solve() method: {e}", exc_info=True)
             raise AgentSolveError(
-                f"solve() failed after {execution_time:.2f}s: {e}"
+                f"solve() failed after {execution_time:.2f}s: {e}",
+                context={"execution_time": execution_time},
             ) from e
 
     def get_solve_capabilities(self) -> dict[str, Any]:

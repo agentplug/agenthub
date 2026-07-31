@@ -13,7 +13,6 @@ from .dynamic_executor import DynamicAgentExecutor, DynamicExecutionError
 from .loader import AgentLoader, AgentLoadError
 from .manifest import ManifestParser, ManifestValidationError
 from .method_executor import MethodExecutor
-from .solve import SolveResult
 from .validator import InterfaceValidationError, InterfaceValidator
 from .wrapper import AgentWrapper
 
@@ -23,7 +22,6 @@ __all__ = [
     "AgentLoadError",
     "AgentWrapper",
     "AgentExecutionError",
-    "SolveResult",
     "InterfaceValidator",
     "InterfaceValidationError",
     "ManifestParser",

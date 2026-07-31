@@ -1,5 +1,6 @@
 """Simplified agent wrapper - orchestration layer only."""
 
+import json
 import logging
 import warnings
 from typing import Any
@@ -74,24 +75,68 @@ class AgentWrapper:
 
             self.tool_manager = AgentToolManager(agent_info.get("manifest", {}))
 
-        # Backward compatibility properties
+        # agent_id may be overridden; the remaining AgentInfo fields are
+        # exposed as read-only properties below instead of copied state
+        # that can drift from agent_info
         self.agent_id = agent_id or self.agent_info.agent_id
-        self.name = self.agent_info.name
-        self.namespace = self.agent_info.namespace
-        self.agent_name = self.agent_info.agent_name
-        self.path = self.agent_info.path
-        self.version = self.agent_info.version
-        self.description = self.agent_info.description
-        self.methods = self.agent_info.methods
-        self.dependencies = self.agent_info.dependencies
-        self.manifest = self.agent_info.manifest
-        self.interface = self.agent_info.interface
 
         # Additional properties
         self.tool_registry = tool_registry
         self.assigned_tools = assigned_tools or []
         self.runtime = runtime
         self.interface_validator = InterfaceValidator()
+
+    # Read-only mirrors of AgentInfo (previously an assignment splat
+    # duplicating eleven fields at construction time)
+    @property
+    def name(self) -> str:
+        """Agent name."""
+        return self.agent_info.name
+
+    @property
+    def namespace(self) -> str:
+        """Agent namespace."""
+        return self.agent_info.namespace
+
+    @property
+    def agent_name(self) -> str:
+        """Agent name within its namespace."""
+        return self.agent_info.agent_name
+
+    @property
+    def path(self) -> str:
+        """Filesystem path of the installed agent."""
+        return self.agent_info.path
+
+    @property
+    def version(self) -> str:
+        """Agent version from the manifest."""
+        return self.agent_info.version
+
+    @property
+    def description(self) -> str:
+        """Agent description from the manifest."""
+        return self.agent_info.description
+
+    @property
+    def methods(self) -> list[str]:
+        """Declared method names."""
+        return self.agent_info.methods
+
+    @property
+    def dependencies(self) -> list[str]:
+        """Declared dependencies."""
+        return self.agent_info.dependencies
+
+    @property
+    def manifest(self) -> dict[str, Any]:
+        """Parsed agent.yaml manifest."""
+        return self.agent_info.manifest
+
+    @property
+    def interface(self) -> dict[str, Any]:
+        """Declared interface methods from the manifest."""
+        return self.agent_info.interface
 
     # Core delegation methods
     def solve(
@@ -126,7 +171,14 @@ class AgentWrapper:
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return {"error": str(e)}
+            # Rebuild the legacy dict: the plain message (suggestions render
+            # only in str(e) for typed-path users) plus execution_time when
+            # the raise site provided it — the same keys the engine used to
+            # fabricate.
+            legacy: dict[str, Any] = {"error": e.args[0] if e.args else str(e)}
+            if "execution_time" in e.context:
+                legacy["execution_time"] = e.context["execution_time"]
+            return legacy
 
     def execute(self, method: str, parameters: dict[str, Any] | None = None) -> Any:
         """Delegate to method executor."""
@@ -151,21 +203,17 @@ class AgentWrapper:
         else:
             raise RuntimeError("No tool registry available for tool assignment")
 
-    def get_tool_context_json(self) -> str:
-        """Get tool context as JSON."""
-        import json
-
+    def get_tool_context(self) -> dict[str, Any]:
+        """Assemble the tool-context document consumed by the runtime."""
         if not self.assigned_tools or not self.tool_registry:
-            return json.dumps(
-                {
-                    "available_tools": [],
-                    "tool_descriptions": {},
-                    "tool_usage_examples": {},
-                    "tool_parameters": {},
-                    "tool_return_types": {},
-                    "tool_namespaces": {},
-                }
-            )
+            return {
+                "available_tools": [],
+                "tool_descriptions": {},
+                "tool_usage_examples": {},
+                "tool_parameters": {},
+                "tool_return_types": {},
+                "tool_namespaces": {},
+            }
 
         # Get tool information from registry
         tool_descriptions = {}
@@ -209,18 +257,26 @@ class AgentWrapper:
             else:
                 return obj
 
-        return json.dumps(
-            make_serializable(
-                {
-                    "available_tools": self.assigned_tools,
-                    "tool_descriptions": tool_descriptions,
-                    "tool_usage_examples": tool_usage_examples,
-                    "tool_parameters": tool_parameters,
-                    "tool_return_types": tool_return_types,
-                    "tool_namespaces": tool_namespaces,
-                }
-            )
+        context: dict[str, Any] = make_serializable(
+            {
+                "available_tools": self.assigned_tools,
+                "tool_descriptions": tool_descriptions,
+                "tool_usage_examples": tool_usage_examples,
+                "tool_parameters": tool_parameters,
+                "tool_return_types": tool_return_types,
+                "tool_namespaces": tool_namespaces,
+            }
         )
+        return context
+
+    def get_tool_context_json(self) -> str:
+        """Get tool context as a JSON string.
+
+        The runtime path consumes the dict directly via
+        :meth:`get_tool_context`; this remains for callers on the JSON
+        contract.
+        """
+        return json.dumps(self.get_tool_context())
 
     def get_tool_metadata(self, tool_name: str) -> dict[str, Any] | None:
         """Get tool metadata."""
@@ -390,10 +446,6 @@ class AgentWrapper:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{method_name}'"
             )
-
-        # Check if it's the solve method first
-        if method_name == "solve":
-            return self.solve
 
         if not self.has_method(method_name):
             # Provide helpful error message with available methods

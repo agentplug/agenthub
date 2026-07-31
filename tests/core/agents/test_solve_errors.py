@@ -70,3 +70,64 @@ class TestWrapperShim:
         wrapper = self.make_wrapper()
         with pytest.raises(AgentSolveError, match="nope"):
             wrapper.solve("q", raise_errors=True)
+
+    def test_legacy_dict_includes_execution_time_when_provided(self):
+        wrapper = self.make_wrapper()
+        wrapper.solve_engine.solve.side_effect = AgentSolveError(
+            "nope", context={"execution_time": 1.5}
+        )
+        with pytest.warns(DeprecationWarning):
+            result = wrapper.solve("q")
+        assert result == {"error": "nope", "execution_time": 1.5}
+
+    def test_legacy_dict_uses_plain_message_without_suggestions(self):
+        """str(error) appends the suggestions block; the legacy dict must
+        carry only the plain message, as the old fabricated dicts did."""
+        wrapper = self.make_wrapper()
+        wrapper.solve_engine.solve.side_effect = AgentSolveError(
+            "nope", suggestions=["try harder"]
+        )
+        with pytest.warns(DeprecationWarning):
+            result = wrapper.solve("q")
+        assert result == {"error": "nope"}
+
+
+class TestEndToEndLegacyIdentity:
+    """Real wrapper → engine → handler chain: the default (shimmed) path
+    must reproduce the pre-migration error dicts exactly."""
+
+    def make_wrapper(self, methods):
+        from unittest.mock import Mock as M
+
+        from agenthub.core.agents.wrapper import AgentWrapper
+
+        return AgentWrapper(
+            {
+                "name": "bot",
+                "namespace": "acme",
+                "agent_name": "bot",
+                "path": "",
+                "version": "1.0.0",
+                "description": "",
+                "methods": methods,
+                "dependencies": [],
+                "manifest": {"interface": {"methods": {}}},
+            },
+            knowledge_manager=M(),
+            tool_manager=M(),
+        )
+
+    def test_no_methods_default_returns_legacy_dict(self):
+        wrapper = self.make_wrapper(methods=[])
+        with pytest.warns(DeprecationWarning, match="raise_errors=True"):
+            result = wrapper.solve("do something")
+        assert result["error"] == "No methods available for this agent"
+        assert isinstance(result["execution_time"], float)
+        assert set(result) == {"error", "execution_time"}
+
+    def test_no_methods_opt_in_raises_typed(self):
+        wrapper = self.make_wrapper(methods=[])
+        with pytest.raises(AgentSolveError) as exc_info:
+            wrapper.solve("do something", raise_errors=True)
+        assert exc_info.value.args[0] == "No methods available for this agent"
+        assert exc_info.value.suggestions

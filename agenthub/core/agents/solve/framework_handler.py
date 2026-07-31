@@ -1,11 +1,14 @@
 """Handles framework-level solve using solve-specific components."""
 
+import json
 import logging
 import time
 from typing import Any
 
 from ...interfaces import AgentWrapperProtocol, LLMServiceProtocol
 from ...llm.errors import LLMError
+from ...llm.structured import extract_json_from_text
+from ...tools.exceptions import AgentSolveError
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +28,15 @@ class FrameworkSolveHandler:
     def solve(
         self, query: str, context: dict[str, Any] | None = None, **kwargs: Any
     ) -> Any:
-        """Execute framework-level solve using LLM method selection."""
+        """Execute framework-level solve using LLM method selection.
+
+        Raises:
+            AgentSolveError: No methods declared, no method selectable, or
+                an unexpected failure. The plain message stays in
+                ``args[0]`` and ``context["execution_time"]`` is always set,
+                so the wrapper's legacy-dict shim reproduces the pre-typed
+                error dicts exactly.
+        """
         start_time = time.time()
 
         try:
@@ -36,10 +47,14 @@ class FrameworkSolveHandler:
             agent_methods = self._get_method_metadata()
 
             if not agent_methods:
-                return {
-                    "error": "No methods available for this agent",
-                    "execution_time": time.time() - start_time,
-                }
+                raise AgentSolveError(
+                    "No methods available for this agent",
+                    suggestions=[
+                        "Declare methods under 'interface.methods' in agent.yaml",
+                        "Run 'agenthub validate <agent>' to check the manifest",
+                    ],
+                    context={"execution_time": time.time() - start_time},
+                )
 
             # Combined method selection and parameter extraction in single LLM call
             (
@@ -54,28 +69,27 @@ class FrameworkSolveHandler:
             )
 
             if not method_name:
-                return {
-                    "error": "Could not select appropriate method",
-                    "execution_time": time.time() - start_time,
-                }
-
-            # Execute the selected method
-            result = self.agent_wrapper.execute(method_name, extracted_params)
-
-            execution_time = time.time() - start_time
-
-            # Combine reasoning (for future use if needed)
-            # combined_reasoning = f"Method selection: {reasoning}. "
-            # f"Parameter extraction: {param_reasoning}"
-            # combined_confidence = min(confidence, param_confidence)
+                raise AgentSolveError(
+                    "Could not select appropriate method",
+                    suggestions=[
+                        "Rephrase the query to match a declared method's purpose",
+                        "Available methods: "
+                        + ", ".join(m["name"] for m in agent_methods),
+                    ],
+                    context={"execution_time": time.time() - start_time},
+                )
 
             # Return the exact same format as direct method calls
-            return result
+            return self.agent_wrapper.execute(method_name, extracted_params)
 
+        except AgentSolveError as e:
+            e.context.setdefault("execution_time", time.time() - start_time)
+            raise
         except Exception as e:
-            execution_time = time.time() - start_time
-            logger.error(f"Error in framework solve method: {e}")
-            return {"error": str(e), "execution_time": execution_time}
+            logger.error(f"Error in framework solve method: {e}", exc_info=True)
+            raise AgentSolveError(
+                str(e), context={"execution_time": time.time() - start_time}
+            ) from e
 
     def _prepare_solve_context(
         self, context: dict[str, Any] | None = None
@@ -182,15 +196,23 @@ class FrameworkSolveHandler:
         logger.info(f"   Available methods: {[m['name'] for m in agent_methods]}")
         logger.info(f"   LLM Response: {response}")
 
-        # Parse the JSON response
-        import json
-
+        # Parse the JSON response with the LLM layer's shared extractor:
+        # tolerates prose and code fences around the object, which bare
+        # json.loads rejected as "no selection"
         try:
-            extracted_data = json.loads(response)
+            extracted_data = extract_json_from_text(response)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM response as JSON: {e}")
             logger.error(f"Raw response: {response}")
-            return "", {}, 0.0, 0.0, "JSON parsing failed", "JSON parsing failed"
+            raise AgentSolveError(
+                "Could not select appropriate method",
+                suggestions=[
+                    "The LLM response did not contain a parseable JSON object",
+                    "Retry, or pin a model with stronger JSON instruction "
+                    "following via AGENTHUB_LLM_MODEL",
+                ],
+                context={"raw_response": response},
+            ) from e
 
         # Extract results
         method_name = extracted_data.get("selected_method", "")

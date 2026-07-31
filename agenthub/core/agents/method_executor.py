@@ -3,11 +3,16 @@
 import json
 import logging
 import os
+import warnings
 from typing import Any
 
 from ..tools.exceptions import AgentExecutionError
 
 logger = logging.getLogger(__name__)
+
+# Parameter types (agent.yaml interface.methods.<m>.parameters.<p>.type)
+# whose string values get file-path resolution before reaching the agent.
+_FILE_PATH_TYPES = frozenset({"file", "path", "file_path", "filepath"})
 
 
 class MethodExecutor:
@@ -42,11 +47,12 @@ class MethodExecutor:
             # Map parameters if needed
             mapped_params = self._map_parameters(method, parameters)
 
-            # Prepare tool context
-            tool_context = self.agent_wrapper.get_tool_context_json()
+            # Prepare tool context (the wrapper builds the dict once; the
+            # runtime serializes it for transport)
+            tool_context = self.agent_wrapper.get_tool_context()
 
-            # Resolve file paths in parameters
-            resolved_params = self._resolve_file_paths(mapped_params)
+            # Resolve file paths in parameters (schema-aware)
+            resolved_params = self._resolve_file_paths(method, mapped_params)
 
             # Generate agent call JSON (for future use if needed)
             # agent_call_json = self.generate_agent_call_json(method, resolved_params)
@@ -58,11 +64,7 @@ class MethodExecutor:
                     agent_name=self.agent_wrapper.name,
                     method=method,
                     parameters=resolved_params,
-                    tool_context=(
-                        json.loads(tool_context)
-                        if isinstance(tool_context, str)
-                        else tool_context
-                    ),
+                    tool_context=tool_context,
                 )
                 return result
             else:
@@ -101,7 +103,18 @@ class MethodExecutor:
                 mapped_kwargs = self._map_mixed_arguments(method, args, kwargs)
                 return mapped_kwargs
             else:
-                # No mapping needed, return as-is
+                # No declared interface: positional args pass through as a
+                # literal "args" tuple, which agent methods almost never
+                # accept. One release with a warning, then a typed error.
+                warnings.warn(
+                    f"Positional arguments passed to method '{method}', which "
+                    f"declares no interface parameters; the runtime receives "
+                    f"them as a raw 'args' tuple. Pass keyword arguments or "
+                    f"declare parameters in agent.yaml — this becomes an "
+                    f"AgentExecutionError in the next minor release.",
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
                 return parameters
         else:
             # No positional args, return as-is
@@ -113,13 +126,6 @@ class MethodExecutor:
         """Map positional arguments to named parameters based on method signature."""
         method_info = self.agent_wrapper.agent_info.get_method_info(method_name)
         parameters = method_info.get("parameters", {})
-
-        if not parameters:
-            # If no parameter info available, try to map by position
-            if args and not kwargs:
-                # Assume first arg is the main parameter
-                return {"query": args[0] if len(args) == 1 else args}
-            return kwargs
 
         # Get parameter names in order
         param_names = list(parameters.keys())
@@ -140,12 +146,6 @@ class MethodExecutor:
         """Handle mixed positional and keyword arguments."""
         method_info = self.agent_wrapper.agent_info.get_method_info(method_name)
         parameters = method_info.get("parameters", {})
-
-        if not parameters:
-            # Fallback: combine args and kwargs
-            if args and not kwargs:
-                return {"query": args[0] if len(args) == 1 else args}
-            return kwargs
 
         # Map positional args first
         mapped_params = self._map_positional_to_named_args(method_name, args, {})
@@ -177,33 +177,65 @@ class MethodExecutor:
                 f"{missing_params}"
             )
 
-    def _resolve_file_paths(self, parameters: dict[str, Any]) -> dict[str, Any]:
-        """Resolve file paths in parameters to absolute paths."""
+    def _resolve_file_paths(
+        self, method: str, parameters: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Resolve file paths in parameters to absolute paths.
+
+        Schema-aware: parameters whose manifest declaration has a file-path
+        type (``file``, ``path``, ``file_path``, ``filepath``) are resolved;
+        parameters with any other declared type pass through untouched.
+        Undeclared parameters fall back to the legacy string heuristic for
+        one release, with a DeprecationWarning when it classifies a value.
+        """
+        method_info = self.agent_wrapper.agent_info.get_method_info(method)
+        schema = method_info.get("parameters", {})
         resolved_params = {}
 
         for key, value in parameters.items():
-            if isinstance(value, str) and self._looks_like_file_path(value):
-                # Resolve relative paths
-                if not os.path.isabs(value):
-                    # Try relative to agent path
-                    agent_path = self.agent_wrapper.agent_info.path
-                    if agent_path:
-                        resolved_path = os.path.join(agent_path, value)
-                        if os.path.exists(resolved_path):
-                            resolved_params[key] = os.path.abspath(resolved_path)
-                            continue
+            declared = schema.get(key)
+            declared_type = declared.get("type") if isinstance(declared, dict) else None
 
-                    # Try relative to current working directory
-                    if os.path.exists(value):
-                        resolved_params[key] = os.path.abspath(value)
-                        continue
-
-                # Keep original if can't resolve
+            if not isinstance(value, str):
                 resolved_params[key] = value
+            elif declared_type in _FILE_PATH_TYPES:
+                resolved_params[key] = self._resolve_single_path(value)
+            elif declared_type is not None:
+                # Declared as a non-file type: never rewrite the value
+                resolved_params[key] = value
+            elif self._looks_like_file_path(value):
+                # Undeclared parameter: legacy heuristic, one more release
+                warnings.warn(
+                    f"Parameter '{key}' of method '{method}' has no declared "
+                    f"type and was treated as a file path by the legacy "
+                    f"heuristic; declare 'type: file' (to keep resolution) "
+                    f"or any other type (to opt out) in agent.yaml. The "
+                    f"heuristic is removed in the next minor release.",
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
+                resolved_params[key] = self._resolve_single_path(value)
             else:
                 resolved_params[key] = value
 
         return resolved_params
+
+    def _resolve_single_path(self, value: str) -> str:
+        """Resolve one path-like string against the agent dir, then cwd."""
+        if not os.path.isabs(value):
+            # Try relative to agent path
+            agent_path = self.agent_wrapper.agent_info.path
+            if agent_path:
+                resolved_path = os.path.join(agent_path, value)
+                if os.path.exists(resolved_path):
+                    return os.path.abspath(resolved_path)
+
+            # Try relative to current working directory
+            if os.path.exists(value):
+                return os.path.abspath(value)
+
+        # Keep original if can't resolve
+        return value
 
     def _looks_like_file_path(self, value: str) -> bool:
         """Check if a string looks like a file path."""

@@ -2,6 +2,7 @@
 
 import click
 
+from ..core.logging import setup_logging
 from .commands.agent import agent
 from .commands.core.exec import core_exec
 from .commands.core.info import core_info
@@ -14,7 +15,9 @@ from .commands.core.validate import core_validate
 @click.version_option(package_name="agenthub-sdk")
 def cli() -> None:
     """AgentHub - AI Agent Management Platform."""
-    pass
+    # The CLI owns the process, so it configures logging; library code only
+    # logs (direct SDK users opt in via agenthub.setup_logging()).
+    setup_logging()
 
 
 # Add command groups
